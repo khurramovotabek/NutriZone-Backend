@@ -1,0 +1,61 @@
+{% extends "admin/change_list.html" %}
+{% load i18n static admin_list %}
+{# Daily reconciliation (ReconciliationAdmin): open discrepancies with advice, run now, resolve / ignore. #}
+{% block extrastyle %}{{ block.super }}{% include "admin/payment/_head.html" %}{% endblock %}
+{% block content_title %}{% endblock %}
+{% block content %}
+<div class="nzp nzd wx">
+  <header class="nzp-hero">
+    <div class="nzp-hero-main">
+      <span class="nzp-hero-icon" style="--c:#e11d48"><i class="fas fa-scale-balanced" aria-hidden="true"></i></span>
+      <div><h2>{% translate "Solishtirish" %}</h2><p>{% translate "Har kuni to'lovlar, buyurtmalar va provayder holati solishtiriladi. Nomuvofiqlik topilsa shu yerda chiqadi; muammo bartaraf etilgach keyingi tekshiruvda o'zi yopiladi." %}</p></div>
+    </div>
+    {% if can_change %}<div class="nzp-hero-actions"><form method="post" action="{% url 'admin:payment_paymentreconciliationissue_run' %}">{% csrf_token %}<button class="nzp-btn nzp-btn-primary"><i class="fas fa-rotate" aria-hidden="true"></i> {% translate "Hozir tekshirish" %}</button></form></div>{% endif %}
+  </header>
+
+  <div class="nzp-stats">
+    <div class="nzp-stat" style="--c:#e11d48"><i class="fas fa-circle-exclamation" aria-hidden="true"></i><div><b>{{ kpi.critical }}</b><span>{% blocktranslate with a=kpi.amount %}Muhim · {{ a }} so'm{% endblocktranslate %}</span></div></div>
+    <div class="nzp-stat" style="--c:#f59e0b"><i class="fas fa-triangle-exclamation" aria-hidden="true"></i><div><b>{{ kpi.warning }}</b><span>{% translate "Ogohlantirishlar" %}</span></div></div>
+    <a class="nzp-stat" href="?all=1" style="--c:#10b981"><i class="fas fa-circle-check" aria-hidden="true"></i><div><b>{{ kpi.resolved }}</b><span>{% translate "Hal qilingan" %}</span></div></a>
+    <div class="nzp-stat" style="--c:#2563eb"><i class="fas fa-clock-rotate-left" aria-hidden="true"></i><div><b>{% if cfg.last_reconciled_at %}{{ cfg.last_reconciled_at|date:"d.m H:i" }}{% else %}—{% endif %}</b><span>{% if summary.checked is not None %}{% blocktranslate with n=summary.checked e=summary.external %}Oxirgi tekshiruv · {{ n }} to'lov · Click API: {{ e }}{% endblocktranslate %}{% else %}{% translate "Hali tekshirilmagan" %}{% endif %}{% if not cfg.reconcile_enabled %} · {% translate "kunlik o'chirilgan" %}{% endif %}</span></div></div>
+  </div>
+
+  <div class="nzp-toolbar">{% with section="recon" %}{% include "admin/payment/_nav.html" %}{% endwith %}</div>
+  <div class="nzp-toolbar"><nav class="nzp-tabs"><a class="nzp-tab{% if not show_all %} on{% endif %}" href="?" style="--t:#e11d48">{% translate "Ochiq" %}</a><a class="nzp-tab{% if show_all %} on{% endif %}" href="?all=1" style="--t:#64748b">{% translate "Barchasi" %}</a></nav></div>
+
+  <section class="nzp-card">
+    {% if cl.result_list %}
+    <ul class="pay-issues">
+      {% for i in cl.result_list %}
+      <li class="pay-issue" style="--t:{{ i.nz.color }}">
+        <span class="pay-issue-icon"><i class="fas {{ i.nz.icon }}" aria-hidden="true"></i></span>
+        <div class="pay-issue-body">
+          <p class="pay-issue-title"><b>{{ i.nz.title }}</b>{% if i.status != "open" %} <span class="nzd-pill" style="--t:#10b981">{{ i.get_status_display }}</span>{% endif %}</p>
+          <p class="pay-issue-meta">
+            {% if i.nz.logo %}<img src="{{ i.nz.logo }}" alt="">{% endif %}
+            {% if i.order_number %}<span>#{{ i.order_number }}</span>{% endif %}
+            {% if i.nz.amount %}<span><b>{{ i.nz.amount }}</b> {% translate "so'm" %}</span>{% endif %}
+            <span>{{ i.nz.when }}</span>
+            {% if i.payment_id %}<a href="{% url 'admin:payment_paymentmodel_change' i.payment_id %}">{% translate "Tranzaksiya" %} →</a>{% endif %}
+          </p>
+          <p class="pay-issue-advice"><i class="fas fa-lightbulb" aria-hidden="true"></i> {{ i.nz.advice }}</p>
+          {% if i.nz.details %}<code class="pay-issue-details">{{ i.nz.details }}</code>{% endif %}
+          {% if i.resolution_note %}<p class="pay-issue-meta">{% translate "Izoh" %}: {{ i.resolution_note }}{% if i.resolved_by %} · {{ i.resolved_by.get_username }}{% endif %}</p>{% endif %}
+        </div>
+        {% if can_change and i.status == "open" %}
+        <form class="pay-issue-actions" method="post" action="{% url 'admin:payment_paymentreconciliationissue_close' i.pk %}">{% csrf_token %}
+          <input class="nzd-input" name="note" placeholder="{% translate 'Izoh (masalan: pul qaytarildi)' %}" maxlength="255">
+          <div><button class="nzp-btn nzp-btn-primary nzp-btn-sm" name="to" value="resolved"><i class="fas fa-check" aria-hidden="true"></i> {% translate "Hal qilindi" %}</button>
+          <button class="nzp-btn nzp-btn-ghost nzp-btn-sm" name="to" value="ignored">{% translate "E'tiborsiz" %}</button></div>
+        </form>
+        {% endif %}
+      </li>
+      {% endfor %}
+    </ul>
+    {% else %}
+    <div class="nzp-empty"><span class="nzp-empty-icon" style="--c:#10b981"><i class="fas fa-circle-check" aria-hidden="true"></i></span><h3>{% translate "Hammasi mos keladi" %}</h3><p>{% translate "To'lovlar, buyurtmalar va provayder ma'lumotlari o'rtasida nomuvofiqlik topilmadi." %}</p></div>
+    {% endif %}
+  </section>
+  {% if cl.result_count > cl.list_per_page %}<div class="nzp-pagination">{% pagination cl %}</div>{% endif %}
+</div>
+{% endblock %}

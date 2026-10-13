@@ -1,0 +1,51 @@
+{% extends "admin/base_site.html" %}
+{% load i18n static %}
+{# Geo & Location → Manzillar xaritasi (apps/geo/infrastructure/admin_map.py): addresses, stores, warehouses and city centres on one map. #}
+{% block extrastyle %}{{ block.super }}<link rel="stylesheet" href="{% static 'admin/css/nutrizone-platform.css' %}?v=5"><link rel="stylesheet" href="{% static 'admin/css/nutrizone-premium.css' %}?v=6"><link rel="stylesheet" href="{% static 'admin/vendor/leaflet/leaflet.css' %}"><link rel="stylesheet" href="{% static 'admin/css/nutrizone-geo.css' %}?v=3">{% endblock %}
+{% block breadcrumbs %}<ol class="breadcrumb"><li class="breadcrumb-item"><a href="{% url 'admin:index' %}">{% translate "Home" %}</a></li><li class="breadcrumb-item"><a href="{% url 'admin:geo_address_changelist' %}">Manzillar</a></li><li class="breadcrumb-item active">{{ title }}</li></ol>{% endblock %}
+{% block content_title %}{% endblock %}
+{% block content %}
+<div class="nzp nzgeo-overview">
+  <header class="nzp-hero">
+    <div class="nzp-hero-main">
+      <span class="nzp-hero-icon" style="--c:#4f46e5"><i class="fas fa-map-location-dot" aria-hidden="true"></i></span>
+      <div><h2>{{ title }}</h2><p>Mijozlar manzillari, do'konlar va omborlar bitta xaritada. Pinni bosing — kim, qayer, eng yaqin do'kon va Yandex / Google / Apple / 2GIS'da ochish.</p></div>
+    </div>
+    <div class="nzp-hero-actions">
+      <a class="nzp-btn nzp-btn-ghost" href="{% url 'admin:geo_address_changelist' %}"><i class="fas fa-list" aria-hidden="true"></i> Manzillar ro'yxati</a>
+      <a class="nzp-btn nzp-btn-ghost" href="{% url 'admin:stores_store_changelist' %}"><i class="fas fa-store" aria-hidden="true"></i> Do'konlar</a>
+    </div>
+  </header>
+
+  <div class="nzi-stats">
+    {% for s in cards %}
+    {% if s.href %}<a class="nzi-stat" href="{{ s.href }}" style="--t:{{ s.tone }}">{% else %}<div class="nzi-stat" style="--t:{{ s.tone }}">{% endif %}
+      <i class="fas {{ s.icon }}" aria-hidden="true"></i><div><b>{{ s.value }}</b><span>{{ s.label }}</span>{% if s.sub %}<small>{{ s.sub }}</small>{% endif %}</div>
+    {% if s.href %}</a>{% else %}</div>{% endif %}
+    {% endfor %}
+  </div>
+
+  <section class="nzgeo-card" data-nzgeo-overview data-focus="{{ focus }}">
+    <div class="nzi-toolbar" style="margin-bottom:12px">
+      <div class="nzgeo-legend">
+        {% for k in kinds %}<label style="--t:{{ k.color }}"><input type="checkbox" data-kind-toggle="{{ k.key }}"{% if k.on %} checked{% endif %}><i class="dot"></i>{{ k.label }} <b>{{ k.n }}</b></label>{% endfor %}
+        <label style="--t:#dc2626"><i class="dot"></i>Do'kondan uzoq manzil</label>
+      </div>
+      <div class="nzi-tools">
+        <label class="nzi-filter"><span>Viloyat</span><select onchange="window.location='?region='+this.value" aria-label="Viloyat"><option value="">Hammasi</option>{% for r in regions %}<option value="{{ r.id }}"{% if r.on %} selected{% endif %}>{{ r.name }}</option>{% endfor %}</select></label>
+      </div>
+    </div>
+    <div class="nzgeo-map lg" data-map></div>
+    {{ points|json_script:"nzgeo-points" }}
+  </section>
+
+  <section class="nzgeo-card">
+    <ul class="nzgeo-tips">
+      <li><i class="fas fa-circle-info" aria-hidden="true"></i><span><b>Qizil pin</b> — eng yaqin do'kondan 10 km dan uzoq manzil. Ular ko'p joy — yangi filial yoki tez yetkazish hududi uchun signal.</span></li>
+      <li><i class="fas fa-location-crosshairs" aria-hidden="true"></i><span>Mijoz «joylashuvimni aniqlash» yoki xaritada pin qo'yganda nuqta saqlanadi; nuqtasiz manzillarni ro'yxatda «Koordinatasiz» filtri bilan toping.</span></li>
+      <li><i class="fas fa-layer-group" aria-hidden="true"></i><span>Xaritaning o'ng yuqorisida: <b>Xarita · Sputnik · Gibrid · Relyef</b> — tanlov eslab qolinadi.</span></li>
+    </ul>
+  </section>
+</div>
+{% endblock %}
+{% block extrajs %}{{ block.super }}<script src="{% static 'admin/vendor/leaflet/leaflet.js' %}"></script><script src="{% static 'admin/js/nutrizone-geo-admin.js' %}?v=5"></script>{% endblock %}

@@ -1,0 +1,43 @@
+{% extends "admin/base_site.html" %}
+{% load i18n static %}
+{# One goods receipt as a document: header, totals, item lines with photo / cost / batch / expiry; printable. #}
+{% block extrastyle %}{{ block.super }}<link rel="stylesheet" href="{% static 'admin/css/nutrizone-platform.css' %}?v=5"><link rel="stylesheet" href="{% static 'admin/css/nutrizone-orderdesk.css' %}?v=5"><link rel="stylesheet" href="{% static 'admin/css/nutrizone-wmsx.css' %}?v=10">{% endblock %}
+{% block breadcrumbs %}<ol class="breadcrumb"><li class="breadcrumb-item"><a href="{% url 'admin:index' %}">{% translate "Home" %}</a></li><li class="breadcrumb-item"><a href="{% url 'admin:stores_stockreceipt_changelist' %}">{% translate "Kirim (qabul)" %}</a></li><li class="breadcrumb-item active">{{ r.number }}</li></ol>{% endblock %}
+{% block content_title %}{% endblock %}
+{% block content %}
+<div class="nzp nzd wx">
+  <header class="nzp-hero">
+    <div class="nzp-hero-main">
+      <a class="nzp-back" href="{% url 'admin:stores_stockreceipt_changelist' %}" aria-label="{% translate 'Back' %}"><i class="fas fa-arrow-left" aria-hidden="true"></i></a>
+      <div><h2 class="nzd-number">{% translate "Kirim" %} <span class="nz-num">{{ r.number }}</span></h2>
+        <p><span><i class="wms-dot" style="background:{{ r.store.color|default:'#94a3b8' }}"></i> {{ r.store.name }}</span><span>{{ created }}</span><span>{{ r.created_by }}</span></p></div>
+    </div>
+    <div class="nzp-hero-actions">
+      <button type="button" class="nzp-btn nzp-btn-ghost" onclick="window.print()"><i class="fas fa-print" aria-hidden="true"></i> {% translate "Print" %}</button>
+      <a class="nzp-btn nzp-btn-ghost" href="{% url 'admin:stores_stockmovement_changelist' %}?q={{ r.number }}"><i class="fas fa-clock-rotate-left" aria-hidden="true"></i> {% translate "Ledger rows" %}</a>
+    </div>
+  </header>
+  <div class="nzp-stats">
+    {% if pay %}<a class="nzp-stat" href="{{ pay.url }}" style="--c:#8b5cf6">{% else %}<div class="nzp-stat" style="--c:#8b5cf6">{% endif %}<i class="fas fa-truck-field" aria-hidden="true"></i><div><b>{{ r.supplier|default:"—" }}</b><span>{% translate "Supplier" %}{% if r.invoice_number %} · № {{ r.invoice_number }}{% endif %}</span>{% if pay and pay.label %}<span class="nzd-tag" style="--t:{{ pay.color }}">{{ pay.label }}{% if pay.open %} · {{ pay.open }}{% endif %}</span>{% endif %}{% if r.due_date and r.total_value %}<small class="wx-muted">{% translate "due" %} {{ r.due_date|date:"d.m.Y" }}</small>{% endif %}</div>{% if pay %}</a>{% else %}</div>{% endif %}
+    <div class="nzp-stat" style="--c:#3b82f6"><i class="fas fa-boxes-stacked" aria-hidden="true"></i><div><b>{{ rows|length }}</b><span>{% translate "Products" %}</span></div></div>
+    <div class="nzp-stat" style="--c:#10b981"><i class="fas fa-cubes" aria-hidden="true"></i><div><b>+{{ r.total_units }}</b><span>{% translate "Units received" %}</span></div></div>
+    <div class="nzp-stat" style="--c:#f59e0b"><i class="fas fa-coins" aria-hidden="true"></i><div><b>{{ value|default:"—" }}{% if value %}<small> {% translate "so'm" %}</small>{% endif %}</b><span>{% translate "Value at cost" %}{% if nocost %} · {{ nocost }} {% translate "qatorda tannarx yo'q" %}{% endif %}</span></div></div>
+    {% if profit %}<div class="nzp-stat" style="--c:{% if profit.loss %}#e11d48{% else %}#10b981{% endif %}"><i class="fas fa-chart-line" aria-hidden="true"></i><div><b>{{ profit.profit }}<small> {% translate "so'm" %} · {{ profit.pct }}%</small></b><span>{% translate "Kutilayotgan yalpi foyda" %} · {% translate "sotuvda" %} {{ profit.revenue }}</span></div></div>{% endif %}
+  </div>
+  {% if r.note %}<div class="nzp-note nzp-note-info"><i class="fas fa-note-sticky" aria-hidden="true"></i> {{ r.note }}</div>{% endif %}
+  <section class="nzp-card nzd-items wx-receipt-items">
+    <ul class="nzd-lines">
+      {% for row in rows %}
+      <li class="nzd-line">
+        <span class="nzd-thumb">{% if row.info.image_url %}<img src="{{ row.info.image_url }}" alt="" loading="lazy">{% else %}<i class="fas fa-box" aria-hidden="true"></i>{% endif %}</span>
+        <div class="nzd-line-main"><strong>{{ row.info.name|default:"—" }}</strong><small>{{ row.info.sku }}{% if row.info.barcode %} · {{ row.info.barcode }}{% endif %}{% if row.info.size %} · {{ row.info.size }}{% endif %}</small>
+          <span class="nzd-line-tags">{% if row.i.batch_number %}<span class="nzd-tag" style="--t:#6366f1">LOT {{ row.i.batch_number }}</span>{% endif %}{% if row.i.expiry_date %}<span class="nzd-tag" style="--t:#f59e0b">{% blocktranslate with d=row.i.expiry_date|date:"d.m.Y" %}until {{ d }}{% endblocktranslate %}</span>{% endif %}</span></div>
+        <div class="nzd-line-qty"><b>+{{ row.i.quantity }}</b><small>{% if row.i.unit_cost is not None %}{{ row.i.unit_cost|floatformat:"0g" }} {% translate "so'm" %}{% else %}{% translate "no cost" %}{% endif %}</small></div>
+        <div class="nzd-line-qty wx-margin">{% if row.price %}<b>{{ row.price }}</b><small>{% translate "sotuv narxi" %}</small>{% if row.margin is not None %}<span class="wx-mchip {{ row.tone }}">{% if row.margin < 0 %}{% translate "zarar" %} {% endif %}{{ row.margin }}%</span>{% endif %}{% else %}<small>{% translate "narx yo'q" %}</small>{% endif %}</div>
+        <div class="nzd-line-total">{% if row.total %}{{ row.total }} <small>{% translate "so'm" %}</small>{% else %}—{% endif %}</div>
+      </li>
+      {% endfor %}
+    </ul>
+  </section>
+</div>
+{% endblock %}

@@ -1,0 +1,84 @@
+{% extends "admin/base_site.html" %}
+{% load i18n static %}
+{# Dispatcher board: live Kanban of online orders (data: board/data/, moves: board/<id>/move/, ship picker: board/<id>/ship-options/). Rendered client-side by nutrizone-board.js. #}
+
+{% block extrastyle %}
+{{ block.super }}
+<link rel="stylesheet" href="{% static 'admin/css/nutrizone-platform.css' %}?v=5">
+<link rel="stylesheet" href="{% static 'admin/css/nutrizone-orderdesk.css' %}?v=6">
+<link rel="stylesheet" href="{% static 'admin/css/nutrizone-board.css' %}?v=2">
+{% endblock %}
+
+{% block breadcrumbs %}
+<ol class="breadcrumb">
+  <li class="breadcrumb-item"><a href="{% url 'admin:index' %}">{% translate "Home" %}</a></li>
+  <li class="breadcrumb-item"><a href="{% url 'admin:ordering_ordermodel_changelist' %}">{% translate "Buyurtmalar" %}</a></li>
+  <li class="breadcrumb-item active">{% translate "Order board" %}</li>
+</ol>
+{% endblock %}
+
+{% block content_title %}{% endblock %}
+
+{% block content %}
+<div class="nzp nzd nzb" data-nzb
+     data-url-data="{% url 'admin:ordering_ordermodel_board_data' %}"
+     data-url-move="{% url 'admin:ordering_ordermodel_board_move' '00000000-0000-0000-0000-000000000000' %}"
+     data-url-ship="{% url 'admin:ordering_ordermodel_board_ship_options' '00000000-0000-0000-0000-000000000000' %}"
+     data-can-change="{% if has_change_permission %}1{% endif %}">
+  {% csrf_token %}
+  <header class="nzp-hero">
+    <div class="nzp-hero-main">
+      <span class="nzp-hero-icon" style="--c:#6366f1"><i class="fas fa-table-columns" aria-hidden="true"></i></span>
+      <div>
+        <h2>{% translate "Order board" %}</h2>
+        <p>{% translate "Drag a card to the next column, or use its button. Updates every 30 seconds." %}</p>
+      </div>
+    </div>
+    <div class="nzp-hero-actions">
+      <span class="nzb-live" data-nzb-live title="{% translate 'Auto-refresh' %}"><span class="nzb-dot"></span> <span data-nzb-updated>—</span></span>
+      <button type="button" class="nzp-btn nzp-btn-ghost" data-nzb-refresh><i class="fas fa-rotate" aria-hidden="true"></i> {% translate "Refresh" %}</button>
+      <a class="nzp-btn nzp-btn-ghost" href="{% url 'admin:ordering_ordermodel_changelist' %}"><i class="fas fa-list" aria-hidden="true"></i> {% translate "List" %}</a>
+    </div>
+  </header>
+
+  <div class="nzp-stats nzb-stats">
+    <div class="nzp-stat" style="--c:#6366f1"><i class="fas fa-layer-group" aria-hidden="true"></i><div><b data-nzb-sum="active">0</b><span>{% translate "Orders in progress" %}</span></div></div>
+    <div class="nzp-stat" style="--c:#e11d48"><i class="fas fa-hourglass-end" aria-hidden="true"></i><div><b data-nzb-sum="late">0</b><span>{% translate "Running late" %}</span></div></div>
+    <div class="nzp-stat" style="--c:#0ea5e9"><i class="fas fa-sack-dollar" aria-hidden="true"></i><div><b><span data-nzb-sum="in_work">0</span><small> {% translate "so'm" %}</small></b><span>{% translate "Cash in progress" %}</span></div></div>
+    <div class="nzp-stat" style="--c:#10b981"><i class="fas fa-house-circle-check" aria-hidden="true"></i><div><b data-nzb-sum="delivered_today">0</b><span>{% translate "Delivered today" %}</span></div></div>
+    <a class="nzp-stat nzb-stat-link" style="--c:#f97316" href="{% url 'admin:ordering_orderreturnmodel_changelist' %}?status__exact=requested"><i class="fas fa-rotate-left" aria-hidden="true"></i><div><b data-nzb-sum="requests">0</b><span>{% translate "Requests to decide" %}</span></div></a>
+  </div>
+
+  <div class="nzb-toolbar">
+    <label class="nzp-search"><i class="fas fa-magnifying-glass" aria-hidden="true"></i><input type="search" data-nzb-q placeholder="{% translate 'Order number, name or phone…' %}" aria-label="{% translate 'Order number, name or phone…' %}"></label>
+    <select class="nzp-select" data-nzb-city aria-label="{% translate 'City' %}"><option value="">{% translate "All cities" %}</option></select>
+    <label class="nzb-toggle"><input type="checkbox" data-nzb-late> <span><i class="fas fa-fire" aria-hidden="true"></i> {% translate "Only late" %}</span></label>
+    <span class="nzb-legend"><i class="ok"></i> {% translate "on time" %} <i class="warn"></i> {% translate "getting late" %} <i class="late"></i> {% translate "late" %}</span>
+  </div>
+
+  <div class="nzb-board" data-nzb-board aria-live="polite">
+    <div class="nzb-loading"><i class="fas fa-spinner fa-spin" aria-hidden="true"></i> {% translate "Loading…" %}</div>
+  </div>
+
+  {# ship-from picker (drop onto "With the courier") #}
+  <dialog class="nzd-dialog" id="nzb-ship" aria-labelledby="nzb-ship-title">
+    <form method="dialog" data-nzb-ship-form>
+      <header><span class="nzd-dialog-icon is-ok"><i class="fas fa-truck-fast" aria-hidden="true"></i></span><div><h3 id="nzb-ship-title">{% translate "Hand over to courier" %} <span class="nz-num" data-nzb-ship-number></span></h3><p>{% translate "Units are taken off this location's stock when the parcel leaves." %}</p></div></header>
+      <div class="nzd-locs nzb-locs" data-nzb-ship-locs role="radiogroup" aria-label="{% translate 'Ship from' %}"></div>
+      <p class="nzd-ship-warn" data-nzb-ship-warn hidden><i class="fas fa-triangle-exclamation" aria-hidden="true"></i> {% translate "This location doesn't have every item -- receive stock or pick another location." %}</p>
+      <footer>
+        <button type="button" class="nzp-btn nzp-btn-ghost" data-nzb-ship-cancel>{% translate "Back" %}</button>
+        <button type="submit" class="nzp-btn nzp-btn-primary" data-nzb-ship-go><i class="fas fa-truck-fast" aria-hidden="true"></i> {% translate "Hand over to courier" %}</button>
+      </footer>
+    </form>
+  </dialog>
+
+  <div class="nzp-toast" data-nzp-toast role="status" aria-live="polite" hidden></div>
+  {{ nz_board_i18n|json_script:"nzb-i18n" }}
+</div>
+{% endblock %}
+
+{% block extrajs %}
+{{ block.super }}
+<script src="{% static 'admin/js/nutrizone-board.js' %}?v=1"></script>
+{% endblock %}

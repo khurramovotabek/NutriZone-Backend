@@ -1,0 +1,66 @@
+{% extends "admin/base_site.html" %}
+{% load i18n static %}
+{# Chat markazi -- the support desk (apps/platform/infrastructure/chat_view.py): queue | thread | customer profile, driven by nutrizone-chat-desk.js. #}
+{% block extrastyle %}{{ block.super }}<link rel="stylesheet" href="{% static 'admin/css/nutrizone-platform.css' %}?v=5"><link rel="stylesheet" href="{% static 'admin/css/nutrizone-premium.css' %}?v=6"><link rel="stylesheet" href="{% static 'admin/css/nutrizone-chat-desk.css' %}?v=5">{% endblock %}
+{% block breadcrumbs %}<ol class="breadcrumb"><li class="breadcrumb-item"><a href="{% url 'admin:index' %}">{% translate "Home" %}</a></li><li class="breadcrumb-item active">{% translate "Chat" %}</li></ol>{% endblock %}
+{% block content_title %}{% endblock %}
+{% block content %}
+<div class="nzp nzc" id="nzc">
+  <header class="nzp-hero nzc-hero">
+    <div class="nzp-hero-main">
+      <span class="nzp-hero-icon" style="--c:#4f46e5"><i class="fas fa-headset" aria-hidden="true"></i></span>
+      <div><h2>{{ title }}</h2><p>{% translate "Chat" %} · Mijozlar savollariga shu yerda javob bering — javob mijozga darhol yetadi, oflayn bo'lsa bildirishnoma boradi.</p></div>
+    </div>
+    <div class="nzc-kpis" data-kpis>
+      <a class="nzc-hours{% if not stats.open_now %} off{% endif %}" data-hours href="{{ config.settings_admin }}" title="Chat sozlamalari"><i class="fas fa-clock" aria-hidden="true"></i><span><b>{% if stats.open_now %}Ish vaqti{% else %}Ish vaqtidan tashqari{% endif %}</b><small>{{ stats.hours }}</small></span></a>
+      <span class="nzc-kpi warn" data-k="waiting"><b>{{ stats.waiting }}</b> javob kutmoqda</span>
+      <span class="nzc-kpi" data-k="mine"><b>{{ stats.mine }}</b> mening</span>
+      <span class="nzc-kpi" data-k="open"><b>{{ stats.open }}</b> ochiq</span>
+      <span class="nzc-kpi" data-k="today"><b>{{ stats.today }}</b> xabar / 24 soat</span>
+      <span class="nzc-kpi" data-k="csat" title="Mijozlarning o'rtacha bahosi, 30 kun"><b>{% if stats.csat %}{{ stats.csat }} ★{% else %}—{% endif %}</b> baho</span>
+      <span class="nzc-kpi{% if stats.review %} bad{% endif %}" data-k="review" title="Past baho olgan, hali hal qilinmagan suhbatlar"><b>{{ stats.review }}</b> nazoratda</span>
+      <span class="nzc-kpi" data-k="first_reply"><b>{% if stats.first_reply is not None %}{{ stats.first_reply }} daq{% else %}—{% endif %}</b> birinchi javob</span>
+      <a class="nzc-head-link" href="{{ config.report }}"><i class="fas fa-chart-column" aria-hidden="true"></i> Operatorlar hisoboti</a>
+    </div>
+  </header>
+
+  <div class="nzc-desk" data-desk>
+    <aside class="nzc-queue" aria-label="Suhbatlar">
+      <nav class="nzc-tabs" role="tablist">
+        <button type="button" data-f="waiting" role="tab">Javob kutmoqda <b data-c="waiting">{{ stats.waiting }}</b></button>
+        <button type="button" data-f="mine" role="tab">Mening <b data-c="mine">{{ stats.mine }}</b></button>
+        <button type="button" data-f="open" role="tab">Ochiq <b data-c="open">{{ stats.open }}</b></button>
+        <button type="button" data-f="review" role="tab" title="Past baho (1–2 ★) olgan suhbatlar">Nazoratda <b data-c="review">{{ stats.review }}</b></button>
+        <button type="button" data-f="stores" role="tab">Do'konlar <b data-c="stores">{{ stats.stores }}</b></button>
+        <button type="button" data-f="closed" role="tab">Yopilgan</button>
+      </nav>
+      <label class="nzc-search"><i class="fas fa-magnifying-glass" aria-hidden="true"></i><input type="search" placeholder="Ism, telefon yoki xabar…" data-q aria-label="Qidirish"></label>
+      <div class="nzc-list" data-list role="list"><div class="nzc-empty"><i class="fas fa-circle-notch fa-spin" aria-hidden="true"></i></div></div>
+    </aside>
+
+    <section class="nzc-thread" data-thread aria-label="Yozishma">
+      <div class="nzc-placeholder" data-placeholder><span><i class="fas fa-comments" aria-hidden="true"></i></span><h3>Suhbatni tanlang</h3><p>Chapdagi navbatdan suhbatni oching. «Javob kutmoqda» — mijoz oxirgi xabarni yozgan suhbatlar.</p></div>
+      <header class="nzc-th-head" data-head hidden></header>
+      <div class="nzc-review" data-review hidden></div>
+      <div class="nzc-msgs" data-msgs hidden></div>
+      <div class="nzc-banner" data-banner hidden></div>
+      <form class="nzc-composer" data-composer hidden autocomplete="off">
+        <div class="nzc-pop" data-pop hidden></div>
+        <div class="nzc-tools">
+          <button type="button" class="nzc-tool" data-tool="quick" title="Tayyor javoblar" aria-label="Tayyor javoblar"><i class="fas fa-bolt" aria-hidden="true"></i></button>
+          <button type="button" class="nzc-tool" data-tool="sticker" title="Stikerlar" aria-label="Stikerlar"><i class="fas fa-face-smile" aria-hidden="true"></i></button>
+          <button type="button" class="nzc-tool" data-tool="card" title="Mahsulot yoki buyurtma kartochkasi" aria-label="Mahsulot yoki buyurtma kartochkasi"><i class="fas fa-bag-shopping" aria-hidden="true"></i></button>
+          <label class="nzc-tool" title="Rasm yoki video" aria-label="Rasm yoki video"><i class="fas fa-paperclip" aria-hidden="true"></i><input type="file" accept="image/*,video/*" data-file hidden></label>
+        </div>
+        <textarea rows="1" placeholder="Javob yozing… (Enter — yuborish, Shift+Enter — yangi qator)" data-input aria-label="Javob"></textarea>
+        <button type="submit" class="nzc-send" data-send aria-label="Yuborish"><i class="fas fa-paper-plane" aria-hidden="true"></i></button>
+      </form>
+    </section>
+
+    <aside class="nzc-profile" data-profile aria-label="Mijoz"><div class="nzc-empty small">Mijoz ma'lumotlari shu yerda ko'rinadi.</div></aside>
+  </div>
+</div>
+{% csrf_token %}
+{{ config|json_script:"nzc-config" }}
+<script src="{% static 'admin/js/nutrizone-chat-desk.js' %}?v=4" defer></script>
+{% endblock %}

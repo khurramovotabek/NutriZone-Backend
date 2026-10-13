@@ -1,0 +1,50 @@
+/* Sales Management / cash-register shifts / loyalty dashboards -- KPI strips, bars and breakdown tables on top of the nz-* admin design system. */
+.nzs-kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin-bottom:18px}
+.nzs-kpi{--tone:#64748b;position:relative;overflow:hidden;display:flex;flex-direction:column;gap:4px;padding:14px 16px;border-radius:16px;background:var(--nz-surface,rgba(255,255,255,.04));border:1px solid rgba(148,163,184,.18);box-shadow:0 8px 24px -16px rgba(0,0,0,.5)}
+.nzs-kpi::after{content:"";position:absolute;right:-24px;top:-24px;width:80px;height:80px;border-radius:50%;background:var(--tone,#64748b);opacity:.12}
+.nzs-kpi strong{font-size:1.25rem;font-weight:800;font-variant-numeric:tabular-nums;letter-spacing:-.01em}
+.nzs-kpi strong small{font-size:.7rem;font-weight:600;opacity:.6}
+.nzs-kpi-label{font-size:.7rem;font-weight:700;text-transform:uppercase;letter-spacing:.06em;opacity:.7;display:flex;gap:6px;align-items:center}
+.nzs-kpi-sub{font-size:.72rem;opacity:.65}
+.nzs-kpi-main{--tone:#3b82f6;grid-column:span 2;background:linear-gradient(135deg,rgba(37,99,235,.22),rgba(37,99,235,.04));border-color:rgba(59,130,246,.35)}
+.nzs-kpi-main strong{font-size:1.7rem}
+.nzs-cash{--tone:#10b981}.nzs-uzcard{--tone:#2563eb}.nzs-humo{--tone:#0d9488}.nzs-coins{--tone:#d4a017}.nzs-discount{--tone:#c026d3}.nzs-refund{--tone:#ef4444}.nzs-open{--tone:#10b981}
+@media (max-width:640px){.nzs-kpi-main{grid-column:span 1}}
+.nzs-tools .btn{border-radius:10px;font-weight:700}
+.nzs-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(520px,1fr));gap:16px}
+@media (max-width:1100px){.nzs-grid{grid-template-columns:1fr}}
+.nzs-card{overflow-x:auto;padding:18px 20px;border-radius:18px;background:var(--nz-surface,rgba(255,255,255,.04));border:1px solid rgba(148,163,184,.18)}
+.nzs-card h3{margin:0 0 12px;font-size:.95rem;font-weight:800;display:flex;align-items:center;gap:8px}
+.nzs-table{width:100%;border-collapse:collapse;font-size:.85rem}
+.nzs-table th{font-size:.68rem;text-transform:uppercase;letter-spacing:.06em;opacity:.65;text-align:left;padding:6px 8px;border-bottom:1px solid rgba(148,163,184,.2)}
+.nzs-table td{padding:8px;border-bottom:1px solid rgba(148,163,184,.1);vertical-align:middle}
+.nzs-table td.num,.nzs-table th.num{text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
+.nzs-bar{height:8px;border-radius:99px;background:rgba(148,163,184,.15);overflow:hidden;min-width:60px}
+.nzs-bar>span{display:block;height:100%;border-radius:99px;background:linear-gradient(90deg,#3b82f6,#60a5fa)}
+.nzs-bar.gold>span{background:linear-gradient(90deg,#d4a017,#facc15)}
+.nzs-bar.green>span{background:linear-gradient(90deg,#059669,#34d399)}
+.nzs-chart{display:flex;align-items:flex-end;gap:4px;height:180px;padding-top:8px}
+.nzs-chart .col{flex:1;min-width:6px;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;height:100%;gap:4px}
+.nzs-chart .col i{display:block;width:100%;border-radius:6px 6px 2px 2px;background:linear-gradient(180deg,#60a5fa,#2563eb);min-height:2px}
+.nzs-chart .col small{font-size:.6rem;opacity:.6;white-space:nowrap}
+.nzs-filters{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-bottom:16px}
+.nzs-chip{display:inline-flex;align-items:center;gap:6px;padding:6px 14px;border-radius:99px;border:1px solid rgba(148,163,184,.25);font-size:.8rem;font-weight:700;color:inherit;text-decoration:none!important}
+.nzs-chip.on{background:#2563eb;border-color:#2563eb;color:#fff!important}
+.nzs-dot{display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:6px;vertical-align:middle}
+.nzs-pill{display:inline-flex;align-items:center;gap:6px;padding:2px 10px;border-radius:99px;font-size:.72rem;font-weight:800}
+.nzs-live{background:rgba(16,185,129,.14);color:#059669}
+.nzs-closed{background:rgba(100,116,139,.16);color:#64748b}
+
+/* ---- glass v2: each KPI lit in its own soft tone, frosted cards, calm date chips ---- */
+.nzs-kpi{background:linear-gradient(150deg,color-mix(in srgb,var(--tone) 16%,var(--nz-surface,#111827)),color-mix(in srgb,var(--nz-surface,#111827) 85%,transparent));border-color:color-mix(in srgb,var(--tone) 28%,transparent);backdrop-filter:blur(14px) saturate(150%);-webkit-backdrop-filter:blur(14px) saturate(150%);box-shadow:inset 0 1px 0 rgba(255,255,255,.07),0 16px 32px -24px var(--tone);transition:transform .18s ease,box-shadow .18s ease}
+.nzs-kpi:hover{transform:translateY(-2px);box-shadow:inset 0 1px 0 rgba(255,255,255,.09),0 20px 36px -22px var(--tone)}
+.nzs-kpi::after{opacity:.2;filter:blur(2px);width:110px;height:110px;right:-34px;top:-34px}
+.nzs-kpi-label i{color:var(--tone);width:24px;height:24px;border-radius:8px;display:inline-grid;place-items:center;background:color-mix(in srgb,var(--tone) 18%,transparent);font-size:.72rem}
+.nzs-kpi strong{color:color-mix(in srgb,var(--tone) 35%,var(--nz-text-primary,#f8fafc))}
+.nzs-kpi-main{--tone:#10b981;background:linear-gradient(135deg,rgba(16,185,129,.26),rgba(13,148,136,.08) 60%,rgba(99,102,241,.1));border-color:rgba(16,185,129,.4)}
+.nzs-kpi-main strong{color:var(--nz-text-primary,#f8fafc)}
+.nzs-card{backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);box-shadow:inset 0 1px 0 rgba(255,255,255,.06),0 18px 40px -30px rgba(0,0,0,.6)}
+.nzs-chip.on{background:linear-gradient(135deg,#10b981,#0d9488);border-color:transparent}
+.nzs-chart .col i{background:linear-gradient(180deg,#34d399,#0d9488)}
+.app-pos.model-salemodel .xfull ul li a,.app-pos.model-salemodel .date-hierarchy a,.app-pos.model-salemodel .xfull .btn{background:color-mix(in srgb,#10b981 12%,var(--nz-surface,#111827))!important;border:1px solid color-mix(in srgb,#10b981 30%,transparent)!important;color:var(--nz-text-primary,#f8fafc)!important;border-radius:999px!important;box-shadow:none!important}
+.app-pos.model-salemodel #result_list tbody tr:hover{background:color-mix(in srgb,#10b981 6%,transparent)!important}

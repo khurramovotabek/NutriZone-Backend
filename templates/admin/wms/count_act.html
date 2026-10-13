@@ -1,0 +1,54 @@
+{% load i18n %}<!doctype html>
+<html lang="uz"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{% translate "Inventarizatsiya dalolatnomasi" %} {{ c.number }}</title>
+<style>
+  :root { --ink:#0f172a; --muted:#64748b; --line:#cbd5e1; --red:#b91c1c; --green:#15803d; }
+  * { box-sizing: border-box; }
+  body { margin: 0; padding: 28px; font: 12px/1.45 Inter, system-ui, -apple-system, "Segoe UI", sans-serif; color: var(--ink); background: #fff; }
+  header { display: flex; justify-content: space-between; align-items: flex-start; gap: 20px; border-bottom: 2px solid var(--ink); padding-bottom: 12px; }
+  h1 { margin: 0; font-size: 18px; } h1 small { display: block; font-size: 12px; font-weight: 500; color: var(--muted); }
+  .meta { text-align: right; } .meta b { display: block; font-size: 14px; }
+  .grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin: 16px 0; }
+  .box { border: 1px solid var(--line); border-radius: 8px; padding: 8px 10px; } .box span { display: block; color: var(--muted); font-size: 10.5px; text-transform: uppercase; letter-spacing: .04em; } .box b { font-size: 15px; }
+  table { width: 100%; border-collapse: collapse; margin-top: 8px; }
+  th, td { border: 1px solid var(--line); padding: 5px 6px; vertical-align: top; }
+  th { background: #f1f5f9; font-size: 10.5px; text-transform: uppercase; letter-spacing: .03em; text-align: left; }
+  td.n { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
+  .minus { color: var(--red); font-weight: 700; } .plus { color: var(--green); font-weight: 700; } .muted { color: var(--muted); }
+  tr.ok td { color: var(--muted); }
+  .sign { display: grid; grid-template-columns: repeat(3, 1fr); gap: 30px; margin-top: 40px; }
+  .sign div { border-top: 1px solid var(--ink); padding-top: 6px; color: var(--muted); }
+  .toolbar { margin-bottom: 16px; display: flex; gap: 8px; } .toolbar button { padding: 8px 14px; border-radius: 8px; border: 1px solid var(--line); background: #fff; cursor: pointer; font: inherit; font-weight: 600; }
+  .stamp { display: inline-block; padding: 3px 10px; border-radius: 999px; font-weight: 700; font-size: 11px; background: #e2e8f0; }
+  .stamp.posted { background: #dcfce7; color: var(--green); } .stamp.cancelled { background: #fee2e2; color: var(--red); }
+  @media print { .toolbar { display: none; } body { padding: 0; } }
+</style></head>
+<body>
+  <div class="toolbar"><button onclick="window.print()">🖨 {% translate "Print" %}</button><button onclick="window.close()">✕ {% translate "Close" %}</button></div>
+  <header>
+    <div><h1>{% translate "Inventarizatsiya dalolatnomasi" %} № {{ c.number }}<small>{{ c.store.name }}{% if c.store.address %} · {{ c.store.address }}{% endif %}</small></h1>
+      <p class="muted">{{ c.get_scope_display }}{% if c.blind %} · {% translate "ko'r-ko'rona sanash" %}{% endif %}{% if c.note %} · {{ c.note }}{% endif %}</p></div>
+    <div class="meta"><span class="stamp {{ c.status }}">{{ c.get_status_display }}</span><b>{{ created }}</b><span class="muted">{% translate "Boshlagan" %}: {{ c.created_by }}</span>{% if posted %}<br><span class="muted">{% translate "Tasdiqlagan" %}: {{ c.posted_by }}, {{ posted }}</span>{% endif %}</div>
+  </header>
+  <div class="grid">
+    <div class="box"><span>{% translate "Mahsulot turlari" %}</span><b>{{ summary.counted }} / {{ summary.lines }}</b></div>
+    <div class="box"><span>{% translate "Aniqlik" %}</span><b>{{ summary.accuracy }}%</b></div>
+    <div class="box"><span>{% translate "Kamomad" %}</span><b class="minus">−{{ summary.shortage_units }} · {{ summary.shortage_value|floatformat:0 }}</b></div>
+    <div class="box"><span>{% translate "Ortiqcha" %}</span><b class="plus">+{{ summary.excess_units }} · {{ summary.excess_value|floatformat:0 }}</b></div>
+  </div>
+  <table>
+    <thead><tr><th>#</th><th>{% translate "Mahsulot" %}</th><th>SKU / {% translate "Shtrix-kod" %}</th><th>{% translate "Tizimda" %}</th><th>{% translate "Sanaldi" %}</th><th>{% translate "Farq" %}</th><th>{% translate "Tannarx" %}</th><th>{% translate "Farq qiymati" %}</th><th>{% translate "Sabab" %}</th></tr></thead>
+    <tbody>
+    {% for r in rows %}
+      <tr class="{% if r.diff == 0 %}ok{% endif %}">
+        <td class="n">{{ r.n }}</td><td>{{ r.i.name }}</td><td>{{ r.i.sku }}{% if r.i.barcode %}<br><span class="muted">{{ r.i.barcode }}</span>{% endif %}</td>
+        <td class="n">{{ r.i.expected_quantity }}</td><td class="n">{% if r.i.counted_quantity is None %}—{% else %}{{ r.i.counted_quantity }}{% endif %}</td>
+        <td class="n {% if r.diff < 0 %}minus{% elif r.diff > 0 %}plus{% endif %}">{% if r.diff > 0 %}+{% endif %}{{ r.diff }}</td>
+        <td class="n">{{ r.i.unit_cost|floatformat:0 }}</td><td class="n">{% if r.diff %}{{ r.value|floatformat:0 }}{% endif %}</td>
+        <td>{% if r.i.reason %}{{ r.i.get_reason_display }}{% endif %}{% if r.i.note %}<br><span class="muted">{{ r.i.note }}</span>{% endif %}</td>
+      </tr>
+    {% endfor %}
+    </tbody>
+  </table>
+  <div class="sign"><div>{% translate "Sanagan(lar)" %}</div><div>{% translate "Mas'ul shaxs" %}</div><div>{% translate "Tasdiqlovchi rahbar" %}</div></div>
+</body></html>

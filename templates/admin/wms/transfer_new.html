@@ -1,0 +1,77 @@
+{% extends "admin/base_site.html" %}
+{% load i18n static %}
+{# New transfer: pick source → destination (each card shows what it holds / lacks), then take the smart fill-up suggestions or continue empty. #}
+{% block extrastyle %}{{ block.super }}<link rel="stylesheet" href="{% static 'admin/css/nutrizone-platform.css' %}?v=5"><link rel="stylesheet" href="{% static 'admin/css/nutrizone-wmsx.css' %}?v=9"><link rel="stylesheet" href="{% static 'admin/css/nutrizone-wms-flow.css' %}?v=5">{% endblock %}
+{% block breadcrumbs %}<ol class="breadcrumb"><li class="breadcrumb-item"><a href="{% url 'admin:index' %}">{% translate "Home" %}</a></li><li class="breadcrumb-item"><a href="{% url 'admin:stores_stocktransfer_changelist' %}">{% translate "Transferlar" %}</a></li><li class="breadcrumb-item active">{% translate "Yangi transfer" %}</li></ol>{% endblock %}
+{% block content_title %}{% endblock %}
+{% block content %}
+<form method="post" class="nzp wx nzf nzf-transfer" id="nzf-new" data-suggest="{{ suggest_url }}">{% csrf_token %}
+  <header class="nzp-hero">
+    <div class="nzp-hero-main">
+      <a class="nzp-back" href="{% url 'admin:stores_stocktransfer_changelist' %}" aria-label="{% translate 'Orqaga' %}"><i class="fas fa-arrow-left" aria-hidden="true"></i></a>
+      <span class="nzp-hero-icon" style="--c:#6366f1"><i class="fas fa-right-left" aria-hidden="true"></i></span>
+      <div><h2>{% translate "Yangi transfer" %}</h2><p>{% translate "Qayerdan va qayerga jo'natilishini tanlang — tizim qabul qiluvchida nima kamligini o'zi taklif qiladi." %}</p></div>
+    </div>
+    <ol class="nzf-steps" aria-label="{% translate 'Bosqichlar' %}">
+      <li class="on"><b>1</b> {% translate "Yo'nalish" %}</li><li><b>2</b> {% translate "Mahsulotlar" %}</li><li><b>3</b> {% translate "Yig'ish va jo'natish" %}</li><li><b>4</b> {% translate "Qabul" %}</li>
+    </ol>
+  </header>
+
+  {% if prefill %}
+  <div class="nzf-prefill">
+    <span class="nzf-thumb">{% if prefill.info.image_url %}<img src="{{ prefill.info.image_url }}" alt="">{% else %}<i class="fas fa-box" aria-hidden="true"></i>{% endif %}</span>
+    <div><small>{% translate "Transferga qo'shiladi" %}</small><b>{{ prefill.info.name }}</b><span>{{ prefill.info.sku }}{% if prefill.info.size %} · {{ prefill.info.size }}{% endif %}</span></div>
+    <label class="nzf-qty">{% translate "Miqdor" %}<input type="number" name="quantity" min="1" value="{{ prefill.quantity }}"></label>
+    <input type="hidden" name="variant" value="{{ prefill.info.id }}">
+  </div>
+  {% endif %}
+
+  <div class="nzf-route">
+    <section class="nzp-card nzf-col" data-group="source">
+      <header class="nzf-col-h"><i class="fas fa-arrow-right-from-bracket" aria-hidden="true"></i><div><b>{% translate "Qayerdan" %}</b><small>{% translate "tovar shu joy qoldig'idan chiqadi" %}</small></div></header>
+      <div class="nzf-locs">
+        {% for s in locations %}
+        <label class="nzf-loc{% if default_source and s.pk == default_source.pk %} on{% endif %}" style="--c:{{ s.color|default:'#64748b' }}">
+          <input type="radio" name="source" value="{{ s.pk }}" {% if default_source and s.pk == default_source.pk %}checked{% endif %} required>
+          <span class="nzf-loc-ico"><i class="fas {% if s.kind == 'warehouse' %}fa-warehouse{% else %}fa-store{% endif %}" aria-hidden="true"></i></span>
+          <span class="nzf-loc-main"><b>{{ s.name }}</b><small>{% if s.kind == 'warehouse' %}{% translate "Sklad" %}{% else %}{% translate "Filial" %}{% endif %}{% if s.city %} · {{ s.city }}{% endif %}{% if s.status != 'active' %} · {{ s.get_status_display }}{% endif %}</small></span>
+          <span class="nzf-loc-num"><b>{{ s.nz.units }}</b><small>{% translate "dona" %} · {{ s.nz.skus }} {% translate "xil" %}</small></span>
+        </label>
+        {% endfor %}
+      </div>
+    </section>
+    <div class="nzf-arrow" aria-hidden="true"><i class="fas fa-truck-fast"></i></div>
+    <section class="nzp-card nzf-col" data-group="destination">
+      <header class="nzf-col-h"><i class="fas fa-arrow-right-to-bracket" aria-hidden="true"></i><div><b>{% translate "Qayerga" %}</b><small>{% translate "qabul qilinganda shu joyga kiradi" %}</small></div></header>
+      <div class="nzf-locs">
+        {% for s in locations %}
+        <label class="nzf-loc" style="--c:{{ s.color|default:'#64748b' }}">
+          <input type="radio" name="destination" value="{{ s.pk }}" {% if default_destination and s.pk == default_destination.pk %}checked{% endif %} required>
+          <span class="nzf-loc-ico"><i class="fas {% if s.kind == 'warehouse' %}fa-warehouse{% else %}fa-store{% endif %}" aria-hidden="true"></i></span>
+          <span class="nzf-loc-main"><b>{{ s.name }}</b><small>{% if s.kind == 'warehouse' %}{% translate "Sklad" %}{% else %}{% translate "Filial" %}{% endif %}{% if s.city %} · {{ s.city }}{% endif %}{% if s.status != 'active' %} · {{ s.get_status_display }}{% endif %}</small>
+            <span class="nzf-flags">{% if s.nz.need %}<em class="warn"><i class="fas fa-arrow-trend-down" aria-hidden="true"></i> {{ s.nz.need }} {% translate "ta minimumdan past" %}</em>{% endif %}{% if s.nz.coming %}<em class="info"><i class="fas fa-truck" aria-hidden="true"></i> {{ s.nz.coming }} {% translate "ta transfer yo'lda" %}</em>{% endif %}</span></span>
+          <span class="nzf-loc-num"><b>{{ s.nz.units }}</b><small>{% translate "dona" %} · {{ s.nz.skus }} {% translate "xil" %}</small></span>
+        </label>
+        {% endfor %}
+      </div>
+    </section>
+  </div>
+
+  <section class="nzp-card nzf-suggest" id="nzf-suggest" hidden>
+    <header class="nzf-col-h"><i class="fas fa-wand-magic-sparkles" aria-hidden="true"></i><div><b>{% translate "Aqlli to'ldirish" %}</b><small id="nzf-sg-sub">{% translate "Qabul qiluvchida minimumdan past yoki tez sotilayotgan, manbada mavjud mahsulotlar" %}</small></div>
+      <label class="nzf-all"><input type="checkbox" id="nzf-sg-all"> {% translate "Hammasini tanlash" %}</label></header>
+    <div id="nzf-sg-body" class="nzf-sg-body"></div>
+  </section>
+
+  <section class="nzp-card nzf-foot">
+    <label class="nzf-note"><span>{% translate "Izoh (ixtiyoriy)" %}</span><input name="notes" maxlength="500" placeholder="{% translate 'Masalan: haftalik to\'ldirish' %}"></label>
+    <div class="nzf-summary" id="nzf-summary"><span><i class="fas fa-route" aria-hidden="true"></i> <b id="nzf-route-text">{% translate "Yo'nalishni tanlang" %}</b></span><span id="nzf-picked"></span></div>
+    <input type="hidden" name="lines" id="nzf-lines" value="[]">
+    <div class="nzf-actions">
+      <a class="nzp-btn nzp-btn-ghost" href="{% url 'admin:stores_stocktransfer_changelist' %}">{% translate "Bekor qilish" %}</a>
+      <button class="nzp-btn nzp-btn-primary nzf-go" type="submit" id="nzf-create" disabled><i class="fas fa-arrow-right" aria-hidden="true"></i> <span>{% translate "Davom etish: mahsulot qo'shish" %}</span></button>
+    </div>
+  </section>
+</form>
+<script src="{% static 'admin/js/nutrizone-transfer-new.js' %}?v=1"></script>
+{% endblock %}

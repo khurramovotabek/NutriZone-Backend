@@ -1,0 +1,21 @@
+{% extends "admin/change_form.html" %}
+{% load i18n %}
+{% block form_top %}
+{% if nzs_summary %}
+<div class="nzf-summary">
+  <div class="nzf-sum-head" style="--c:{{ original.color|default:'#10b981' }}">
+    {% if nzs_summary.logo %}<img src="{{ nzs_summary.logo }}" alt="">{% else %}<span class="nzf-sum-mark">{{ original.name|slice:":1" }}</span>{% endif %}
+    <div><b>{{ original.name }}</b><small>{{ original.get_kind_display }} · {{ original.city|default:"shahar ko'rsatilmagan" }}</small></div>
+    <span class="nzf-open {% if nzs_summary.open_now %}on{% endif %}">{% if nzs_summary.open_now %}● Hozir ochiq{% else %}○ Hozir yopiq{% endif %}</span>
+    {% if nzs_summary.public_url %}<a class="nzf-add" href="{{ nzs_summary.public_url }}" target="_blank" rel="noopener"><i class="fas fa-arrow-up-right-from-square"></i> Saytda ko'rish</a>{% endif %}
+  </div>
+  <div class="nzf-sum-kpis">
+    <div style="--t:#10b981"><span>30 kunlik tushum</span><b>{{ nzs_summary.revenue }}</b><small>{{ nzs_summary.sales }} ta savdo</small></div>
+    <div style="--t:#f59e0b"><span>Reyting</span><b>{{ nzs_summary.stars }}</b><small>{{ nzs_summary.rating_count }} ta baho</small></div>
+    <div style="--t:#2563eb"><span>Qoldiq</span><b>{{ nzs_summary.units }} dona</b><small>{{ nzs_summary.skus }} xil mahsulot</small></div>
+    <div style="--t:#8b5cf6"><span>Kassa</span><b>{{ nzs_summary.shift }}</b><small>{{ nzs_summary.shift_sub }}</small></div>
+  </div>
+</div>
+{% endif %}
+{{ block.super }}
+{% endblock %}

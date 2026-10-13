@@ -1,0 +1,168 @@
+/*
+ * NutriZone Admin -- dashboard home: Quick Actions, "All sections" cards and Recent actions.
+ * Built on the theme tokens (nutrizone-admin.css / nutrizone-theme.css), so it follows light/dark.
+ */
+
+/* ---------- shared section heading ---------- */
+.nzq-head h3, .nzh-head h3 {
+  display: flex; align-items: center; gap: 10px;
+  margin: 0; font-size: 17px; font-weight: 750; letter-spacing: -0.01em; color: var(--nz-text-primary);
+}
+.nzq-head h3 i, .nzh-head h3 i {
+  width: 30px; height: 30px; display: grid; place-items: center; border-radius: 9px; font-size: 13px;
+  color: #fff; background: linear-gradient(140deg, var(--nz-primary), color-mix(in srgb, var(--nz-primary) 65%, #000));
+  box-shadow: 0 8px 18px -10px var(--nz-primary);
+}
+.nzq-head p, .nzh-head p { margin: 4px 0 0 40px; font-size: 12.5px; color: var(--nz-text-muted); }
+
+/* ---------- Bugungi vazifalar (action centre) ---------- */
+.nzt { padding: 20px !important; margin-bottom: 20px; }
+.nzt-head { margin-bottom: 14px; }
+.nzt-urgent { color: #e11d48; font-weight: 700; }
+.nzt-grid { display: grid; grid-template-columns: 1fr; gap: 10px; }
+@media (min-width: 640px) { .nzt-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (min-width: 1200px) { .nzt-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); } }
+.nzt-item {
+  --t: #3b82f6;
+  position: relative; display: flex; align-items: center; gap: 12px; padding: 12px 14px; border-radius: 14px; text-decoration: none !important;
+  border: 1px solid color-mix(in srgb, var(--t) 28%, var(--nz-border)); background: color-mix(in srgb, var(--t) 7%, var(--nz-surface));
+  transition: transform .15s, box-shadow .15s, border-color .15s;
+}
+.nzt-item:hover { transform: translateY(-2px); border-color: var(--t); box-shadow: 0 12px 26px -16px var(--t); }
+.nzt-item:focus-visible { outline: 2px solid var(--t); outline-offset: 2px; }
+.nzt-item.is-urgent::before { content: ""; position: absolute; inset: 0 auto 0 0; width: 3px; border-radius: 14px 0 0 14px; background: var(--t); }
+.nzt-icon { flex: none; width: 38px; height: 38px; display: grid; place-items: center; border-radius: 11px; color: var(--t); background: color-mix(in srgb, var(--t) 16%, transparent); }
+.nzt-text { min-width: 0; flex: 1; display: flex; flex-direction: column; }
+.nzt-text strong { font-size: 13.5px; font-weight: 700; color: var(--nz-text-primary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.nzt-text small { font-size: 11.5px; color: var(--nz-text-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.nzt-count { flex: none; font-size: 22px; font-weight: 800; color: var(--t); font-variant-numeric: tabular-nums; }
+.nzt-clear { display: flex; align-items: center; gap: 10px; padding: 14px 16px; border-radius: 14px; color: #16a34a; background: color-mix(in srgb, #16a34a 9%, transparent); font-weight: 600; font-size: 13.5px; }
+.nzt-failed { margin: 12px 0 0; }
+
+/* ---------- Quick Actions ---------- */
+.nzq { padding: 20px !important; margin-bottom: 20px; }
+.nzq-head { margin-bottom: 16px; }
+.nzq-grid { display: grid; grid-template-columns: 1fr; gap: 12px; }
+@media (min-width: 640px) { .nzq-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (min-width: 1100px) { .nzq-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+.nzq-tile {
+  --c: #3b82f6;
+  position: relative; display: flex; align-items: center; gap: 12px; padding: 14px 14px;
+  border-radius: 14px; border: 1px solid var(--nz-border);
+  background: linear-gradient(135deg, color-mix(in srgb, var(--c) 9%, var(--nz-surface)) 0%, var(--nz-surface) 70%);
+  color: var(--nz-text-primary) !important; text-decoration: none !important; overflow: hidden;
+  transition: transform 0.18s cubic-bezier(.16,1,.3,1), box-shadow 0.18s, border-color 0.18s;
+}
+.nzq-tile::after {
+  content: ""; position: absolute; right: -30px; top: -30px; width: 90px; height: 90px; border-radius: 50%;
+  background: color-mix(in srgb, var(--c) 18%, transparent); filter: blur(18px); opacity: 0; transition: opacity 0.2s;
+}
+.nzq-tile:hover { transform: translateY(-2px); border-color: color-mix(in srgb, var(--c) 45%, var(--nz-border)); box-shadow: 0 14px 30px -18px var(--c); }
+.nzq-tile:hover::after { opacity: 1; }
+.nzq-icon {
+  flex: none; width: 42px; height: 42px; display: grid; place-items: center; border-radius: 12px; font-size: 17px;
+  color: #fff; background: linear-gradient(140deg, var(--c), color-mix(in srgb, var(--c) 62%, #000));
+  box-shadow: 0 10px 20px -12px var(--c);
+}
+.nzq-text { min-width: 0; flex: 1; display: flex; flex-direction: column; }
+.nzq-text strong { font-size: 14px; font-weight: 700; line-height: 1.25; }
+.nzq-text small { margin-top: 2px; font-size: 12px; color: var(--nz-text-muted); line-height: 1.35; }
+.nzq-go { flex: none; font-size: 12px; color: var(--nz-text-muted); transition: transform 0.18s, color 0.18s; }
+.nzq-tile:hover .nzq-go { transform: translateX(3px); color: var(--c); }
+.nzq-emerald { --c: #10b981; } .nzq-blue { --c: #3b82f6; } .nzq-violet { --c: #8b5cf6; }
+.nzq-teal { --c: #14b8a6; } .nzq-amber { --c: #f59e0b; } .nzq-sky { --c: #0ea5e9; }
+.nzq-rose { --c: #f43f5e; } .nzq-indigo { --c: #6366f1; } .nzq-slate { --c: #64748b; }
+
+/* ---------- Lower layout: sections + activity ---------- */
+.nzh-layout { display: grid; grid-template-columns: minmax(0, 1fr) 360px; gap: 20px; align-items: start; margin-top: 4px; }
+@media (max-width: 1280px) { .nzh-layout { grid-template-columns: 1fr; } .nzh-activity { position: static; } }
+.nzh-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; flex-wrap: wrap; margin-bottom: 14px; }
+
+/* filter */
+.nzh-filter { position: relative; margin: 0; min-width: 220px; }
+.nzh-filter i { position: absolute; left: 12px; top: 50%; transform: translateY(-50%); font-size: 12px; color: var(--nz-text-muted); pointer-events: none; }
+.nzh-filter input {
+  width: 100%; height: 38px; padding: 0 12px 0 34px; border-radius: 11px; border: 1px solid var(--nz-border);
+  background: var(--nz-surface); color: var(--nz-text-primary); font-size: 13px; outline: none; transition: border-color .15s, box-shadow .15s;
+}
+.nzh-filter input:focus { border-color: var(--nz-primary); box-shadow: 0 0 0 4px var(--nz-focus-ring); }
+
+/* section cards */
+/* Masonry columns: cards of different heights pack without gaps. */
+.nzh-grid { columns: 280px; column-gap: 14px; }
+.nzh-grid > .nzh-app { break-inside: avoid; margin-bottom: 14px; }
+.nzh-app {
+  display: flex; flex-direction: column; border-radius: 16px; border: 1px solid var(--nz-border);
+  background: var(--nz-surface); box-shadow: var(--nz-shadow-sm); overflow: hidden;
+  transition: box-shadow .18s, border-color .18s, transform .18s; animation: nzh-in .45s cubic-bezier(.16,1,.3,1) both; animation-delay: calc(var(--i, 0) * 25ms);
+}
+@keyframes nzh-in { from { opacity: 0; transform: translateY(8px); } }
+.nzh-app:hover { border-color: color-mix(in srgb, var(--nz-primary) 30%, var(--nz-border)); box-shadow: 0 16px 34px -22px color-mix(in srgb, var(--nz-primary) 70%, #000); }
+.nzh-app-head {
+  display: flex; align-items: center; gap: 10px; padding: 12px 14px; border-bottom: 1px solid var(--nz-border);
+  background: linear-gradient(180deg, color-mix(in srgb, var(--nz-primary) 6%, transparent), transparent);
+}
+.nzh-app-icon {
+  flex: none; width: 34px; height: 34px; display: grid; place-items: center; border-radius: 10px; font-size: 14px;
+  color: var(--nz-primary); background: color-mix(in srgb, var(--nz-primary) 13%, transparent);
+}
+.nzh-app-head h4 { flex: 1; min-width: 0; margin: 0; font-size: 14px; font-weight: 700; color: var(--nz-text-primary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.nzh-count { flex: none; min-width: 24px; height: 22px; padding: 0 7px; border-radius: 999px; display: grid; place-items: center; font-size: 11px; font-weight: 700; color: var(--nz-text-secondary); background: var(--nz-surface-secondary); }
+.nzh-models { list-style: none; margin: 0; padding: 6px; }
+.nzh-models li { display: flex; align-items: center; gap: 6px; border-radius: 10px; transition: background-color .12s; }
+.nzh-models li:hover { background: var(--nz-hover); }
+.nzh-model-link {
+  flex: 1; min-width: 0; display: flex; align-items: center; gap: 10px; padding: 8px 8px;
+  font-size: 13px; font-weight: 500; color: var(--nz-text-primary) !important; text-decoration: none !important;
+}
+.nzh-model-link i { flex: none; width: 18px; text-align: center; font-size: 12px; color: var(--nz-text-muted); }
+.nzh-model-link span { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.nzh-models li:hover .nzh-model-link i { color: var(--nz-primary); }
+.nzh-model-link.is-disabled { opacity: .55; }
+/* Jazzmin's default model icon (fa-circle) reads better as a small bullet. */
+.nzh-model-link i.fa-circle { font-size: 6px; opacity: .7; }
+.nzh-actions { flex: none; display: flex; gap: 4px; padding-right: 4px; opacity: .55; transition: opacity .12s; }
+.nzh-models li:hover .nzh-actions, .nzh-actions:focus-within { opacity: 1; }
+.nzh-btn {
+  width: 28px; height: 28px; display: grid; place-items: center; border-radius: 8px; font-size: 11px;
+  color: var(--nz-text-secondary) !important; background: var(--nz-surface-secondary); text-decoration: none !important; transition: background-color .12s, color .12s;
+}
+.nzh-btn:hover { color: #fff !important; background: var(--nz-primary); }
+.nzh-btn.nzh-add { color: var(--nz-success) !important; background: color-mix(in srgb, var(--nz-success) 13%, transparent); }
+.nzh-btn.nzh-add:hover { color: #fff !important; background: var(--nz-success); }
+.nzh-empty { margin: 24px 0; text-align: center; color: var(--nz-text-muted); font-size: 13px; }
+.nzh-hidden { display: none !important; }
+
+/* ---------- Recent actions ---------- */
+.nzh-activity {
+  position: sticky; top: 76px; padding: 18px; border-radius: 18px; border: 1px solid var(--nz-border);
+  background: var(--nz-surface); box-shadow: var(--nz-shadow-md);
+}
+.nzh-link { display: inline-flex; align-items: center; gap: 6px; padding: 6px 10px; border-radius: 9px; font-size: 12px; font-weight: 700; color: var(--nz-primary) !important; text-decoration: none !important; }
+.nzh-link:hover { background: var(--nz-hover); }
+.nzh-link i { font-size: 10px; }
+.nzh-activity-empty { padding: 30px 0; text-align: center; color: var(--nz-text-muted); }
+.nzh-activity-empty i { font-size: 26px; opacity: .6; }
+.nzh-feed { position: relative; list-style: none; margin: 0; padding: 0; }
+.nzh-feed::before { content: ""; position: absolute; left: 15px; top: 8px; bottom: 8px; width: 2px; border-radius: 2px; background: var(--nz-border); }
+.nzh-event { --c: #3b82f6; position: relative; display: flex; gap: 12px; padding: 8px 0; }
+.nzh-event.is-add { --c: #10b981; } .nzh-event.is-del { --c: #ef4444; } .nzh-event.is-change { --c: #3b82f6; }
+.nzh-event-dot {
+  position: relative; z-index: 1; flex: none; width: 32px; height: 32px; display: grid; place-items: center; border-radius: 10px;
+  font-size: 11px; color: #fff; background: var(--c); box-shadow: 0 0 0 4px var(--nz-surface), 0 8px 16px -8px var(--c);
+}
+.nzh-event-body {
+  flex: 1; min-width: 0; padding: 10px 12px; border-radius: 12px; border: 1px solid var(--nz-border);
+  background: color-mix(in srgb, var(--c) 4%, var(--nz-surface)); transition: border-color .15s;
+}
+.nzh-event:hover .nzh-event-body { border-color: color-mix(in srgb, var(--c) 40%, var(--nz-border)); }
+.nzh-event-top { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
+.nzh-event-type { font-size: 10.5px; font-weight: 800; letter-spacing: .06em; text-transform: uppercase; color: var(--c); }
+.nzh-event-top time { font-size: 11px; color: var(--nz-text-muted); white-space: nowrap; }
+.nzh-event-title { margin: 4px 0 0; font-size: 13px; font-weight: 650; line-height: 1.35; word-break: break-word; color: var(--nz-text-primary); }
+.nzh-event-title a { color: var(--nz-text-primary) !important; }
+.nzh-event-title a:hover { color: var(--nz-primary) !important; }
+.nzh-chip { display: inline-block; margin-top: 6px; padding: 2px 8px; border-radius: 999px; font-size: 10.5px; font-weight: 600; color: var(--nz-text-secondary); background: var(--nz-surface-secondary); }
+.nzh-event-msg { margin: 6px 0 0; font-size: 12px; line-height: 1.45; color: var(--nz-text-secondary); }
+
+@media (prefers-reduced-motion: reduce) { .nzh-app { animation: none; } .nzq-tile, .nzh-app { transition: none; } }

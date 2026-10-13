@@ -1,0 +1,303 @@
+{% extends "admin/index.html" %}
+{% load i18n static nutrizone_dashboard %}
+
+{% block content %}
+{% if nz_dashboard %}
+<div class="nz-dashboard" data-nz-dashboard>
+  <div class="nz-dashboard-header">
+    <div>
+      <h2 class="nz-dashboard-title">{{ brand_name }} · {% translate "biznes ko'rinishi" %}</h2>
+      <p class="nz-dashboard-subtitle">
+        {% blocktranslate with period=nz_dashboard.period_label %}Showing data for {{ period }}{% endblocktranslate %}
+        &middot; {% translate "Last updated" %}: <span data-nz-timestamp>{{ nz_dashboard.last_updated|date:"Y-m-d H:i" }}</span>
+      </p>
+    </div>
+  </div>
+
+  {# --- Bugungi vazifalar: every queue waiting on a person, most urgent first (dashboard_tasks.py) --- #}
+  {% if nz_tasks.ok %}{% with t=nz_tasks.data %}
+  <section class="nz-card nzt" aria-labelledby="nzt-title">
+    <header class="nzq-head nzt-head">
+      <div>
+        <h3 id="nzt-title"><i class="fas fa-list-check" aria-hidden="true"></i> {% translate "Bugungi vazifalar" %}</h3>
+        <p>{% if t.tasks %}{% blocktranslate count n=t.tasks|length %}{{ n }} navbat sizni kutyapti{% plural %}{{ n }} navbat sizni kutyapti{% endblocktranslate %}{% if t.urgent %} · <b class="nzt-urgent">{% blocktranslate with n=t.urgent %}{{ n }} tasi shoshilinch{% endblocktranslate %}</b>{% endif %}{% else %}{% translate "Hammasi joyida — kutayotgan ish yo'q" %}{% endif %}</p>
+      </div>
+    </header>
+    {% if t.tasks %}
+    <div class="nzt-grid">
+      {% for task in t.tasks %}
+      <a href="{{ task.url }}" class="nzt-item{% if task.priority == 0 %} is-urgent{% endif %}" style="--t:{{ task.tone }}">
+        <span class="nzt-icon"><i class="fas {{ task.icon }}" aria-hidden="true"></i></span>
+        <span class="nzt-text"><strong>{{ task.label }}</strong><small>{{ task.hint }}</small></span>
+        <b class="nzt-count">{{ task.count }}</b>
+      </a>
+      {% endfor %}
+    </div>
+    {% else %}
+    <div class="nzt-clear"><i class="fas fa-circle-check" aria-hidden="true"></i> {% translate "Yangi buyurtma, javobsiz chat va kam qolgan mahsulot yo'q." %}</div>
+    {% endif %}
+    {% if t.failed %}<p class="nz-error-state nzt-failed">&#9888; {% blocktranslate with n=t.failed %}{{ n }} ta bo'lim yuklanmadi — loglarni tekshiring{% endblocktranslate %}</p>{% endif %}
+  </section>
+  {% endwith %}{% endif %}
+
+  {# --- KPI grid --- #}
+  <div class="nz-kpi-grid">
+    {% if nz_dashboard.kpis.ok %}
+      {% with k=nz_dashboard.kpis.data %}
+      <div class="nz-card nz-kpi-card">
+        <div class="nz-kpi-label">{% translate "Online revenue" %}</div>
+        <div class="nz-stat-number">{{ k.revenue.current|floatformat:0 }} UZS</div>
+        {% if k.revenue.change.value is not None %}
+        <div class="nz-kpi-trend nz-trend-{{ k.revenue.change.direction }}">
+          {% if k.revenue.change.direction == "up" %}&#8593;{% elif k.revenue.change.direction == "down" %}&#8595;{% endif %}
+          {{ k.revenue.change.value }}% {% translate "vs previous period" %}
+        </div>
+        {% else %}
+        <div class="nz-kpi-trend nz-trend-muted">{% translate "No previous data" %}</div>
+        {% endif %}
+      </div>
+
+      <div class="nz-card nz-kpi-card">
+        <div class="nz-kpi-label">{% translate "Online orders" %}</div>
+        <div class="nz-stat-number">{{ k.orders.current }}</div>
+        {% if k.orders.change.value is not None %}
+        <div class="nz-kpi-trend nz-trend-{{ k.orders.change.direction }}">
+          {% if k.orders.change.direction == "up" %}&#8593;{% elif k.orders.change.direction == "down" %}&#8595;{% endif %}
+          {{ k.orders.change.value }}% {% translate "vs previous period" %}
+        </div>
+        {% else %}
+        <div class="nz-kpi-trend nz-trend-muted">{% translate "No previous data" %}</div>
+        {% endif %}
+      </div>
+
+      <div class="nz-card nz-kpi-card">
+        <div class="nz-kpi-label">{% translate "Customers" %}</div>
+        <div class="nz-stat-number">{{ k.customers_total }}</div>
+      </div>
+
+      <div class="nz-card nz-kpi-card">
+        <div class="nz-kpi-label">{% translate "Products" %}</div>
+        <div class="nz-stat-number">{{ k.products_total }}</div>
+        <div class="nz-kpi-trend nz-trend-muted">{{ k.products_active }} {% translate "active" %} &middot; {{ k.products_inactive }} {% translate "inactive" %}</div>
+      </div>
+
+      <div class="nz-card nz-kpi-card">
+        <div class="nz-kpi-label">{% translate "Average Order Value" %}</div>
+        <div class="nz-stat-number">{{ k.average_order_value|floatformat:0 }} UZS</div>
+      </div>
+
+      <div class="nz-card nz-kpi-card">
+        <div class="nz-kpi-label">{% translate "Low Stock" %}</div>
+        <div class="nz-stat-number">{{ k.low_stock_total }}</div>
+        <div class="nz-kpi-trend nz-trend-muted">{{ k.out_of_stock_total }} {% translate "out of stock" %}</div>
+      </div>
+      {% endwith %}
+    {% else %}
+      <div class="nz-card nz-error-state">
+        <span>&#9888; {% translate "Unable to load KPI data" %}</span>
+      </div>
+    {% endif %}
+  </div>
+
+  {# --- Daily sales by store: every branch its own line, in its own lifelong colour --- #}
+  <section class="nz-card nzsc" id="nz-store-sales" data-endpoint="{% url 'admin:pos_salemodel_by_store' %}" data-sales-url="{% url 'admin:pos_salemodel_changelist' %}" aria-labelledby="nzsc-title">
+    <div class="nzsc-head">
+      <div>
+        <h3 id="nzsc-title"><i class="fas fa-chart-line" aria-hidden="true"></i> {% translate "Filiallar bo'yicha kunlik savdo" %}</h3>
+        <p class="nzsc-sub" data-nzsc-period>&nbsp;</p>
+      </div>
+      <div class="nzsc-ranges" role="group" aria-label="{% translate 'Davr' %}">
+        <button type="button" data-range="today">{% translate "Bugun" %}</button>
+        <button type="button" data-range="yesterday">{% translate "Kecha" %}</button>
+        <button type="button" data-range="7d" class="on">{% translate "7 kun" %}</button>
+        <button type="button" data-range="30d">{% translate "30 kun" %}</button>
+        <button type="button" data-range="this_month">{% translate "Shu oy" %}</button>
+        <button type="button" data-range="prev_month">{% translate "O'tgan oy" %}</button>
+        <span class="nzsc-custom">
+          <input type="date" data-from aria-label="{% translate 'Boshlanish sanasi' %}">
+          <span aria-hidden="true">—</span>
+          <input type="date" data-to aria-label="{% translate 'Tugash sanasi' %}">
+          <button type="button" data-range="custom">{% translate "Ko'rsatish" %}</button>
+        </span>
+      </div>
+    </div>
+
+    <div class="nzsc-kpis">
+      <div class="nzsc-kpi"><span>{% translate "Jami tushum" %}</span><strong data-kpi="total">—</strong><small data-kpi="sales">&nbsp;</small></div>
+      <div class="nzsc-kpi"><span>{% translate "Savdo qilgan filiallar" %}</span><strong data-kpi="stores">—</strong><small>&nbsp;</small></div>
+      <div class="nzsc-kpi"><span>{% translate "Eng yuqori filial" %}</span><strong data-kpi="top">—</strong><small data-kpi="top-sum">&nbsp;</small></div>
+      <div class="nzsc-kpi"><span>{% translate "Oldingi davrga nisbatan" %}</span><strong data-kpi="change">—</strong><small data-kpi="prev">&nbsp;</small></div>
+    </div>
+
+    <div class="nzsc-chart">
+      <canvas id="nzsc-canvas" role="img" aria-label="{% translate "Filiallar bo'yicha kunlik savdo grafigi" %}"></canvas>
+      <div class="nzsc-tooltip" hidden></div>
+      <div class="nzsc-state" data-state="loading"><i class="fas fa-circle-notch fa-spin"></i> {% translate "Yuklanmoqda…" %}</div>
+    </div>
+
+    <div class="nzsc-legend-bar">
+      <strong data-active-count></strong>
+      <input type="search" class="nzsc-search" placeholder="{% translate 'Filial qidirish…' %}" aria-label="{% translate 'Filial qidirish' %}" hidden>
+      <button type="button" class="nzsc-link" data-show-all>{% translate "Barcha filiallarni ko'rsatish" %}</button>
+    </div>
+    <div class="nzsc-legend" role="group" aria-label="{% translate 'Filiallar' %}"></div>
+
+    <div class="nzsc-grid" aria-label="{% translate 'Har bir filial grafigi' %}"></div>
+    {{ nzsc_labels|json_script:"nzsc-labels" }}
+  </section>
+
+  {# --- Quick Actions --- #}
+  <section class="nz-card nzq" aria-labelledby="nzq-title">
+    <header class="nzq-head">
+      <h3 id="nzq-title"><i class="fas fa-bolt" aria-hidden="true"></i> {% translate "Quick Actions" %}</h3>
+      <p>{% translate "The tasks you do most, one click away" %}</p>
+    </header>
+    <div class="nzq-grid">
+      <a href="{% url 'admin:nz_pos_terminal' %}" class="nzq-tile nzq-emerald">
+        <span class="nzq-icon"><i class="fas fa-cash-register" aria-hidden="true"></i></span>
+        <span class="nzq-text"><strong>{% translate "Open POS Terminal" %}</strong><small>{% translate "Sell in store and take payments" %}</small></span>
+        <i class="fas fa-arrow-right nzq-go" aria-hidden="true"></i>
+      </a>
+      <a href="{% url 'admin:ordering_ordermodel_changelist' %}" class="nzq-tile nzq-blue">
+        <span class="nzq-icon"><i class="fas fa-clipboard-list" aria-hidden="true"></i></span>
+        <span class="nzq-text"><strong>{% translate "View Orders" %}</strong><small>{% translate "Process and track online orders" %}</small></span>
+        <i class="fas fa-arrow-right nzq-go" aria-hidden="true"></i>
+      </a>
+      <a href="{% url 'admin:products_product_add' %}" class="nzq-tile nzq-violet">
+        <span class="nzq-icon"><i class="fas fa-circle-plus" aria-hidden="true"></i></span>
+        <span class="nzq-text"><strong>{% translate "Add Product" %}</strong><small>{% translate "Create a new catalog item" %}</small></span>
+        <i class="fas fa-arrow-right nzq-go" aria-hidden="true"></i>
+      </a>
+      <a href="{% url 'admin:nz_inventory_dashboard' %}" class="nzq-tile nzq-teal">
+        <span class="nzq-icon"><i class="fas fa-warehouse" aria-hidden="true"></i></span>
+        <span class="nzq-text"><strong>{% translate "Inventory" %}</strong><small>{% translate "Stock levels across every branch" %}</small></span>
+        <i class="fas fa-arrow-right nzq-go" aria-hidden="true"></i>
+      </a>
+      <a href="{% url 'admin:nz_price_list' %}" class="nzq-tile nzq-amber">
+        <span class="nzq-icon"><i class="fas fa-tags" aria-hidden="true"></i></span>
+        <span class="nzq-text"><strong>{% translate "Price List" %}</strong><small>{% translate "Prices and old prices in bulk" %}</small></span>
+        <i class="fas fa-arrow-right nzq-go" aria-hidden="true"></i>
+      </a>
+      <a href="{% url 'admin:nz_analytics' %}" class="nzq-tile nzq-indigo">
+        <span class="nzq-icon"><i class="fas fa-chart-pie" aria-hidden="true"></i></span>
+        <span class="nzq-text"><strong>{% translate "Analitika" %}</strong><small>{% translate "Tushum, foyda, filiallar va Telegram hisobotlar" %}</small></span>
+        <i class="fas fa-arrow-right nzq-go" aria-hidden="true"></i>
+      </a>
+      <a href="{% url 'admin:nz_reports' %}" class="nzq-tile nzq-sky">
+        <span class="nzq-icon"><i class="fas fa-chart-column" aria-hidden="true"></i></span>
+        <span class="nzq-text"><strong>{% translate "Reports" %}</strong><small>{% translate "Sales and performance analytics" %}</small></span>
+        <i class="fas fa-arrow-right nzq-go" aria-hidden="true"></i>
+      </a>
+      <a href="{% url 'admin:nz_roles_overview' %}" class="nzq-tile nzq-rose">
+        <span class="nzq-icon"><i class="fas fa-user-shield" aria-hidden="true"></i></span>
+        <span class="nzq-text"><strong>{% translate "Roles & Permissions" %}</strong><small>{% translate "Who can access what" %}</small></span>
+        <i class="fas fa-arrow-right nzq-go" aria-hidden="true"></i>
+      </a>
+      <a href="{% url 'admin:nz_geo_overview' %}" class="nzq-tile nzq-indigo">
+        <span class="nzq-icon"><i class="fas fa-map-location-dot" aria-hidden="true"></i></span>
+        <span class="nzq-text"><strong>{% translate "Geo Overview" %}</strong><small>{% translate "Regions, cities and delivery areas" %}</small></span>
+        <i class="fas fa-arrow-right nzq-go" aria-hidden="true"></i>
+      </a>
+      <a href="{% url 'admin:nz_settings_overview' %}" class="nzq-tile nzq-slate">
+        <span class="nzq-icon"><i class="fas fa-gear" aria-hidden="true"></i></span>
+        <span class="nzq-text"><strong>{% translate "Settings" %}</strong><small>{% translate "Branding and site configuration" %}</small></span>
+        <i class="fas fa-arrow-right nzq-go" aria-hidden="true"></i>
+      </a>
+    </div>
+  </section>
+
+  {# --- Online orders: earned / in the pipeline / lost, by day --- #}
+  <section class="nz-card nzsc nzoo" id="nz-online-orders" data-endpoint="{% url 'admin:nz_online_orders_json' %}" data-orders-url="{% url 'admin:ordering_ordermodel_changelist' %}" aria-labelledby="nzoo-title">
+    <div class="nzsc-head">
+      <div>
+        <h3 id="nzoo-title"><i class="fas fa-globe" aria-hidden="true"></i> {% translate "Onlayn buyurtmalar daromadi" %}</h3>
+        <p class="nzsc-sub" data-nzoo-period>&nbsp;</p>
+      </div>
+      <div class="nzsc-ranges" role="group" aria-label="{% translate 'Davr' %}">
+        <button type="button" data-range="7d">{% translate "7 kun" %}</button>
+        <button type="button" data-range="30d" class="on">{% translate "30 kun" %}</button>
+        <button type="button" data-range="this_month">{% translate "Shu oy" %}</button>
+        <button type="button" data-range="prev_month">{% translate "O'tgan oy" %}</button>
+      </div>
+    </div>
+    <div class="nzsc-kpis">
+      <div class="nzsc-kpi"><span>{% translate "Daromad (yetkazilgan)" %}</span><strong data-k="revenue">—</strong><small data-k="change">&nbsp;</small></div>
+      <div class="nzsc-kpi"><span>{% translate "Buyurtmalar" %}</span><strong data-k="orders">—</strong><small data-k="customers">&nbsp;</small></div>
+      <div class="nzsc-kpi"><span>{% translate "Jarayonda" %}</span><strong data-k="pipeline">—</strong><small data-k="pipeline-sum">&nbsp;</small></div>
+      <div class="nzsc-kpi"><span>{% translate "O'rtacha chek" %}</span><strong data-k="avg">—</strong><small data-k="loss">&nbsp;</small></div>
+    </div>
+    <div class="nzoo-body">
+      <div class="nzsc-chart"><canvas id="nzoo-canvas" role="img" aria-label="{% translate 'Onlayn buyurtmalar grafigi' %}"></canvas><div class="nzsc-tooltip" hidden></div><div class="nzsc-state" data-state="loading"><i class="fas fa-circle-notch fa-spin"></i></div></div>
+      <aside class="nzoo-side">
+        <div class="nzoo-donut"><canvas id="nzoo-donut" aria-hidden="true"></canvas><div class="nzoo-donut-center"><b data-k="total-orders">0</b><span>{% translate "buyurtma" %}</span></div></div>
+        <ul class="nzoo-legend" data-statuses></ul>
+        <h4>{% translate "Shaharlar bo'yicha" %}</h4>
+        <ul class="nzoo-cities" data-cities></ul>
+      </aside>
+    </div>
+  </section>
+
+  {% include "admin/includes/nz_rankings.html" %}
+
+  <div class="nz-dashboard-columns nz-dashboard-columns-1">
+    {# --- Low stock alerts --- #}
+    <div class="nz-card">
+      <h3>{% translate "Attention Required" %}</h3>
+      {% if nz_dashboard.low_stock_alerts.ok and nz_dashboard.low_stock_alerts.data %}
+        <ul class="nz-alert-list">
+          {% for item in nz_dashboard.low_stock_alerts.data %}
+          <li class="nz-alert-item">
+            <strong>{{ item.code }}</strong>
+            <span>{% blocktranslate with qty=item.available_quantity %}Only {{ qty }} units left{% endblocktranslate %}</span>
+          </li>
+          {% endfor %}
+        </ul>
+      {% elif nz_dashboard.low_stock_alerts.ok %}
+        <p class="nz-empty-state">{% translate "No low-stock items right now." %}</p>
+      {% else %}
+        <p class="nz-error-state">&#9888; {% translate "Unable to load inventory alerts" %}</p>
+      {% endif %}
+    </div>
+  </div>
+
+  {# --- Recent orders --- #}
+  <div class="nz-card">
+    <h3>{% translate "Recent Orders" %}</h3>
+    {% if nz_dashboard.recent_orders.ok and nz_dashboard.recent_orders.data %}
+      <div class="table-responsive">
+        <table class="nz-table">
+          <thead>
+            <tr>
+              <th>{% translate "Order" %}</th>
+              <th>{% translate "Items" %}</th>
+              <th>{% translate "Status" %}</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for order in nz_dashboard.recent_orders.data %}
+            <tr>
+              <td>{{ order.order_number }}</td>
+              <td>{{ order.line_count }}</td>
+              <td><span class="nz-badge nz-badge-{{ order.status }}">{{ order.status|order_status_label }}</span></td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    {% else %}
+      <p class="nz-empty-state">{% translate "No orders yet." %}</p>
+    {% endif %}
+  </div>
+</div>
+<script src="{% static 'admin/vendor/chartjs/chart.umd.js' %}"></script>
+<script src="{% static 'admin/js/nutrizone-dashboard-charts.js' %}"></script>
+<link rel="stylesheet" href="{% static 'admin/css/nutrizone-store-sales.css' %}?v=2">
+<script src="{% static 'admin/js/nutrizone-store-sales-chart.js' %}?v=1"></script>
+<script src="{% static 'admin/js/nutrizone-online-orders-chart.js' %}?v=1"></script>
+<link rel="stylesheet" href="{% static 'admin/css/nutrizone-home.css' %}?v=5">
+<script src="{% static 'admin/js/nutrizone-home.js' %}?v=1"></script>
+{% include "admin/includes/nz_home_sections.html" %}
+{% else %}
+{{ block.super }}
+{% endif %}
+{% endblock %}

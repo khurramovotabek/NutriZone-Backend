@@ -1,0 +1,88 @@
+{% extends "admin/change_list.html" %}
+{% load i18n static admin_list nzi %}
+{# Shared premium list (Identity, Loyalty, ...) -- rows come from PremiumListMixin (apps/platform/infrastructure/premium_admin.py). #}
+{% block extrastyle %}{{ block.super }}<link rel="stylesheet" href="{% static 'admin/css/nutrizone-platform.css' %}?v=5"><link rel="stylesheet" href="{% static 'admin/css/nutrizone-premium.css' %}?v=6">{% for c in nz.css %}<link rel="stylesheet" href="{% static c %}?v={{ nz.asset_v }}">{% endfor %}{% endblock %}
+{% block content_title %}{% endblock %}
+{% block object-tools %}{% endblock %}
+{% block search %}{% endblock %}
+{% block filters %}{% endblock %}
+{% block date_hierarchy %}{% endblock %}
+{% block result_list %}{% endblock %}
+{% block pagination %}{% endblock %}
+{% block content %}
+<div class="nzp nzi">
+  <header class="nzp-hero">
+    <div class="nzp-hero-main">
+      <span class="nzp-hero-icon" style="--c:{{ nz.tone }}"><i class="fas {{ nz.icon }}" aria-hidden="true"></i></span>
+      <div><h2>{{ nz.title }}</h2>{% if nz.subtitle %}<p>{{ nz.subtitle }}</p>{% endif %}</div>
+    </div>
+    <div class="nzp-hero-actions">
+      {% for a in nz.hero_actions %}<a class="nzp-btn {% if a.primary %}nzp-btn-primary{% else %}nzp-btn-ghost{% endif %}" href="{{ a.url }}"><i class="fas {{ a.icon }}" aria-hidden="true"></i> {{ a.label }}</a>{% endfor %}
+    </div>
+  </header>
+
+  {% if nz.stats %}
+  <div class="nzi-stats">
+    {% for s in nz.stats %}
+    {% if s.href %}<a class="nzi-stat" href="{{ s.href }}" style="--t:{{ s.tone }}">{% else %}<div class="nzi-stat" style="--t:{{ s.tone }}">{% endif %}
+      <i class="fas {{ s.icon }}" aria-hidden="true"></i><div><b>{{ s.value }}</b><span>{{ s.label }}</span>{% if s.sub %}<small>{{ s.sub }}</small>{% endif %}</div>
+    {% if s.href %}</a>{% else %}</div>{% endif %}
+    {% endfor %}
+  </div>
+  {% endif %}
+
+  <div class="nzi-toolbar">
+    {% if nz.tabs %}<nav class="nzp-tabs" aria-label="{% translate 'Holat' %}">{% for t in nz.tabs %}<a href="{{ t.url }}" class="nzp-tab{% if t.on %} on{% endif %}" style="--t:{{ t.color }}">{{ t.label }} <b>{{ t.n }}</b></a>{% endfor %}</nav>{% endif %}
+    <div class="nzi-tools">
+      {% if cl.has_filters %}{% for spec in cl.filter_specs %}{% with choices=spec|nzi_choices:cl %}{% if choices %}
+      <label class="nzi-filter"><span>{{ spec.title|capfirst }}</span><select onchange="window.location=this.value" aria-label="{{ spec.title }}">{% for c in choices %}<option value="{{ c.query_string|iriencode }}"{% if c.selected %} selected{% endif %}>{{ c.display }}</option>{% endfor %}</select></label>
+      {% endif %}{% endwith %}{% endfor %}{% endif %}
+      {% for s in nz.sorts %}{% if forloop.first %}<span class="nzi-sorts">{% endif %}<a href="{{ s.url }}" class="{% if s.on %}on{% endif %}">{{ s.label }}</a>{% if forloop.last %}</span>{% endif %}{% endfor %}
+      {% if cl.search_fields %}<form class="nzi-search" method="get" role="search">{% for k, v in cl.params.items %}{% if k != "q" and k != "p" %}<input type="hidden" name="{{ k }}" value="{{ v }}">{% endif %}{% endfor %}
+        <i class="fas fa-magnifying-glass" aria-hidden="true"></i><input type="search" name="q" value="{{ cl.query }}" placeholder="{{ nz.search }}" aria-label="{% translate 'Qidirish' %}">{% if cl.query %}<a href="?" aria-label="{% translate 'Tozalash' %}"><i class="fas fa-xmark" aria-hidden="true"></i></a>{% endif %}</form>{% endif %}
+    </div>
+  </div>
+
+  <form method="post" class="nzi-listform" id="changelist-form" novalidate>{% csrf_token %}
+    <input type="hidden" name="index" value="0"><input type="hidden" name="select_across" value="0" class="select-across">
+    {% if nz.actions and cl.nz_rows %}
+    <div class="nzi-bulk" data-nzi-bulk hidden>
+      <span><b data-nzi-count>0</b> {% translate "ta tanlandi" %}</span>
+      {% for a in nz.actions %}<button type="submit" name="action" value="{{ a.name }}" class="nzp-btn nzp-btn-ghost nzp-btn-sm">{{ a.label }}</button>{% endfor %}
+    </div>
+    {% endif %}
+    <section class="nzp-card nzi-list">
+      {% if cl.nz_rows and nz.layout == "gallery" %}
+      <div class="nzi-gallery">
+        {% for r in cl.nz_rows %}
+        <article class="nzi-card" data-href="{{ r.nz_link }}" style="--i:{{ forloop.counter0 }}">
+          {% if nz.actions %}<label class="nzi-card-cb"><input type="checkbox" name="_selected_action" value="{{ r.pk }}" class="action-select" aria-label="Tanlash"></label>{% endif %}
+          {% for cell in r.nz_cells %}{% if forloop.first %}<a href="{{ r.nz_link }}" class="nzi-card-media">{{ cell }}</a><div class="nzi-card-body">{% else %}<div class="nzi-card-line">{{ cell }}</div>{% endif %}{% if forloop.last %}</div>{% endif %}{% endfor %}
+        </article>
+        {% endfor %}
+      </div>
+      {% elif cl.nz_rows %}
+      <div class="nzi-table{% if nz.actions %} has-check{% endif %}" role="table" style="--cols:{{ nz.grid }}">
+        <div class="nzi-tr nzi-th" role="row">
+          {% if nz.actions %}<span><input type="checkbox" data-nzi-all aria-label="{% translate 'Hammasini tanlash' %}"></span>{% endif %}
+          {% for label, cls in nz.columns %}<span class="{{ cls }}">{{ label }}</span>{% endfor %}
+        </div>
+        {% for r in cl.nz_rows %}
+        <div class="nzi-tr" role="row" data-href="{{ r.nz_link }}" style="--i:{{ forloop.counter0 }}">
+          {% if nz.actions %}<span class="nzi-cb"><input type="checkbox" name="_selected_action" value="{{ r.pk }}" class="action-select" aria-label="{% translate 'Tanlash' %}"></span>{% endif %}
+          {% for cell in r.nz_cells %}<span class="{% with c=nz.columns|slice:forloop.counter|last %}{{ c.1 }}{% endwith %}">{% if forloop.first %}<a href="{{ r.nz_link }}" class="nzi-main">{{ cell }}</a>{% else %}{{ cell }}{% endif %}</span>{% endfor %}
+        </div>
+        {% endfor %}
+      </div>
+      {% else %}
+      <div class="nzp-empty"><span class="nzp-empty-icon" style="--c:{{ nz.tone }}"><i class="fas {{ nz.icon }}" aria-hidden="true"></i></span>
+        <h3>{% if cl.query or cl.has_active_filters %}{% translate "Hech narsa topilmadi" %}{% else %}{{ nz.empty.0 }}{% endif %}</h3>
+        {% if nz.empty.1 and not cl.query %}<p>{{ nz.empty.1 }}</p>{% endif %}
+        {% if cl.query or cl.has_active_filters %}<a class="nzp-btn nzp-btn-ghost" href="?">{% translate "Filtrlarni tozalash" %}</a>{% endif %}</div>
+      {% endif %}
+    </section>
+  </form>
+  <div class="nzi-foot"><span>{{ cl.result_count }} {% translate "ta yozuv" %}{% if cl.result_count != cl.full_result_count %} · {% translate "jami" %} {{ cl.full_result_count }}{% endif %}</span>{% if cl.result_count > cl.list_per_page %}{% pagination cl %}{% endif %}</div>
+</div>
+<script src="{% static 'admin/js/nutrizone-premium.js' %}?v=4" defer></script>
+{% endblock %}

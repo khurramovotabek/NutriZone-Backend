@@ -1,0 +1,59 @@
+{% extends "admin/change_list.html" %}
+{% load i18n static admin_list %}
+{# Suppliers: payable KPIs, debt tabs, rows with purchased / paid / debt / overdue (annotated in SupplierAdmin.get_changelist_instance). #}
+{% block extrastyle %}{{ block.super }}<link rel="stylesheet" href="{% static 'admin/css/nutrizone-platform.css' %}?v=5"><link rel="stylesheet" href="{% static 'admin/css/nutrizone-orderdesk.css' %}?v=5"><link rel="stylesheet" href="{% static 'admin/css/nutrizone-wmsx.css' %}?v=9">{% endblock %}
+{% block content_title %}{% endblock %}
+{% block content %}
+<div class="nzp nzd wx">
+  <header class="nzp-hero">
+    <div class="nzp-hero-main">
+      <span class="nzp-hero-icon" style="--c:#8b5cf6"><i class="fas fa-truck-field" aria-hidden="true"></i></span>
+      <div><h2>{% translate "Yetkazib beruvchilar" %}</h2><p>{% translate "Who we buy from, what we bought and what we still owe. Every goods receipt at cost is a purchase; payments settle the oldest receipts first." %}</p></div>
+    </div>
+    <div class="nzp-hero-actions">
+      <a class="nzp-btn nzp-btn-ghost" href="{% url 'admin:stores_stockreceipt_changelist' %}"><i class="fas fa-dolly" aria-hidden="true"></i> {% translate "Kirim (qabul)" %}</a>
+      {% if can_add %}<a class="nzp-btn nzp-btn-primary" href="{% url 'admin:stores_supplier_add' %}"><i class="fas fa-plus" aria-hidden="true"></i> {% translate "New supplier" %}</a>{% endif %}
+    </div>
+  </header>
+
+  <div class="nzp-stats">
+    <a class="nzp-stat" href="?debt=yes" style="--c:#f59e0b"><i class="fas fa-scale-unbalanced" aria-hidden="true"></i><div><b>{{ nz_kpis.debt }}<small> {% translate "so'm" %}</small></b><span>{% translate "We owe in total" %}</span></div></a>
+    <a class="nzp-stat" href="?debt=overdue" style="--c:#ef4444"><i class="fas fa-clock" aria-hidden="true"></i><div><b>{{ nz_kpis.overdue }}<small> {% translate "so'm" %}</small></b><span>{% blocktranslate count n=nz_kpis.overdue_n %}Overdue · {{ n }} supplier{% plural %}Overdue · {{ n }} suppliers{% endblocktranslate %}</span></div></a>
+    <div class="nzp-stat" style="--c:#8b5cf6"><i class="fas fa-cart-flatbed" aria-hidden="true"></i><div><b>{{ nz_kpis.bought }}<small> {% translate "so'm" %}</small></b><span>{% translate "Bought this month" %}</span></div></div>
+    <div class="nzp-stat" style="--c:#10b981"><i class="fas fa-money-bill-transfer" aria-hidden="true"></i><div><b>{{ nz_kpis.paid }}<small> {% translate "so'm" %}</small></b><span>{% translate "Paid this month" %}</span></div></div>
+  </div>
+  {% if unlinked %}<div class="nzp-note nzp-note-info"><i class="fas fa-circle-info" aria-hidden="true"></i> {% blocktranslate count n=unlinked %}{{ n }} goods receipt has no supplier -- it doesn't count towards any debt.{% plural %}{{ n }} goods receipts have no supplier -- they don't count towards any debt.{% endblocktranslate %}</div>{% endif %}
+
+  <div class="nzp-toolbar">
+    <nav class="nzp-tabs" aria-label="{% translate 'Debt' %}">
+      {% for t in nz_tabs %}<a href="{{ t.url }}" class="nzp-tab{% if t.on %} on{% endif %}" style="--t:{{ t.color }}"><i class="fas {{ t.icon }}" aria-hidden="true"></i> {{ t.label }} <b>{{ t.n }}</b></a>{% endfor %}
+    </nav>
+    <form class="nzd-filters" method="get"><label class="nzp-search"><i class="fas fa-magnifying-glass" aria-hidden="true"></i><input type="search" name="q" value="{{ cl.query }}" placeholder="{% translate 'Name, TIN, contact or phone…' %}" aria-label="{% translate 'Name, TIN, contact or phone…' %}"></label></form>
+  </div>
+
+  <section class="nzp-card nzp-inbox">
+    {% if cl.result_list %}
+    <div class="nzd-table wx-supplier-table" role="table">
+      <div class="nzd-tr nzd-th" role="row"><span>{% translate "Supplier" %}</span><span>{% translate "Receipts" %}</span><span class="r">{% translate "Purchased" %}</span><span class="r">{% translate "Paid" %}</span><span class="r">{% translate "Debt" %}</span><span class="r">{% translate "Overdue" %}</span></div>
+      {% for s in cl.result_list %}
+      <a class="nzd-tr{% if not s.is_active %} is-muted{% endif %}" role="row" href="{% url 'admin:stores_supplier_card' s.pk %}" style="--i:{{ forloop.counter0 }}">
+        <span class="wx-prod"><span class="ph wx-avatar">{{ s.name|slice:":1"|upper }}</span><span><b>{{ s.name }}{% if not s.is_active %} <em class="wx-muted">· {% translate "inactive" %}</em>{% endif %}</b><small>{% if s.contact_person %}{{ s.contact_person }} · {% endif %}{{ s.phone|default:"" }}{% if s.payment_terms_days %} · {% blocktranslate with d=s.payment_terms_days %}{{ d }} days terms{% endblocktranslate %}{% endif %}</small></span></span>
+        <span><b class="wx-num">{{ s.nz.receipts }}</b><small>{% if s.nz.last %}{% translate "last" %} {{ s.nz.last }}{% else %}—{% endif %}</small></span>
+        <span class="r"><b>{{ s.nz.purchased }}</b></span>
+        <span class="r"><span class="wx-plus">{{ s.nz.paid }}</span></span>
+        <span class="r">{% if s.nz.has_debt %}<b class="wx-debt">{{ s.nz.debt }}</b>{% elif s.nz.advance %}<b class="wx-plus">+{{ s.nz.advance_amount }}</b><small>{% translate "advance" %}</small>{% else %}<span class="wx-state ok">{% translate "settled" %}</span>{% endif %}</span>
+        <span class="r">{% if s.nz.overdue %}<b class="wx-minus">{{ s.nz.overdue }}</b><small>{% blocktranslate count d=s.nz.late_days %}{{ d }} day late{% plural %}{{ d }} days late{% endblocktranslate %}</small>{% else %}<small>—</small>{% endif %}</span>
+      </a>
+      {% endfor %}
+    </div>
+    {% else %}
+    <div class="nzp-empty"><span class="nzp-empty-icon" style="--c:#8b5cf6"><i class="fas fa-truck-field" aria-hidden="true"></i></span>
+      <h3>{% translate "No suppliers yet" %}</h3>
+      <p>{% translate "Add your suppliers with their payment terms. A supplier typed on a goods receipt is added here automatically." %}</p>
+      {% if can_add %}<a class="nzp-btn nzp-btn-primary" href="{% url 'admin:stores_supplier_add' %}"><i class="fas fa-plus" aria-hidden="true"></i> {% translate "New supplier" %}</a>{% endif %}
+    </div>
+    {% endif %}
+  </section>
+  {% if cl.result_count > cl.list_per_page %}<div class="nzp-pagination">{% pagination cl %}</div>{% endif %}
+</div>
+{% endblock %}

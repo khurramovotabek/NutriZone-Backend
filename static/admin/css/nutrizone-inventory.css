@@ -1,0 +1,293 @@
+/*
+ * NutriZone Admin -- Inventory Dashboard.
+ * Purely additive to nutrizone-admin.css's own glass-morphic design
+ * system (.nz-dashboard/.nz-card/.nz-kpi-grid/.nz-table/.nz-badge
+ * already exist and are reused as-is here, never redefined).
+ */
+
+.nz-dashboard-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--nz-space-4);
+}
+
+/* --- Warehouse summary row --- */
+
+.nz-inv-warehouse-row {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: var(--nz-space-3);
+}
+
+.nz-inv-warehouse-card {
+  display: flex;
+  flex-direction: column;
+  gap: var(--nz-space-1);
+  padding: var(--nz-space-3) var(--nz-space-4);
+}
+
+.nz-inv-warehouse-label {
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: var(--nz-text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.nz-inv-warehouse-total {
+  font-family: var(--nz-font-family-numeric);
+  font-variant-numeric: tabular-nums;
+  font-weight: 700;
+  font-size: 1.375rem;
+  color: var(--nz-primary);
+}
+.nz-inv-warehouse-total span {
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: var(--nz-text-muted);
+  text-transform: none;
+}
+
+/* --- Stock table card --- */
+
+.nz-inv-stock-card {
+  padding: var(--nz-space-4);
+}
+
+.nz-inv-stock-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--nz-space-4);
+  flex-wrap: wrap;
+  margin-bottom: var(--nz-space-4);
+}
+.nz-inv-stock-header h3 {
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--nz-text-primary);
+  margin: 0;
+}
+
+.nz-inv-header-controls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--nz-space-2);
+  flex: 1 1 auto;
+  justify-content: flex-end;
+}
+
+.nz-inv-branch-wrap {
+  flex: 0 1 220px;
+}
+
+#nz-inv-branch {
+  width: 100%;
+  padding: var(--nz-space-2) var(--nz-space-3);
+  border: 1px solid var(--nz-border);
+  border-radius: var(--nz-radius-sm);
+  background: var(--nz-surface-secondary);
+  color: var(--nz-text-primary);
+  font-size: 0.875rem;
+  cursor: pointer;
+}
+#nz-inv-branch:focus {
+  outline: none;
+  border-color: var(--nz-primary);
+  box-shadow: 0 0 0 3px var(--nz-focus-ring);
+}
+
+.nz-inv-search-wrap {
+  flex: 1 1 260px;
+  max-width: 360px;
+}
+
+#nz-inv-search {
+  width: 100%;
+  padding: var(--nz-space-2) var(--nz-space-3);
+  border: 1px solid var(--nz-border);
+  border-radius: var(--nz-radius-sm);
+  background: var(--nz-surface-secondary);
+  color: var(--nz-text-primary);
+  font-size: 0.875rem;
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+#nz-inv-search:focus {
+  outline: none;
+  border-color: var(--nz-primary);
+  box-shadow: 0 0 0 3px var(--nz-focus-ring);
+}
+#nz-inv-search::placeholder {
+  color: var(--nz-text-muted);
+}
+
+.nz-inv-table-wrap {
+  overflow-x: auto;
+}
+
+#nz-inv-table td {
+  vertical-align: middle;
+}
+
+.nz-inv-product-cell {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 220px;
+}
+
+.nz-inv-product-thumb {
+  flex: 0 0 32px;
+  width: 32px;
+  height: 32px;
+  padding: 2px;
+  border-radius: 6px;
+  background: #fff;
+  border: 1px solid var(--nz-border);
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--nz-text-muted);
+  font-size: 0.8rem;
+}
+.nz-inv-product-thumb img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  max-width: 100%;
+  object-fit: contain;
+}
+.nz-inv-product-thumb:not(:has(img)) {
+  background: var(--nz-surface-secondary);
+}
+
+.nz-inv-product-info {
+  min-width: 0;
+  line-height: 1.25;
+}
+.nz-inv-product-name {
+  font-weight: 600;
+  color: var(--nz-text-primary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 360px;
+}
+.nz-inv-product-sku {
+  font-size: 0.72rem;
+  color: var(--nz-text-muted);
+  margin-top: 2px;
+  letter-spacing: 0.02em;
+}
+
+.nz-inv-qty-input {
+  width: 88px;
+  padding: 6px var(--nz-space-2);
+  border: 1px solid var(--nz-border);
+  border-radius: var(--nz-radius-sm);
+  background: var(--nz-surface-secondary);
+  color: var(--nz-text-primary);
+  font-family: var(--nz-font-family-numeric);
+  font-weight: 600;
+  text-align: center;
+}
+.nz-inv-qty-input:focus {
+  outline: none;
+  border-color: var(--nz-primary);
+  box-shadow: 0 0 0 3px var(--nz-focus-ring);
+}
+.nz-inv-qty-input:disabled {
+  opacity: 0.6;
+}
+
+.nz-inv-warehouse-pills {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--nz-space-1);
+}
+
+.nz-inv-warehouse-pill {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: var(--nz-radius-sm);
+  font-size: 0.75rem;
+  font-family: var(--nz-font-family-numeric);
+  background: var(--nz-hover);
+  color: var(--nz-primary);
+  white-space: nowrap;
+}
+.nz-inv-warehouse-pill.nz-inv-pill-empty {
+  background: transparent;
+  border: 1px solid var(--nz-border);
+  color: var(--nz-text-muted);
+}
+
+.nz-inv-skeleton-row {
+  height: 20px;
+  border-radius: var(--nz-radius-sm);
+  background: linear-gradient(90deg, var(--nz-surface-secondary) 25%, var(--nz-hover) 50%, var(--nz-surface-secondary) 75%);
+  background-size: 200% 100%;
+  animation: nz-inv-shimmer 1.4s ease-in-out infinite;
+}
+@keyframes nz-inv-shimmer {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+.nz-inv-pagination {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--nz-space-1);
+  margin-top: var(--nz-space-4);
+}
+
+.nz-inv-page-btn {
+  min-width: 32px;
+  height: 32px;
+  padding: 0 var(--nz-space-2);
+  border: 1px solid var(--nz-border);
+  border-radius: var(--nz-radius-sm);
+  background: var(--nz-surface-secondary);
+  color: var(--nz-text-secondary);
+  font-size: 0.8125rem;
+  font-family: var(--nz-font-family-numeric);
+  cursor: pointer;
+  transition: border-color 0.15s, color 0.15s, background 0.15s;
+}
+.nz-inv-page-btn:hover {
+  border-color: var(--nz-primary);
+  color: var(--nz-text-primary);
+}
+.nz-inv-page-btn.nz-active {
+  background: var(--nz-primary);
+  border-color: var(--nz-primary);
+  color: #fff;
+  font-weight: 600;
+}
+
+@media (max-width: 767.98px) {
+  .nz-dashboard-header {
+    flex-direction: column;
+  }
+  .nz-inv-stock-header {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .nz-inv-search-wrap {
+    max-width: none;
+  }
+  .nz-inv-header-controls {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .nz-inv-branch-wrap {
+    flex: 1 1 auto;
+  }
+}
+
+/* header shortcut to branch transfers */
+.nz-dashboard-header:has(.nz-inv-transfer-link) { display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; }
+.nz-inv-transfer-link { display: inline-flex; align-items: center; gap: 8px; padding: 10px 18px; border-radius: 11px; font-weight: 600; font-size: 0.875rem; color: #fff; background: linear-gradient(135deg, var(--nz-primary), var(--nz-primary-hover)); box-shadow: 0 6px 16px color-mix(in srgb, var(--nz-primary) 30%, transparent); transition: transform var(--nz-transition-fast), box-shadow var(--nz-transition-fast); text-decoration: none; }
+.nz-inv-transfer-link:hover { color: #fff; text-decoration: none; transform: translateY(-1px); box-shadow: 0 10px 22px color-mix(in srgb, var(--nz-primary) 40%, transparent); }

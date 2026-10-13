@@ -1,0 +1,129 @@
+{% extends "admin/base_site.html" %}
+{% load i18n static %}
+{# Replenishment (To'ldirish): location cards, per-product min / fill-up rules edited inline (POST save/), suggestions, "create transfer draft" (POST transfer/). #}
+{% block extrastyle %}{{ block.super }}<link rel="stylesheet" href="{% static 'admin/css/nutrizone-platform.css' %}?v=5"><link rel="stylesheet" href="{% static 'admin/css/nutrizone-orderdesk.css' %}?v=5"><link rel="stylesheet" href="{% static 'admin/css/nutrizone-wmsx.css' %}?v=9">{% endblock %}
+{% block content_title %}{% endblock %}
+{% block content %}
+<div class="nzp nzd wx" id="wx-replenish" data-save="{% url 'admin:stores_reorderrule_save' %}" data-search="{{ search_url }}" data-location="{{ store.pk }}" data-saved="✓ {% translate 'Rule saved' %}">
+  <header class="nzp-hero">
+    <div class="nzp-hero-main">
+      <span class="nzp-hero-icon" style="--c:#0ea5e9"><i class="fas fa-arrows-rotate" aria-hidden="true"></i></span>
+      <div><h2>{% translate "To'ldirish (minimal qoldiq)" %}</h2><p>{% blocktranslate with s=days.sales %}Set a minimum and a fill-up quantity per product and branch. When available + on the way drops to the minimum, the product shows up here and becomes a transfer draft in one click. Sales speed is from the last {{ s }} days.{% endblocktranslate %}</p></div>
+    </div>
+    <div class="nzp-hero-actions"><a class="nzp-btn nzp-btn-ghost" href="{% url 'admin:nz_wms_stock' %}?view=matrix"><i class="fas fa-table-cells" aria-hidden="true"></i> {% translate "Stock matrix" %}</a></div>
+  </header>
+
+
+  <div class="wx-locs wx-loc-grid">
+    {% for l in locations %}
+    <a class="wx-loc{% if store and l.s.pk == store.pk %} on{% endif %}" href="?location={{ l.s.pk }}" style="--c:{{ l.s.color|default:'#64748b' }}">
+      <span class="wx-loc-body"><span class="wx-loc-icon"><i class="fas {% if l.s.kind == 'warehouse' %}fa-warehouse{% else %}fa-store{% endif %}" aria-hidden="true"></i></span>
+        <span class="wx-loc-text"><b>{{ l.s.name }}</b><small>{% blocktranslate count n=l.rules %}{{ n }} rule{% plural %}{{ n }} rules{% endblocktranslate %}</small>
+          {% if l.need %}<em class="wx-busy" style="--c:#ef4444"><i class="fas fa-triangle-exclamation" aria-hidden="true"></i> {% blocktranslate count n=l.need %}{{ n }} needs stock{% plural %}{{ n }} need stock{% endblocktranslate %}</em>{% elif l.rules %}<small class="wx-plus"><i class="fas fa-check" aria-hidden="true"></i> {% translate "all above minimum" %}</small>{% endif %}</span></span>
+    </a>
+    {% endfor %}
+  </div>
+
+  {% if store %}
+  <form method="post" action="{% url 'admin:stores_reorderrule_transfer' %}" data-transfer-form>{% csrf_token %}
+    <input type="hidden" name="location" value="{{ store.pk }}">
+    <div class="nzp-toolbar">
+      <nav class="nzp-tabs" aria-label="{% translate 'Filter' %}">
+        <a class="nzp-tab{% if tab == 'need' %} on{% endif %}" href="?location={{ store.pk }}&source={{ source.pk }}&tab=need" style="--t:#ef4444"><i class="fas fa-triangle-exclamation" aria-hidden="true"></i> {% translate "Needs stock" %} <b>{{ counts.need }}</b></a>
+        <a class="nzp-tab{% if tab == 'rules' %} on{% endif %}" href="?location={{ store.pk }}&source={{ source.pk }}&tab=rules" style="--t:#0ea5e9"><i class="fas fa-sliders" aria-hidden="true"></i> {% translate "All rules" %} <b>{{ counts.rules }}</b></a>
+        <a class="nzp-tab{% if tab == 'norule' %} on{% endif %}" href="?location={{ store.pk }}&source={{ source.pk }}&tab=norule" style="--t:#8b5cf6"><i class="fas fa-wand-magic-sparkles" aria-hidden="true"></i> {% translate "Selling without a rule" %} <b>{{ counts.norule }}</b></a>
+      </nav>
+      <label class="wx-source"><span>{% translate "Send from" %}</span>
+        <select class="nzp-select" name="source" onchange="location.href='?location={{ store.pk }}&tab={{ tab }}&source='+this.value">{% for s in sources %}<option value="{{ s.pk }}"{% if source and s.pk == source.pk %} selected{% endif %}>{{ s.name }}</option>{% endfor %}</select></label>
+    </div>
+
+    {% if can_edit %}
+    <div class="wx-add-rule">
+      <label class="nzp-search"><i class="fas fa-plus" aria-hidden="true"></i><input type="search" data-rule-q placeholder="{% translate 'Add a product rule: name, SKU or barcode…' %}" aria-label="{% translate 'Add a product rule: name, SKU or barcode…' %}"></label>
+      <ul class="wx-results" data-rule-results hidden></ul>
+    </div>
+    {% endif %}
+
+    <section class="nzp-card nzp-inbox">
+      {% if rows %}
+      <div class="nzd-table wx-replenish-table" role="table">
+        <div class="nzd-tr nzd-th" role="row"><span></span><span>{% translate "Product" %}</span><span class="r">{% translate "Available" %}</span><span class="r">{% translate "On the way" %}</span><span class="r">{% translate "Sales / day" %}</span><span class="c">{% translate "Minimum" %}</span><span class="c">{% translate "Fill up to" %}</span><span class="r">{% translate "Send" %}</span></div>
+        {% for r in rows %}{% with ln=r.ln %}
+        <div class="nzd-tr wx-rp-{{ ln.state }}" role="row" data-variant="{{ ln.variant_id }}">
+          <span class="c">{% if ln.needs and can_transfer %}<input type="checkbox" name="pick_{{ ln.variant_id }}" value="1" {% if ln.can_send %}checked{% else %}disabled{% endif %} aria-label="{% translate 'Include in the transfer' %}">{% endif %}</span>
+          <span class="wx-prod">{% if ln.info.image_url %}<img src="{{ ln.info.image_url }}" alt="">{% else %}<span class="ph"><i class="fas fa-box" aria-hidden="true"></i></span>{% endif %}<span><b>{{ ln.info.name }}</b><small>{{ ln.info.sku }}{% if ln.info.size %} · {{ ln.info.size }}{% endif %}</small></span></span>
+          <span class="r"><b class="wx-num">{{ ln.available }}</b><span class="wx-state {% if ln.state == 'out' %}out{% elif ln.state == 'need' %}low{% else %}ok{% endif %}">{% if ln.state == 'out' %}{% translate "Out" %}{% elif ln.state == 'need' %}{% translate "Below minimum" %}{% elif ln.state == 'ok' %}{% translate "Enough" %}{% else %}{% translate "no rule" %}{% endif %}</span></span>
+          <span class="r">{% if ln.incoming %}<b class="wx-plus">+{{ ln.incoming }}</b>{% else %}<small>—</small>{% endif %}</span>
+          <span class="r">{% if ln.sold %}<b>{{ r.per_day }}</b><small>{% if ln.days_cover is not None %}{% blocktranslate count d=ln.days_cover %}{{ d }} day left{% plural %}{{ d }} days left{% endblocktranslate %}{% endif %}</small>{% else %}<small>—</small>{% endif %}</span>
+          <span class="c"><input class="wx-rule-input" data-min inputmode="numeric" value="{% if ln.rule %}{{ ln.rule.min_quantity }}{% endif %}" placeholder="{{ r.sug_min|default:'' }}" aria-label="{% translate 'Minimum' %}"{% if not can_edit %} disabled{% endif %}></span>
+          <span class="c"><input class="wx-rule-input" data-target inputmode="numeric" value="{% if ln.rule %}{{ ln.rule.target_quantity }}{% endif %}" placeholder="{{ r.sug_target|default:'' }}" aria-label="{% translate 'Fill up to' %}"{% if not can_edit %} disabled{% endif %}>
+            {% if not ln.rule and r.sug_min and can_edit %}<button type="button" class="wx-apply" data-apply="{{ r.sug_min }},{{ r.sug_target }}" title="{% blocktranslate with a=days.safety b=days.cover %}{{ a }} days of sales as minimum, {{ b }} days as fill-up{% endblocktranslate %}"><i class="fas fa-wand-magic-sparkles" aria-hidden="true"></i></button>{% endif %}</span>
+          <span class="r">{% if ln.needs %}<input class="wx-rule-input wx-send" name="qty_{{ ln.variant_id }}" inputmode="numeric" value="{{ ln.can_send }}" aria-label="{% translate 'Send' %}"{% if not can_transfer %} disabled{% endif %}><small>{% if ln.can_send < ln.suggest %}<span class="wx-minus">{% blocktranslate with n=ln.source_available %}only {{ n }} at source{% endblocktranslate %}</span>{% else %}{% blocktranslate with n=ln.source_available %}{{ n }} at source{% endblocktranslate %}{% endif %}</small>{% else %}<small>—</small>{% endif %}</span>
+        </div>
+        {% endwith %}{% endfor %}
+      </div>
+      {% else %}
+      <div class="nzp-empty"><span class="nzp-empty-icon" style="--c:#10b981"><i class="fas {% if tab == 'need' %}fa-circle-check{% else %}fa-sliders{% endif %}" aria-hidden="true"></i></span>
+        {% if tab == "need" %}<h3>{% translate "Nothing to replenish" %}</h3><p>{% if counts.rules %}{% translate "Every product with a rule is above its minimum (counting what is on the way)." %}{% else %}{% translate "No rules at this location yet. Open “Selling without a rule” to set them from sales, or add a product above." %}{% endif %}</p>
+        {% else %}<h3>{% translate "Nothing here" %}</h3><p>{% translate "Add a product rule with the search above." %}</p>{% endif %}
+      </div>
+      {% endif %}
+    </section>
+
+    {% if tab == "need" and counts.need and can_transfer %}
+    <div class="nzp-savebar wx-rp-bar">
+      <span><i class="fas fa-truck-ramp-box" aria-hidden="true"></i> {% blocktranslate with n=send_units src=source.name dst=store.name %}<b>{{ n }}</b> units from {{ src }} → {{ dst }}{% endblocktranslate %}{% if short_units %} · <span class="wx-minus">{% blocktranslate with n=short_units %}{{ n }} short at the source{% endblocktranslate %}</span>{% endif %}</span>
+      {% if send_units %}<button class="nzp-btn nzp-btn-primary" type="submit"><i class="fas fa-file-circle-plus" aria-hidden="true"></i> {% translate "Create transfer draft" %}</button>{% else %}<span class="wx-muted"><i class="fas fa-dolly" aria-hidden="true"></i> {% translate "The source has none of it -- receive it from a supplier first (Kirim) or pick another source." %}</span>{% endif %}
+    </div>
+    {% endif %}
+  </form>
+  {% endif %}
+  <div class="nzp-toast" data-nzp-toast role="status" aria-live="polite" hidden></div>
+</div>
+<script>
+(function () {
+  var root = document.getElementById("wx-replenish"); if (!root || !root.getAttribute("data-location")) return;
+  var pending = {}, timer = null, searchTimer = null;
+  function csrf() { var i = document.querySelector("input[name=csrfmiddlewaretoken]"); return i ? i.value : ""; }
+  function esc(s) { return String(s == null ? "" : s).replace(/[&<>"']/g, function (c) { return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]; }); }
+  function toast(text, bad) { var el = root.querySelector("[data-nzp-toast]"); el.textContent = text; el.classList.toggle("is-error", !!bad); el.hidden = false; clearTimeout(toast.t); toast.t = setTimeout(function () { el.hidden = true; }, bad ? 4500 : 1800); }
+  function save() {
+    var rules = pending; pending = {};
+    return fetch(root.getAttribute("data-save"), { method: "POST", credentials: "same-origin", headers: { "X-CSRFToken": csrf(), "Content-Type": "application/json" }, body: JSON.stringify({ location: root.getAttribute("data-location"), rules: rules }) })
+      .then(function (r) { return r.json().then(function (j) { if (!r.ok || !j.ok) throw new Error((j.error && j.error.message) || "Error"); toast(root.getAttribute("data-saved")); }); })
+      .catch(function (e) { toast(e.message, true); });
+  }
+  function queue(row) {
+    var min = row.querySelector("[data-min]").value.trim(), target = row.querySelector("[data-target]").value.trim();
+    if ((min && !target) || (!min && target)) return; // wait for both
+    pending[row.getAttribute("data-variant")] = min || target ? { min: min, target: target } : null;
+    var wand = row.querySelector("[data-apply]"); if (wand) wand.remove();
+    clearTimeout(timer); timer = setTimeout(save, 600);
+  }
+  root.addEventListener("input", function (e) {
+    if (e.target.matches("[data-min],[data-target]")) { e.target.value = e.target.value.replace(/\D/g, ""); queue(e.target.closest("[data-variant]")); }
+    if (e.target.matches(".wx-send")) e.target.value = e.target.value.replace(/\D/g, "");
+  });
+  root.addEventListener("click", function (e) {
+    var b = e.target.closest("[data-apply]");
+    if (b) { var row = b.closest("[data-variant]"), v = b.getAttribute("data-apply").split(","); row.querySelector("[data-min]").value = v[0]; row.querySelector("[data-target]").value = v[1]; queue(row); b.remove(); }
+    var pick = e.target.closest("[data-pick]");
+    if (pick) {
+      pending[pick.getAttribute("data-pick")] = { min: "1", target: "3" };
+      save().then(function () { location.href = "?location=" + root.getAttribute("data-location") + "&tab=rules"; });
+    }
+  });
+  var q = root.querySelector("[data-rule-q]"), results = root.querySelector("[data-rule-results]");
+  if (q) q.addEventListener("input", function () {
+    clearTimeout(searchTimer);
+    var v = q.value.trim(); if (v.length < 2) { results.hidden = true; return; }
+    searchTimer = setTimeout(function () {
+      fetch(root.getAttribute("data-search") + "?all=1&q=" + encodeURIComponent(v) + "&location=" + root.getAttribute("data-location"), { credentials: "same-origin" }).then(function (r) { return r.json(); }).then(function (j) {
+        results.hidden = false;
+        results.innerHTML = (j.data || []).map(function (p) { return '<li><button type="button" data-pick="' + p.variant_id + '">' + (p.image_url ? '<img src="' + esc(p.image_url) + '" alt="">' : '<span class="ph"><i class="fas fa-box"></i></span>') + "<span><b>" + esc(p.name) + "</b><small>" + esc(p.sku) + "</small></span><em>" + p.available + "</em></button></li>"; }).join("") || '<li class="wx-muted">—</li>';
+      });
+    }, 250);
+  });
+})();
+</script>
+{% endblock %}

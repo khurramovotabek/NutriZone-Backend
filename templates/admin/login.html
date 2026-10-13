@@ -1,0 +1,286 @@
+{% load i18n static jazzmin %}{% get_current_language as LANGUAGE_CODE %}{% get_jazzmin_settings request as jazzmin_settings %}{% get_available_languages as LANGUAGES %}<!DOCTYPE html>
+{# Standalone (does not extend Jazzmin's registration/base.html): that base draws its own oversized login logo and card chrome, which fought this layout. #}
+<html lang="{{ LANGUAGE_CODE|default:'en' }}">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex, nofollow">
+  <title>{% translate "Log in" %} | {{ brand_name|default:"NutriZone" }}</title>
+  <script>
+    // Same storage key as the dashboard's theme switcher (admin/js/nutrizone-theme.js), applied before paint.
+    (function () {
+      var mode = "system";
+      try { mode = localStorage.getItem("nutrizone.admin.theme") || "system"; } catch (e) {}
+      var dark = mode === "dark" || (mode === "system" && window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches);
+      document.documentElement.setAttribute("data-nz-theme", dark ? "dark" : "light");
+    })();
+  </script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap">
+  <link rel="stylesheet" href="{% static 'vendor/fontawesome-free/css/all.min.css' %}">
+  {% include "admin/nz_branding.html" %}
+  <style>
+    :root, html[data-nz-theme="light"] {
+      --lg-bg: #eef2f7;
+      --lg-card: rgba(255, 255, 255, 0.86);
+      --lg-border: rgba(15, 23, 42, 0.08);
+      --lg-text: #0f172a;
+      --lg-muted: #5b6475;
+      --lg-soft: #94a0b2;
+      --lg-input: #ffffff;
+      --lg-input-border: #d9e0ea;
+      --lg-shadow: 0 30px 80px -30px rgba(15, 23, 42, 0.35);
+    }
+    html[data-nz-theme="dark"] {
+      --lg-bg: #0b0f15;
+      --lg-card: rgba(23, 29, 38, 0.82);
+      --lg-border: rgba(255, 255, 255, 0.08);
+      --lg-text: #f2f4f7;
+      --lg-muted: #a9b3bf;
+      --lg-soft: #6b7684;
+      --lg-input: #121820;
+      --lg-input-border: #2c3540;
+      --lg-shadow: 0 30px 80px -30px rgba(0, 0, 0, 0.8);
+    }
+    :root { --lg-primary: var(--nz-primary, #2563eb); }
+    * { box-sizing: border-box; }
+    html, body { height: 100%; margin: 0; }
+    body {
+      font-family: "Inter", "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+      background: var(--lg-bg);
+      color: var(--lg-text);
+      -webkit-font-smoothing: antialiased;
+    }
+    a { color: var(--lg-primary); text-decoration: none; }
+    a:hover { text-decoration: underline; }
+
+    .lg-page { position: relative; min-height: 100%; display: grid; grid-template-columns: minmax(0, 1.05fr) minmax(0, 1fr); }
+
+    /* Brand side */
+    .lg-brand {
+      position: relative; overflow: hidden; color: #fff; padding: 48px 56px;
+      display: flex; flex-direction: column; justify-content: space-between;
+      background: linear-gradient(150deg, color-mix(in srgb, var(--lg-primary) 92%, #000) 0%, color-mix(in srgb, var(--lg-primary) 70%, #0b1220) 55%, #0b1220 100%);
+    }
+    .lg-orb { position: absolute; border-radius: 999px; filter: blur(70px); opacity: .55; pointer-events: none; animation: lg-float 18s ease-in-out infinite alternate; }
+    .lg-orb.a { width: 420px; height: 420px; top: -140px; right: -120px; background: color-mix(in srgb, var(--lg-primary) 70%, #22d3ee); }
+    .lg-orb.b { width: 360px; height: 360px; bottom: -160px; left: -100px; background: #10b981; opacity: .35; animation-delay: -6s; }
+    .lg-grid { position: absolute; inset: 0; pointer-events: none; opacity: .12;
+      background-image: linear-gradient(rgba(255,255,255,.5) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,.5) 1px, transparent 1px);
+      background-size: 44px 44px; mask-image: radial-gradient(ellipse at 30% 40%, #000 20%, transparent 75%); -webkit-mask-image: radial-gradient(ellipse at 30% 40%, #000 20%, transparent 75%); }
+    @keyframes lg-float { to { transform: translate3d(40px, 30px, 0) scale(1.08); } }
+    .lg-brand > :not(.lg-orb):not(.lg-grid) { position: relative; }
+    .lg-mark { display: flex; align-items: center; gap: 12px; font-weight: 800; font-size: 20px; letter-spacing: -.01em; }
+    .lg-mark img { width: 44px; height: 44px; padding: 4px; border-radius: 12px; object-fit: contain; background: #fff; box-shadow: 0 10px 24px rgba(0,0,0,.3); }
+    .lg-eyebrow { display: inline-flex; align-items: center; gap: 8px; padding: 6px 12px; border-radius: 999px; background: rgba(255,255,255,.12); border: 1px solid rgba(255,255,255,.18); font-size: 12px; font-weight: 600; letter-spacing: .04em; text-transform: uppercase; }
+    .lg-headline { margin: 18px 0 12px; font-size: clamp(30px, 3.2vw, 44px); line-height: 1.08; font-weight: 800; letter-spacing: -.02em; }
+    .lg-lead { margin: 0; max-width: 440px; font-size: 15px; line-height: 1.6; color: rgba(255,255,255,.82); }
+    .lg-features { list-style: none; margin: 32px 0 0; padding: 0; display: grid; gap: 14px; max-width: 460px; }
+    .lg-features li { display: flex; gap: 14px; align-items: flex-start; padding: 14px 16px; border-radius: 16px; background: rgba(255,255,255,.07); border: 1px solid rgba(255,255,255,.1); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); }
+    .lg-features i { flex: none; width: 36px; height: 36px; border-radius: 10px; display: grid; place-items: center; background: rgba(255,255,255,.14); font-size: 15px; }
+    .lg-features b { display: block; font-size: 14px; }
+    .lg-features span { display: block; margin-top: 2px; font-size: 13px; color: rgba(255,255,255,.72); line-height: 1.45; }
+    .lg-brand-foot { font-size: 12px; color: rgba(255,255,255,.6); }
+
+    /* Form side */
+    .lg-side { position: relative; display: flex; flex-direction: column; padding: 28px 32px; }
+    .lg-topbar { display: flex; justify-content: flex-end; align-items: center; gap: 8px; }
+    .lg-pill { display: inline-flex; align-items: center; gap: 6px; height: 36px; padding: 0 12px; border-radius: 10px; border: 1px solid var(--lg-border); background: var(--lg-card); color: var(--lg-muted); font: inherit; font-size: 13px; font-weight: 600; cursor: pointer; }
+    .lg-pill:hover { color: var(--lg-text); text-decoration: none; }
+    .lg-lang { display: inline-flex; padding: 3px; gap: 2px; border-radius: 10px; border: 1px solid var(--lg-border); background: var(--lg-card); }
+    .lg-lang button { border: 0; background: transparent; color: var(--lg-muted); font: inherit; font-size: 12px; font-weight: 700; padding: 6px 9px; border-radius: 7px; cursor: pointer; text-transform: uppercase; }
+    .lg-lang button[aria-pressed="true"] { background: var(--lg-primary); color: #fff; }
+    .lg-center { flex: 1; display: grid; place-items: center; padding: 24px 0; }
+    .lg-card { width: 100%; max-width: 420px; padding: 36px; border-radius: 24px; background: var(--lg-card); border: 1px solid var(--lg-border); box-shadow: var(--lg-shadow); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); animation: lg-rise .5s cubic-bezier(.16,1,.3,1) both; }
+    @keyframes lg-rise { from { opacity: 0; transform: translateY(14px); } }
+    .lg-card-icon { width: 52px; height: 52px; border-radius: 16px; display: grid; place-items: center; color: #fff; font-size: 20px; background: linear-gradient(150deg, var(--lg-primary), color-mix(in srgb, var(--lg-primary) 70%, #000)); box-shadow: 0 14px 30px -12px var(--lg-primary); }
+    .lg-welcome { margin: 18px 0 0; font-size: 11px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--lg-primary); }
+    .lg-welcome + h2 { margin-top: 6px !important; }
+    .lg-card h2 { margin: 18px 0 6px; font-size: 24px; font-weight: 800; letter-spacing: -.02em; }
+    .lg-card .lg-sub { margin: 0 0 24px; color: var(--lg-muted); font-size: 14px; line-height: 1.5; }
+    .lg-alert { display: flex; gap: 10px; align-items: flex-start; padding: 12px 14px; margin-bottom: 18px; border-radius: 12px; font-size: 13px; line-height: 1.5; background: color-mix(in srgb, #ef4444 10%, transparent); border: 1px solid color-mix(in srgb, #ef4444 30%, transparent); color: color-mix(in srgb, #ef4444 85%, var(--lg-text)); }
+    .lg-alert p { margin: 0; }
+    .lg-alert.info { background: color-mix(in srgb, #f59e0b 10%, transparent); border-color: color-mix(in srgb, #f59e0b 30%, transparent); color: color-mix(in srgb, #b45309 80%, var(--lg-text)); }
+    .lg-field { margin-bottom: 16px; }
+    .lg-field label { display: block; margin-bottom: 6px; font-size: 13px; font-weight: 600; color: var(--lg-muted); }
+    .lg-input { position: relative; }
+    .lg-input > i { position: absolute; left: 14px; top: 50%; transform: translateY(-50%); color: var(--lg-soft); font-size: 14px; pointer-events: none; }
+    .lg-input input { width: 100%; height: 48px; padding: 0 44px 0 40px; border-radius: 12px; border: 1px solid var(--lg-input-border); background: var(--lg-input); color: var(--lg-text); font: inherit; font-size: 15px; transition: border-color .15s, box-shadow .15s; }
+    .lg-input input:focus { outline: none; border-color: var(--lg-primary); box-shadow: 0 0 0 4px color-mix(in srgb, var(--lg-primary) 18%, transparent); }
+    .lg-input input[aria-invalid="true"] { border-color: #ef4444; }
+    /* Browser autofill paints its own pale fill; keep the field in the theme's colours. */
+    .lg-input input:-webkit-autofill, .lg-input input:-webkit-autofill:hover, .lg-input input:-webkit-autofill:focus {
+      -webkit-text-fill-color: var(--lg-text); caret-color: var(--lg-text);
+      -webkit-box-shadow: 0 0 0 1000px var(--lg-input) inset; transition: background-color 9999s ease-out 0s;
+    }
+    .lg-eye { position: absolute; right: 6px; top: 50%; transform: translateY(-50%); width: 36px; height: 36px; border: 0; border-radius: 9px; background: transparent; color: var(--lg-soft); cursor: pointer; }
+    .lg-eye:hover { color: var(--lg-text); background: color-mix(in srgb, var(--lg-text) 6%, transparent); }
+    .lg-caps { display: none; margin-top: 6px; font-size: 12px; font-weight: 600; color: #d97706; }
+    .lg-caps.on { display: block; }
+    .lg-row { display: flex; justify-content: flex-end; margin: -4px 0 18px; font-size: 13px; }
+    .lg-submit { width: 100%; height: 50px; border: 0; border-radius: 12px; color: #fff; font: inherit; font-size: 15px; font-weight: 700; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; gap: 10px;
+      background: linear-gradient(150deg, var(--lg-primary), color-mix(in srgb, var(--lg-primary) 75%, #000)); box-shadow: 0 1px 0 rgba(255,255,255,.25) inset, 0 14px 30px -12px var(--lg-primary); transition: filter .15s, transform .15s; }
+    .lg-submit:hover { filter: brightness(1.07); transform: translateY(-1px); }
+    .lg-submit:disabled { opacity: .75; cursor: progress; transform: none; }
+    .lg-spinner { display: none; width: 16px; height: 16px; border-radius: 50%; border: 2px solid rgba(255,255,255,.45); border-top-color: #fff; animation: lg-spin .7s linear infinite; }
+    .lg-submit.busy .lg-spinner { display: inline-block; }
+    @keyframes lg-spin { to { transform: rotate(360deg); } }
+    .lg-secure { display: flex; align-items: center; justify-content: center; gap: 8px; margin-top: 22px; padding-top: 18px; border-top: 1px solid var(--lg-border); font-size: 12px; color: var(--lg-soft); }
+    .lg-secure i { color: #10b981; }
+    .lg-foot { text-align: center; font-size: 12px; color: var(--lg-soft); }
+
+    @media (max-width: 960px) {
+      .lg-page { grid-template-columns: 1fr; }
+      .lg-brand { padding: 28px 24px 32px; }
+      .lg-features, .lg-brand-foot, .lg-lead { display: none; }
+      .lg-headline { font-size: 26px; margin: 14px 0 0; }
+      .lg-side { position: static; padding: 0 16px 24px; margin-top: -18px; }
+      /* Sits on the brand header's first row, level with the logo. */
+      .lg-topbar { position: absolute; top: 30px; right: 16px; z-index: 5; }
+      .lg-mark { padding-right: 150px; }
+      .lg-topbar .lg-pill span, .lg-topbar .lg-back { display: none; }
+      .lg-card { padding: 26px 22px; }
+    }
+    @media (prefers-reduced-motion: reduce) { .lg-orb, .lg-card { animation: none; } }
+  </style>
+</head>
+<body>
+<div class="lg-page">
+  <aside class="lg-brand">
+    <div class="lg-orb a"></div><div class="lg-orb b"></div><div class="lg-grid"></div>
+    <div class="lg-mark">
+      <img src="{% if site_settings.logo %}{{ site_settings.logo.url }}{% else %}{% static 'admin/img/nutrizone-logo.svg' %}{% endif %}" alt="">
+      {{ brand_name|default:"NutriZone" }}
+    </div>
+    <div>
+      <span class="lg-eyebrow"><i class="fas fa-shield-halved" aria-hidden="true"></i> {% translate "Operations dashboard" %}</span>
+      <h1 class="lg-headline">{% blocktranslate with brand=brand_name|default:"NutriZone" %}Run {{ brand }} from one place{% endblocktranslate %}</h1>
+      <p class="lg-lead">{% translate "Internal administration for sport nutrition operations -- products, orders, inventory, and more, all in one place." %}</p>
+      <ul class="lg-features">
+        <li><i class="fas fa-truck-fast" aria-hidden="true"></i><div><b>{% translate "Orders & deliveries" %}</b><span>{% translate "Track every order from checkout to the customer's door." %}</span></div></li>
+        <li><i class="fas fa-warehouse" aria-hidden="true"></i><div><b>{% translate "Stores & warehouse" %}</b><span>{% translate "Stock, transfers and POS across every branch." %}</span></div></li>
+        <li><i class="fas fa-chart-line" aria-hidden="true"></i><div><b>{% translate "Reports & loyalty" %}</b><span>{% translate "Sales analytics, coins and customer insights." %}</span></div></li>
+      </ul>
+    </div>
+    <p class="lg-brand-foot">&copy; {% now "Y" %} {{ brand_name|default:"NutriZone" }}</p>
+  </aside>
+
+  <main class="lg-side">
+    <div class="lg-topbar">
+      {% if nz_frontend_url %}<a class="lg-pill lg-back" href="{{ nz_frontend_url }}"><i class="fas fa-arrow-left" aria-hidden="true"></i><span>{% translate "Back to the store" %}</span></a>{% endif %}
+      <button type="button" class="lg-pill" id="lg-theme" aria-label="{% translate 'Switch theme' %}" title="{% translate 'Switch theme' %}"><i class="fas fa-moon" aria-hidden="true"></i></button>
+      <form class="lg-lang" action="{% url 'set_language' %}" method="post">
+        {% csrf_token %}
+        <input type="hidden" name="next" value="{{ request.get_full_path }}">
+        {% for code, name in LANGUAGES %}<button type="submit" name="language" value="{{ code }}" title="{{ name }}" aria-pressed="{% if code == LANGUAGE_CODE %}true{% else %}false{% endif %}">{{ code }}</button>{% endfor %}
+      </form>
+    </div>
+
+    <div class="lg-center">
+      <section class="lg-card" aria-labelledby="lg-title">
+        <div class="lg-card-icon"><i class="fas fa-right-to-bracket" aria-hidden="true"></i></div>
+        {% if jazzmin_settings.welcome_sign %}<p class="lg-welcome">{{ jazzmin_settings.welcome_sign }}</p>{% endif %}
+        <h2 id="lg-title">{% translate "Sign in to the dashboard" %}</h2>
+        <p class="lg-sub">{% translate "Use your staff account to continue." %}</p>
+
+        {% if user.is_authenticated %}
+          <div class="lg-alert info" role="alert"><i class="fas fa-circle-info" aria-hidden="true"></i>
+            <p>{% blocktranslate trimmed %}You are authenticated as {{ username }}, but are not authorized to access this page. Would you like to login to a different account?{% endblocktranslate %}</p>
+          </div>
+        {% endif %}
+        {% if form.errors %}
+          <div class="lg-alert" role="alert"><i class="fas fa-triangle-exclamation" aria-hidden="true"></i>
+            <div>
+              {% for error in form.non_field_errors %}<p>{{ error }}</p>{% endfor %}
+              {% if form.username.errors %}<p>{{ form.username.label }}: {{ form.username.errors|join:", " }}</p>{% endif %}
+              {% if form.password.errors %}<p>{{ form.password.label }}: {{ form.password.errors|join:", " }}</p>{% endif %}
+            </div>
+          </div>
+        {% endif %}
+
+        <form action="{{ app_path }}" method="post" id="lg-form" novalidate>
+          {% csrf_token %}
+          <div class="lg-field">
+            <label for="id_username">{{ form.username.label }}</label>
+            <div class="lg-input">
+              <i class="fas fa-user" aria-hidden="true"></i>
+              <input type="text" name="username" id="id_username" value="{{ form.username.value|default_if_none:'' }}" autocomplete="username" autocapitalize="none" spellcheck="false" required autofocus{% if form.errors %} aria-invalid="true"{% endif %}>
+            </div>
+          </div>
+          <div class="lg-field">
+            <label for="id_password">{{ form.password.label }}</label>
+            <div class="lg-input">
+              <i class="fas fa-lock" aria-hidden="true"></i>
+              <input type="password" name="password" id="id_password" autocomplete="current-password" required{% if form.errors %} aria-invalid="true"{% endif %}>
+              <button type="button" class="lg-eye" id="lg-eye" aria-label="{% translate 'Show password' %}" data-show="{% translate 'Show password' %}" data-hide="{% translate 'Hide password' %}"><i class="fas fa-eye" aria-hidden="true"></i></button>
+            </div>
+            <p class="lg-caps" id="lg-caps" role="status"><i class="fas fa-triangle-exclamation" aria-hidden="true"></i> {% translate "Caps Lock is on" %}</p>
+          </div>
+          {% url 'admin_password_reset' as password_reset_url %}
+          {% if password_reset_url %}<div class="lg-row"><a href="{{ password_reset_url }}">{% translate "Forgotten your password or username?" %}</a></div>{% endif %}
+          <button type="submit" class="lg-submit" id="lg-submit">
+            <span class="lg-spinner" aria-hidden="true"></span>
+            <span id="lg-submit-text" data-busy="{% translate 'Signing in…' %}">{% translate "Log in" %}</span>
+          </button>
+        </form>
+
+        <p class="lg-secure"><i class="fas fa-shield-halved" aria-hidden="true"></i> {% translate "Authorized staff only" %}</p>
+      </section>
+    </div>
+
+    <p class="lg-foot">&copy; {% now "Y" %} {{ brand_name|default:"NutriZone" }}</p>
+  </main>
+</div>
+
+<script>
+  (function () {
+    var pwd = document.getElementById("id_password");
+    var eye = document.getElementById("lg-eye");
+    // Always start masked -- also when the browser restores the page from its back/forward cache with a revealed field.
+    function mask() {
+      pwd.type = "password";
+      eye.setAttribute("aria-label", eye.dataset.show);
+      eye.firstElementChild.className = "fas fa-eye";
+    }
+    mask();
+    window.addEventListener("pageshow", mask);
+    eye.addEventListener("click", function () {
+      var show = pwd.type === "password";
+      pwd.type = show ? "text" : "password";
+      eye.setAttribute("aria-label", show ? eye.dataset.hide : eye.dataset.show);
+      eye.firstElementChild.className = show ? "fas fa-eye-slash" : "fas fa-eye";
+      pwd.focus();
+    });
+
+    var caps = document.getElementById("lg-caps");
+    function checkCaps(e) { if (e.getModifierState) caps.classList.toggle("on", e.getModifierState("CapsLock")); }
+    pwd.addEventListener("keydown", checkCaps);
+    pwd.addEventListener("keyup", checkCaps);
+    pwd.addEventListener("blur", function () { caps.classList.remove("on"); });
+
+    var form = document.getElementById("lg-form");
+    var submit = document.getElementById("lg-submit");
+    form.addEventListener("submit", function () {
+      mask(); // never leave the password revealed on the page being navigated away from
+      submit.classList.add("busy");
+      submit.disabled = true;
+      var label = document.getElementById("lg-submit-text");
+      label.textContent = label.dataset.busy;
+    });
+
+    // Theme toggle -- shares the dashboard's storage key, so the choice carries over after sign-in.
+    var root = document.documentElement;
+    var themeBtn = document.getElementById("lg-theme");
+    function paintIcon() { themeBtn.firstElementChild.className = root.getAttribute("data-nz-theme") === "dark" ? "fas fa-sun" : "fas fa-moon"; }
+    paintIcon();
+    themeBtn.addEventListener("click", function () {
+      var next = root.getAttribute("data-nz-theme") === "dark" ? "light" : "dark";
+      root.setAttribute("data-nz-theme", next);
+      try { localStorage.setItem("nutrizone.admin.theme", next); } catch (e) {}
+      paintIcon();
+    });
+  })();
+</script>
+</body>
+</html>

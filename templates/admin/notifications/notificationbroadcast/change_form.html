@@ -1,0 +1,3 @@
+{% extends "admin/premium/form.html" %}
+{# A broadcast card: premium form chrome; refreshes every 3 s while the broadcast is still queued / sending. #}
+{% block extrahead %}{{ block.super }}{% if ntf_refresh %}<meta http-equiv="refresh" content="3">{% endif %}{% endblock %}

@@ -1,0 +1,184 @@
+{% extends "admin/base_site.html" %}
+{% load i18n static nza %}
+{# Dashboard → Nazorat markazi (apps/platform/infrastructure/control_view.py; rules: control_center.py). Base styles: nutrizone-analytics.css (nza-), own: nutrizone-control.css (nzc-). #}
+{% block extrastyle %}{{ block.super }}<link rel="stylesheet" href="{% static 'admin/css/nutrizone-analytics.css' %}?v=5"><link rel="stylesheet" href="{% static 'admin/css/nutrizone-control.css' %}?v=4">{% endblock %}
+{% block breadcrumbs %}<ol class="breadcrumb"><li class="breadcrumb-item"><a href="{% url 'admin:index' %}">{% translate "Home" %}</a></li><li class="breadcrumb-item active">{{ title }}</li></ol>{% endblock %}
+{% block content_title %}{% endblock %}
+{% block content %}
+<div class="nza nzc" data-state="{{ state }}">
+
+  <header class="nza-hero nzc-hero">
+    <div class="nza-hero-main">
+      <span class="nza-hero-icon"><i class="fas fa-shield-halved" aria-hidden="true"></i></span>
+      <div class="nza-hero-text">
+        <p class="nza-eyebrow">NutriZone · Control room</p>
+        <h2>{{ title }}</h2>
+        <p class="nza-hero-sub">{% if store %}🏪 {{ store.name }} · {% endif %}{{ d.generated_at|date:"d.m.Y" }} · {{ d.generated_at|time:"H:i" }} holati <span class="nza-live"><span></span>jonli</span></p>
+      </div>
+    </div>
+    <div class="nza-hero-actions">
+      <form class="nzc-store" method="get">
+        <i class="fas fa-store" aria-hidden="true"></i>
+        <select name="store" aria-label="Filial" onchange="this.form.submit()">
+          <option value="">Barcha filiallar</option>
+          {% for st in stores %}<option value="{{ st.id }}"{% if store and store.id == st.id %} selected{% endif %}>{{ st.name }}</option>{% endfor %}
+        </select>
+      </form>
+      <a class="nza-btn" href="{{ links.analytics }}{% if store %}?store={{ store.id }}{% endif %}"><i class="fas fa-chart-pie" aria-hidden="true"></i> Analitika</a>
+    </div>
+  </header>
+
+  {% if not d.sections_ok.Savdo %}<div class="nza-card nza-error"><i class="fas fa-triangle-exclamation" aria-hidden="true"></i> Bugungi savdo ma'lumotlarini yuklab bo'lmadi — loglarni tekshiring.</div>{% endif %}
+
+  {# ------------------------------------------------------------ KPIs #}
+  <section class="nza-kpis nzc-kpis" aria-label="Hozirgi holat">
+    <article class="nza-kpi nza-kpi-hero" style="--t:#4f46e5">
+      <div class="nza-kpi-top"><span class="nza-kpi-icon"><i class="fas fa-sack-dollar" aria-hidden="true"></i></span><span class="nza-kpi-label">Bugungi tushum</span></div>
+      <strong title="{{ ov.revenue|som }}">{{ ov.revenue|compact }} <small>so'm</small></strong>
+      <div class="nza-kpi-foot">{{ ov.revenue_change|trend }}<span>kecha shu vaqtga nisbatan</span></div>
+    </article>
+    <article class="nza-kpi" style="--t:#0891b2">
+      <div class="nza-kpi-top"><span class="nza-kpi-icon"><i class="fas fa-receipt" aria-hidden="true"></i></span><span class="nza-kpi-label">Xaridlar</span></div>
+      <strong>{{ ov.purchases|default:0 }}</strong>
+      <div class="nza-kpi-foot">{{ ov.purchases_change|trend }}<span>o'rtacha chek {{ ov.average|som|default:"—" }}</span></div>
+    </article>
+    <article class="nza-kpi" style="--t:#16a34a">
+      <div class="nza-kpi-top"><span class="nza-kpi-icon"><i class="fas fa-coins" aria-hidden="true"></i></span><span class="nza-kpi-label">Yalpi foyda</span></div>
+      {% if ov.gross_profit is not None %}<strong title="{{ ov.gross_profit|som }}">{{ ov.gross_profit|compact }} <small>so'm</small></strong>
+      <div class="nza-kpi-foot">{{ ov.profit_change|trend }}<span>marja {{ ov.margin|pct }}</span></div>
+      {% else %}<strong class="nza-na">—</strong><div class="nza-kpi-foot"><span>tannarx qamrovi {{ ov.cost_coverage|pct|default:"0%" }} (kerak ≥90%)</span></div>{% endif %}
+    </article>
+    <article class="nza-kpi" style="--t:#7c3aed">
+      <div class="nza-kpi-top"><span class="nza-kpi-icon"><i class="fas fa-cash-register" aria-hidden="true"></i></span><span class="nza-kpi-label">Ochiq kassalar</span></div>
+      <strong>{{ d.open_shifts }} <small>/ {{ d.kassa_count }}</small></strong>
+      <div class="nza-kpi-foot"><span>ishlayotgan filial kassalari</span></div>
+    </article>
+    <article class="nza-kpi{% if d.critical %} nzc-kpi-alarm{% endif %}" style="--t:{% if d.critical %}#dc2626{% elif d.warning %}#d97706{% else %}#16a34a{% endif %}">
+      <div class="nza-kpi-top"><span class="nza-kpi-icon"><i class="fas fa-bell" aria-hidden="true"></i></span><span class="nza-kpi-label">Ochiq signallar</span></div>
+      <strong>{{ d.alerts|length }}</strong>
+      <div class="nza-kpi-foot"><span class="nzc-dot is-critical"></span><span>{{ d.critical }} jiddiy</span><span class="nzc-dot is-warning"></span><span>{{ d.warning }} diqqat</span></div>
+    </article>
+  </section>
+
+  {# ------------------------------------------------------------ branches #}
+  <section class="nza-card nzc-branches" aria-labelledby="nzc-branches-h">
+    <div class="nza-card-head"><h3 id="nzc-branches-h"><i class="fas fa-store" aria-hidden="true"></i> Filiallar hozir</h3><a class="nza-link" href="{{ links.sessions }}">Smenalar tarixi →</a></div>
+    {% if d.branches %}
+    <div class="nzc-branch-grid">
+      {% for b in d.branches %}
+      <article class="nzc-branch{% if b.alerts.critical %} has-critical{% elif b.alerts.warning %} has-warning{% endif %}" style="--c:{{ b.color }}">
+        <header>
+          <span class="nzc-branch-dot" aria-hidden="true"></span>
+          <h4>{{ b.name }}</h4>
+          {% if b.shift %}<span class="nzc-pill is-open"><span></span>Kassa ochiq</span>
+          {% elif b.kassa %}<span class="nzc-pill is-closed">Kassa yopiq</span>
+          {% else %}<span class="nzc-pill">Kassa ishlatilmaydi</span>{% endif %}
+        </header>
+        <div class="nzc-branch-money"><strong title="{{ b.revenue|som }}">{{ b.revenue|compact }} <small>so'm</small></strong>{{ b.change|trend }}</div>
+        <dl>
+          <div><dt>Xaridlar</dt><dd>{{ b.purchases }}</dd></div>
+          <div><dt>O'rtacha chek</dt><dd>{% if b.purchases %}{{ b.average|compact }}{% else %}—{% endif %}</dd></div>
+          <div><dt>Oxirgi savdo</dt><dd>{% if b.last_sale %}{{ b.last_sale|time:"H:i" }}{% else %}—{% endif %}</dd></div>
+          <div><dt>{% if b.shift %}Kassada{% else %}Ish vaqti{% endif %}</dt><dd>{% if b.shift %}{{ b.shift.by }} · {% if b.shift.hours >= 12 %}{{ b.shift.opened_at|date:"d.m H:i" }}{% else %}{{ b.shift.opened_at|time:"H:i" }}{% endif %}dan{% else %}{{ b.hours|default:"—" }}{% endif %}</dd></div>
+        </dl>
+        {% if b.alerts.critical or b.alerts.warning %}
+        <a class="nzc-branch-alerts" href="?store={{ b.key }}">{% if b.alerts.critical %}<span class="nzc-dot is-critical"></span>{{ b.alerts.critical }} jiddiy {% endif %}{% if b.alerts.warning %}<span class="nzc-dot is-warning"></span>{{ b.alerts.warning }} diqqat{% endif %} →</a>
+        {% endif %}
+      </article>
+      {% endfor %}
+    </div>
+    {% if d.online %}<p class="nza-note"><i class="fas fa-globe" aria-hidden="true"></i> Onlayn do'kon bugun: <b>{{ d.online.revenue|som }} so'm</b> · {{ d.online.purchases }} ta yetkazilgan buyurtma {{ d.online.change|trend }}</p>{% endif %}
+    {% else %}<p class="nza-empty">Faol filial yo'q.</p>{% endif %}
+  </section>
+
+  <div class="nzc-layout">
+    {# ------------------------------------------------------------ alerts #}
+    <section class="nza-card nzc-feed" aria-labelledby="nzc-feed-h">
+      <div class="nza-card-head">
+        <h3 id="nzc-feed-h"><i class="fas fa-bell" aria-hidden="true"></i> Signallar</h3>
+        <nav class="nza-tabs" aria-label="Holat">{% for t in state_tabs %}<a href="{{ t.url }}" class="nza-tab{% if t.on %} is-on{% endif %}"{% if t.on %} aria-current="page"{% endif %}>{{ t.label }}</a>{% endfor %}</nav>
+      </div>
+      <nav class="nzc-chips" aria-label="Turi">{% for t in group_tabs %}<a href="{{ t.url }}" class="nzc-chip{% if t.on %} is-on{% endif %}"{% if t.on %} aria-current="page"{% endif %}>{{ t.label }}</a>{% endfor %}</nav>
+
+      {% if rows %}
+      <ol class="nzc-alerts">
+        {% for x in rows %}{% with a=x.a %}
+        <li class="nzc-alert is-{{ a.severity }}{% if a.resolved_at %} is-resolved{% endif %}">
+          <div class="nzc-alert-icon" aria-hidden="true">{{ x.icon }}</div>
+          <div class="nzc-alert-body">
+            <p class="nzc-alert-meta"><span class="nzc-sev">{% if a.severity == 'critical' %}Jiddiy{% else %}Diqqat{% endif %}</span> {{ x.label }}{% if a.store %} · {{ a.store.name }}{% endif %} · <time datetime="{{ a.happened_at|date:'c' }}">{{ a.happened_at|date:"d.m H:i" }}</time></p>
+            <h4>{{ a.title }}</h4>
+            {% if a.facts %}<dl class="nzc-facts">{% for f in a.facts %}<div><dt>{{ f.0 }}</dt><dd>{{ f.1 }}</dd></div>{% endfor %}</dl>{% endif %}
+            {% if a.resolved_at %}<p class="nzc-resolved"><i class="fas fa-circle-check" aria-hidden="true"></i> Yopildi: {{ a.resolved_by_name|default:"—" }} · {{ a.resolved_at|date:"d.m H:i" }}{% if a.resolution_note %} — {{ a.resolution_note }}{% endif %}</p>{% endif %}
+          </div>
+          <div class="nzc-alert-actions">
+            {% if a.link %}<a class="nzc-btn" href="{{ a.link }}"><i class="fas fa-magnifying-glass" aria-hidden="true"></i> Ko'rish</a>{% endif %}
+            {% if x.can_transfer and can_request %}
+            <form method="post" action="{% url 'admin:nz_control_transfer' %}">{% csrf_token %}
+              <input type="hidden" name="alert" value="{{ a.id }}"><input type="hidden" name="back" value="{{ back }}">
+              <button type="submit" class="nzc-btn"><i class="fas fa-truck-ramp-box" aria-hidden="true"></i> Transfer so'rash</button>
+            </form>
+            {% endif %}
+            {% if not a.resolved_at %}
+            <form method="post" action="{% url 'admin:nz_control_resolve' %}">{% csrf_token %}
+              <input type="hidden" name="alert" value="{{ a.id }}"><input type="hidden" name="back" value="{{ back }}">
+              <button type="submit" class="nzc-btn is-primary"><i class="fas fa-check" aria-hidden="true"></i> Yopish</button>
+            </form>
+            {% endif %}
+          </div>
+        </li>
+        {% endwith %}{% endfor %}
+      </ol>
+      {% else %}
+      <p class="nza-ok nzc-empty"><i class="fas fa-circle-check" aria-hidden="true"></i> {% if state == 'open' %}Ochiq signal yo'q — hammasi joyida.{% else %}Bu bo'limda yozuv yo'q.{% endif %}</p>
+      {% endif %}
+    </section>
+
+    {# ------------------------------------------------------------ side #}
+    <aside class="nzc-side">
+      <section class="nza-card nzc-tg">
+        <h3><i class="fab fa-telegram" aria-hidden="true"></i> Telegram</h3>
+        {% if telegram.live and telegram.enabled %}
+        <p class="nza-ok"><i class="fas fa-circle-check" aria-hidden="true"></i> Yangi signallar @{{ telegram.username|default:"NutriZoneAnalyticsBot" }} orqali darhol yuboriladi</p>
+        <p class="nza-muted">Qabul qiluvchilar: {{ telegram.recipients }} ta (rahbariyat — hammasi, filial egasi — o'z filiali). Botda: /nazorat</p>
+        {% elif not telegram.live %}<p class="nza-note is-danger">Analytics bot ulanmagan — signallar faqat shu sahifada.</p>
+        {% else %}<p class="nza-note">Telegram yuborish o'chirilgan.</p>{% endif %}
+      </section>
+
+      <section class="nza-card nzc-settings">
+        <h3><i class="fas fa-sliders" aria-hidden="true"></i> Qoidalar va chegaralar</h3>
+        {% if can_edit %}
+        <form method="post" action="{% url 'admin:nz_control_settings' %}">{% csrf_token %}
+          <input type="hidden" name="back" value="{{ back }}">
+          <label class="nzc-switch"><input type="checkbox" name="enabled"{% if cfg.enabled %} checked{% endif %}> Nazorat yoqilgan</label>
+          <label class="nzc-switch"><input type="checkbox" name="telegram_enabled"{% if cfg.telegram_enabled %} checked{% endif %}> Telegram'ga yuborish</label>
+          <label class="nzc-switch"><input type="checkbox" name="stock_alerts"{% if cfg.stock_alerts %} checked{% endif %}> Ombor: minimal qoldiq, prognoz, muddat</label>
+          <div class="nzc-fields">
+            {% for f in settings_rows %}
+            <label class="nzc-field"><span>{{ f.label }}</span><span class="nzc-input"><input type="text" inputmode="numeric" name="{{ f.name }}" value="{{ f.value }}" required><small>{{ f.unit }}</small></span></label>
+            {% endfor %}
+          </div>
+          <button type="submit" class="nzc-btn is-primary nzc-save"><i class="fas fa-floppy-disk" aria-hidden="true"></i> Saqlash</button>
+        </form>
+        {% else %}
+        <ul class="nzc-rules">{% for f in settings_rows %}<li><span>{{ f.label }}</span><b>{{ f.value }} {{ f.unit }}</b></li>{% endfor %}</ul>
+        <p class="nza-muted">Chegaralarni faqat superadmin o'zgartiradi.</p>
+        {% endif %}
+        <p class="nza-muted nzc-scan"><i class="fas fa-rotate" aria-hidden="true"></i> Tekshiruv har 2 daqiqada. Smena, buyurtma signallari sabab yo'qolganda o'zi yopiladi.</p>
+      </section>
+    </aside>
+  </div>
+</div>
+<script>
+/* Live page: reload every 60 s while it is visible and nobody is typing (the open list only). */
+(function () {
+  var root = document.querySelector(".nzc");
+  if (!root || root.dataset.state !== "open") return;
+  setInterval(function () {
+    var el = document.activeElement;
+    if (document.hidden || (el && /INPUT|SELECT|TEXTAREA/.test(el.tagName))) return;
+    window.location.reload();
+  }, 60000);
+})();
+</script>
+{% endblock %}

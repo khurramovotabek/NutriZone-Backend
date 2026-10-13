@@ -1,0 +1,76 @@
+/* Dashboard → Geo & Location (apps/geo/infrastructure/admin.py + nutrizone-geo-admin.js) */
+.nzg-flag { display: inline-flex; width: var(--w, 28px); aspect-ratio: 4/3; border-radius: 6px; overflow: hidden; vertical-align: middle; align-items: center; justify-content: center;
+  box-shadow: 0 0 0 1px rgba(255,255,255,.12), 0 6px 14px -8px rgba(0,0,0,.6); font-size: 18px; flex-shrink: 0; }
+.nzg-flag img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.nzg-flag-empty { background: var(--nz-surface-secondary); color: var(--nz-text-muted); font-size: .8rem; }
+.nzg-place { display: inline-flex; align-items: center; gap: 12px; min-width: 0; }
+.nzg-place > span:last-child { display: grid; gap: 1px; min-width: 0; }
+.nzg-place b { font-size: .86rem; color: var(--nz-text-primary); }
+.nzg-place small { font-size: .72rem; color: var(--nz-text-muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.nzg-ico { width: 36px; height: 36px; flex-shrink: 0; border-radius: 11px; display: grid; place-items: center; color: var(--t, #4f46e5);
+  background: color-mix(in srgb, var(--t, #4f46e5) 14%, transparent); }
+.nzg-code { font-family: ui-monospace, monospace; font-size: .72rem; font-weight: 700; padding: 2px 8px; border-radius: 7px; background: var(--nz-surface-secondary); color: var(--nz-text-secondary); }
+.nzg-num { display: inline-grid; justify-items: end; line-height: 1.15; }
+.nzg-num b { font-size: .95rem; color: var(--nz-text-primary); }
+.nzg-num small { font-size: .66rem; color: var(--nz-text-muted); }
+.nzg-langs { display: inline-flex; gap: 3px; }
+.nzg-langs span { font-size: .6rem; font-weight: 800; letter-spacing: .03em; padding: 1px 5px; border-radius: 5px; color: #16a34a; background: color-mix(in srgb, #16a34a 12%, transparent); }
+.nzg-langs span.no { color: #dc2626; background: color-mix(in srgb, #dc2626 10%, transparent); text-decoration: line-through; }
+.nzg-coord { font-family: ui-monospace, monospace; font-size: .72rem; color: var(--nz-text-muted); }
+.nzg-addr b { display: block; font-size: .84rem; color: var(--nz-text-primary); }
+.nzg-addr small { display: block; font-size: .72rem; color: var(--nz-text-muted); margin-top: 1px; }
+.nzg-addr em { display: block; font-style: normal; font-size: .72rem; color: #0d9488; margin-top: 2px; }
+.nzg-acc { display: inline-flex; flex-direction: column; gap: 2px; align-items: flex-start; }
+.nzg-acc small { font-size: .68rem; color: var(--nz-text-muted); }
+
+/* "open in" links (Yandex / route / Google / Apple / 2GIS) */
+.nzgeo-links { display: inline-flex; flex-wrap: wrap; gap: 4px; }
+.nzgeo-links a { display: inline-flex; align-items: center; padding: 3px 9px; border-radius: 999px; font-size: .7rem; font-weight: 700; text-decoration: none !important;
+  color: var(--t) !important; background: color-mix(in srgb, var(--t) 11%, var(--nz-surface, #fff)); border: 1px solid color-mix(in srgb, var(--t) 28%, transparent); }
+
+/* maps */
+.nzgeo-map { height: 340px; border-radius: 16px; overflow: hidden; border: 1px solid var(--nz-border); background: var(--nz-surface-secondary); z-index: 0; }
+.nzgeo-map.lg { height: min(68vh, 620px); }
+.nzgeo-pin { background: none; border: 0; filter: drop-shadow(0 3px 6px rgba(0,0,0,.45)); }
+.nzgeo-layers { display: flex; gap: 2px; padding: 3px; border-radius: 12px; background: rgba(15, 23, 42, .78); backdrop-filter: blur(6px); box-shadow: 0 8px 20px -10px rgba(0,0,0,.6); }
+.nzgeo-layers button { border: 0; cursor: pointer; padding: 5px 10px; border-radius: 9px; font-size: .72rem; font-weight: 700; color: #cbd5e1; background: transparent; }
+.nzgeo-layers button.on { color: #fff; background: #4f46e5; }
+.nzgeo-pop { display: grid; gap: 3px; min-width: 200px; }
+.nzgeo-pop small { font-size: .64rem; font-weight: 800; text-transform: uppercase; letter-spacing: .05em; color: #64748b; }
+.nzgeo-pop b { font-size: .86rem; }
+.nzgeo-pop span { font-size: .74rem; color: #475569; }
+.nzgeo-pop .nzgeo-open { font-size: .76rem; font-weight: 700; }
+
+.nzgeo-picker { display: grid; gap: 10px; }
+.nzgeo-tools { display: grid; grid-template-columns: minmax(0, 1.4fr) minmax(0, 1.2fr); gap: 8px; }
+.nzgeo-tools > div { position: relative; display: flex; gap: 6px; }
+.nzgeo-tools input { flex: 1; min-width: 0; padding: 8px 12px; border-radius: 10px; border: 1px solid var(--nz-border); background: var(--nz-surface); color: var(--nz-text-primary); font-size: .8rem; }
+.nzgeo-tools button, .nzgeo-actions button { display: inline-flex; align-items: center; gap: 6px; padding: 8px 12px; border-radius: 10px; border: 1px solid var(--nz-border); cursor: pointer;
+  font-size: .76rem; font-weight: 700; color: var(--nz-text-primary); background: var(--nz-surface-secondary); white-space: nowrap; }
+.nzgeo-tools button:hover, .nzgeo-actions button:hover { color: #4f46e5; border-color: color-mix(in srgb, #4f46e5 40%, var(--nz-border)); }
+.nzgeo-results { position: absolute; z-index: 1200; top: calc(100% + 4px); left: 0; right: 0; max-height: 280px; overflow: auto; padding: 4px; border-radius: 12px;
+  background: var(--nz-surface); border: 1px solid var(--nz-border); box-shadow: 0 18px 40px -18px rgba(0,0,0,.6); }
+.nzgeo-results button { display: grid; width: 100%; text-align: left; gap: 1px; padding: 7px 10px; border: 0; border-radius: 9px; background: none; cursor: pointer; color: var(--nz-text-primary); }
+.nzgeo-results button:hover { background: var(--nz-surface-secondary); }
+.nzgeo-results small { font-size: .7rem; color: var(--nz-text-muted); }
+.nzgeo-results p { margin: 6px 10px; font-size: .76rem; color: var(--nz-text-muted); }
+.nzgeo-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+.nzgeo-status { flex: 1; min-width: 160px; font-size: .74rem; color: var(--nz-text-muted); font-family: ui-monospace, monospace; }
+.nzgeo-status.bad { color: #dc2626; font-family: inherit; }
+@media (max-width: 760px) { .nzgeo-tools { grid-template-columns: 1fr; } .nzgeo-map { height: 280px; } }
+
+/* address map page */
+.nzgeo-overview { display: grid; gap: 12px; }
+.nzgeo-legend { display: flex; flex-wrap: wrap; gap: 8px; }
+.nzgeo-legend label { display: inline-flex; align-items: center; gap: 8px; padding: 7px 12px; border-radius: 999px; font-size: .78rem; font-weight: 700; cursor: pointer;
+  color: var(--nz-text-primary); background: var(--nz-surface); border: 1px solid var(--nz-border); }
+.nzgeo-legend i.dot { width: 10px; height: 10px; border-radius: 50%; background: var(--t); }
+.nzgeo-legend input { accent-color: var(--t); }
+.nzgeo-card { padding: 16px; border-radius: 18px; background: var(--nz-surface); border: 1px solid var(--nz-border); }
+.nzgeo-tips { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 10px; margin: 0; padding: 0; list-style: none; }
+.nzgeo-tips li { display: flex; gap: 10px; padding: 10px 12px; border-radius: 12px; font-size: .78rem; color: var(--nz-text-secondary); background: var(--nz-surface-secondary); }
+.nzgeo-tips li i { color: #4f46e5; margin-top: 2px; }
+.nzgeo-details { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 8px; }
+.nzgeo-details div { padding: 9px 12px; border-radius: 12px; background: var(--nz-surface-secondary); }
+.nzgeo-details small { display: block; font-size: .64rem; font-weight: 800; text-transform: uppercase; letter-spacing: .05em; color: var(--nz-text-muted); }
+.nzgeo-details b { font-size: .86rem; color: var(--nz-text-primary); }

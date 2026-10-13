@@ -1,0 +1,73 @@
+/* Dashboard → Loyalty & Wallet: tier badges, coin amounts, the tier ladder + calculator, the ladder editor, referral codes. Builds on nutrizone-premium.css. */
+main.app-main:has(.nzl) { overflow-x: clip !important; overflow-y: visible !important; }
+
+.nzl-tier { --t: #d4a017; display: inline-flex; align-items: center; gap: 5px; height: 26px; padding: 0 10px; border-radius: 999px; font-size: .78rem; font-weight: 800; white-space: nowrap;
+  color: color-mix(in srgb, var(--t) 80%, var(--nz-text-primary)); background: color-mix(in srgb, var(--t) 15%, transparent); border: 1px solid color-mix(in srgb, var(--t) 40%, transparent); }
+.nzl-tier small { font-weight: 700; opacity: .8; }
+.nzl-pin { color: #9333ea; font-size: .7rem; }
+.nzi-tr .nzl-tier + small { display: block; margin-top: 3px; }
+.nzl-coin { font-variant-numeric: tabular-nums; color: #d4a017; }
+.nzl-coin::before { content: "🪙 "; font-size: .78em; }
+
+/* referral codes */
+.nzl-code, .nzl-link { display: inline-flex; align-items: center; gap: 6px; min-width: 0; max-width: 100%; }
+.nzl-code code { font-size: .82rem !important; font-weight: 800; letter-spacing: .04em; color: #9333ea !important; background: color-mix(in srgb, #9333ea 12%, transparent) !important; }
+.nzl-link span { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: .76rem; color: var(--nz-text-muted); }
+.nzl-copy { flex-shrink: 0; width: 28px; height: 28px; border-radius: 8px; display: grid; place-items: center; cursor: pointer; font-size: .74rem;
+  color: var(--nz-text-secondary); background: var(--nz-surface-secondary); border: 1px solid var(--nz-border); transition: color .15s, border-color .15s, background .15s; }
+.nzl-copy:hover { color: #9333ea; border-color: #9333ea; }
+.nzl-copy.is-copied { color: #fff; background: #16a34a; border-color: #16a34a; }
+.nzl-copy.is-copied i::before { content: "\f00c"; }
+.nzl-arrow { display: inline-flex; align-items: center; gap: 8px; min-width: 0; max-width: 100%; }
+.nzl-arrow > i { color: var(--nz-text-muted); font-size: .72rem; }
+
+/* tier page */
+.nzl-warn { border-color: color-mix(in srgb, #d97706 40%, transparent) !important; background: color-mix(in srgb, #d97706 9%, var(--nz-surface)) !important; color: var(--nz-text-primary); margin-bottom: 12px; }
+.nzl-warn i { color: #d97706; }
+.nzl-sec-h { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px; padding: 14px 18px; border-bottom: 1px solid var(--nz-border); }
+.nzl-sec-h b { display: block; color: var(--nz-text-primary); }
+.nzl-sec-h small { display: block; font-size: .74rem; color: var(--nz-text-muted); }
+.nzl-ladder-card { padding: 0 !important; overflow: hidden; margin-bottom: 16px !important; }
+.nzl-calc { display: inline-flex; align-items: center; gap: 8px; margin: 0; font-size: .76rem; font-weight: 700; color: var(--nz-text-secondary); }
+.nzl-calc input { width: 140px; height: 36px; padding: 0 10px; border-radius: 10px; border: 1px solid var(--nz-border); background: var(--nz-surface-secondary); color: var(--nz-text-primary); font-weight: 800; text-align: right; }
+.nzl-calc em { font-style: normal; color: var(--nz-text-muted); }
+.nzl-ladder { display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); align-items: end; gap: 10px; margin: 0; padding: 18px; list-style: none; }
+.nzl-ladder li { --h: 1; }
+.nzl-step { position: relative; display: flex; flex-direction: column; align-items: center; gap: 3px; padding: 14px 10px 12px; min-height: calc(130px + var(--h) * 12px); justify-content: flex-end; text-align: center;
+  border-radius: 16px 16px 10px 10px; color: inherit !important; text-decoration: none !important; border: 1px solid color-mix(in srgb, var(--t) 40%, var(--nz-border));
+  background: linear-gradient(180deg, color-mix(in srgb, var(--t) 22%, transparent), color-mix(in srgb, var(--t) 6%, var(--nz-surface))); transition: transform .15s, box-shadow .15s; }
+.nzl-step:hover { transform: translateY(-3px); box-shadow: 0 16px 30px -20px var(--t); }
+.nzl-glyph { font-size: 1.6rem; line-height: 1; }
+.nzl-step b { font-size: .9rem; color: var(--nz-text-primary); }
+.nzl-pct { font-size: 1.35rem; font-weight: 900; color: color-mix(in srgb, var(--t) 85%, var(--nz-text-primary)); line-height: 1.1; }
+.nzl-step small { font-size: .66rem; color: var(--nz-text-muted); }
+.nzl-reward { margin-top: 4px; padding: 2px 8px; border-radius: 999px; font-size: .72rem; font-weight: 800; color: #d4a017; background: color-mix(in srgb, #d4a017 13%, transparent); }
+.nzl-members { font-size: .7rem; font-weight: 700; color: var(--nz-text-secondary); }
+
+/* ladder editor */
+.nzl-editor .nzi-list { margin-bottom: 0; }
+.nzl-row { cursor: default; }
+.nzl-row input[type=text], .nzl-row input[type=number] { width: 100%; height: 36px; padding: 0 10px; border-radius: 10px; border: 1px solid var(--nz-border); background: var(--nz-surface-secondary);
+  color: var(--nz-text-primary); font-weight: 700; font-variant-numeric: tabular-nums; }
+.nzl-row input:focus { outline: none; border-color: #d4a017; box-shadow: 0 0 0 3px color-mix(in srgb, #d4a017 22%, transparent); }
+.nzl-row.is-off { opacity: .55; }
+.nzl-row.has-error { background: color-mix(in srgb, #dc2626 7%, transparent); }
+.nzl-err { color: #dc2626 !important; }
+.nzl-ex { font-weight: 800; color: #d4a017 !important; }
+.nzl-switch { position: relative; display: inline-flex; margin: 0; cursor: pointer; }
+.nzl-switch input { position: absolute; opacity: 0; width: 1px; height: 1px; }
+.nzl-switch i { width: 42px; height: 24px; border-radius: 999px; background: var(--nz-border); transition: background .15s; position: relative; }
+.nzl-switch i::after { content: ""; position: absolute; top: 3px; left: 3px; width: 18px; height: 18px; border-radius: 50%; background: #fff; transition: transform .15s; }
+.nzl-switch input:checked + i { background: #16a34a; }
+.nzl-switch input:checked + i::after { transform: translateX(18px); }
+.nzl-switch input:focus-visible + i { outline: 2px solid #d4a017; outline-offset: 2px; }
+.nzl-edit { display: grid; place-items: center; width: 32px; height: 32px; border-radius: 9px; color: var(--nz-text-secondary) !important; border: 1px solid var(--nz-border); }
+.nzl-edit:hover { color: #d4a017 !important; border-color: #d4a017; }
+
+@media (max-width: 900px) {
+  .nzl-editor .nzi-tr { grid-template-columns: 1fr 1fr !important; }
+  .nzl-editor .nzi-th { display: none; }
+  .nzl-editor .nzi-tr > span { display: block !important; }
+  .nzl-ladder { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .nzl-step { min-height: 0; }
+}

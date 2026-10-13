@@ -1,0 +1,204 @@
+{% extends "admin/base_site.html" %}
+{% load i18n static %}
+
+{% block extrastyle %}
+{{ block.super }}
+<link rel="stylesheet" href="{% static 'admin/css/nutrizone-transfers.css' %}?v=2026.09.26.1">
+{% endblock %}
+
+{% block breadcrumbs %}
+<div class="breadcrumbs">
+  <a href="{% url 'admin:index' %}">{% translate "Home" %}</a>
+  &rsaquo; <a href="{% url 'admin:nz_inventory_dashboard' %}">{% translate "Inventory" %}</a>
+  &rsaquo; {{ title }}
+</div>
+{% endblock %}
+
+{% block content %}
+<div class="nz-dashboard nz-tr" id="nz-transfers"
+     data-products-url="{% url 'admin:nz_stock_transfer_products' %}"
+     data-create-url="{% url 'admin:nz_stock_transfer_create' %}">
+
+  <div class="nz-tr-hero">
+    <div class="nz-tr-hero-text">
+      <span class="nz-tr-hero-icon"><i class="fas fa-right-left" aria-hidden="true"></i></span>
+      <div>
+        <h2 class="nz-dashboard-title">{{ title }}</h2>
+        <p class="nz-dashboard-subtitle">{% translate "Move stock from one branch to another -- every unit goes through the stock ledger." %}</p>
+      </div>
+    </div>
+    <div class="nz-tr-stats">
+      <div class="nz-tr-stat"><span>{% translate "Today" %}</span><b>{{ stats.today }}</b></div>
+      <div class="nz-tr-stat"><span>{% translate "This month" %}</span><b>{{ stats.month }}</b></div>
+      <div class="nz-tr-stat"><span>{% translate "Units moved this month" %}</span><b>{{ stats.month_units }}</b></div>
+    </div>
+  </div>
+
+  {% if branches|length < 2 %}
+    <div class="nz-card nz-tr-empty-state">
+      <i class="fas fa-store-slash" aria-hidden="true"></i>
+      <h3>{% translate "At least two branches are needed" %}</h3>
+      <p>{% translate "Add another store to transfer stock between branches." %}</p>
+    </div>
+  {% else %}
+
+  {# --- Step 1: route --- #}
+  <section class="nz-card nz-tr-route" aria-label="{% translate 'Route' %}">
+    <div class="nz-tr-branch" data-role="source-card">
+      <label for="nz-tr-source"><i class="fas fa-upload" aria-hidden="true"></i> {% translate "Sending branch" %}</label>
+      <select id="nz-tr-source" class="nz-tr-select">
+        <option value="">{% translate "Choose a branch" %}</option>
+        {% for b in branches %}<option value="{{ b.id }}" data-units="{{ b.units }}">{{ b.name }}</option>{% endfor %}
+      </select>
+      <small class="nz-tr-branch-meta" data-role="source-meta">&nbsp;</small>
+    </div>
+
+    <button type="button" class="nz-tr-swap" data-action="swap" title="{% translate 'Swap branches' %}" aria-label="{% translate 'Swap branches' %}">
+      <i class="fas fa-right-left" aria-hidden="true"></i>
+    </button>
+
+    <div class="nz-tr-branch" data-role="destination-card">
+      <label for="nz-tr-destination"><i class="fas fa-download" aria-hidden="true"></i> {% translate "Receiving branch" %}</label>
+      <select id="nz-tr-destination" class="nz-tr-select">
+        <option value="">{% translate "Choose a branch" %}</option>
+        {% for b in branches %}<option value="{{ b.id }}" data-units="{{ b.units }}">{{ b.name }}</option>{% endfor %}
+      </select>
+      <small class="nz-tr-branch-meta" data-role="destination-meta">&nbsp;</small>
+    </div>
+  </section>
+  <p class="nz-tr-route-error" data-role="route-error" hidden></p>
+
+  <div class="nz-tr-workspace">
+    {# --- Step 2: find products --- #}
+    <section class="nz-card nz-tr-catalog">
+      <div class="nz-tr-search">
+        <i class="fas fa-magnifying-glass" aria-hidden="true"></i>
+        <input type="search" id="nz-tr-search" autocomplete="off" placeholder="{% translate 'Search by name, barcode or SKU -- or scan a barcode' %}" disabled>
+        <span class="nz-tr-scan-hint" title="{% translate 'Scanner ready' %}"><i class="fas fa-barcode" aria-hidden="true"></i></span>
+        <span class="nz-tr-spinner" data-role="spinner" hidden></span>
+      </div>
+      <div class="nz-tr-results-head">
+        <span data-role="results-title">{% translate "Products at the sending branch" %}</span>
+        <span class="nz-tr-results-count" data-role="results-count"></span>
+      </div>
+      <div class="nz-tr-results" data-role="results">
+        <div class="nz-tr-placeholder">
+          <i class="fas fa-route" aria-hidden="true"></i>
+          <p>{% translate "Choose the sending and receiving branch first." %}</p>
+        </div>
+      </div>
+      <nav class="nz-tr-pager" data-role="pager" hidden></nav>
+    </section>
+
+    {# --- Step 3: the transfer list --- #}
+    <aside class="nz-card nz-tr-basket" aria-label="{% translate 'Transfer list' %}">
+      <header class="nz-tr-basket-head">
+        <h3><i class="fas fa-dolly" aria-hidden="true"></i> {% translate "Transfer list" %}</h3>
+        <button type="button" class="nz-tr-link-btn" data-action="clear" hidden>{% translate "Clear" %}</button>
+      </header>
+      <div class="nz-tr-route-pill" data-role="route-pill" hidden></div>
+      <ul class="nz-tr-lines" data-role="lines"></ul>
+      <div class="nz-tr-basket-empty" data-role="basket-empty">
+        <i class="fas fa-boxes-stacked" aria-hidden="true"></i>
+        <p>{% translate "Add products from the list on the left." %}</p>
+      </div>
+      <div class="nz-tr-summary">
+        <div><span>{% translate "Products" %}</span><b data-role="sum-lines">0</b></div>
+        <div><span>{% translate "Total units" %}</span><b data-role="sum-units">0</b></div>
+      </div>
+      <label class="nz-tr-note-label" for="nz-tr-note">{% translate "Note (optional)" %}</label>
+      <textarea id="nz-tr-note" class="nz-tr-note" rows="2" maxlength="500" placeholder="{% translate 'e.g. restock for the weekend' %}"></textarea>
+      <div class="nz-tr-feedback" data-role="feedback" hidden></div>
+      <button type="button" class="nz-tr-submit" data-action="review" disabled>
+        <i class="fas fa-truck-fast" aria-hidden="true"></i> <span>{% translate "Transfer" %}</span>
+      </button>
+    </aside>
+  </div>
+  {% endif %}
+
+  {# --- History --- #}
+  <section class="nz-card nz-tr-history">
+    <header class="nz-tr-history-head">
+      <h3><i class="fas fa-clock-rotate-left" aria-hidden="true"></i> {% translate "Transfer history" %} <span class="nz-tr-count">{{ stats.all }}</span></h3>
+      <form method="get" class="nz-tr-history-filter">
+        <select name="branch" class="nz-tr-select nz-tr-select-sm" onchange="this.form.submit()" aria-label="{% translate 'Filter by branch' %}">
+          <option value="">{% translate "All branches" %}</option>
+          {% for b in branches %}<option value="{{ b.id }}"{% if b.id == branch_filter %} selected{% endif %}>{{ b.name }}</option>{% endfor %}
+        </select>
+      </form>
+    </header>
+    {% if history.object_list %}
+      <div class="table-responsive">
+        <table class="nz-tr-table">
+          <thead>
+            <tr>
+              <th>{% translate "Number" %}</th>
+              <th>{% translate "Date" %}</th>
+              <th>{% translate "Route" %}</th>
+              <th class="num">{% translate "Products" %}</th>
+              <th class="num">{% translate "Units" %}</th>
+              <th>{% translate "Sent by" %}</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for t in history.object_list %}
+            <tr>
+              <td><a class="nz-tr-number" href="{% url 'admin:nz_stock_transfer_detail' t.id %}">{{ t.number }}</a></td>
+              <td class="nz-tr-muted">{{ t.completed_at|date:"d.m.Y H:i" }}</td>
+              <td><span class="nz-tr-route-cell"><b>{{ t.source_name }}</b><i class="fas fa-arrow-right" aria-hidden="true"></i><b>{{ t.destination_name }}</b></span>{% if t.note %}<small class="nz-tr-note-cell">{{ t.note }}</small>{% endif %}</td>
+              <td class="num">{{ t.line_count }}</td>
+              <td class="num"><span class="nz-tr-units">{{ t.total_units }}</span></td>
+              <td class="nz-tr-muted">{{ t.actor_name|default:"—" }}</td>
+              <td class="num"><a class="nz-tr-open" href="{% url 'admin:nz_stock_transfer_detail' t.id %}" aria-label="{% translate 'Open document' %}"><i class="fas fa-chevron-right" aria-hidden="true"></i></a></td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      {% if history.paginator.num_pages > 1 %}
+      <nav class="nz-tr-pager nz-tr-pager-static">
+        {% if history.has_previous %}<a href="?page={{ history.previous_page_number }}{% if branch_filter %}&branch={{ branch_filter }}{% endif %}"><i class="fas fa-chevron-left" aria-hidden="true"></i></a>{% endif %}
+        <span>{% translate "Page" %} {{ history.number }} / {{ history.paginator.num_pages }}</span>
+        {% if history.has_next %}<a href="?page={{ history.next_page_number }}{% if branch_filter %}&branch={{ branch_filter }}{% endif %}"><i class="fas fa-chevron-right" aria-hidden="true"></i></a>{% endif %}
+      </nav>
+      {% endif %}
+    {% else %}
+      <div class="nz-tr-placeholder nz-tr-placeholder-sm">
+        <i class="fas fa-inbox" aria-hidden="true"></i>
+        <p>{% translate "No transfers yet." %}</p>
+      </div>
+    {% endif %}
+  </section>
+
+  {# --- Confirm dialog --- #}
+  <div class="nz-tr-modal" data-role="modal" hidden>
+    <div class="nz-tr-modal-card" role="dialog" aria-modal="true" aria-labelledby="nz-tr-modal-title">
+      <h3 id="nz-tr-modal-title">{% translate "Confirm transfer" %}</h3>
+      <div class="nz-tr-modal-route" data-role="modal-route"></div>
+      <ul class="nz-tr-modal-lines" data-role="modal-lines"></ul>
+      <div class="nz-tr-modal-total" data-role="modal-total"></div>
+      <div class="nz-tr-modal-actions">
+        <button type="button" class="nz-tr-btn-ghost" data-action="cancel">{% translate "Cancel" %}</button>
+        <button type="button" class="nz-tr-submit nz-tr-submit-inline" data-action="confirm"><i class="fas fa-check" aria-hidden="true"></i> <span>{% translate "Confirm and transfer" %}</span></button>
+      </div>
+    </div>
+  </div>
+
+  {# --- Success dialog --- #}
+  <div class="nz-tr-modal" data-role="success" hidden>
+    <div class="nz-tr-modal-card nz-tr-success" role="dialog" aria-modal="true">
+      <div class="nz-tr-success-icon"><i class="fas fa-check" aria-hidden="true"></i></div>
+      <h3>{% translate "Transfer completed" %}</h3>
+      <p data-role="success-text"></p>
+      <div class="nz-tr-modal-actions">
+        <a class="nz-tr-btn-ghost" data-role="success-link" href="#">{% translate "Open document" %}</a>
+        <button type="button" class="nz-tr-submit nz-tr-submit-inline" data-action="new"><i class="fas fa-plus" aria-hidden="true"></i> <span>{% translate "New transfer" %}</span></button>
+      </div>
+    </div>
+  </div>
+</div>
+
+{{ i18n|json_script:"nz-tr-i18n" }}
+<script src="{% static 'admin/js/nutrizone-transfers.js' %}?v=2026.09.26.2"></script>
+{% endblock %}

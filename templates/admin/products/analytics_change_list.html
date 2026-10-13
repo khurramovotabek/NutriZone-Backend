@@ -1,0 +1,59 @@
+{% extends "admin/change_list.html" %}
+{% load i18n static %}
+{% block extrastyle %}{{ block.super }}<link rel="stylesheet" href="{% static 'admin/css/nutrizone-catalog.css' %}?v=1">{% if opts.model_name == "product" %}<link rel="stylesheet" href="{% static 'admin/css/nutrizone-price-quick.css' %}?v=2">{% endif %}{% endblock %}
+{% block extrajs %}{{ block.super }}{% if opts.model_name == "product" %}
+<script id="nzq-config" type="application/json">{"product": "{% url 'admin:nz_price_list_product' '__' %}", "save": "{% url 'admin:nz_price_list_save' '__' %}", "history": "{% url 'admin:nz_price_list_history' '__' %}", "edit": "{% url 'admin:products_product_change' '00000000-0000-0000-0000-000000000000' %}"}</script>
+<script src="{% static 'admin/js/nutrizone-price-quick.js' %}?v=2"></script>{% endif %}{% endblock %}
+{% block date_hierarchy %}
+{{ nzg_css|default:'' }}
+{% if nzc %}
+<section class="nzc-head" aria-label="{% translate 'Tahlil' %}">
+  <div class="nzc-kpis">
+    {% for k in nzc.kpis %}
+    <div class="nzc-kpi" style="--t:{{ k.tone }}">
+      <i class="fas {{ k.icon }}"></i>
+      <span>{{ k.label }}</span>
+      <strong>{{ k.value }}</strong>
+      <small>{% if k.change %}<em class="nzc-trend {% if k.change.up %}up{% else %}down{% endif %}">{% if k.change.up %}▲{% else %}▼{% endif %} {{ k.change.text }}</em> {% endif %}{{ k.sub }}</small>
+    </div>
+    {% endfor %}
+  </div>
+  {% if nzc.ranking or nzc.donut %}
+  <div class="nzc-panels">
+    {% if nzc.ranking %}
+    <div class="nzc-panel">
+      <h4><i class="fas fa-ranking-star"></i> {{ nzc.ranking_title }} <small>{% translate "so'nggi 30 kun" %}</small></h4>
+      {% if nzc.ranking.rows %}
+      <ol class="nzc-rank">
+        {% for r in nzc.ranking.rows %}
+        <li style="--c:{{ r.color }}">
+          <span class="n">{{ forloop.counter }}</span>
+          <span class="name" title="{{ r.label }}">{{ r.label }}</span>
+          <span class="track"><span style="width:{{ r.pct }}%"></span></span>
+          <b>{{ r.revenue }}</b>
+          <small>{{ r.units }} dona{% if r.change is not None %} · <em class="nzc-trend {% if r.change >= 0 %}up{% else %}down{% endif %}">{% if r.change >= 0 %}+{% endif %}{{ r.change }}%</em>{% endif %}</small>
+        </li>
+        {% endfor %}
+      </ol>
+      {% else %}<p class="nzc-empty"><i class="fas fa-chart-simple"></i> {% translate "So'nggi 30 kunda savdo bo'lmagan" %}</p>{% endif %}
+    </div>
+    {% endif %}
+    {% if nzc.donut %}
+    <div class="nzc-panel">
+      <h4><i class="fas fa-chart-pie"></i> {{ nzc.donut_title }}</h4>
+      {% if nzc.donut.legend %}
+      <div class="nzc-donut-wrap">
+        <div class="nzc-donut" style="background:{{ nzc.donut.gradient }}"><span><b>{{ nzc.donut.total }}</b><small>{{ nzc.donut_unit }}</small></span></div>
+        <ul class="nzc-legend">
+          {% for l in nzc.donut.legend %}<li><i style="background:{{ l.color }}"></i><span title="{{ l.label }}">{{ l.label }}</span><b>{{ l.value }}</b><small>{{ l.pct }}%</small></li>{% endfor %}
+        </ul>
+      </div>
+      {% else %}<p class="nzc-empty"><i class="fas fa-chart-pie"></i> {% translate "Ma'lumot yo'q" %}</p>{% endif %}
+    </div>
+    {% endif %}
+  </div>
+  {% endif %}
+</section>
+{% endif %}
+{{ block.super }}
+{% endblock %}

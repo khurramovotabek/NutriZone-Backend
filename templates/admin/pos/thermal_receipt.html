@@ -1,0 +1,93 @@
+{% load i18n nz_money %}<!doctype html>
+<html lang="uz"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{{ rc.number }}</title>
+{# The paper slip for a thermal printer (80 / 58 mm). Black on white only: thermal heads print nothing else. #}
+<style>
+  @page { size: {{ width }}mm auto; margin: 0; }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: #e5e7eb; font: {% if width == 58 %}10.5px{% else %}12px{% endif %}/1.38 "DejaVu Sans Mono", "Courier New", ui-monospace, monospace; color: #000; }
+  .slip { width: {{ width }}mm; margin: 12px auto; padding: 4mm {% if width == 58 %}2.5mm{% else %}3.5mm{% endif %} 7mm; background: #fff; }
+  .c { text-align: center; } .r { text-align: right; white-space: nowrap; } .b { font-weight: 700; }
+  h1 { margin: 0; font-size: {% if width == 58 %}16px{% else %}20px{% endif %}; letter-spacing: .22em; font-weight: 900; }
+  .store { font-weight: 700; margin-top: 2px; }
+  .muted { font-size: .9em; }
+  .title { margin: 2px 0; font-weight: 900; letter-spacing: .12em; }
+  .stamp { margin: 4px 0; padding: 2px 0; border: 2px solid #000; font-weight: 900; letter-spacing: .1em; }
+  hr { border: 0; border-top: 1px dashed #000; margin: 6px 0; }
+  hr.d { border-top: 3px double #000; }
+  table { width: 100%; border-collapse: collapse; }
+  td { vertical-align: top; padding: 1px 0; }
+  td:first-child { padding-right: 6px; }
+  .item td { padding-top: 4px; }
+  .sku { font-size: .85em; }
+  .total td { font-size: 1.32em; font-weight: 900; padding: 3px 0; }
+  .qr { display: flex; justify-content: center; margin: 8px 0 3px; } .qr img, .qr canvas { width: {% if width == 58 %}28mm{% else %}32mm{% endif %} !important; height: {% if width == 58 %}28mm{% else %}32mm{% endif %} !important; }
+  .url { word-break: break-all; font-size: .8em; }
+  .tools { width: {{ width }}mm; margin: 12px auto 0; display: flex; gap: 6px; justify-content: center; }
+  .tools button, .tools a { font: 600 12px system-ui, sans-serif; padding: 6px 10px; border: 1px solid #94a3b8; border-radius: 8px; background: #fff; color: #111; text-decoration: none; cursor: pointer; }
+  @media print { body { background: #fff; } .slip { margin: 0; } .tools { display: none; } }
+</style></head>
+<body>
+<div class="tools"><button onclick="window.print()">🖨 {% translate "Print receipt" %}</button><a href="?w={% if width == 80 %}58{% else %}80{% endif %}">{% if width == 80 %}58{% else %}80{% endif %} mm</a></div>
+<div class="slip">
+  <div class="c">
+    <h1>{{ brand|upper }}</h1>
+    {% if store %}<div class="store">{{ rc.kassa|default:store.name }}</div>
+    <div class="muted">{% if store.address %}{{ store.address }}{% if store.city %}, {{ store.city }}{% endif %}<br>{% endif %}{% if phone %}{% translate "Tel" %}: {{ phone }}{% endif %}</div>{% endif %}
+  </div>
+  <hr class="d">
+  <div class="c title">{% translate "SAVDO CHEKI" %}</div>
+  {% if rc.status == "refunded" %}<div class="c stamp">*** {% translate "QAYTARILGAN" %} ***</div>{% endif %}
+  <table>
+    <tr><td>{% translate "Chek №" %}</td><td class="r b">{{ rc.number }}</td></tr>
+    <tr><td>{% translate "Sana / vaqt" %}</td><td class="r">{{ issued }}</td></tr>
+    <tr><td>{% translate "Kassa" %}</td><td class="r">{{ rc.kassa|default:"—" }}</td></tr>
+    {% if rc.shift %}<tr><td>{% translate "Smena" %}</td><td class="r">№{{ rc.shift }}</td></tr>{% endif %}
+    <tr><td>{% translate "Kassir" %}</td><td class="r b">{{ rc.cashier|default:"—" }}</td></tr>
+  </table>
+  <hr>
+  <table>
+    {% for i in rc.items %}
+    <tr class="item"><td colspan="2" class="b">{{ forloop.counter }}. {{ i.name }}{% if i.variant_label %} ({{ i.variant_label }}){% endif %}</td></tr>
+    {% if i.sku %}<tr><td colspan="2" class="sku">{% translate "Art." %} {{ i.sku }}</td></tr>{% endif %}
+    <tr><td>{{ i.quantity }} {% translate "dona" %} × {{ i.unit_price|som }}</td><td class="r b">{{ i.line_total|som }}</td></tr>
+    {% if i.refunded_quantity %}<tr><td colspan="2" class="muted">↩ {{ i.refunded_quantity }} {% translate "dona qaytarildi" %}</td></tr>{% endif %}
+    {% endfor %}
+  </table>
+  <hr>
+  <table>
+    <tr><td>{% translate "Pozitsiyalar / dona" %}</td><td class="r">{{ lines }} / {{ rc.item_count }}</td></tr>
+    <tr><td>{% translate "Mahsulotlar summasi" %}</td><td class="r">{{ rc.subtotal|som }}</td></tr>
+    {% if has_discount %}<tr><td>{% translate "Chegirma" %}</td><td class="r">−{{ rc.discount|som }}</td></tr>{% endif %}
+    {% if has_coins %}<tr><td>{% translate "Coin bilan to'landi" %}</td><td class="r">−{{ rc.coins|som }}</td></tr>{% endif %}
+  </table>
+  <hr class="d">
+  <table><tr class="total"><td>{% translate "JAMI" %}</td><td class="r">{{ rc.total|som }} so'm</td></tr></table>
+  <hr class="d">
+  <table>
+    {% for p in rc.payments %}<tr><td>{% translate "To'lov" %}: {% if p.method == "cash" %}{% translate "Naqd" %}{% elif p.method == "uzcard" %}Uzcard{% elif p.method == "humo" %}Humo{% elif p.method == "card" %}{% translate "Karta" %}{% else %}{{ p.method|title }}{% endif %}</td><td class="r">{{ p.amount|som }}</td></tr>{% endfor %}
+    {% if rc.amount_tendered and has_change %}<tr><td>{% translate "Olingan" %}</td><td class="r">{{ rc.amount_tendered|som }}</td></tr><tr><td class="b">{% translate "Qaytim" %}</td><td class="r b">{{ rc.change|som }}</td></tr>{% endif %}
+  </table>
+  {% if rc.customer %}<hr>
+  <table>
+    <tr><td>{% translate "Mijoz" %}</td><td class="r">{{ rc.customer.name|default:"" }}</td></tr>
+    {% if rc.customer.phone %}<tr><td>{% translate "Telefon" %}</td><td class="r">{{ rc.customer.phone }}</td></tr>{% endif %}
+    {% if rc.tier %}<tr><td>{% translate "Daraja" %}</td><td class="r">{{ rc.tier }}</td></tr>{% endif %}
+    {% if rc.coins_earned %}<tr><td class="b">{% translate "Cashback (coin)" %}</td><td class="r b">+{{ rc.coins_earned }}</td></tr>{% endif %}
+  </table>{% endif %}
+  {% if rc.refunds %}<hr><div class="b">{% translate "Qaytarishlar" %}</div>
+  <table>{% for x in rc.refunds %}<tr><td>{{ x.number }} · {{ x.items }} {% translate "dona" %}</td><td class="r">−{{ x.value|som }}</td></tr>{% endfor %}</table>{% endif %}
+  {% if e_receipt %}<hr><div class="c b">{% translate "Elektron chek" %}</div><div class="qr" id="qr" data-url="{{ e_receipt }}"></div><div class="c url">{{ e_receipt }}</div>{% endif %}
+  <hr>
+  <div class="c b">{% translate "Xaridingiz uchun rahmat!" %}</div>
+  <div class="c muted">{% translate "Chekni saqlab qo'ying: qaytarish va almashtirish shu chek bo'yicha." %}</div>
+</div>
+{% if e_receipt %}<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>{% endif %}
+<script>
+(function () {
+  var box = document.getElementById("qr");
+  try { if (box && window.QRCode) new QRCode(box, { text: box.getAttribute("data-url"), width: 180, height: 180, correctLevel: QRCode.CorrectLevel.M }); } catch (e) { /* the link below stays */ }
+  {% if autoprint %}window.addEventListener("load", function () { setTimeout(function () { window.print(); }, 250); });{% endif %}
+})();
+</script>
+</body></html>

@@ -1,0 +1,26 @@
+{% extends "admin/base_site.html" %}
+{% load i18n static %}
+{# New goods receipt (Kirim): the scanning / costing workspace is rendered by nutrizone-wms-receipt.js from `config`. #}
+{% block extrastyle %}{{ block.super }}<link rel="stylesheet" href="{% static 'admin/css/nutrizone-wms.css' %}?v=3"><link rel="stylesheet" href="{% static 'admin/css/nutrizone-platform.css' %}?v=5"><link rel="stylesheet" href="{% static 'admin/css/nutrizone-wmsx.css' %}?v=9"><link rel="stylesheet" href="{% static 'admin/css/nutrizone-wms-flow.css' %}?v=5">{% endblock %}
+{% block breadcrumbs %}<ol class="breadcrumb"><li class="breadcrumb-item"><a href="{% url 'admin:index' %}">{% translate "Home" %}</a></li><li class="breadcrumb-item"><a href="{% url 'admin:stores_stockreceipt_changelist' %}">{% translate "Kirim (qabul)" %}</a></li><li class="breadcrumb-item active">{% translate "Yangi kirim" %}</li></ol>{% endblock %}
+{% block content_title %}{% endblock %}
+{% block content %}
+<div class="nzp wx nzf nzf-receipt">
+  <header class="nzp-hero">
+    <div class="nzp-hero-main">
+      <a class="nzp-back" href="{% url 'admin:stores_stockreceipt_changelist' %}" aria-label="{% translate 'Orqaga' %}"><i class="fas fa-arrow-left" aria-hidden="true"></i></a>
+      <span class="nzp-hero-icon" style="--c:#10b981"><i class="fas fa-dolly" aria-hidden="true"></i></span>
+      <div><h2>{% translate "Yangi kirim" %}</h2><p>{% translate "Yetkazib beruvchidan kelgan tovarni qabul qiling: skaner, qidiruv yoki Excel. Tannarx kiritilsa, ombor qiymati va marja avtomatik hisoblanadi." %}</p></div>
+    </div>
+    <div class="nzp-hero-actions">
+      <a class="nzp-btn nzp-btn-ghost" href="{% url 'admin:stores_supplier_changelist' %}"><i class="fas fa-truck-field" aria-hidden="true"></i> {% translate "Yetkazib beruvchilar" %}</a>
+    </div>
+  </header>
+  <div id="wms-receipt"><div class="nzp-card nzf-empty"><i class="fas fa-circle-notch fa-spin" aria-hidden="true"></i><p>{% translate "Yuklanmoqda…" %}</p></div></div>
+</div>
+<div class="wms-modal" id="wms-modal" hidden><div class="wms-dialog" role="dialog" aria-modal="true"></div></div>
+<div class="wms-toasts" id="wms-toasts" aria-live="polite"></div>
+{% csrf_token %}
+{{ config|json_script:"wms-config" }}
+<script src="{% static 'admin/js/nutrizone-wms-receipt.js' %}?v=7"></script>
+{% endblock %}

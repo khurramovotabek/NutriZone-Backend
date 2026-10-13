@@ -1,0 +1,6 @@
+{# One labelled Site Settings input: optional leading icon, inline errors. #}
+<div class="nz-st-field{% if field.errors %} has-error{% endif %}">
+  <label for="{{ field.id_for_label }}">{{ label }}</label>
+  {% if icon %}<div class="nz-st-input-icon"><i class="fas {{ icon }}" aria-hidden="true"></i>{{ field }}</div>{% else %}{{ field }}{% endif %}
+  {% for e in field.errors %}<p class="nz-st-error">{{ e }}</p>{% endfor %}
+</div>

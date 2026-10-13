@@ -1,0 +1,79 @@
+{% extends "admin/base_site.html" %}
+{% load i18n static %}
+
+{% block extrastyle %}
+{{ block.super }}
+<link rel="stylesheet" href="{% static 'admin/css/nutrizone-transfers.css' %}?v=2026.09.26.1">
+{% endblock %}
+
+{% block breadcrumbs %}
+<div class="breadcrumbs">
+  <a href="{% url 'admin:index' %}">{% translate "Home" %}</a>
+  &rsaquo; <a href="{% url 'admin:nz_stock_transfers' %}">{% translate "Stock transfers" %}</a>
+  &rsaquo; {{ transfer.number }}
+</div>
+{% endblock %}
+
+{% block content %}
+<div class="nz-dashboard nz-tr">
+  <div class="nz-trd-head">
+    <div>
+      <h2 class="nz-dashboard-title">{% translate "Transfer" %} <span class="nz-trd-number">{{ transfer.number }}</span></h2>
+      <span class="nz-trd-status"><i class="fas fa-circle-check" aria-hidden="true"></i> {% translate "Completed" %}</span>
+    </div>
+    <div class="nz-trd-actions">
+      <a class="nz-tr-btn-ghost" href="{% url 'admin:nz_stock_transfers' %}"><i class="fas fa-arrow-left" aria-hidden="true"></i>&nbsp; {% translate "All transfers" %}</a>
+      <button type="button" class="nz-tr-submit nz-tr-submit-inline" onclick="window.print()"><i class="fas fa-print" aria-hidden="true"></i> {% translate "Print" %}</button>
+    </div>
+  </div>
+
+  <div class="nz-card nz-tr-modal-route" style="margin-bottom:16px;">
+    <div><small>{% translate "Sending branch" %}</small><b>{{ source_name }}</b></div>
+    <i class="fas fa-arrow-right" aria-hidden="true"></i>
+    <div><small>{% translate "Receiving branch" %}</small><b>{{ destination_name }}</b></div>
+  </div>
+
+  <div class="nz-trd-meta">
+    <div class="nz-card"><span>{% translate "Date" %}</span><b>{{ transfer.completed_at|date:"d.m.Y H:i" }}</b></div>
+    <div class="nz-card"><span>{% translate "Products" %}</span><b>{{ rows|length }}</b></div>
+    <div class="nz-card"><span>{% translate "Total units" %}</span><b>{{ transfer.total_units }}</b></div>
+    <div class="nz-card"><span>{% translate "Sent by" %}</span><b>{{ transfer.actor_name|default:"—" }}</b></div>
+  </div>
+
+  {% if transfer.note %}
+  <div class="nz-card" style="padding:14px 16px;margin-bottom:16px;"><span class="nz-tr-muted">{% translate "Note" %}:</span> {{ transfer.note }}</div>
+  {% endif %}
+
+  <div class="nz-card nz-trd-lines">
+    <div class="table-responsive">
+      <table class="nz-tr-table">
+        <thead>
+          <tr>
+            <th>{% translate "Product" %}</th>
+            <th>{% translate "Barcode / SKU" %}</th>
+            <th class="num">{% translate "Quantity" %}</th>
+            <th class="num">{{ source_name }}</th>
+            <th class="num">{{ destination_name }}</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for r in rows %}
+          <tr>
+            <td>
+              <div class="nz-trd-product">
+                {% if r.image_url %}<img src="{{ r.image_url }}" alt="">{% else %}<span class="nz-tr-noimg"><i class="fas fa-image" aria-hidden="true"></i></span>{% endif %}
+                <div><b>{{ r.name|default:"—" }}</b>{% if r.brand or r.size %}<small>{% if r.brand %}{{ r.brand }}{% endif %}{% if r.brand and r.size %} · {% endif %}{% if r.size %}{{ r.size }}{% endif %}</small>{% endif %}</div>
+              </div>
+            </td>
+            <td class="nz-tr-muted">{{ r.barcode|default:r.sku|default:"—" }}</td>
+            <td class="num"><span class="nz-tr-units">{{ r.quantity }}</span></td>
+            <td class="num"><span class="nz-trd-change">{{ r.source_before }} → <b>{{ r.source_after }}</b></span></td>
+            <td class="num"><span class="nz-trd-change">{{ r.destination_before }} → <b>{{ r.destination_after }}</b></span></td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+{% endblock %}

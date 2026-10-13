@@ -1,0 +1,46 @@
+{% extends "admin/base_site.html" %}
+{% load i18n %}
+
+{% block breadcrumbs %}
+<div class="breadcrumbs">
+  <a href="{% url 'admin:index' %}">{% translate "Home" %}</a>
+  &rsaquo; <a href="{% url 'admin:nz_pos_terminal' %}">{% translate "POS Terminal" %}</a>
+  &rsaquo; {{ title }}
+</div>
+{% endblock %}
+
+{% block content %}
+<div class="nz-dashboard" data-nz-receipt>
+  <div class="nz-card" style="max-width: 480px;">
+    <h2 class="nz-dashboard-title">{{ brand_name }}</h2>
+    <p class="nz-dashboard-subtitle">{% translate "Receipt" %}</p>
+    <hr>
+    <p><strong>{% translate "Sale" %}:</strong> {{ sale.id }}</p>
+    <p><strong>{% translate "Status" %}:</strong> {{ sale.status }}</p>
+    <p><strong>{% translate "Date" %}:</strong> {{ sale.created_at|date:"Y-m-d H:i" }}</p>
+    <hr>
+    <div class="table-responsive">
+    <table class="nz-table">
+      <thead>
+        <tr>
+          <th>{% translate "Product" %}</th>
+          <th>{% translate "Qty" %}</th>
+          <th>{% translate "Unit Price" %}</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for line in lines %}
+        <tr>
+          <td>{{ line.product_id }}</td>
+          <td>{{ line.quantity }}</td>
+          <td>{{ line.unit_price_amount }} {{ line.unit_price_currency }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    </div>
+    <hr>
+    <p class="nz-stat-number">{% translate "Total" %}: {{ total|floatformat:0 }} {{ currency }}</p>
+  </div>
+</div>
+{% endblock %}

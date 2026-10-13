@@ -1,0 +1,59 @@
+{% extends "admin/change_list.html" %}
+{% load i18n static admin_list %}
+{# Transactions (PaymentTransactionAdmin): KPIs, status tabs, provider filter, search; rows prepared in get_changelist_instance. #}
+{% block extrastyle %}{{ block.super }}{% include "admin/payment/_head.html" %}{% endblock %}
+{% block content_title %}{% endblock %}
+{% block content %}
+<div class="nzp nzd wx">
+  <header class="nzp-hero">
+    <div class="nzp-hero-main">
+      <span class="nzp-hero-icon" style="--c:#10b981"><i class="fas fa-money-bill-transfer" aria-hidden="true"></i></span>
+      <div><h2>{% translate "Tranzaksiyalar" %}</h2><p>{% translate "Payme, Click va Uzum orqali har bir to'lov urinishi — holati, summasi va provayder bilan to'liq yozishmasi." %}</p></div>
+    </div>
+    <div class="nzp-hero-actions"><a class="nzp-btn nzp-btn-ghost" href="{% url 'admin:payment_paymentproviderconfig_changelist' %}"><i class="fas fa-building-columns" aria-hidden="true"></i> {% translate "To'lov tizimlari" %}</a></div>
+  </header>
+
+  {% include "admin/payment/_recon_banner.html" %}
+  <div class="nzp-stats">
+    <div class="nzp-stat" style="--c:#10b981"><i class="fas fa-sack-dollar" aria-hidden="true"></i><div><b>{{ kpi.today }}<small> {% translate "so'm" %}</small></b><span>{% blocktranslate with n=kpi.today_count %}Bugun · {{ n }} ta to'lov{% endblocktranslate %}</span></div></div>
+    <div class="nzp-stat" style="--c:#2563eb"><i class="fas fa-calendar-week" aria-hidden="true"></i><div><b>{{ kpi.week }}<small> {% translate "so'm" %}</small></b><span>{% blocktranslate with a=kpi.avg %}7 kun · o'rtacha chek {{ a }}{% endblocktranslate %}</span></div></div>
+    <div class="nzp-stat" style="--c:#8b5cf6"><i class="fas fa-bullseye" aria-hidden="true"></i><div><b>{% if kpi.success is not None %}{{ kpi.success }}%{% else %}—{% endif %}</b><span>{% blocktranslate with p=kpi.pending %}Konversiya (7 kun) · {{ p }} kutilmoqda{% endblocktranslate %}</span></div></div>
+    <a class="nzp-stat" href="?status=refunded" style="--c:#e11d48"><i class="fas fa-rotate-left" aria-hidden="true"></i><div><b>{{ kpi.refunded }}<small> {% translate "so'm" %}</small></b><span>{% translate "Qaytarilgan" %}</span></div></a>
+  </div>
+
+  <div class="nzp-toolbar">{% with section="txns" %}{% include "admin/payment/_nav.html" %}{% endwith %}</div>
+  <div class="nzp-toolbar">
+    <nav class="nzp-tabs" aria-label="{% translate 'Holat' %}">
+      {% for key, label, color, icon, n in tabs %}<a class="nzp-tab{% if current == key %} on{% endif %}" href="?{% if key %}status={{ key }}{% endif %}{% if provider %}&provider__exact={{ provider }}{% endif %}" style="--t:{{ color }}"><i class="fas {{ icon }}" aria-hidden="true"></i> {{ label }} <b>{{ n }}</b></a>{% endfor %}
+    </nav>
+    <form class="pay-filters" method="get">
+      {% if current %}<input type="hidden" name="status" value="{{ current }}">{% endif %}
+      <select class="nzp-select" name="provider__exact" onchange="this.form.submit()" aria-label="{% translate 'Provayder' %}"><option value="">{% translate "Barcha provayderlar" %}</option>{% for k, v in providers %}<option value="{{ k }}"{% if provider == k %} selected{% endif %}>{{ v }}</option>{% endfor %}</select>
+      <label class="nzp-search"><i class="fas fa-magnifying-glass" aria-hidden="true"></i><input type="search" name="q" value="{{ q }}" placeholder="{% translate 'Buyurtma yoki tranzaksiya ID…' %}" aria-label="{% translate 'Qidirish' %}"></label>
+    </form>
+  </div>
+
+  <section class="nzp-card nzp-inbox">
+    {% if cl.result_list %}
+    <div class="nzd-table pay-txn-table" role="table">
+      <div class="nzd-tr nzd-th" role="row"><span>{% translate "Buyurtma" %}</span><span>{% translate "Mijoz" %}</span><span>{% translate "Usul" %}</span><span class="r">{% translate "Summa" %}</span><span>{% translate "Holat" %}</span><span>{% translate "Vaqt" %}</span></div>
+      {% for p in cl.result_list %}
+      <a class="nzd-tr" role="row" href="{% url 'admin:payment_paymentmodel_change' p.pk %}" style="--i:{{ forloop.counter0 }}">
+        <span><b class="nz-num">{{ p.order_number|default:"—" }}</b>{% if p.is_test %}<small><span class="pay-tag" style="--t:#f59e0b"><i class="fas fa-flask" aria-hidden="true"></i> {% translate "test" %}</span></small>{% endif %}</span>
+        <span>{% if p.nz.user %}<b>{{ p.nz.user.full_name|default:_("Mijoz") }}</b><small>{{ p.nz.user.phone_number }}</small>{% else %}<small>—</small>{% endif %}</span>
+        <span class="pay-method"><img src="{{ p.nz.logo }}" alt=""><span><b>{{ p.nz.method }}</b>{% if p.nz.via %}<small>{{ p.nz.via }} {% translate "orqali" %}</small>{% endif %}</span></span>
+        <span class="r"><span class="pay-amount">{{ p.nz.amount }}</span></span>
+        <span><span class="nzd-pill" style="--t:{{ p.nz.style.color }}"><i class="fas {{ p.nz.style.icon }}" aria-hidden="true"></i> {{ p.nz.style.label }}</span></span>
+        <span><b>{{ p.nz.when }}</b>{% if p.nz.paid %}<small>{% translate "to'landi" %} {{ p.nz.paid }}</small>{% endif %}</span>
+      </a>
+      {% endfor %}
+    </div>
+    {% else %}
+    <div class="nzp-empty"><span class="nzp-empty-icon" style="--c:#10b981"><i class="fas fa-money-bill-transfer" aria-hidden="true"></i></span><h3>{% translate "Hozircha tranzaksiyalar yo'q" %}</h3>
+      <p>{% translate "To'lov tizimini ulang — mijoz onlayn to'laganda har bir urinish shu yerda paydo bo'ladi." %}</p>
+      <a class="nzp-btn nzp-btn-primary" href="{% url 'admin:payment_paymentproviderconfig_changelist' %}"><i class="fas fa-plug" aria-hidden="true"></i> {% translate "To'lov tizimlarini sozlash" %}</a></div>
+    {% endif %}
+  </section>
+  {% if cl.result_count > cl.list_per_page %}<div class="nzp-pagination">{% pagination cl %}</div>{% endif %}
+</div>
+{% endblock %}

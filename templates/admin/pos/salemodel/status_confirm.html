@@ -1,0 +1,54 @@
+{% extends "admin/base_site.html" %}
+{% load i18n admin_urls %}
+
+{% block breadcrumbs %}
+<ol class="breadcrumb">
+  <li class="breadcrumb-item"><a href="{% url 'admin:index' %}">{% translate "Home" %}</a></li>
+  <li class="breadcrumb-item"><a href="{% url opts|admin_urlname:'changelist' %}">{{ opts.verbose_name_plural|capfirst }}</a></li>
+  <li class="breadcrumb-item"><a href="{{ change_url }}">{{ order_number }}</a></li>
+  <li class="breadcrumb-item active">{{ title }}</li>
+</ol>
+{% endblock %}
+
+{% block content_title %}{{ title }}{% endblock %}
+
+{% block content %}
+<div class="nz-sale-confirm">
+  <div class="card">
+    <div class="card-body">
+      <div class="nz-sale-confirm-head">
+        <div>
+          <div class="nz-sale-confirm-order">{{ order_number }}</div>
+          <div class="nz-sale-confirm-customer">{{ customer_name }} &middot; {{ customer_phone }}</div>
+        </div>
+        {{ status_badge }}
+      </div>
+
+      <table class="table table-sm nz-sale-confirm-lines">
+        <thead><tr><th>{% translate "Mahsulot" %}</th><th class="text-right">{% translate "Soni" %}</th><th class="text-right">{% translate "Summa" %}</th></tr></thead>
+        <tbody>
+          {% for line in lines %}
+          <tr><td>{{ line.name }}</td><td class="text-right">{{ line.quantity }}</td><td class="text-right">{{ line.total }}</td></tr>
+          {% endfor %}
+        </tbody>
+        <tfoot>
+          <tr><td colspan="2">{% translate "Xarid summasi" %}</td><td class="text-right">{{ products_total }}</td></tr>
+          {% if delivery_fee %}<tr><td colspan="2">{% translate "Yetkazib berish" %}</td><td class="text-right">{{ delivery_fee }}</td></tr>{% endif %}
+          <tr class="nz-sale-confirm-total"><td colspan="2">{% translate "Jami" %}</td><td class="text-right">{{ grand_total }}</td></tr>
+        </tfoot>
+      </table>
+
+      <div class="alert alert-warning nz-sale-confirm-alert">
+        <i class="fas fa-triangle-exclamation"></i>
+        <ul>{% for line in consequences %}<li>{{ line }}</li>{% endfor %}</ul>
+      </div>
+
+      <form method="post" class="nz-sale-confirm-actions">
+        {% csrf_token %}
+        <a href="{{ change_url }}" class="btn btn-outline-secondary">{% translate "Bekor qilish" %}</a>
+        <button type="submit" class="btn btn-danger" id="nz-sale-confirm-submit">{{ confirm_label }}</button>
+      </form>
+    </div>
+  </div>
+</div>
+{% endblock %}

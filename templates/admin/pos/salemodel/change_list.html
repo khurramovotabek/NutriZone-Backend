@@ -1,0 +1,66 @@
+{% extends "admin/change_list.html" %}
+{% load i18n static admin_list nz_money %}
+{# Sales (Savdolar): totals of the current filter, quick date chips, status tabs, branch / seller / payment selects, premium rows (SaleAdmin.get_changelist_instance). #}
+{% block extrastyle %}{{ block.super }}<link rel="stylesheet" href="{% static 'admin/css/nutrizone-platform.css' %}?v=5"><link rel="stylesheet" href="{% static 'admin/css/nutrizone-orderdesk.css' %}?v=5"><link rel="stylesheet" href="{% static 'admin/css/nutrizone-wmsx.css' %}?v=12"><link rel="stylesheet" href="{% static 'admin/css/nutrizone-pos-terminal.css' %}?v=7">{% endblock %}
+{% block content_title %}{% endblock %}
+{% block date_hierarchy %}{% endblock %}
+{% block content %}
+<div class="nzp nzd wx">
+  <header class="nzp-hero">
+    <div class="nzp-hero-main">
+      <span class="nzp-hero-icon" style="--c:#10b981"><i class="fas fa-receipt" aria-hidden="true"></i></span>
+      <div><h2>{% translate "Savdolar boshqaruvi" %}</h2><p>{% translate "Every till sale of every branch -- receipt, seller, products and exactly how it was paid. The totals follow the filters." %}</p></div>
+    </div>
+    <div class="nzp-hero-actions">
+      <a class="nzp-btn nzp-btn-ghost" href="{% url 'admin:pos_salemodel_reports' %}"><i class="fas fa-chart-pie" aria-hidden="true"></i> {% translate "Hisobotlar" %}</a>
+      <a class="nzp-btn nzp-btn-ghost" href="{% url 'admin:pos_salemodel_export' %}?{% if export_query %}{{ export_query }}&amp;{% endif %}format=xlsx"><i class="fas fa-file-excel" aria-hidden="true"></i> Excel</a>
+      <a class="nzp-btn nzp-btn-ghost" href="{% url 'admin:pos_salemodel_export' %}?{% if export_query %}{{ export_query }}&amp;{% endif %}format=csv"><i class="fas fa-file-csv" aria-hidden="true"></i> CSV</a>
+      <a class="nzp-btn nzp-btn-primary" href="{% url 'admin:nz_pos_terminal' %}"><i class="fas fa-cash-register" aria-hidden="true"></i> {% translate "POS terminal" %}</a>
+    </div>
+  </header>
+
+  {% if sales_summary %}
+  <div class="nzp-stats wx-stats-6 px-sales-kpis">
+    <div class="nzp-stat" style="--c:#10b981"><i class="fas fa-chart-line" aria-hidden="true"></i><div><b>{{ sales_summary.revenue|som }}<small> so'm</small></b><span>{% blocktranslate with n=sales_summary.count a=sales_summary.average|som %}Revenue · {{ n }} sales · average {{ a }}{% endblocktranslate %}</span></div></div>
+    <div class="nzp-stat" style="--c:#059669"><i class="fas fa-money-bill-wave" aria-hidden="true"></i><div><b>{{ sales_summary.by_method.cash|som }}</b><span>{% translate "Naqd" %}</span></div></div>
+    <div class="nzp-stat" style="--c:#2563eb"><i class="fas fa-credit-card" aria-hidden="true"></i><div><b>{{ sales_summary.cards|som }}</b><span>Uzcard {{ sales_summary.by_method.uzcard|som }} · Humo {{ sales_summary.by_method.humo|som }}</span></div></div>
+    <div class="nzp-stat" style="--c:#d4a017"><i class="fas fa-coins" aria-hidden="true"></i><div><b>{{ sales_summary.coins|som }}</b><span>{% translate "Paid with coins" %}</span></div></div>
+    <div class="nzp-stat" style="--c:#c026d3"><i class="fas fa-percent" aria-hidden="true"></i><div><b>{{ sales_summary.discount|som }}</b><span>{% translate "Chegirmalar" %}</span></div></div>
+    <div class="nzp-stat" style="--c:#e11d48"><i class="fas fa-rotate-left" aria-hidden="true"></i><div><b>{{ sales_summary.refunds_total|som }}</b><span>{% blocktranslate with n=sales_summary.refunds_count %}Returned · {{ n }} sales{% endblocktranslate %}</span></div></div>
+  </div>
+  {% endif %}
+
+  {% if nz_dates %}<nav class="wx-type-chips" aria-label="{% translate 'Period' %}">{% for d in nz_dates %}<a href="{{ d.query_string }}" class="{% if d.selected %}on{% endif %}" style="--t:#10b981"><i></i>{{ d.display }}</a>{% endfor %}</nav>{% endif %}
+
+  <form class="nzp-toolbar px-sales-toolbar" method="get">
+    {% for k, v in request.GET.items %}{% if k != "q" and k != "p" %}<input type="hidden" name="{{ k }}" value="{{ v }}">{% endif %}{% endfor %}
+    {% if nz_tabs %}<nav class="nzp-tabs" aria-label="{% translate 'Status' %}">{% for t in nz_tabs %}<a class="nzp-tab{% if t.selected %} on{% endif %}" href="{{ t.query_string }}" style="--t:#10b981">{{ t.display }}</a>{% endfor %}</nav>{% endif %}
+    <div class="wx-date-filter">
+      {% for s in nz_selects %}<select class="nzp-select" onchange="if(this.value)location.href=this.value" aria-label="{{ s.title }}">{% for c in s.choices %}<option value="{{ c.query_string }}"{% if c.selected %} selected{% endif %}>{% if forloop.first %}{{ s.title }}: {% endif %}{{ c.display }}</option>{% endfor %}</select>{% endfor %}
+      <label class="nzp-search"><i class="fas fa-magnifying-glass" aria-hidden="true"></i><input type="search" name="q" value="{{ nz_q }}" placeholder="{% translate 'Receipt (NZ-000124), customer or phone…' %}" aria-label="{% translate 'Receipt (NZ-000124), customer or phone…' %}"></label>
+    </div>
+  </form>
+
+  <section class="nzp-card nzp-inbox">
+    {% if cl.result_list %}
+    <div class="nzd-table px-sales-table" role="table">
+      <div class="nzd-tr nzd-th" role="row"><span>{% translate "Chek" %}</span><span>{% translate "Filial" %} / {% translate "Sotuvchi" %}</span><span>{% translate "Mijoz" %}</span><span>{% translate "Mahsulotlar" %}</span><span>{% translate "To'lov" %}</span><span class="r">{% translate "Jami" %}</span><span>{% translate "Holat" %}</span></div>
+      {% for s in cl.result_list %}
+      <a class="nzd-tr" role="row" href="{% url 'admin:pos_salemodel_change' s.pk %}" style="--i:{{ forloop.counter0 }}">
+        <span><b class="nz-num">{{ s.nz.number }}</b><small>{{ s.nz.date }} · {{ s.nz.time }}</small></span>
+        <span class="wx-loc-cell"><i class="wms-dot" style="background:{{ s.nz.color }}"></i><span><b>{{ s.nz.branch }}</b><small>{{ s.nz.seller }}</small></span></span>
+        <span>{% if s.nz.customer %}<b>{{ s.nz.customer.full_name|default:s.nz.customer.phone_number }}</b><small>{{ s.nz.customer.phone_number }}</small>{% else %}<small class="wx-muted">{% translate "Guest" %}</small>{% endif %}</span>
+        <span>{% if s.nz.products %}{% for name, qty in s.nz.products %}<small class="px-prodline">{{ name|truncatechars:34 }} <b>×{{ qty }}</b></small>{% endfor %}{% if s.nz.more %}<small class="wx-muted">+{{ s.nz.more }}</small>{% endif %}{% else %}<small class="wx-muted">—</small>{% endif %}</span>
+        <span class="wx-tags">{% for p in s.nz.pays %}<span class="nzd-tag" style="--t:{{ p.tone }}">{{ p.label }} {{ p.amount }}</span>{% endfor %}{% if s.nz.coins %}<span class="nzd-tag" style="--t:#d4a017">🪙 {{ s.nz.coins }}</span>{% endif %}{% if s.nz.discount %}<span class="nzd-tag" style="--t:#c026d3">−{{ s.nz.discount }}</span>{% endif %}</span>
+        <span class="r"><b class="{% if s.nz.struck %}px-struck{% endif %}">{{ s.nz.total }}</b>{% if s.nz.returned %}<small class="wx-minus">−{{ s.nz.returned }}</small>{% endif %}</span>
+        <span><span class="nzd-pill" style="--t:{{ s.nz.tone }}">{{ s.nz.label }}</span></span>
+      </a>
+      {% endfor %}
+    </div>
+    {% else %}
+    <div class="nzp-empty"><span class="nzp-empty-icon" style="--c:#10b981"><i class="fas fa-receipt" aria-hidden="true"></i></span><h3>{% translate "No sales here" %}</h3><p>{% translate "Try another period or filter." %}</p></div>
+    {% endif %}
+  </section>
+  {% if cl.result_count > cl.list_per_page %}<div class="nzp-pagination">{% pagination cl %}</div>{% endif %}
+</div>
+{% endblock %}

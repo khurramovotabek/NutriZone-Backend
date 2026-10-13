@@ -1,0 +1,172 @@
+# ============================================================================
+# HTTPS-enabled Nginx configuration template -- Phase 15B.
+#
+# This file is NOT active by default. The working nginx.conf (HTTP-only)
+# remains untouched and continues to serve the application, since no real
+# production domain exists yet to obtain a real TLS certificate against
+# (confirmed via reconnaissance: ALLOWED_HOSTS/CORS_ALLOWED_ORIGINS/
+# CSRF_TRUSTED_ORIGINS all reference only localhost/127.0.0.1, and
+# nginx.conf's own server_name is the catch-all `_`).
+#
+# ACTIVATION PROCEDURE (once a real production domain is known):
+#
+#   1. Set the real domain in place of ${DOMAIN} below (e.g. via envsubst
+#      at deploy time, or a one-time find/replace).
+#
+#   2. Obtain a certificate. The standard, well-supported path with this
+#      Docker Compose topology is Certbot's webroot method:
+#
+#        docker compose -f docker/compose/docker-compose.prod.yml run --rm \
+#          -v certbot_www:/var/www/certbot \
+#          -v certbot_conf:/etc/letsencrypt \
+#          certbot/certbot certonly --webroot \
+#          -w /var/www/certbot -d ${DOMAIN} \
+#          --email <real-admin-email> --agree-tos --no-eff-email
+#
+#      This requires port 80 to already be reachable at ${DOMAIN} (DNS must
+#      point at the server) -- the HTTP server block below serves the ACME
+#      challenge path for exactly this purpose before any cert exists.
+#
+#   3. Mount the resulting certificate/key (from the certbot_conf volume,
+#      under /etc/letsencrypt/live/${DOMAIN}/) into the nginx container
+#      read-only, matching the paths referenced below.
+#
+#   4. Replace docker/nginx/nginx.conf with this file (or point the nginx
+#      service's volume mount at this file instead) and restart nginx.
+#
+#   5. Set up renewal (Certbot certificates expire after 90 days):
+#
+#        0 3 * * * docker compose -f docker/compose/docker-compose.prod.yml \
+#          run --rm certbot renew --webroot -w /var/www/certbot && \
+#          docker compose -f docker/compose/docker-compose.prod.yml \
+#          exec nginx nginx -s reload
+#
+#   6. Only then set SECURE_HSTS_PRELOAD / enable HSTS submission -- HSTS
+#      preload is effectively irreversible for the domain and must not be
+#      turned on before HTTPS is confirmed fully working end-to-end.
+#
+# TLS settings below use TLS 1.2+ only, modern ciphers, and OCSP stapling --
+# no configuration was copied blindly; every directive here has a specific,
+# documented purpose.
+# ============================================================================
+
+worker_processes auto;
+
+events {
+    worker_connections 1024;
+}
+
+http {
+    include       mime.types;
+    default_type  application/octet-stream;
+    sendfile      on;
+    gzip          on;
+    gzip_types    text/plain application/json application/javascript text/css;
+
+    client_max_body_size 200M;  # matches DATA_UPLOAD_MAX_MEMORY_SIZE (video uploads, REST API Blueprint §11)
+
+    upstream django_app {
+        server web:8000;
+    }
+
+    # --- HTTP: ACME challenge + redirect everything else to HTTPS ---
+    server {
+        listen 80;
+        server_name ${DOMAIN};
+
+        # Required for Certbot's webroot validation, and for renewal --
+        # this path must stay reachable over plain HTTP even after HTTPS
+        # is otherwise enforced everywhere else.
+        location /.well-known/acme-challenge/ {
+            root /var/www/certbot;
+        }
+
+        # The existing, already-verified liveness check stays reachable
+        # over HTTP too -- some orchestrators/load balancers probe over
+        # plain HTTP even for HTTPS-fronted services.
+        location /health/live {
+            proxy_pass http://django_app;
+            proxy_set_header Host $host;
+            access_log off;
+        }
+
+        location / {
+            return 301 https://$host$request_uri;
+        }
+    }
+
+    # --- HTTPS: the real, TLS-terminated application ---
+    server {
+        listen 443 ssl;
+        http2 on;
+        server_name ${DOMAIN};
+
+        ssl_certificate     /etc/letsencrypt/live/${DOMAIN}/fullchain.pem;
+        ssl_certificate_key /etc/letsencrypt/live/${DOMAIN}/privkey.pem;
+
+        # TLS 1.2+ only -- TLS 1.0/1.1 are deprecated and disabled.
+        ssl_protocols TLSv1.2 TLSv1.3;
+        ssl_prefer_server_ciphers off;  # TLS 1.3 negotiates its own order; for 1.2 the OS/OpenSSL default list is already modern on current distributions.
+        ssl_session_cache shared:SSL:10m;
+        ssl_session_timeout 1d;
+        ssl_session_tickets off;
+
+        # OCSP stapling -- lets clients verify revocation without a
+        # separate round-trip to the CA.
+        ssl_stapling on;
+        ssl_stapling_verify on;
+
+        # Security headers -- reinforces (does not replace) Django's own
+        # SecurityMiddleware settings in production.py. HSTS is set here
+        # too since it's a response header the browser must see over a
+        # connection it already trusts as HTTPS; Django's own
+        # SECURE_HSTS_SECONDS also emits this, so double-check for
+        # duplicate headers if both are active simultaneously.
+        add_header X-Content-Type-Options "nosniff" always;
+        add_header X-Frame-Options "DENY" always;
+        add_header Referrer-Policy "same-origin" always;
+
+        location /.well-known/acme-challenge/ {
+            root /var/www/certbot;
+        }
+
+        location /static/ {
+            alias /app/static/;
+        }
+
+        location /media/ {
+            alias /app/media/;
+        }
+
+        # WebSocket traffic -> the same ASGI app server as every HTTP request
+        # (config.asgi serves both); only the Upgrade headers differ.
+        # Configuration-verified only -- NOT VERIFIED live, since no real
+        # HTTPS deployment exists yet to test wss:// against.
+        location /ws/ {
+            proxy_pass http://django_app;
+            proxy_http_version 1.1;
+            proxy_set_header Upgrade $http_upgrade;
+            proxy_set_header Connection "upgrade";
+            proxy_set_header Host $host;
+            proxy_set_header X-Real-IP $remote_addr;
+            proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+            proxy_set_header X-Forwarded-Proto $scheme;
+            proxy_read_timeout 3600s;
+        }
+
+        # Everything else (HTTP) -> the ASGI app server.
+        location / {
+            proxy_pass http://django_app;
+            proxy_set_header Host $host;
+            proxy_set_header X-Real-IP $remote_addr;
+            proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+            proxy_set_header X-Forwarded-Proto $scheme;
+        }
+
+        location /health/live {
+            proxy_pass http://django_app;
+            proxy_set_header Host $host;
+            access_log off;
+        }
+    }
+}

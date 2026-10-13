@@ -1,0 +1,2 @@
+{# "Excel'ga yuklash" for a list built with ExcelExportMixin (apps/platform/infrastructure/excel_export.py). `cls` picks the look. #}
+{% if nz_excel_url %}<a class="{{ cls|default:'btn btn-success nz-excel-btn' }}" href="{{ nz_excel_url }}" title="Sahifadagi filtr va qidiruv bo'yicha butun ro'yxat"><i class="fas fa-file-excel" aria-hidden="true"></i> Excel'ga yuklash</a>{% endif %}

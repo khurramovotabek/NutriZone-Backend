@@ -1,0 +1,187 @@
+{% load i18n admin_urls %}
+{# Shared workspace for one return (desk.kind == "return") or cancellation ("cancel"): steps, the one next action as a form, items priced from the order, order + customer, notes. POSTs to <model>_act. #}
+{% with d=desk obj=desk.obj %}
+{% url opts|admin_urlname:'act' obj.pk as act_url %}
+<div class="nzp nzd" data-nzd-workflow>
+  <header class="nzp-hero">
+    <div class="nzp-hero-main">
+      <a class="nzp-back" href="{% url opts|admin_urlname:'changelist' %}{% if preserved_filters %}?{{ preserved_filters }}{% endif %}" title="{% translate 'Back' %}" aria-label="{% translate 'Back' %}"><i class="fas fa-arrow-left" aria-hidden="true"></i></a>
+      <div>
+        <h2 class="nzd-number">
+          {% if d.kind == "return" %}{% translate "Return" %}{% else %}{% translate "Cancellation" %}{% endif %} <span class="nz-num">{{ d.number }}</span>
+          <span class="nzd-pill" style="--t:{{ d.style.color }}"><i class="fas {{ d.style.icon }}" aria-hidden="true"></i> {{ d.style.label }}</span>
+        </h2>
+        <p>
+          <span><i class="fas fa-tag" aria-hidden="true"></i> {{ d.reason_label }}</span>
+          {% if obj.requested_at %}<span><i class="fas fa-calendar" aria-hidden="true"></i> {{ obj.requested_at|date:"d.m.Y H:i" }} · {% blocktranslate with timesince=obj.requested_at|timesince %}{{ timesince }} ago{% endblocktranslate %}</span>{% endif %}
+        </p>
+      </div>
+    </div>
+    <div class="nzp-hero-actions">
+      {% if d.order %}<a class="nzp-btn nzp-btn-ghost" href="{% url 'admin:ordering_ordermodel_change' d.order.pk %}"><i class="fas fa-receipt" aria-hidden="true"></i> {% translate "Order" %} {{ d.order.order_number }}</a>{% endif %}
+    </div>
+  </header>
+
+  <section class="nzp-card nzd-flow">
+    <ol class="nzd-steps">
+      {% for s in d.steps %}
+      <li class="is-{{ s.state }}" style="--t:{{ s.color }}">
+        <span class="nzd-step-dot"><i class="fas {% if s.state == 'done' %}fa-check{% else %}{{ s.icon }}{% endif %}" aria-hidden="true"></i></span>
+        <span class="nzd-step-label">{{ s.label }}</span>
+        <small>{% if s.at %}{{ s.at|date:"d.m H:i" }}{% else %}&nbsp;{% endif %}</small>
+      </li>
+      {% endfor %}
+    </ol>
+
+    {% if has_change_permission %}
+    <div class="nzd-next nzd-next-col">
+      {% if obj.status == "requested" %}
+        <div class="nzd-next-row">
+          {% if d.kind == "return" %}
+            <form method="post" action="{{ act_url }}">{% csrf_token %}<input type="hidden" name="action" value="approve"><button class="nzp-btn nzp-btn-primary nzd-next-btn"><i class="fas fa-circle-check" aria-hidden="true"></i> {% translate "Approve return" %}</button></form>
+            <span class="nzd-next-hint">{% translate "Approve, then wait for the goods to come back." %}</span>
+          {% else %}
+            <button type="button" class="nzp-btn nzp-btn-primary nzd-next-btn" data-nzd-open="complete-dialog"><i class="fas fa-flag-checkered" aria-hidden="true"></i> {% translate "Approve and complete" %}</button>
+            <form method="post" action="{{ act_url }}">{% csrf_token %}<input type="hidden" name="action" value="approve"><button class="nzp-btn nzp-btn-ghost"><i class="fas fa-circle-check" aria-hidden="true"></i> {% translate "Only approve" %}</button></form>
+          {% endif %}
+          <button type="button" class="nzp-btn nzp-btn-danger-ghost" data-nzd-open="reject-dialog"><i class="fas fa-ban" aria-hidden="true"></i> {% translate "Reject" %}</button>
+        </div>
+
+      {% elif d.kind == "return" and obj.status == "approved" %}
+        <form method="post" action="{{ act_url }}" class="nzd-action-form">{% csrf_token %}
+          <input type="hidden" name="action" value="receive">
+          <div class="nzd-action-head"><strong><i class="fas fa-box" aria-hidden="true"></i> {% translate "Goods received?" %}</strong><small>{% translate "Check the items, then confirm. The order is updated and, if every item came back, its coins are reversed." %}</small></div>
+          <label class="nzd-check"><input type="checkbox" name="restock" value="1"{% if d.restock_default %} checked{% endif %}><span><b>{% translate "Put back on the shelf" %}</b><small>{% translate "The units go back to the location they were shipped from. Untick for damaged / defective goods." %}</small></span></label>
+          <input type="text" name="note" class="nzd-input" placeholder="{% translate 'What was found on receipt (optional)' %}">
+          <button class="nzp-btn nzp-btn-primary nzd-next-btn"><i class="fas fa-box" aria-hidden="true"></i> {% translate "Confirm receipt" %}</button>
+        </form>
+
+      {% elif d.kind == "return" and obj.status == "received" %}
+        <form method="post" action="{{ act_url }}" class="nzd-action-form">{% csrf_token %}
+          <input type="hidden" name="action" value="refund">
+          <div class="nzd-action-head"><strong><i class="fas fa-money-bill-wave" aria-hidden="true"></i> {% translate "Refund the customer" %}</strong><small>{% blocktranslate with paid=d.paid left=d.refundable %}The customer paid {{ paid }} so'm for this order; up to {{ left }} so'm can still be refunded.{% endblocktranslate %}</small></div>
+          <div class="nzd-amount">
+            <input type="text" inputmode="decimal" name="amount" value="{{ d.suggested }}" class="nzd-input nz-num" aria-label="{% translate 'Refund amount' %}" data-nzd-money>
+            <span>{% translate "so'm" %}</span>
+            <button type="button" class="nzp-btn nzp-btn-ghost nzp-btn-sm" data-nzd-fill="{{ d.suggested }}">{% translate "Value of returned items" %}</button>
+          </div>
+          <input type="text" name="note" class="nzd-input" placeholder="{% translate 'How it was paid back: cash, card… (optional)' %}">
+          <button class="nzp-btn nzp-btn-primary nzd-next-btn"><i class="fas fa-check" aria-hidden="true"></i> {% translate "Record refund" %}</button>
+        </form>
+
+      {% elif d.kind == "cancel" and obj.status == "approved" %}
+        <div class="nzd-next-row">
+          <button type="button" class="nzp-btn nzp-btn-primary nzd-next-btn" data-nzd-open="complete-dialog"><i class="fas fa-flag-checkered" aria-hidden="true"></i> {% translate "Complete cancellation" %}</button>
+          <span class="nzd-next-hint">{% translate "Cancels the items on the order and releases (or returns) their stock." %}</span>
+        </div>
+
+      {% else %}
+        <div class="nzd-terminal" style="--t:{{ d.style.color }}">
+          <span class="nzd-terminal-icon"><i class="fas {{ d.style.icon }}" aria-hidden="true"></i></span>
+          <div>
+            <strong>
+              {% if obj.status == "refunded" %}{% blocktranslate with amount=d.refunded %}Refunded {{ amount }} so'm{% endblocktranslate %}
+              {% elif obj.status == "completed" %}{% translate "Cancellation completed" %}
+              {% elif obj.status == "rejected" %}{% translate "Rejected" %}
+              {% else %}{{ d.style.label }}{% endif %}
+            </strong>
+            <small>{{ obj.updated_at|date:"d.m.Y H:i" }}</small>
+            {% if obj.status == "rejected" and obj.rejection_reason %}<p class="nzd-terminal-reason"><i class="fas fa-quote-left" aria-hidden="true"></i> {{ obj.rejection_reason }}</p>{% endif %}
+          </div>
+        </div>
+      {% endif %}
+    </div>
+    {% endif %}
+  </section>
+
+  <div class="nzd-grid">
+    <div class="nzd-main">
+      <section class="nzp-card nzd-items">
+        <header class="nzp-card-head"><span class="nzp-card-icon" style="--c:#6366f1"><i class="fas fa-boxes-stacked" aria-hidden="true"></i></span><div><h3>{% if d.kind == "return" %}{% translate "Items coming back" %}{% else %}{% translate "Items being cancelled" %}{% endif %}</h3><p>{% translate "Prices are what the customer paid (after discounts and coins)." %}</p></div></header>
+        <ul class="nzd-lines">
+          {% for i in d.items %}
+          <li class="nzd-line">
+            <span class="nzd-thumb">{% if i.image %}<img src="{{ i.image }}" alt="" loading="lazy">{% else %}<i class="fas fa-box" aria-hidden="true"></i>{% endif %}</span>
+            <div class="nzd-line-main"><strong>{{ i.name }}</strong><small>{% if i.size %}{{ i.size }} · {% endif %}{% if i.sku %}SKU {{ i.sku }}{% endif %}</small></div>
+            <div class="nzd-line-qty"><b>× {{ i.quantity }}</b><small>{% if i.ordered %}{% blocktranslate with n=i.ordered %}of {{ n }} ordered{% endblocktranslate %}{% endif %}</small></div>
+            <div class="nzd-line-total">{{ i.total }} <small>{% translate "so'm" %}</small></div>
+          </li>
+          {% endfor %}
+        </ul>
+        <dl class="nzd-totals"><div class="nzd-total-row"><dt>{% translate "Value" %}</dt><dd>{{ d.value }} {% translate "so'm" %}</dd></div></dl>
+      </section>
+
+      <section class="nzp-card">
+        <header class="nzp-card-head nzp-card-head-sm"><span class="nzp-card-icon" style="--c:#f59e0b"><i class="fas fa-note-sticky" aria-hidden="true"></i></span><div><h3>{% translate "Notes" %}</h3><p>{% translate "Staff only: decisions, what was found, how money was paid back." %}</p></div></header>
+        {% if obj.note %}<div class="nzd-quote"><p>{{ obj.note|linebreaksbr }}</p></div>{% else %}<p class="nzp-muted">{% translate "No notes yet." %}</p>{% endif %}
+        {% if has_change_permission %}
+        <form method="post" action="{{ act_url }}" class="nzd-note-form nzd-inline">{% csrf_token %}
+          <input type="hidden" name="action" value="note">
+          <input type="text" name="note" class="nzd-input" placeholder="{% translate 'Add a note…' %}" required>
+          <button class="nzp-btn nzp-btn-ghost nzp-btn-sm"><i class="fas fa-plus" aria-hidden="true"></i> {% translate "Add" %}</button>
+        </form>
+        {% endif %}
+      </section>
+    </div>
+
+    <aside class="nzd-side">
+      {% if d.order %}
+      <section class="nzp-card">
+        <header class="nzp-card-head nzp-card-head-sm"><span class="nzp-card-icon" style="--c:#0ea5e9"><i class="fas fa-receipt" aria-hidden="true"></i></span><div><h3>{% translate "Order" %}</h3></div></header>
+        <ul class="nzp-facts">
+          <li><span>{% translate "Number" %}</span><b><a href="{% url 'admin:ordering_ordermodel_change' d.order.pk %}" class="nz-num">{{ d.order.order_number }}</a></b></li>
+          <li><span>{% translate "Status" %}</span><b><span class="nzd-pill" style="--t:{{ d.order_style.color }}"><i class="fas {{ d.order_style.icon }}" aria-hidden="true"></i> {{ d.order_style.label }}</span></b></li>
+          {% if d.order.placed_at %}<li><span>{% translate "Placed" %}</span><b>{{ d.order.placed_at|date:"d.m.Y H:i" }}</b></li>{% endif %}
+          {% if d.kind == "return" %}<li><span>{% translate "Paid" %}</span><b>{{ d.paid }} {% translate "so'm" %}</b></li>{% endif %}
+        </ul>
+      </section>
+      {% endif %}
+      {% if d.customer %}{% with c=d.customer %}
+      <section class="nzp-card">
+        <div class="nzd-person">
+          <span class="nzp-avatar nzp-avatar-lg" data-seed="{{ c.phone }}">{{ c.initials }}</span>
+          <div><strong>{{ c.name }}</strong>{% if c.phone %}<a href="tel:{{ c.phone }}">{{ c.phone }}</a>{% endif %}</div>
+        </div>
+        <div class="nzd-contact">
+          {% if c.phone %}<a class="nzp-btn nzp-btn-ghost nzp-btn-sm" href="tel:{{ c.phone }}"><i class="fas fa-phone" aria-hidden="true"></i> {% translate "Call" %}</a>{% endif %}
+          {% if c.telegram %}<a class="nzp-btn nzp-btn-ghost nzp-btn-sm" href="https://t.me/{{ c.telegram }}" target="_blank" rel="noopener"><i class="fab fa-telegram" aria-hidden="true"></i> Telegram</a>{% endif %}
+        </div>
+        {% if c.user_id %}<div class="nzd-mini-stats"><div><b>{{ c.orders }}</b><small>{% translate "orders" %}</small></div><div><b>{{ c.delivered }}</b><small>{% translate "delivered" %}</small></div><div><b>{{ c.spent }}</b><small>{% translate "so'm spent" %}</small></div></div>{% endif %}
+      </section>
+      {% endwith %}{% endif %}
+    </aside>
+  </div>
+
+  {% if has_change_permission and obj.status == "requested" %}
+  <dialog class="nzd-dialog" id="reject-dialog" aria-labelledby="reject-title">
+    <form method="post" action="{{ act_url }}">{% csrf_token %}
+      <input type="hidden" name="action" value="reject">
+      <header><span class="nzd-dialog-icon"><i class="fas fa-ban" aria-hidden="true"></i></span><div><h3 id="reject-title">{% if d.kind == "return" %}{% translate "Reject the return?" %}{% else %}{% translate "Reject the cancellation?" %}{% endif %}</h3><p>{% translate "The order stays as it is. Write the reason -- the customer will ask." %}</p></div></header>
+      <label class="nzd-field-label" for="reject-note">{% translate "Reason" %}</label>
+      <textarea id="reject-note" name="note" rows="3" required></textarea>
+      <footer>
+        <button type="button" class="nzp-btn nzp-btn-ghost" data-nzd-close>{% translate "Back" %}</button>
+        <button type="submit" class="nzp-btn nzd-btn-danger"><i class="fas fa-ban" aria-hidden="true"></i> {% translate "Reject" %}</button>
+      </footer>
+    </form>
+  </dialog>
+  {% endif %}
+
+  {% if has_change_permission and d.kind == "cancel" and obj.status in "requested approved" %}
+  <dialog class="nzd-dialog" id="complete-dialog" aria-labelledby="complete-title">
+    <form method="post" action="{{ act_url }}">{% csrf_token %}
+      <input type="hidden" name="action" value="{% if obj.status == 'requested' %}approve_complete{% else %}complete{% endif %}">
+      <header><span class="nzd-dialog-icon is-ok"><i class="fas fa-flag-checkered" aria-hidden="true"></i></span><div><h3 id="complete-title">{% translate "Complete the cancellation?" %}</h3><p>{% translate "These items are cancelled on the order; if nothing is left, the order is cancelled, reserved stock is released (or returned to the shelf if it had shipped) and coins paid with go back to the customer." %}</p></div></header>
+      <label class="nzd-field-label" for="complete-refund">{% translate "Money paid back (optional)" %}</label>
+      <div class="nzd-amount"><input id="complete-refund" type="text" inputmode="decimal" name="refund" class="nzd-input nz-num" placeholder="0" data-nzd-money><span>{% translate "so'm" %}</span></div>
+      <p class="nzp-help">{% translate "Leave empty for cash-on-delivery orders that were not paid yet." %}</p>
+      <input type="text" name="note" class="nzd-input" placeholder="{% translate 'Comment (optional)' %}">
+      <footer>
+        <button type="button" class="nzp-btn nzp-btn-ghost" data-nzd-close>{% translate "Back" %}</button>
+        <button type="submit" class="nzp-btn nzp-btn-primary"><i class="fas fa-flag-checkered" aria-hidden="true"></i> {% translate "Complete" %}</button>
+      </footer>
+    </form>
+  </dialog>
+  {% endif %}
+</div>
+{% endwith %}

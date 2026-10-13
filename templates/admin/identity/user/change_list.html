@@ -1,0 +1,16 @@
+{% extends "admin/change_list.html" %}
+{% load i18n %}
+{% block content_title %}{% translate "Foydalanuvchilar" %}{% endblock %}
+{% block date_hierarchy %}
+{% if people_kpis %}
+<div class="col-12 ppl-kpis">
+  <a class="ppl-kpi" style="--t:#2563eb" href="?"><i class="fas fa-users"></i><span>{% translate "Jami" %}</span><strong>{{ people_kpis.total }}</strong></a>
+  <a class="ppl-kpi" style="--t:#16a34a" href="?status__exact=active"><i class="fas fa-circle-check"></i><span>{% translate "Faol" %}</span><strong>{{ people_kpis.active }}</strong></a>
+  <a class="ppl-kpi" style="--t:#d97706" href="?status__exact=pending_verification"><i class="fas fa-hourglass-half"></i><span>{% translate "Tasdiqlanmagan" %}</span><strong>{{ people_kpis.pending }}</strong></a>
+  <a class="ppl-kpi" style="--t:#dc2626" href="?status__exact=blocked"><i class="fas fa-ban"></i><span>{% translate "Bloklangan" %}</span><strong>{{ people_kpis.blocked }}</strong></a>
+  <div class="ppl-kpi" style="--t:#9333ea"><i class="fas fa-user-plus"></i><span>{% translate "Shu hafta yangi" %}</span><strong>{{ people_kpis.new_week }}</strong></div>
+  <a class="ppl-kpi" style="--t:#0891b2" href="?telegram=1"><i class="fab fa-telegram"></i><span>{% translate "Telegram ulangan" %}</span><strong>{{ people_kpis.telegram }}</strong></a>
+</div>
+{% endif %}
+{{ block.super }}
+{% endblock %}

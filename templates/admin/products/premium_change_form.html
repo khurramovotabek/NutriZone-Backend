@@ -1,0 +1,45 @@
+{% extends "admin/change_form.html" %}
+{% load i18n static %}
+{% comment %}
+Premium add/change page for the catalog models (apps/products/infrastructure/catalog_form_ui.py): hero card, sticky
+section bar, translation tabs, image drop zone, switches. Everything below the hero is the stock admin form --
+the page JS only re-arranges and enhances it, so the form still works with JS off.
+{% endcomment %}
+{% block extrastyle %}{{ block.super }}<link rel="stylesheet" href="{% static 'admin/css/nutrizone-catalog.css' %}?v=1"><link rel="stylesheet" href="{% static 'admin/css/nutrizone-catalog-form.css' %}?v=7">{% endblock %}
+{% block bodyclass %}{{ block.super }} nzp-page{% endblock %}
+{% block form_top %}
+{% if nzp %}
+<section class="nzp-hero" style="--t:{{ nzp.tone }}" data-nzp-hero{% if add %} data-nzp-add{% endif %}>
+  <div class="nzp-hero-top">
+    <div class="nzp-hero-media">
+      {% if nzp.image %}<img src="{{ nzp.image }}" alt="" data-nzp-hero-img>
+      {% elif nzp.swatch %}<span class="nzp-hero-swatch" style="background:{{ nzp.swatch }}" data-nzp-hero-swatch></span>
+      {% else %}<span class="nzp-hero-mark" data-nzp-hero-mark><i class="fas {{ nzp.icon }}"></i></span>{% endif %}
+    </div>
+    <div class="nzp-hero-main">
+      <div class="nzp-eyebrow"><i class="fas {{ nzp.icon }}"></i> {{ opts.verbose_name|capfirst }}{% if add %} · <span>{% translate "yangi yozuv" %}</span>{% endif %}</div>
+      <h2 data-nzp-title data-placeholder="{{ nzp.title }}">{{ nzp.title }}</h2>
+      {% if nzp.subtitle %}<p class="nzp-sub">{{ nzp.subtitle }}</p>{% endif %}
+      {% if nzp.chips %}<div class="nzp-chips">{% for c in nzp.chips %}{{ c }}{% endfor %}</div>{% endif %}
+    </div>
+    <div class="nzp-hero-actions">
+      {% for l in nzp.links %}<a class="nzp-link{% if l.primary %} is-primary{% endif %}" href="{{ l.url }}"{% if l.external %} target="_blank" rel="noopener"{% endif %}><i class="fas {{ l.icon }}"></i> {{ l.label }}</a>{% endfor %}
+      <span class="nzp-dirty" data-nzp-dirty hidden><i class="fas fa-circle"></i> {% translate "Saqlanmagan o'zgarishlar" %}</span>
+    </div>
+  </div>
+  {% if nzp.stats %}
+  <div class="nzp-stats">
+    {% for s in nzp.stats %}
+    <div class="nzp-stat" style="--t:{{ s.tone }}">
+      {% if s.icon %}<i class="fas {{ s.icon }}"></i>{% endif %}
+      <span>{{ s.label }}</span><b>{{ s.value }}</b>{% if s.sub %}<small>{{ s.sub }}</small>{% endif %}
+    </div>
+    {% endfor %}
+  </div>
+  {% endif %}
+</section>
+<nav class="nzp-sections" data-nzp-sections aria-label="{% translate 'Bo‘limlar' %}" hidden></nav>
+{% endif %}
+{{ block.super }}
+{% endblock %}
+{% block extrajs %}{{ block.super }}<script>window.NZPK_MANAGE = "{% url 'admin:products_package_changelist' %}";</script><script src="{% static 'admin/js/nutrizone-catalog-form.js' %}?v=7" defer></script>{% endblock %}

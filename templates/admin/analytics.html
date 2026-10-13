@@ -1,0 +1,365 @@
+{% extends "admin/base_site.html" %}
+{% load i18n static nza %}
+{# Dashboard → Analitika (apps/platform/infrastructure/analytics_view.py; numbers: business_analytics.build). #}
+{% block extrastyle %}{{ block.super }}<link rel="stylesheet" href="{% static 'admin/css/nutrizone-analytics.css' %}?v=5">{% endblock %}
+{% block breadcrumbs %}<ol class="breadcrumb"><li class="breadcrumb-item"><a href="{% url 'admin:index' %}">{% translate "Home" %}</a></li><li class="breadcrumb-item active">{{ title }}</li></ol>{% endblock %}
+{% block content_title %}{% endblock %}
+{% block content %}
+{% with ov=r.overview fin=r.finance o=r.orders c=r.customers inv=r.inventory %}
+<div class="nza">
+
+  {# ------------------------------------------------------------ hero #}
+  <header class="nza-hero">
+    <div class="nza-hero-main">
+      <span class="nza-hero-icon"><i class="fas fa-chart-pie" aria-hidden="true"></i></span>
+      <div class="nza-hero-text">
+        <p class="nza-eyebrow">NutriZone · Analytics</p>
+        <h2>{{ title }}</h2>
+        <p class="nza-hero-sub"><b>{{ p.title }}</b> · {% if store %}🏪 {{ store.name }} · {% endif %}{{ p.range_text }}{% if p.running %} <span class="nza-live"><span></span>jonli</span>{% endif %}</p>
+      </div>
+    </div>
+    <div class="nza-hero-actions">
+      <a class="nza-btn nza-btn-tg" href="#nza-telegram"><i class="fab fa-telegram" aria-hidden="true"></i> Telegram hisobot</a>
+      <a class="nza-btn" href="{{ export_url }}"><i class="fas fa-file-excel" aria-hidden="true"></i> Excel</a>
+      <a class="nza-btn" href="{{ links.wms_reports }}"><i class="fas fa-warehouse" aria-hidden="true"></i> Ombor hisobotlari</a>
+    </div>
+  </header>
+
+  {# ------------------------------------------------------------ period #}
+  <div class="nza-toolbar">
+    <nav class="nza-tabs" aria-label="Davr">
+      {% for t in tabs %}<a href="{{ t.url }}" class="nza-tab{% if t.on %} is-on{% endif %}"{% if t.on %} aria-current="page"{% endif %}>{{ t.label }}</a>{% endfor %}
+    </nav>
+    <form class="nza-store{% if store %} is-on{% endif %}" method="get">
+      <input type="hidden" name="p" value="{{ p.key }}">{% if p.key == 'custom' %}<input type="hidden" name="from" value="{{ custom_from }}"><input type="hidden" name="to" value="{{ custom_to }}">{% endif %}
+      <i class="fas fa-store" aria-hidden="true"></i>
+      <select name="store" aria-label="Filial" onchange="this.form.submit()">
+        <option value="">Barcha filiallar</option>
+        {% for st in stores %}<option value="{{ st.id }}"{% if store and store.id == st.id %} selected{% endif %}>{{ st.name }}</option>{% endfor %}
+      </select>
+    </form>
+    <form class="nza-custom{% if p.key == 'custom' %} is-on{% endif %}" method="get">
+      {% if store %}<input type="hidden" name="store" value="{{ store.id }}">{% endif %}
+      <input type="hidden" name="p" value="custom">
+      <input type="date" name="from" value="{{ custom_from }}" aria-label="Boshlanish sanasi" required>
+      <span aria-hidden="true">—</span>
+      <input type="date" name="to" value="{{ custom_to }}" aria-label="Tugash sanasi" required>
+      <button type="submit">Ko'rsatish</button>
+    </form>
+  </div>
+  <p class="nza-compare"><i class="fas fa-code-compare" aria-hidden="true"></i> Taqqoslash: {{ p.compare_label }}</p>
+
+  {# ------------------------------------------------------------ KPIs #}
+  {% if ov %}
+  <section class="nza-kpis" aria-label="Asosiy ko'rsatkichlar">
+    <article class="nza-kpi nza-kpi-hero" style="--t:#4f46e5">
+      <div class="nza-kpi-top"><span class="nza-kpi-icon"><i class="fas fa-sack-dollar" aria-hidden="true"></i></span><span class="nza-kpi-label">Savdo tushumi</span></div>
+      <strong title="{{ ov.revenue|som }}">{{ ov.revenue|compact }} <small>so'm</small></strong>
+      <div class="nza-kpi-foot">{{ ov.revenue_change|trend }}<span>{{ ov.revenue|som }}</span></div>
+    </article>
+    <article class="nza-kpi" style="--t:#0891b2">
+      <div class="nza-kpi-top"><span class="nza-kpi-icon"><i class="fas fa-receipt" aria-hidden="true"></i></span><span class="nza-kpi-label">Xaridlar</span></div>
+      <strong>{{ ov.purchases|num }} <small>ta</small></strong>
+      <div class="nza-kpi-foot">{{ ov.purchases_change|trend:"ta" }}<span>chek + yetkazilgan buyurtma</span></div>
+    </article>
+    <article class="nza-kpi" style="--t:#16a34a">
+      <div class="nza-kpi-top"><span class="nza-kpi-icon"><i class="fas fa-box" aria-hidden="true"></i></span><span class="nza-kpi-label">Sotilgan mahsulot</span></div>
+      <strong>{{ ov.units|num }} <small>dona</small></strong>
+      <div class="nza-kpi-foot">{{ ov.units_change|trend:"dona" }}</div>
+    </article>
+    <article class="nza-kpi" style="--t:#d97706">
+      <div class="nza-kpi-top"><span class="nza-kpi-icon"><i class="fas fa-calculator" aria-hidden="true"></i></span><span class="nza-kpi-label">O'rtacha chek</span></div>
+      <strong>{% if ov.average is not None %}{{ ov.average|compact }} <small>so'm</small>{% else %}—{% endif %}</strong>
+      <div class="nza-kpi-foot">{% if ov.average_change %}{{ ov.average_change|trend }}{% endif %}{% if ov.average is not None %}<span>{{ ov.average|som }}</span>{% endif %}</div>
+    </article>
+    <article class="nza-kpi" style="--t:#db2777">
+      <div class="nza-kpi-top"><span class="nza-kpi-icon"><i class="fas fa-chart-line" aria-hidden="true"></i></span><span class="nza-kpi-label">Yalpi foyda</span></div>
+      {% if ov.gross_profit is not None %}
+      <strong title="{{ ov.gross_profit|som }}">{{ ov.gross_profit|compact }} <small>so'm</small></strong>
+      <div class="nza-kpi-foot">{% if ov.profit_change %}{{ ov.profit_change|trend }}{% endif %}<span>marja {{ ov.margin|pct }}</span></div>
+      {% else %}
+      <strong class="nza-na">—</strong>
+      <div class="nza-kpi-foot"><span>{% if ov.cost_coverage is not None %}tannarx savdoning {{ ov.cost_coverage }}% qismida ma'lum{% else %}savdo yo'q{% endif %}</span></div>
+      {% endif %}
+    </article>
+  </section>
+  <div class="nza-split">
+    <span><i class="fas fa-store" aria-hidden="true"></i> Do'konlar <b>{{ ov.pos_revenue|som }}</b></span>
+    <span><i class="fas fa-globe" aria-hidden="true"></i> Onlayn (yetkazilgan) <b>{{ ov.online_revenue|som }}</b></span>
+    {% if ov.pipeline_orders %}<span class="is-muted"><i class="fas fa-truck-fast" aria-hidden="true"></i> Yo'lda {{ ov.pipeline_orders }} ta buyurtma · {{ ov.pipeline_value|som }} <em>(hali tushum emas)</em></span>{% endif %}
+  </div>
+  {% else %}
+  <div class="nza-card nza-error"><i class="fas fa-triangle-exclamation" aria-hidden="true"></i> Savdo ma'lumotlarini yuklab bo'lmadi — loglarni tekshiring.</div>
+  {% endif %}
+
+  {# ------------------------------------------------------------ summary + alerts #}
+  <section class="nza-grid nza-grid-2">
+    <article class="nza-card nza-summary">
+      <h3><i class="fas fa-brain" aria-hidden="true"></i> Xulosa</h3>
+      {% if r.summary %}<ul>{% for line in r.summary %}<li>{{ line }}</li>{% endfor %}</ul>{% else %}<p class="nza-empty">Xulosa uchun ma'lumot yetarli emas.</p>{% endif %}
+    </article>
+    <article class="nza-card nza-alerts">
+      <h3><i class="fas fa-bell" aria-hidden="true"></i> Diqqat talab qiladi {% if r.alerts %}<span class="nza-count">{{ r.alerts|length }}</span>{% endif %}</h3>
+      {% if r.alerts %}
+      <ul>{% for a in r.alerts %}<li class="is-{{ a.level }}"><span aria-hidden="true">{{ a.icon }}</span>{{ a.text }}</li>{% endfor %}</ul>
+      {% else %}<p class="nza-ok"><i class="fas fa-circle-check" aria-hidden="true"></i> Muhim ogohlantirish yo'q</p>{% endif %}
+    </article>
+  </section>
+
+  {# ------------------------------------------------------------ charts #}
+  <section class="nza-grid nza-grid-chart">
+    <article class="nza-card">
+      <div class="nza-card-head">
+        <h3><i class="fas fa-chart-column" aria-hidden="true"></i> Tushum dinamikasi</h3>
+        <span class="nza-legend"><i style="--c:#4f46e5"></i>Do'konlar <i style="--c:#06b6d4"></i>Onlayn <i class="is-line" style="--c:#f59e0b"></i>Oldingi davr</span>
+      </div>
+      <div class="nza-chart"><canvas id="nza-revenue" role="img" aria-label="Tushum dinamikasi grafigi"></canvas></div>
+    </article>
+    <article class="nza-card">
+      <div class="nza-card-head"><h3><i class="fas fa-credit-card" aria-hidden="true"></i> To'lov usullari</h3></div>
+      {% if fin and fin.payments.rows %}
+      <div class="nza-donut"><canvas id="nza-payments" role="img" aria-label="To'lov usullari diagrammasi"></canvas><div class="nza-donut-center"><b>{{ fin.payments.total|compact }}</b><span>so'm</span></div></div>
+      <ul class="nza-paylist">
+        {% for row in fin.payments.rows %}<li><i data-pay="{{ forloop.counter0 }}"></i><span>{{ row.label }}<small>{{ row.count }} ta</small></span><b>{{ row.amount|num }}</b><em>{{ row.share|pct }}</em></li>{% endfor %}
+      </ul>
+      {% else %}<p class="nza-empty">Bu davrda to'lov yo'q.</p>{% endif %}
+    </article>
+  </section>
+
+  {# ------------------------------------------------------------ stores + products #}
+  <section class="nza-grid nza-grid-2">
+    <article class="nza-card">
+      <div class="nza-card-head"><h3><i class="fas fa-ranking-star" aria-hidden="true"></i> Filiallar reytingi</h3><a href="{{ links.sales }}" class="nza-link">Savdolar →</a></div>
+      {% if r.stores %}
+      <ol class="nza-rank">
+        {% for s in r.stores %}
+        <li style="--c:{{ s.color }}">
+          <span class="nza-rank-n">{{ s.rank }}</span>
+          <div class="nza-rank-body">
+            <div class="nza-rank-row"><b>{{ s.name }}</b><strong>{{ s.revenue|som }}</strong></div>
+            <div class="nza-bar"><span style="width:{% if s.share %}{{ s.share|floatformat:0 }}{% else %}0{% endif %}%"></span></div>
+            <div class="nza-rank-meta"><span>{% if s.kind == 'online' %}🌐 onlayn{% elif s.kind == 'central' %}💻 dashboard kassa{% else %}🏪 filial{% endif %} · {{ s.purchases }} ta xarid · {{ s.units }} dona{% if s.purchases %} · o'rtacha {{ s.average|num }}{% endif %}</span><span>{{ s.share|pct }} {{ s.change|trend }}</span></div>
+          </div>
+        </li>
+        {% endfor %}
+      </ol>
+      {% else %}<p class="nza-empty">Filial ma'lumoti yo'q.</p>{% endif %}
+    </article>
+    <article class="nza-card">
+      <div class="nza-card-head"><h3><i class="fas fa-fire" aria-hidden="true"></i> Top mahsulotlar</h3>{% if r.products %}<span class="nza-muted">{{ r.products.sku_sold }} xil mahsulot sotilgan</span>{% endif %}</div>
+      {% if r.products and r.products.top %}
+      <ol class="nza-products">
+        {% for t in r.products.top %}
+        <li>
+          <span class="nza-thumb">{% if t.image %}<img src="{{ t.image }}" alt="">{% else %}<i class="fas fa-box" aria-hidden="true"></i>{% endif %}</span>
+          <div class="nza-prod-body">
+            <b>{{ t.name }}</b>
+            <small>{% if t.size %}{{ t.size }} · {% endif %}{{ t.units }} dona</small>
+            <div class="nza-bar nza-bar-thin"><span style="width:{{ t.share }}%"></span></div>
+          </div>
+          <strong>{{ t.revenue|som }}</strong>
+        </li>
+        {% endfor %}
+      </ol>
+      {% else %}<p class="nza-empty">Bu davrda mahsulot sotilmagan.</p>{% endif %}
+    </article>
+  </section>
+
+  {# ------------------------------------------------------------ when + who sells #}
+  <section class="nza-grid nza-grid-chart">
+    <article class="nza-card">
+      <div class="nza-card-head">
+        <h3><i class="fas fa-fire-flame-curved" aria-hidden="true"></i> Savdo vaqtlari</h3>
+        {% if r.heatmap.peak %}<span class="nza-muted">Eng gavjum: <b>{{ r.heatmap.peak.day }} {{ r.heatmap.peak.hour }}:00</b> · eng kuchli kun: <b>{{ r.heatmap.best_day }}</b></span>{% endif %}
+      </div>
+      {% if heat %}
+      <div class="nza-heat" style="--n:{{ heat.0.cells|length }}" role="table" aria-label="Hafta kuni va soat bo'yicha savdo">
+        <div class="nza-heat-row nza-heat-hours" role="row"><span></span>{% for c in heat.0.cells %}<span role="columnheader">{% if c.hour|divisibleby:2 %}{{ c.hour }}{% endif %}</span>{% endfor %}</div>
+        {% for row in heat %}
+        <div class="nza-heat-row" role="row"><span role="rowheader">{{ row.day }}</span>{% for c in row.cells %}<i role="cell" style="--a:{{ c.a }}" title="{{ row.day }} {{ c.hour }}:00 — {{ c.count }} ta xarid · {{ c.revenue|som }}"></i>{% endfor %}</div>
+        {% endfor %}
+      </div>
+      <p class="nza-heat-legend"><span>kam</span><i style="--a:.1"></i><i style="--a:.35"></i><i style="--a:.6"></i><i style="--a:.85"></i><i style="--a:1"></i><span>ko'p</span></p>
+      {% else %}<p class="nza-empty">Bu davrda savdo yo'q.</p>{% endif %}
+    </article>
+    <article class="nza-card">
+      <div class="nza-card-head"><h3><i class="fas fa-id-badge" aria-hidden="true"></i> Kassirlar reytingi</h3></div>
+      {% if r.sellers %}
+      <ol class="nza-sellers">
+        {% for x in r.sellers %}
+        <li>
+          <span class="nza-ava">{{ x.name|slice:":1"|upper }}</span>
+          <div><b>{{ x.name }}</b><small>{{ x.branch }} · {{ x.count }} ta chek · o'rtacha {{ x.average|compact }}</small><div class="nza-bar nza-bar-thin"><span style="width:{{ x.share }}%"></span></div></div>
+          <strong>{{ x.revenue|compact }}</strong>
+        </li>
+        {% endfor %}
+      </ol>
+      {% else %}<p class="nza-empty">Bu davrda kassa savdosi yo'q.</p>{% endif %}
+    </article>
+  </section>
+
+  {% if r.mix %}
+  <section class="nza-grid nza-grid-2">
+    {% for block in mix_blocks %}
+    <article class="nza-card">
+      <div class="nza-card-head"><h3><i class="fas {{ block.icon }}" aria-hidden="true"></i> {{ block.title }}</h3></div>
+      {% if block.rows %}
+      <div class="nza-stack" aria-hidden="true">{% for x in block.rows %}<span style="width:{{ x.share }}%;--c:{{ x.color }}" title="{{ x.name }} · {{ x.share|pct }}"></span>{% endfor %}</div>
+      <ul class="nza-mix">{% for x in block.rows %}<li><i style="--c:{{ x.color }}"></i><span>{{ x.name }}</span><b>{{ x.revenue|som }}</b><em>{{ x.share|pct }}</em></li>{% endfor %}</ul>
+      {% else %}<p class="nza-empty">Ma'lumot yo'q.</p>{% endif %}
+    </article>
+    {% endfor %}
+  </section>
+  {% endif %}
+
+  {# ------------------------------------------------------------ finance + orders #}
+  <section class="nza-grid nza-grid-2">
+    <article class="nza-card">
+      <div class="nza-card-head"><h3><i class="fas fa-scale-balanced" aria-hidden="true"></i> Moliyaviy tahlil</h3></div>
+      {% if fin %}
+      <dl class="nza-ledger">
+        <div><dt>Yalpi savdo</dt><dd>{{ fin.gross_sales|som }}</dd></div>
+        {% if fin.discounts %}<div class="is-minus"><dt>Chegirmalar</dt><dd>−{{ fin.discounts|som }}</dd></div>{% endif %}
+        {% if fin.delivery %}<div class="is-plus"><dt>Yetkazish puli</dt><dd>+{{ fin.delivery|som }}</dd></div>{% endif %}
+        {% if fin.refunds %}<div class="is-minus"><dt>Qaytarishlar <small>{{ fin.refunds_count }} ta</small></dt><dd>−{{ fin.refunds|som }}</dd></div>{% endif %}
+        <div class="is-total"><dt>Sof tushum</dt><dd>{{ fin.net_revenue|som }}</dd></div>
+        {% if ov.cogs is not None %}
+        <div class="is-minus"><dt>Tannarx (COGS)</dt><dd>−{{ ov.cogs|som }}</dd></div>
+        <div class="is-total is-profit"><dt>Yalpi foyda <small>{{ ov.margin|pct }}</small></dt><dd>{{ ov.gross_profit|som }}</dd></div>
+        {% else %}
+        <div class="is-na"><dt>Yalpi foyda</dt><dd>{% if ov.cost_coverage is not None %}tannarx {{ ov.cost_coverage }}% ma'lum — hisoblanmadi{% else %}—{% endif %}</dd></div>
+        {% endif %}
+        <div class="is-na"><dt>Operatsion xarajatlar / sof foyda</dt><dd>tizimda yuritilmaydi</dd></div>
+        {% if fin.lost_value %}<div class="is-na"><dt>Bekor/qaytgan onlayn</dt><dd>{{ fin.lost_value|som }} <small>(tushumga kirmaydi)</small></dd></div>{% endif %}
+      </dl>
+      <div class="nza-windows">
+        {% for w in fin.windows %}<div><span>{{ w.label }}</span><b>{{ w.revenue|compact }}</b></div>{% endfor %}
+        <div class="is-life"><span>Jami qayd etilgan</span><b>{{ fin.lifetime|compact }}</b></div>
+      </div>
+      {% else %}<p class="nza-empty">Moliya bo'limi yuklanmadi.</p>{% endif %}
+    </article>
+    <article class="nza-card">
+      <div class="nza-card-head"><h3><i class="fas fa-bag-shopping" aria-hidden="true"></i> Onlayn buyurtmalar</h3><a href="{{ links.orders }}" class="nza-link">Buyurtmalar →</a></div>
+      {% if o %}
+      <div class="nza-minis">
+        <div><span>Yangi</span><b>{{ o.placed }}</b>{{ o.change|trend:"ta" }}</div>
+        <div><span>Yetkazilgan</span><b>{{ o.delivered }}</b></div>
+        <div class="{% if o.cancel_spike %}is-danger{% endif %}"><span>Bekor qilingan</span><b>{{ o.cancelled }}</b>{% if o.placed %}<small>{{ o.cancel_rate|pct }}</small>{% endif %}</div>
+        <div><span>Qaytarilgan</span><b>{{ o.returned }}</b></div>
+      </div>
+      {% if o.statuses %}
+      <ul class="nza-status">
+        {% for s in o.statuses %}<li class="st-{{ s.code }}"><span>{{ s.label }}</span><div class="nza-bar"><span style="width:{% widthratio s.count o.placed 100 %}%"></span></div><b>{{ s.count }}</b></li>{% endfor %}
+      </ul>
+      {% else %}<p class="nza-empty">Bu davrda onlayn buyurtma yo'q.</p>{% endif %}
+      {% if o.backlog_total %}<p class="nza-note"><i class="fas fa-hourglass-half" aria-hidden="true"></i> Hozir jarayonda: <b>{{ o.backlog_total }} ta</b> — {% for b in o.backlog %}{{ b.label|lower }} {{ b.count }}{% if not forloop.last %}, {% endif %}{% endfor %}</p>{% endif %}
+      {% if o.cancel_spike %}<p class="nza-note is-danger"><i class="fas fa-triangle-exclamation" aria-hidden="true"></i> Bekor qilish ulushi {{ o.cancel_rate|pct }} — oldingi davrda {{ o.prev_cancel_rate|pct }}</p>{% endif %}
+      {% else %}<p class="nza-empty">Buyurtmalar bo'limi yuklanmadi.</p>{% endif %}
+    </article>
+  </section>
+
+  {# ------------------------------------------------------------ customers + stock #}
+  <section class="nza-grid nza-grid-13">
+    <article class="nza-card">
+      <div class="nza-card-head"><h3><i class="fas fa-users" aria-hidden="true"></i> Mijozlar</h3></div>
+      {% if c %}
+      <div class="nza-ring" style="--v:{{ c.repeat_share|default:0 }}"><div><b>{% if c.repeat_share is not None %}{{ c.repeat_share }}%{% else %}—{% endif %}</b><span>takroriy</span></div></div>
+      <dl class="nza-facts">
+        <div><dt>Yangi ro'yxatdan o'tganlar</dt><dd>{{ c.new }} {{ c.new_change|trend:"ta" }}</dd></div>
+        <div><dt>Xaridorlar (tanilgan)</dt><dd>{{ c.buyers }}</dd></div>
+        <div><dt>Takroriy / birinchi marta</dt><dd>{{ c.repeat }} / {{ c.first_time }}</dd></div>
+        <div><dt>Xarid chastotasi</dt><dd>{% if c.frequency %}{{ c.frequency|floatformat:2 }} ta{% else %}—{% endif %}</dd></div>
+        {% if c.anonymous %}<div class="is-na"><dt>Mijozsiz kassa cheklari</dt><dd>{{ c.anonymous }} ta</dd></div>{% endif %}
+      </dl>
+      {% else %}<p class="nza-empty">Mijozlar bo'limi yuklanmadi.</p>{% endif %}
+    </article>
+    <article class="nza-card">
+      <div class="nza-card-head"><h3><i class="fas fa-boxes-stacked" aria-hidden="true"></i> Ombor nazorati</h3><a href="{{ links.stock }}" class="nza-link">Qoldiqlar →</a></div>
+      {% if inv %}
+      <div class="nza-minis">
+        <a href="{{ links.reorder }}" class="{% if inv.out_of_stock %}is-danger{% elif inv.low_stock_total %}is-warn{% endif %}"><span>Kam qolgan</span><b>{{ inv.low_stock_total }}</b><small>tugagan: {{ inv.out_of_stock }}</small></a>
+        <a href="{{ links.expiry }}" class="{% if inv.expiring_skus %}is-warn{% endif %}"><span>Muddati yaqin · {{ inv.expiry_days }} kun</span><b>{{ inv.expiring_skus }}</b><small>{{ inv.expiring_units }} dona</small></a>
+        <a href="{{ links.expiry }}" class="{% if inv.expired_skus %}is-danger{% endif %}"><span>Muddati o'tgan</span><b>{{ inv.expired_skus }}</b><small>{{ inv.expired_units }} dona</small></a>
+        <div><span>{{ inv.slow_days }} kun sotilmagan</span>{% if inv.slow_history_ok %}<b>{{ inv.slow_total }}</b>{% else %}<b class="nza-na">—</b><small>tarix hali yetarli emas</small>{% endif %}</div>
+      </div>
+      <div class="nza-lists">
+        <div>
+          <h4>Kam qolganlar</h4>
+          {% if inv.low_stock %}<ul>{% for i in inv.low_stock|slice:":6" %}<li><span>{{ i.code }}</span><b class="{% if i.available_quantity == 0 %}is-danger{% endif %}">{{ i.available_quantity }} / {{ i.low_stock_at }}</b></li>{% endfor %}</ul>{% else %}<p class="nza-ok"><i class="fas fa-circle-check" aria-hidden="true"></i> Hammasi yetarli</p>{% endif %}
+        </div>
+        <div>
+          <h4>Muddati yaqinlar</h4>
+          {% if inv.expiring %}<ul>{% for x in inv.expiring|slice:":6" %}<li><span>{{ x.name }} <small>{{ x.store }}</small></span><b class="{% if x.days_left <= 7 %}is-danger{% endif %}">{{ x.days_left }} kun · {{ x.quantity }}</b></li>{% endfor %}</ul>{% else %}<p class="nza-ok"><i class="fas fa-circle-check" aria-hidden="true"></i> {{ inv.expiry_days }} kun ichida yo'q</p>{% endif %}
+        </div>
+        {% if inv.slow %}
+        <div>
+          <h4>Sotilmayotganlar</h4>
+          <ul>{% for x in inv.slow|slice:":6" %}<li><span>{{ x.name }}</span><b>{{ x.on_hand }} · {{ x.value|compact }}</b></li>{% endfor %}</ul>
+        </div>
+        {% endif %}
+      </div>
+      {% else %}<p class="nza-empty">Ombor bo'limi yuklanmadi.</p>{% endif %}
+    </article>
+  </section>
+
+  {# ------------------------------------------------------------ Telegram #}
+  <section class="nza-card nza-tg" id="nza-telegram">
+    <div class="nza-tg-info">
+      <div class="nza-tg-brand">
+        <span class="nza-tg-logo"><i class="fab fa-telegram" aria-hidden="true"></i></span>
+        <div><h3>@{{ bot.username }}</h3><p>Rahbariyat uchun avtomatik hisobotlar va javobsiz chat ogohlantirishlari</p></div>
+      </div>
+      <ul class="nza-tg-status">
+        <li class="{% if bot.live %}is-ok{% else %}is-off{% endif %}"><i class="fas {% if bot.live %}fa-circle-check{% else %}fa-circle-xmark{% endif %}" aria-hidden="true"></i> Bot tokeni {% if bot.live %}ulangan{% else %}sozlanmagan{% endif %}</li>
+        <li class="{% if bot.recipients %}is-ok{% else %}is-off{% endif %}"><i class="fas fa-user-check" aria-hidden="true"></i> Qabul qiluvchilar: <b>{{ bot.recipients }}</b></li>
+        <li class="{% if bot.configured %}is-ok{% else %}is-off{% endif %}"><i class="fas fa-comments" aria-hidden="true"></i> Javobsiz chatlar {% if bot.configured %}shu botga keladi{% else %}hozircha Orders botga ketadi{% endif %}</li>
+      </ul>
+      <h4>Jadval <small>Asia/Tashkent</small></h4>
+      {% if bot.schedules %}
+      <ul class="nza-tg-sched">
+        {% for s in bot.schedules %}<li class="{% if not s.enabled %}is-off{% endif %}"><i class="fas fa-clock" aria-hidden="true"></i><span>{{ s.name }}</span><small>{% if s.last_run %}oxirgi: {{ s.last_run|date:"d.m H:i" }}{% else %}hali ishlamagan{% endif %}</small></li>{% endfor %}
+      </ul>
+      {% else %}<p class="nza-note">Jadval hali yaratilmagan — <code>manage.py analytics_bot_setup</code></p>{% endif %}
+      {% if can_send %}
+      <form method="post" action="{% url 'admin:nz_analytics_send' %}" class="nza-tg-send">{% csrf_token %}
+        <input type="hidden" name="back" value="{{ request.get_full_path }}">
+        <select name="report" aria-label="Hisobot turi">{% for k, label in send_choices %}<option value="{{ k }}">{{ label }}</option>{% endfor %}</select>
+        <button type="submit" {% if not bot.configured %}disabled title="Bot sozlanmagan"{% endif %}><i class="fas fa-paper-plane" aria-hidden="true"></i> Hozir yuborish</button>
+      </form>
+      {% endif %}
+      {% if not bot.configured %}
+      <details class="nza-tg-setup"><summary>Qanday ulanadi?</summary>
+        <ol>
+          <li>@BotFather → <b>@{{ bot.username }}</b> tokenini oling.</li>
+          <li><code>.env</code>: <code>TELEGRAM_ANALYTICS_BOT_TOKEN</code>, <code>TELEGRAM_ANALYTICS_WEBHOOK_SECRET</code>.</li>
+          <li>Botga <code>/start</code> yozing — u chat ID'ingizni ko'rsatadi; uni <code>TELEGRAM_ANALYTICS_CHAT_IDS</code> ga qo'shing.</li>
+          <li><code>manage.py analytics_bot_setup</code> — jadval, menyu va webhook.</li>
+        </ol>
+      </details>
+      {% endif %}
+    </div>
+    <div class="nza-phone" aria-label="Telegram hisobot namunasi">
+      <div class="nza-phone-bar"><span class="nza-phone-ava"><i class="fas fa-chart-pie" aria-hidden="true"></i></span><div><b>NutriZone Analytics</b><small>bot</small></div></div>
+      <div class="nza-phone-chat">
+        {% for m in bot.preview %}<div class="nza-bubble">{{ m|safe }}<time>{{ r.generated_at|date:"H:i" }}</time></div>{% endfor %}
+        <div class="nza-tg-keys"><span>📈 Bugun</span><span>📅 Kecha</span><span>🗓 Hafta</span><span>🗓 Oy</span><span>🏪 Filiallar</span><span>📦 Ombor</span></div>
+      </div>
+    </div>
+  </section>
+
+  <details class="nza-method">
+    <summary><i class="fas fa-circle-info" aria-hidden="true"></i> Hisoblash qoidalari</summary>
+    <ul>
+      <li><b>Tushum</b> — do'kon kassalari (chek summasi − chegirma + yetkazish − qaytarish; coin bilan to'langan qism ham kiradi) + <b>yetkazilgan/yakunlangan</b> onlayn buyurtmalar. Yo'ldagi buyurtmalar tushumga kirmaydi.</li>
+      <li><b>Tannarx</b> — oxirgi kirim narxi, bo'lmasa narxlar ro'yxatidagi tannarx. Savdoning 90% dan kamida tannarx ma'lum bo'lmasa yalpi foyda ko'rsatilmaydi.</li>
+      <li><b>Taqqoslash</b> — davom etayotgan davr oldingi davrning aynan shu qismiga solishtiriladi (bugun 00:00–hozir ↔ kecha 00:00–shu vaqt).</li>
+      <li><b>Mijozlar</b> — faqat mijoz biriktirilgan cheklar va buyurtmalar; takroriy = davrgacha ham xarid qilgan yoki davrda 2+ marta xarid qilgan.</li>
+      <li>Vaqt — Asia/Tashkent. Ma'lumot {{ r.generated_at|date:"d.m.Y H:i" }} holatiga.</li>
+    </ul>
+  </details>
+</div>
+{{ chart_data|json_script:"nza-data" }}
+{% endwith %}
+<script src="{% static 'admin/vendor/chartjs/chart.umd.js' %}"></script>
+<script src="{% static 'admin/js/nutrizone-analytics.js' %}?v=2"></script>
+{% endblock %}

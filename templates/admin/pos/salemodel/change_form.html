@@ -1,0 +1,22 @@
+{% extends "admin/change_form.html" %}
+{% load i18n admin_urls admin_modify %}
+
+{# Sales are created only by the POS terminal and are read-only here; the #}
+{# right-hand panel offers the one status change the sale's state allows. #}
+{% block submit_buttons_bottom %}
+<div class="nz-sale-status-panel">
+  <div class="nz-sale-status-head">
+    <span class="nz-sale-status-label">{% translate "Holat" %}</span>
+    {{ sale_status_badge }}
+  </div>
+  {% if sale_status_action %}
+    <a href="{{ sale_status_action.url }}" class="btn btn-sm btn-block {% if original.status == 'completed' %}btn-danger{% else %}btn-secondary{% endif %}">
+      <i class="{{ sale_status_action.icon }}"></i> {{ sale_status_action.label }}
+    </a>
+  {% else %}
+    <p class="nz-sale-status-note">{% translate "Bu savdo yakuniy holatda — holatni o'zgartirib bo'lmaydi." %}</p>
+  {% endif %}
+  <a href="{% url opts|admin_urlname:'changelist' %}" class="btn btn-sm btn-block btn-outline-secondary"><i class="fas fa-arrow-left"></i> {% translate "Savdolar ro'yxatiga qaytish" %}</a>
+  <div class="object-tools d-flex flex-wrap gap-2">{% change_form_object_tools %}</div>
+</div>
+{% endblock %}

@@ -1,0 +1,204 @@
+{% extends "admin/base_site.html" %}
+{% load i18n static %}
+{% block extrastyle %}{{ block.super }}<link rel="stylesheet" href="{% static 'admin/css/nutrizone-notify.css' %}?v=1">{% endblock %}
+{% block breadcrumbs %}<div class="breadcrumbs"><a href="{% url 'admin:index' %}">{% translate "Home" %}</a> &rsaquo; <a href="{% url 'admin:notifications_notificationmodel_changelist' %}">{% translate "Bildirishnomalar" %}</a> &rsaquo; {% translate "Xabar yuborish" %}</div>{% endblock %}
+{% block content_title %}{% translate "Xabar yuborish" %}{% endblock %}
+{% block content %}
+<form method="post" class="col-12 ntf" id="ntf-form" novalidate>{% csrf_token %}
+  <div class="ntf-main">
+    {% if form.non_field_errors %}<div class="ntf-alert"><i class="fas fa-triangle-exclamation"></i> {{ form.non_field_errors|join:" " }}</div>{% endif %}
+
+    <section class="ntf-card">
+      <header><span class="ntf-step">1</span><div><h3>{% translate "Kimga yuboramiz?" %}</h3><p>{% translate "Auditoriyani tanlang — mijozlar soni darhol hisoblanadi." %}</p></div></header>
+      <div class="ntf-aud">
+        {% for key, label, icon, tone, hint in audiences %}
+        <label class="ntf-aud-card" style="--t:{{ tone }}">
+          <input type="radio" name="audience" value="{{ key }}" {% if form.audience.value == key %}checked{% endif %}>
+          <i class="fas {{ icon }}"></i><b>{{ label }}</b><small>{{ hint }}</small>
+        </label>
+        {% endfor %}
+      </div>
+      <div class="ntf-target" data-for="tier" hidden>
+        <label>{% translate "Loyalty darajasi" %}</label>
+        <div class="ntf-chips">
+          {% for t in tiers %}<label class="ntf-chip" style="--t:{{ t.color|default:'#8b5cf6' }}"><input type="radio" name="target_tier" value="{{ t.slug }}" {% if form.target_tier.value == t.slug %}checked{% endif %}><span></span>{{ t.name }}</label>{% endfor %}
+        </div>
+        {% if form.target_tier.errors %}<small class="ntf-err">{{ form.target_tier.errors|join:" " }}</small>{% endif %}
+      </div>
+      <div class="ntf-target" data-for="segment" hidden>
+        <label>{% translate "Segment" %}</label>
+        <div class="ntf-chips">
+          {% for sg in segments %}<label class="ntf-chip" style="--t:{{ sg.tone }}"><input type="radio" name="target_segment" value="{{ sg.code }}" {% if form.target_segment.value == sg.code %}checked{% endif %}><span></span>{{ sg.label }} <small>({{ sg.count }})</small></label>{% endfor %}
+        </div>
+        {% if form.target_segment.errors %}<small class="ntf-err">{{ form.target_segment.errors|join:" " }}</small>{% endif %}
+      </div>
+      <div class="ntf-target" data-for="phone" hidden>
+        <label for="id_target_phone">{% translate "Telefon raqami" %}</label>
+        <input type="tel" name="target_phone" id="id_target_phone" value="{{ form.target_phone.value|default:'' }}" placeholder="+998 90 123 45 67" class="ntf-input" autocomplete="off">
+        {% if form.target_phone.errors %}<small class="ntf-err">{{ form.target_phone.errors|join:" " }}</small>{% endif %}
+      </div>
+    </section>
+
+    <section class="ntf-card">
+      <header><span class="ntf-step">2</span><div><h3>{% translate "Xabar matni" %}</h3><p>{% translate "O'zbekcha majburiy. Ruscha/inglizcha bo'sh qolsa — o'zbekcha ko'rsatiladi." %}</p></div></header>
+      <div class="ntf-tabs" role="tablist">
+        <button type="button" class="on" data-lang="uz">🇺🇿 O'zbekcha</button>
+        <button type="button" data-lang="ru">🇷🇺 Русский</button>
+        <button type="button" data-lang="en">🇬🇧 English</button>
+      </div>
+      <div class="ntf-lang" data-lang="uz">
+        <label for="id_title_uz">{% translate "Sarlavha" %} <em>*</em></label>
+        <input type="text" name="title_uz" id="id_title_uz" maxlength="150" value="{{ form.title_uz.value|default:'' }}" class="ntf-input" placeholder="Masalan: Yangi filial ochildi! 🎉" data-count="150">
+        {% if form.title_uz.errors %}<small class="ntf-err">{{ form.title_uz.errors|join:" " }}</small>{% endif %}
+        <label for="id_body_uz">{% translate "Matn" %} <em>*</em></label>
+        <textarea name="body_uz" id="id_body_uz" rows="4" maxlength="1000" class="ntf-input" placeholder="Chilonzordagi yangi do'konimizda birinchi hafta barcha mahsulotlarga 10% chegirma." data-count="1000">{{ form.body_uz.value|default:'' }}</textarea>
+        {% if form.body_uz.errors %}<small class="ntf-err">{{ form.body_uz.errors|join:" " }}</small>{% endif %}
+      </div>
+      <div class="ntf-lang" data-lang="ru" hidden>
+        <label for="id_title_ru">Заголовок</label>
+        <input type="text" name="title_ru" id="id_title_ru" maxlength="150" value="{{ form.title_ru.value|default:'' }}" class="ntf-input" placeholder="Необязательно">
+        <label for="id_body_ru">Текст</label>
+        <textarea name="body_ru" id="id_body_ru" rows="4" maxlength="1000" class="ntf-input" placeholder="Необязательно">{{ form.body_ru.value|default:'' }}</textarea>
+      </div>
+      <div class="ntf-lang" data-lang="en" hidden>
+        <label for="id_title_en">Title</label>
+        <input type="text" name="title_en" id="id_title_en" maxlength="150" value="{{ form.title_en.value|default:'' }}" class="ntf-input" placeholder="Optional">
+        <label for="id_body_en">Message</label>
+        <textarea name="body_en" id="id_body_en" rows="4" maxlength="1000" class="ntf-input" placeholder="Optional">{{ form.body_en.value|default:'' }}</textarea>
+      </div>
+      <label for="ntf-link-select">{% translate "Bosilganda ochiladigan sahifa" %}</label>
+      <div class="ntf-link">
+        <select id="ntf-link-select" class="ntf-input">
+          {% for value, label in links %}<option value="{{ value }}">{{ label }}</option>{% endfor %}
+          <option value="__custom">{% translate "Boshqa sahifa…" %}</option>
+        </select>
+        <input type="text" name="link" id="id_link" value="{{ form.link.value|default:'' }}" class="ntf-input" placeholder="/products/rule-1-whey" hidden>
+      </div>
+      {% if form.link.errors %}<small class="ntf-err">{{ form.link.errors|join:" " }}</small>{% endif %}
+    </section>
+
+    <section class="ntf-card">
+      <header><span class="ntf-step">3</span><div><h3>{% translate "Qanday yuboramiz?" %}</h3><p>{% translate "Ilova ichidagi xabar hamma uchun; Telegram — botga ulanganlarga." %}</p></div></header>
+      <div class="ntf-channels">
+        <label class="ntf-switch" style="--t:#2563eb"><input type="checkbox" name="send_in_app" {% if form.send_in_app.value %}checked{% endif %}><span class="ntf-toggle"></span><i class="fas fa-bell"></i><span><b>{% translate "Sayt / ilova ichida" %}</b><small>{% translate "Qo'ng'iroqcha belgisi va Bildirishnomalar sahifasida" %}</small></span></label>
+        <label class="ntf-switch" style="--t:#0ea5e9"><input type="checkbox" name="send_telegram" {% if form.send_telegram.value %}checked{% endif %}><span class="ntf-toggle"></span><i class="fab fa-telegram"></i><span><b>Telegram</b><small data-tg-hint>{% translate "Botga ulangan mijozlarga shaxsiy xabar" %}</small></span></label>
+      </div>
+      <div class="ntf-prio">
+        <span>{% translate "Muhimlik" %}</span>
+        <label><input type="radio" name="priority" value="normal" {% if form.priority.value != "high" %}checked{% endif %}> {% translate "Oddiy" %}</label>
+        <label><input type="radio" name="priority" value="high" {% if form.priority.value == "high" %}checked{% endif %}> <i class="fas fa-bolt" style="color:#f59e0b"></i> {% translate "Muhim" %}</label>
+      </div>
+    </section>
+  </div>
+
+  <aside class="ntf-side">
+    <div class="ntf-card ntf-summary">
+      <div class="ntf-reach"><span>{% translate "Qamrov" %}</span><strong data-reach>—</strong><small data-reach-sub>&nbsp;</small></div>
+      <div class="ntf-phone">
+        <div class="ntf-phone-top"><span>9:41</span><span><i class="fas fa-signal"></i> <i class="fas fa-wifi"></i> <i class="fas fa-battery-full"></i></span></div>
+        <div class="ntf-phone-head"><i class="fas fa-bell"></i> {% translate "Bildirishnomalar" %} <span class="ntf-dot">1</span></div>
+        <div class="ntf-preview">
+          <span class="ntf-preview-ic"><i class="fas fa-bullhorn"></i></span>
+          <div><b data-pv-title>{% translate "Sarlavha shu yerda" %}</b><p data-pv-body>{% translate "Xabar matni shu yerda ko'rinadi." %}</p><small><span data-pv-link hidden><i class="fas fa-arrow-up-right-from-square"></i> <span></span> · </span>{% translate "hozir" %}</small></div>
+        </div>
+        <div class="ntf-tg" data-pv-tg hidden>
+          <div class="ntf-tg-head"><i class="fab fa-telegram"></i> {{ brand_name }} bot</div>
+          <div class="ntf-tg-bubble"><b data-pv-title></b><p data-pv-body></p></div>
+        </div>
+      </div>
+      <button type="submit" class="btn nz-btn-success ntf-send"><i class="fas fa-paper-plane"></i> <span data-send-label>{% translate "Yuborish" %}</span></button>
+      <a class="ntf-history" href="{{ history_url }}"><i class="fas fa-clock-rotate-left"></i> {% translate "Yuborilgan xabarlar tarixi" %}</a>
+    </div>
+  </aside>
+</form>
+<script>
+(function () {
+  "use strict";
+  var form = document.getElementById("ntf-form");
+  var countsUrl = "{{ counts_url }}";
+  var $ = function (s, r) { return (r || form).querySelector(s); };
+  var $$ = function (s, r) { return Array.prototype.slice.call((r || form).querySelectorAll(s)); };
+  var reach = { total: 0, telegram: 0 };
+  var timer = null, ctrl = null;
+
+  function audience() { var c = $('input[name="audience"]:checked'); return c ? c.value : "all"; }
+  function target() {
+    var a = audience();
+    if (a === "tier") { var t = $('input[name="target_tier"]:checked'); return t ? t.value : ""; }
+    if (a === "segment") { var g = $('input[name="target_segment"]:checked'); return g ? g.value : ""; }
+    if (a === "phone") return $("#id_target_phone").value;
+    return "";
+  }
+  function fmt(n) { return String(n).replace(/\B(?=(\d{3})+(?!\d))/g, " "); }
+
+  function refreshTargets() {
+    $$(".ntf-target").forEach(function (el) { el.hidden = el.getAttribute("data-for") !== audience(); });
+  }
+  function loadCount() {
+    clearTimeout(timer);
+    timer = setTimeout(function () {
+      if (ctrl && ctrl.abort) ctrl.abort();
+      ctrl = typeof AbortController !== "undefined" ? new AbortController() : null;
+      $("[data-reach]").textContent = "…";
+      fetch(countsUrl + "?audience=" + encodeURIComponent(audience()) + "&target=" + encodeURIComponent(target()), { credentials: "same-origin", signal: ctrl ? ctrl.signal : undefined })
+        .then(function (r) { return r.json(); })
+        .then(function (d) { reach = d; paintReach(); })
+        .catch(function () {});
+    }, 250);
+  }
+  function paintReach() {
+    var inApp = $('input[name="send_in_app"]').checked, tg = $('input[name="send_telegram"]').checked;
+    $("[data-reach]").textContent = fmt(reach.total) + " mijoz";
+    var parts = [];
+    if (reach.sample) parts.push(reach.sample);
+    if (inApp) parts.push("ilova ichida: " + fmt(reach.total));
+    if (tg) parts.push("Telegram: " + fmt(reach.telegram));
+    $("[data-reach-sub]").textContent = parts.join(" · ") || "Kanal tanlanmagan";
+    $("[data-tg-hint]").textContent = fmt(reach.telegram) + " ta mijoz botga ulangan";
+    $("[data-send-label]").textContent = reach.total ? fmt(reach.total) + " mijozga yuborish" : "Yuborish";
+    $(".ntf-send").disabled = !reach.total || (!inApp && !tg);
+    $("[data-pv-tg]").hidden = !tg;
+    $(".ntf-preview").style.display = inApp || !tg ? "" : "none";
+  }
+  function preview() {
+    var t = $("#id_title_uz").value.trim() || "Sarlavha shu yerda", b = $("#id_body_uz").value.trim() || "Xabar matni shu yerda ko'rinadi.";
+    $$("[data-pv-title]").forEach(function (el) { el.textContent = t; });
+    $$("[data-pv-body]").forEach(function (el) { el.textContent = b; });
+    var link = $("#id_link").value, pl = $("[data-pv-link]");
+    pl.hidden = !link; pl.querySelector("span").textContent = link;
+    $(".ntf-preview").classList.toggle("is-high", ($('input[name="priority"]:checked') || {}).value === "high");
+  }
+
+  // link picker: preset pages or a custom path
+  var sel = $("#ntf-link-select"), linkInput = $("#id_link");
+  (function initLink() {
+    var v = linkInput.value, known = $$("option", sel).some(function (o) { return o.value === v; });
+    sel.value = known ? v : "__custom"; linkInput.hidden = known;
+  })();
+  sel.addEventListener("change", function () {
+    if (sel.value === "__custom") { linkInput.hidden = false; linkInput.focus(); }
+    else { linkInput.hidden = true; linkInput.value = sel.value; }
+    preview();
+  });
+
+  $$(".ntf-tabs button").forEach(function (b) {
+    b.addEventListener("click", function () {
+      var lang = b.getAttribute("data-lang");
+      $$(".ntf-tabs button").forEach(function (x) { x.classList.toggle("on", x === b); });
+      $$(".ntf-lang").forEach(function (p) { p.hidden = p.getAttribute("data-lang") !== lang; });
+    });
+  });
+
+  form.addEventListener("change", function (e) {
+    if (e.target.name === "audience") refreshTargets();
+    if (["audience", "target_tier", "target_segment"].indexOf(e.target.name) >= 0) loadCount();
+    if (["send_in_app", "send_telegram"].indexOf(e.target.name) >= 0) paintReach();
+    preview();
+  });
+  form.addEventListener("input", function (e) { if (e.target.id === "id_target_phone") loadCount(); preview(); });
+  form.addEventListener("submit", function () { var b = $(".ntf-send"); b.disabled = true; b.innerHTML = '<i class="fas fa-circle-notch fa-spin"></i> Yuborilmoqda…'; });
+
+  refreshTargets(); preview(); loadCount();
+})();
+</script>
+{% endblock %}

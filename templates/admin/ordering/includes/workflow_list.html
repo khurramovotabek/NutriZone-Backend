@@ -1,0 +1,91 @@
+{% load i18n admin_list admin_urls %}
+{# Shared list for returns (nz_kind="return") and cancellations ("cancel"): KPIs, status tabs, search + reason filter, rows with order, customer, value and status. Rows are annotated in admin_desk.annotate_rows. #}
+<div class="nzp nzd" data-nzd-list>
+  <header class="nzp-hero">
+    <div class="nzp-hero-main">
+      <span class="nzp-hero-icon" style="--c:{% if nz_kind == 'return' %}#f97316{% else %}#e11d48{% endif %}"><i class="fas {% if nz_kind == 'return' %}fa-rotate-left{% else %}fa-ban{% endif %}" aria-hidden="true"></i></span>
+      <div>
+        <h2>{% if nz_kind == "return" %}{% translate "Returns" %}{% else %}{% translate "Cancellations" %}{% endif %}</h2>
+        <p>{% if nz_kind == "return" %}{% translate "Goods coming back after delivery: approve, receive, refund." %}{% else %}{% translate "Orders (or items) cancelled before delivery: approve and complete." %}{% endif %}</p>
+      </div>
+    </div>
+    <div class="nzp-hero-actions">
+      {% if has_add_permission %}
+      <a class="nzp-btn nzp-btn-primary" href="{% url opts|admin_urlname:'add' %}"><i class="fas fa-plus" aria-hidden="true"></i> {% if nz_kind == "return" %}{% translate "New return" %}{% else %}{% translate "New cancellation" %}{% endif %}</a>
+      {% endif %}
+    </div>
+  </header>
+
+  <div class="nzp-stats">
+    <div class="nzp-stat" style="--c:#f59e0b"><i class="fas fa-inbox" aria-hidden="true"></i><div><b>{{ nz_kpis.counts.requested|default:0 }}</b><span>{% translate "Waiting for a decision" %}</span></div></div>
+    {% if nz_kind == "return" %}
+    <div class="nzp-stat" style="--c:#6366f1"><i class="fas fa-truck-ramp-box" aria-hidden="true"></i><div><b>{{ nz_kpis.counts.approved|default:0 }}</b><span>{% translate "Waiting for the goods" %}</span></div></div>
+    <div class="nzp-stat" style="--c:#0ea5e9"><i class="fas fa-hand-holding-dollar" aria-hidden="true"></i><div><b>{{ nz_kpis.counts.received|default:0 }}</b><span>{% translate "Waiting for a refund" %}</span></div></div>
+    <div class="nzp-stat" style="--c:#10b981"><i class="fas fa-money-bill-wave" aria-hidden="true"></i><div><b>{{ nz_kpis.refunded }}<small> {% translate "so'm" %}</small></b><span>{% translate "Refunded in 30 days" %}</span></div></div>
+    {% else %}
+    <div class="nzp-stat" style="--c:#6366f1"><i class="fas fa-circle-check" aria-hidden="true"></i><div><b>{{ nz_kpis.counts.approved|default:0 }}</b><span>{% translate "Approved, not completed" %}</span></div></div>
+    <div class="nzp-stat" style="--c:#10b981"><i class="fas fa-flag-checkered" aria-hidden="true"></i><div><b>{{ nz_kpis.counts.completed|default:0 }}</b><span>{% translate "Completed" %}</span></div></div>
+    <div class="nzp-stat" style="--c:#e11d48"><i class="fas fa-calendar-days" aria-hidden="true"></i><div><b>{{ nz_kpis.month }}</b><span>{% translate "In the last 30 days" %}</span></div></div>
+    {% endif %}
+  </div>
+
+  <div class="nzp-toolbar">
+    <nav class="nzp-tabs" aria-label="{% translate 'Status' %}">
+      {% for t in nz_tabs %}
+      <a href="?{% if t.key %}status__exact={{ t.key }}{% endif %}{% if nz_query %}&q={{ nz_query|urlencode }}{% endif %}{% if nz_reason %}&reason__exact={{ nz_reason }}{% endif %}" class="nzp-tab{% if t.on %} on{% endif %}" style="--t:{{ t.color }}"><i class="fas {{ t.icon }}" aria-hidden="true"></i> {{ t.label }} <b>{{ t.n }}</b></a>
+      {% endfor %}
+    </nav>
+    <form class="nzd-filters" method="get">
+      {% if nz_status %}<input type="hidden" name="status__exact" value="{{ nz_status }}">{% endif %}
+      <select name="reason__exact" class="nzp-select" aria-label="{% translate 'Reason' %}" data-nzd-autosubmit>
+        <option value="">{% translate "All reasons" %}</option>
+        {% for value, label in nz_reasons %}<option value="{{ value }}"{% if nz_reason == value %} selected{% endif %}>{{ label }}</option>{% endfor %}
+      </select>
+      <label class="nzp-search"><i class="fas fa-magnifying-glass" aria-hidden="true"></i><input type="search" name="q" value="{{ cl.query }}" placeholder="{% translate 'Order number, name or phone…' %}" aria-label="{% translate 'Order number, name or phone…' %}"></label>
+    </form>
+  </div>
+
+  <section class="nzp-card nzp-inbox">
+    {% if cl.result_list %}
+    <div class="nzd-table" role="table">
+      <div class="nzd-tr nzd-th" role="row">
+        <span role="columnheader">{% translate "Number" %}</span>
+        <span role="columnheader">{% translate "Order" %}</span>
+        <span role="columnheader">{% translate "Customer" %}</span>
+        <span role="columnheader">{% translate "Reason" %}</span>
+        <span role="columnheader" class="r">{% if nz_kind == "return" %}{% translate "Value / refund" %}{% else %}{% translate "Value" %}{% endif %}</span>
+        <span role="columnheader">{% translate "Status" %}</span>
+      </div>
+      {% for r in cl.result_list %}
+      {% url opts|admin_urlname:'change' r.pk as change_url %}
+      <a class="nzd-tr{% if r.nz.open %} is-open{% endif %}" role="row" href="{% add_preserved_filters change_url %}" style="--i:{{ forloop.counter0 }}">
+        <span role="cell" class="nzd-cell-num"><b class="nz-num">{{ r.nz.number }}</b><small>{% if r.nz.age_days == 0 %}{% translate "today" %}{% else %}{% blocktranslate count n=r.nz.age_days %}{{ n }} day ago{% plural %}{{ n }} days ago{% endblocktranslate %}{% endif %}</small></span>
+        <span role="cell">{% if r.nz.order %}<b class="nz-num">{{ r.nz.order.order_number }}</b><small><i class="fas {{ r.nz.order_style.icon }}" style="color:{{ r.nz.order_style.color }}" aria-hidden="true"></i> {{ r.nz.order_style.label }}</small>{% else %}<small>—</small>{% endif %}</span>
+        <span role="cell" class="nzd-cell-person"><span class="nzp-avatar" data-seed="{{ r.nz.phone }}">{{ r.nz.initials }}</span><span><b>{{ r.nz.customer }}</b><small>{{ r.nz.phone|default:"—" }}</small></span></span>
+        <span role="cell"><b>{{ r.nz.reason }}</b><small>{% blocktranslate count n=r.nz.units %}{{ n }} item{% plural %}{{ n }} items{% endblocktranslate %}</small></span>
+        <span role="cell" class="r"><b class="nz-num">{{ r.nz.value }}</b><small>{% if r.nz.is_refund %}{% translate "refunded" %}{% else %}{% translate "so'm" %}{% endif %}</small></span>
+        <span role="cell"><span class="nzd-pill" style="--t:{{ r.nz.style.color }}"><i class="fas {{ r.nz.style.icon }}" aria-hidden="true"></i> {{ r.nz.style.label }}</span></span>
+      </a>
+      {% endfor %}
+    </div>
+    {% else %}
+    <div class="nzp-empty">
+      <span class="nzp-empty-icon" style="--c:{% if nz_kind == 'return' %}#f97316{% else %}#e11d48{% endif %}"><i class="fas {% if nz_kind == 'return' %}fa-rotate-left{% else %}fa-ban{% endif %}" aria-hidden="true"></i></span>
+      {% if cl.query or nz_status or nz_reason %}
+        <h3>{% translate "Nothing found" %}</h3>
+        <p>{% translate "Try a different search or filter." %}</p>
+        <a class="nzp-btn nzp-btn-ghost" href="?">{% translate "Clear filters" %}</a>
+      {% elif nz_kind == "return" %}
+        <h3>{% translate "No returns yet" %}</h3>
+        <p>{% translate "Customers ask for a return from “My orders” on the site, or you open one here for a delivered order." %}</p>
+        {% if has_add_permission %}<a class="nzp-btn nzp-btn-primary" href="{% url opts|admin_urlname:'add' %}"><i class="fas fa-plus" aria-hidden="true"></i> {% translate "New return" %}</a>{% endif %}
+      {% else %}
+        <h3>{% translate "No cancellations yet" %}</h3>
+        <p>{% translate "Customers can cancel from “My orders” before shipping; once the parcel is on the way, open a cancellation here." %}</p>
+        {% if has_add_permission %}<a class="nzp-btn nzp-btn-primary" href="{% url opts|admin_urlname:'add' %}"><i class="fas fa-plus" aria-hidden="true"></i> {% translate "New cancellation" %}</a>{% endif %}
+      {% endif %}
+    </div>
+    {% endif %}
+  </section>
+  {% if cl.result_count > cl.list_per_page %}<div class="nzp-pagination">{% pagination cl %}</div>{% endif %}
+</div>

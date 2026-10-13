@@ -1,0 +1,89 @@
+/*
+ * Soft multi-tone palette: the admin is no longer "all blue".
+ * Blue (--nz-primary, from Site Settings) stays the brand/navigation colour.
+ * Actions get their own calm tones: save = emerald, secondary = teal/slate glass, delete = rose, warn = amber.
+ */
+:root {
+  --nz-tone-emerald: #10b981; --nz-tone-emerald-2: #059669;
+  --nz-tone-teal: #14b8a6;    --nz-tone-violet: #8b5cf6;
+  --nz-tone-amber: #f59e0b;   --nz-tone-rose: #f43f5e;
+  --nz-tone-sky: #0ea5e9;     --nz-tone-pink: #ec4899;
+  --nz-tone-slate: #64748b;   --nz-tone-indigo: #6366f1;
+}
+
+/* ---- Buttons ---- */
+.btn-success, .nz-btn-success, .submit-row input[name="_save"], .submit-row .default {
+  background: linear-gradient(135deg, var(--nz-tone-emerald) 0%, var(--nz-tone-emerald-2) 100%) !important;
+  border-color: var(--nz-tone-emerald-2) !important; color: #fff !important;
+  box-shadow: 0 2px 10px rgba(16, 185, 129, .28), inset 0 1px 0 rgba(255, 255, 255, .28);
+  transition: transform .18s ease, box-shadow .18s ease, filter .18s ease;
+}
+.btn-success:hover, .nz-btn-success:hover { transform: translateY(-1px); filter: brightness(1.05); box-shadow: 0 8px 20px rgba(16, 185, 129, .34); }
+
+.btn-info {
+  background: color-mix(in srgb, var(--nz-tone-teal) 14%, var(--nz-surface)) !important;
+  border: 1px solid color-mix(in srgb, var(--nz-tone-teal) 38%, transparent) !important;
+  color: color-mix(in srgb, var(--nz-tone-teal) 72%, var(--nz-text-primary)) !important; box-shadow: none;
+}
+.btn-info:hover { background: color-mix(in srgb, var(--nz-tone-teal) 22%, var(--nz-surface)) !important; }
+
+.btn-secondary, .btn-outline-secondary, .btn-default, .nz-btn-soft {
+  background: color-mix(in srgb, var(--nz-surface) 72%, transparent) !important;
+  border: 1px solid var(--nz-border) !important; color: var(--nz-text-primary) !important;
+  backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);
+}
+.btn-secondary:hover, .btn-outline-secondary:hover, .btn-default:hover, .nz-btn-soft:hover { background: var(--nz-hover) !important; }
+
+.btn-danger, .deletelink, a.deletelink, .nz-btn-soft-rose {
+  background: color-mix(in srgb, var(--nz-tone-rose) 12%, var(--nz-surface)) !important;
+  border: 1px solid color-mix(in srgb, var(--nz-tone-rose) 35%, transparent) !important;
+  color: #e11d48 !important; box-shadow: none;
+}
+.btn-danger:hover, .deletelink:hover, .nz-btn-soft-rose:hover { background: var(--nz-tone-rose) !important; color: #fff !important; }
+.btn-warning {
+  background: color-mix(in srgb, var(--nz-tone-amber) 16%, var(--nz-surface)) !important;
+  border: 1px solid color-mix(in srgb, var(--nz-tone-amber) 40%, transparent) !important; color: #b45309 !important;
+}
+/* changelist search + filter buttons: calm teal instead of heavy blue */
+#changelist-search .btn-primary, #changelist-form .search-btn, .nz-filter .btn-primary, form#changelist-search button[type="submit"] {
+  background: linear-gradient(135deg, var(--nz-tone-teal), #0d9488) !important; border-color: #0d9488 !important;
+  box-shadow: 0 2px 8px rgba(20, 184, 166, .25);
+}
+/* "Add" object tool: fresh emerald */
+.object-tools .addlink, a.addlink.btn, .object-tools a[href$="/add/"] {
+  background: linear-gradient(135deg, var(--nz-tone-emerald), var(--nz-tone-emerald-2)) !important; border-color: var(--nz-tone-emerald-2) !important; color: #fff !important;
+}
+/* changelist action "Go" button: violet */
+.actions button[name="index"], .actions .btn-primary { background: linear-gradient(135deg, var(--nz-tone-violet), #7c3aed) !important; border-color: #7c3aed !important; }
+[data-nz-theme="dark"] .btn-danger, [data-nz-theme="dark"] .deletelink { color: #fda4af !important; }
+[data-nz-theme="dark"] .btn-warning { color: #fcd34d !important; }
+[data-nz-theme="dark"] .btn-info { color: #5eead4 !important; }
+
+/* ---- Dashboard: each tile / KPI its own soft tone ---- */
+.nz-quick-action { --t: var(--nz-tone-sky); position: relative; overflow: hidden;
+  background: linear-gradient(160deg, color-mix(in srgb, var(--t) 9%, var(--nz-surface)), var(--nz-surface));
+  border-color: color-mix(in srgb, var(--t) 22%, var(--nz-border)); transition: transform .18s ease, box-shadow .18s ease, border-color .15s; }
+.nz-quick-action .nz-quick-action-icon { color: var(--t); width: 44px; height: 44px; display: grid; place-items: center; border-radius: 14px; background: color-mix(in srgb, var(--t) 15%, transparent); font-size: 1.25rem; }
+.nz-quick-action:hover { border-color: var(--t); color: var(--nz-text-primary); background: color-mix(in srgb, var(--t) 13%, var(--nz-surface)); transform: translateY(-2px); box-shadow: 0 10px 24px -12px color-mix(in srgb, var(--t) 60%, transparent); }
+.nz-quick-action:nth-child(9n+1) { --t: var(--nz-tone-emerald); }
+.nz-quick-action:nth-child(9n+2) { --t: var(--nz-tone-sky); }
+.nz-quick-action:nth-child(9n+3) { --t: var(--nz-tone-violet); }
+.nz-quick-action:nth-child(9n+4) { --t: var(--nz-tone-amber); }
+.nz-quick-action:nth-child(9n+5) { --t: var(--nz-tone-indigo); }
+.nz-quick-action:nth-child(9n+6) { --t: var(--nz-tone-teal); }
+.nz-quick-action:nth-child(9n+7) { --t: var(--nz-tone-pink); }
+.nz-quick-action:nth-child(9n+8) { --t: var(--nz-tone-rose); }
+.nz-quick-action:nth-child(9n+9) { --t: var(--nz-tone-slate); }
+
+.nz-kpi-card, .nzsc-kpi { --t: var(--nz-primary); position: relative; overflow: hidden; }
+.nz-kpi-card::before, .nzsc-kpi::before { content: ""; position: absolute; left: 0; top: 0; bottom: 0; width: 4px; background: var(--t); opacity: .85; }
+.nz-kpi-card::after { content: ""; position: absolute; right: -30px; top: -30px; width: 110px; height: 110px; border-radius: 50%; background: radial-gradient(circle, color-mix(in srgb, var(--t) 18%, transparent), transparent 70%); pointer-events: none; }
+.nz-kpi-grid > :nth-child(6n+1), .nzsc-kpis > :nth-child(4n+1) { --t: var(--nz-tone-emerald); }
+.nz-kpi-grid > :nth-child(6n+2), .nzsc-kpis > :nth-child(4n+2) { --t: var(--nz-tone-sky); }
+.nz-kpi-grid > :nth-child(6n+3), .nzsc-kpis > :nth-child(4n+3) { --t: var(--nz-tone-violet); }
+.nz-kpi-grid > :nth-child(6n+4), .nzsc-kpis > :nth-child(4n+4) { --t: var(--nz-tone-amber); }
+.nz-kpi-grid > :nth-child(6n+5) { --t: var(--nz-tone-teal); }
+.nz-kpi-grid > :nth-child(6n+6) { --t: var(--nz-tone-pink); }
+
+/* range switch: emerald "on" state */
+.nzsc .nzsc-ranges button.on, .nzsc .nzsc-custom.on button { background: linear-gradient(135deg, var(--nz-tone-emerald), var(--nz-tone-emerald-2)); }

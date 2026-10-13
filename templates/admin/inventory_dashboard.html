@@ -1,0 +1,296 @@
+{% extends "admin/base_site.html" %}
+{% load i18n static %}
+
+{% block extrastyle %}
+{{ block.super }}
+<link rel="stylesheet" href="{% static 'admin/css/nutrizone-inventory.css' %}">
+{% endblock %}
+
+{% block breadcrumbs %}
+<div class="breadcrumbs">
+  <a href="{% url 'admin:index' %}">{% translate "Home" %}</a>
+  &rsaquo; {{ title }}
+</div>
+{% endblock %}
+
+{% block content %}
+<div class="nz-dashboard">
+  <div class="nz-dashboard-header">
+    <div>
+      <h2 class="nz-dashboard-title">{{ title }}</h2>
+      <p class="nz-dashboard-subtitle">{% translate "Real-time stock levels across every real warehouse in the system" %}</p>
+    </div>
+    <a href="{% url 'admin:nz_stock_transfers' %}" class="nz-inv-transfer-link"><i class="fas fa-right-left" aria-hidden="true"></i> {% translate "Transfer between branches" %}</a>
+  </div>
+
+  <div class="nz-kpi-grid">
+    <div class="nz-card nz-kpi-card">
+      <div class="nz-kpi-label">{% translate "Total Units In Stock" %}</div>
+      <div class="nz-stat-number">{{ total_units_system_wide }}</div>
+    </div>
+    <div class="nz-card nz-kpi-card">
+      <div class="nz-kpi-label">{% translate "Warehouses" %}</div>
+      <div class="nz-stat-number">{{ warehouse_count }}</div>
+    </div>
+    <div class="nz-card nz-kpi-card">
+      <div class="nz-kpi-label">{% translate "Low Stock" %}</div>
+      <div class="nz-stat-number">{{ low_stock_total }}</div>
+    </div>
+    <div class="nz-card nz-kpi-card">
+      <div class="nz-kpi-label">{% translate "Out of Stock" %}</div>
+      <div class="nz-stat-number">{{ out_of_stock_total }}</div>
+    </div>
+    <div class="nz-card nz-kpi-card">
+      <div class="nz-kpi-label">{% translate "Expiring Within 30 Days" %}</div>
+      <div class="nz-stat-number">{{ expiring_total }}</div>
+    </div>
+  </div>
+
+  {% if warehouse_summaries %}
+  <div class="nz-inv-warehouse-row">
+    {% for w in warehouse_summaries %}
+    <div class="nz-card nz-inv-warehouse-card">
+      <div class="nz-inv-warehouse-label">{{ w.label }}</div>
+      <div class="nz-inv-warehouse-total">{{ w.total_units }} <span>{% translate "dona" %}</span></div>
+    </div>
+    {% endfor %}
+  </div>
+  {% endif %}
+
+  <div class="nz-card nz-inv-stock-card">
+    <div class="nz-inv-stock-header">
+      <h3>{% translate "Mahsulotlar va zaxira" %}</h3>
+      <div class="nz-inv-header-controls">
+        <div class="nz-inv-branch-wrap">
+          <select id="nz-inv-branch">
+            <option value="all">{% translate "Barcha filiallar (umumiy)" %}</option>
+            {% for w in warehouse_summaries %}
+            <option value="{{ w.warehouse_id }}">{{ w.label }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="nz-inv-search-wrap">
+          <input type="text" id="nz-inv-search" placeholder="{% translate 'Mahsulot nomi yoki SKU boyicha qidiring...' %}" autocomplete="off">
+        </div>
+      </div>
+    </div>
+    <div class="nz-inv-table-wrap table-responsive">
+      <table class="nz-table" id="nz-inv-table">
+        <thead>
+          <tr>
+            <th>{% translate "Mahsulot" %}</th>
+            <th>{% translate "Narxi" %}</th>
+            <th>{% translate "Umumiy zaxira" %}</th>
+            <th id="nz-inv-branch-col-header">{% translate "Filiallar boyicha" %}</th>
+          </tr>
+        </thead>
+        <tbody id="nz-inv-table-body">
+          <tr><td colspan="4"><div class="nz-inv-skeleton-row"></div></td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="nz-inv-pagination" id="nz-inv-pagination"></div>
+  </div>
+
+  <div class="nz-dashboard-columns">
+    <div class="nz-card">
+      <h3>{% translate "Low Stock Items" %}</h3>
+      {% if low_stock_items %}
+        <div class="table-responsive">
+        <table class="nz-table" style="width:100%;">
+          <thead>
+            <tr>
+              <th>{% translate "Product" %}</th>
+              <th style="text-align:right;">{% translate "Available" %}</th>
+              <th style="text-align:right;">{% translate "Threshold" %}</th>
+              <th style="text-align:right;">{% translate "Status" %}</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for item in low_stock_items %}
+            <tr>
+              <td>{{ item.product_name }}</td>
+              <td style="text-align:right;">{{ item.available_quantity }}</td>
+              <td style="text-align:right;">{{ item.low_stock_at }}</td>
+              <td style="text-align:right;">
+                {% if item.available_quantity == 0 %}
+                  <span class="nz-badge nz-badge-danger">{% translate "Out of stock" %}</span>
+                {% else %}
+                  <span class="nz-badge nz-badge-warning">{% translate "Low" %}</span>
+                {% endif %}
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+        </div>
+      {% else %}
+        <p class="nz-empty-state">{% translate "No items are currently low on stock." %}</p>
+      {% endif %}
+    </div>
+
+    <div class="nz-card">
+      <h3>{% translate "Expiring Batches" %}</h3>
+      {% if expiring_batches %}
+        <div class="table-responsive">
+        <table class="nz-table" style="width:100%;">
+          <thead>
+            <tr>
+              <th>{% translate "Batch" %}</th>
+              <th style="text-align:right;">{% translate "Expires" %}</th>
+              <th style="text-align:right;">{% translate "Quantity" %}</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for batch in expiring_batches %}
+            <tr>
+              <td>{{ batch.batch_number }}</td>
+              <td style="text-align:right;">{{ batch.expiration_date }}</td>
+              <td style="text-align:right;">{{ batch.quantity_received }}</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+        </div>
+      {% else %}
+        <p class="nz-empty-state">{% translate "No batches expiring within 30 days." %}</p>
+      {% endif %}
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extrahead %}
+{{ block.super }}
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+  let currentPage = 1;
+  let currentQuery = "";
+  let currentBranch = "all";
+
+  function formatMoney(amount) {
+    if (amount === null || amount === undefined || amount === "") return "&mdash;";
+    return Math.round(Number(amount)).toLocaleString("uz-UZ");
+  }
+
+  function escapeHtml(value) {
+    return String(value).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+  }
+
+  async function handleQuantityCommit(input) {
+    const newQuantity = parseInt(input.value, 10);
+    const previous = input.dataset.previous;
+    if (Number.isNaN(newQuantity) || newQuantity < 0) { input.value = previous; return; }
+    if (String(newQuantity) === previous) return;
+    input.disabled = true;
+    try {
+      const res = await fetch("/django-admin/inventory/api/adjust-stock", {
+        method: "POST",
+        // CSRF_COOKIE_HTTPONLY = True project-wide -- window.NZ_CSRF_TOKEN
+        // (base_site.html's own global) is this project's real answer,
+        // matching pos_terminal.html's identical csrfToken() fix.
+        headers: { "Content-Type": "application/json", "X-CSRFToken": window.NZ_CSRF_TOKEN || "" },
+        body: JSON.stringify({ warehouse_inventory_id: input.dataset.warehouseInventoryId, quantity: newQuantity }),
+      });
+      const body_json = await res.json();
+      if (!body_json.success) throw new Error(body_json.error?.message || "Failed");
+      input.dataset.previous = String(body_json.data.quantity);
+      input.value = body_json.data.quantity;
+    } catch (e) {
+      input.value = previous;
+      alert(e.message || "{% translate 'Yangilashda xatolik yuz berdi.' %}");
+    } finally {
+      input.disabled = false;
+    }
+  }
+
+  function renderRows(results) {
+    const body = document.getElementById("nz-inv-table-body");
+    if (!results.length) {
+      body.innerHTML = `<tr><td colspan="4"><p class="nz-empty-state">{% translate "Hech qanday mahsulot topilmadi." %}</p></td></tr>`;
+      return;
+    }
+    const branchScoped = currentBranch !== "all";
+    body.innerHTML = results.map((row) => {
+      const scopedEntry = row.by_warehouse[0];
+      const branchCell = branchScoped
+        ? (scopedEntry
+            ? `<input type="number" min="0" class="nz-inv-qty-input" value="${scopedEntry.available_quantity}" data-previous="${scopedEntry.available_quantity}" data-warehouse-inventory-id="${scopedEntry.warehouse_inventory_id}">`
+            : `<span class="nz-inv-warehouse-pill nz-inv-pill-empty">{% translate "Bu filialda yo'q" %}</span>`)
+        : `<div class="nz-inv-warehouse-pills">${row.by_warehouse.map((w) => `<span class="nz-inv-warehouse-pill ${w.available_quantity === 0 ? 'nz-inv-pill-empty' : ''}">${escapeHtml(w.label)}: ${w.available_quantity}</span>`).join("") || "&mdash;"}</div>`;
+      return `
+      <tr>
+        <td>
+          <div class="nz-inv-product-cell">
+            <div class="nz-inv-product-thumb">${row.image_url ? `<img src="${row.image_url}" alt="" loading="lazy">` : `<i class="fas fa-box" aria-hidden="true"></i>`}</div>
+            <div class="nz-inv-product-info">
+              <div class="nz-inv-product-name" title="${escapeHtml(row.product_name)}">${escapeHtml(row.product_name)}</div>
+              ${row.sku ? `<div class="nz-inv-product-sku">${escapeHtml(row.sku)}</div>` : ""}
+            </div>
+          </div>
+        </td>
+        <td>${row.price !== null ? formatMoney(row.price) + " " + row.currency : `<span class="nz-badge nz-badge-neutral">{% translate "Narx mavjud emas" %}</span>`}</td>
+        <td><strong>${row.total_available}</strong> {% translate "dona" %}</td>
+        <td>${branchCell}</td>
+      </tr>
+    `;
+    }).join("");
+
+    if (branchScoped) {
+      body.querySelectorAll(".nz-inv-qty-input").forEach((input) => {
+        input.addEventListener("blur", () => handleQuantityCommit(input));
+        input.addEventListener("keydown", (e) => { if (e.key === "Enter") input.blur(); });
+      });
+    }
+  }
+
+  function renderPagination(totalCount, pageSize) {
+    const totalPages = Math.max(1, Math.ceil(totalCount / pageSize));
+    const el = document.getElementById("nz-inv-pagination");
+    if (totalPages <= 1) { el.innerHTML = ""; return; }
+    let html = "";
+    for (let p = 1; p <= totalPages; p++) {
+      html += `<button type="button" class="nz-inv-page-btn ${p === currentPage ? 'nz-active' : ''}" data-page="${p}">${p}</button>`;
+    }
+    el.innerHTML = html;
+    el.querySelectorAll(".nz-inv-page-btn").forEach((btn) => {
+      btn.addEventListener("click", () => { currentPage = parseInt(btn.dataset.page, 10); loadStock(); });
+    });
+  }
+
+  async function loadStock() {
+    const body = document.getElementById("nz-inv-table-body");
+    body.innerHTML = `<tr><td colspan="4"><div class="nz-inv-skeleton-row"></div></td></tr>`;
+    try {
+      const url = `/django-admin/inventory/api/stock-list?q=${encodeURIComponent(currentQuery)}&page=${currentPage}&warehouse_id=${encodeURIComponent(currentBranch)}`;
+      const res = await fetch(url);
+      const body_json = await res.json();
+      if (!body_json.success) throw new Error("Request failed");
+      renderRows(body_json.data.results);
+      renderPagination(body_json.data.total_count, 24);
+    } catch (e) {
+      body.innerHTML = `<tr><td colspan="4"><p class="nz-error-state">{% translate "Yuklashda xatolik yuz berdi." %}</p></td></tr>`;
+    }
+  }
+
+  let searchTimer;
+  document.getElementById("nz-inv-search").addEventListener("input", (e) => {
+    clearTimeout(searchTimer);
+    searchTimer = setTimeout(() => {
+      currentQuery = e.target.value.trim();
+      currentPage = 1;
+      loadStock();
+    }, 300);
+  });
+
+  document.getElementById("nz-inv-branch").addEventListener("change", (e) => {
+    currentBranch = e.target.value;
+    currentPage = 1;
+    document.getElementById("nz-inv-branch-col-header").textContent = currentBranch === "all" ? "{% translate 'Filiallar boyicha' %}" : "{% translate 'Ushbu filialdagi soni' %}";
+    loadStock();
+  });
+
+  loadStock();
+});
+</script>
+{% endblock %}

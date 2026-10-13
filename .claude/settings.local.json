@@ -1,0 +1,14 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(pip --version)",
+      "Bash(python3 -m venv --help)",
+      "Bash(pip3 --version)",
+      "Bash(docker compose run *)",
+      "Bash(curl *)",
+      "Bash(pkill -f \"next dev\")",
+      "Bash(NEXT_PUBLIC_API_BASE_URL=http://localhost:8000 npm run dev)",
+      "Bash(disown)"
+    ]
+  }
+}

@@ -1,0 +1,71 @@
+{% extends "admin/base_site.html" %}
+{% load i18n static %}
+{% block extrastyle %}{{ block.super }}<link rel="stylesheet" href="{% static 'admin/css/nutrizone-people.css' %}?v=1">{% endblock %}
+{% block breadcrumbs %}<div class="breadcrumbs"><a href="{% url 'admin:index' %}">{% translate "Home" %}</a> &rsaquo; {% translate "Profil" %}</div>{% endblock %}
+{% block content_title %}{% translate "Mening profilim" %}{% endblock %}
+{% block content %}
+<div class="col-12 prf">
+  <aside class="prf-card prf-hero">
+    <div class="prf-avatar">{{ initials }}</div>
+    <h2>{{ display_name }}</h2>
+    <div class="sub">@{{ request.user.get_username }}{% if request.user.email %} · {{ request.user.email }}{% endif %}</div>
+    <div class="prf-badges">
+      <span class="prf-badge" style="--t:{% if request.user.is_superuser %}#7c3aed{% else %}#2563eb{% endif %}"><i class="fas fa-shield-halved"></i> {{ role }}</span>
+      {% for g in groups %}<span class="prf-badge" style="--t:#0d9488">{{ g }}</span>{% endfor %}
+      <span class="prf-badge" style="--t:#16a34a"><i class="fas fa-circle" style="font-size:.5rem"></i> {% translate "Faol" %}</span>
+    </div>
+    <div class="prf-facts">
+      <div><span>{% translate "Ro'yxatdan o'tgan" %}</span><b>{{ joined }}</b></div>
+      <div><span>{% translate "Oxirgi kirish" %}</span><b>{{ last_login }}</b></div>
+      <div><span>{% translate "Brend" %}</span><b>{{ brand_name }}</b></div>
+      <div><span>{% translate "Ruxsatlar" %}</span><b>{% if request.user.is_superuser %}{% translate "To'liq kirish" %}{% else %}{% translate "Guruh bo'yicha" %}{% endif %}</b></div>
+    </div>
+    <div class="prf-actions" style="justify-content:center">
+      <a class="btn btn-sm nz-btn-soft" href="{% url 'admin:password_change' %}"><i class="fas fa-key"></i> {% translate "Parolni o'zgartirish" %}</a>
+      <a class="btn btn-sm nz-btn-soft-rose" href="{% url 'admin:logout' %}"><i class="fas fa-right-from-bracket"></i> {% translate "Chiqish" %}</a>
+    </div>
+  </aside>
+
+  <div>
+    <div class="prf-stats">
+      <div class="ppl-kpi" style="--t:#2563eb"><i class="fas fa-bolt"></i><span>{% translate "Jami amallar" %}</span><strong>{{ stats.actions }}</strong></div>
+      <div class="ppl-kpi" style="--t:#16a34a"><i class="fas fa-calendar-week"></i><span>{% translate "Shu hafta" %}</span><strong>{{ stats.week }}</strong></div>
+      <div class="ppl-kpi" style="--t:#f59e0b"><i class="fas fa-right-left"></i><span>{% translate "Transferlar" %}</span><strong>{{ stats.transfers }}</strong></div>
+      <div class="ppl-kpi" style="--t:#9333ea"><i class="fas fa-dolly"></i><span>{% translate "Kirimlar" %}</span><strong>{{ stats.receipts }}</strong></div>
+    </div>
+
+    <div class="prf-card" style="margin-bottom:18px">
+      <h3><i class="fas fa-user-pen"></i> {% translate "Shaxsiy ma'lumotlar" %}</h3>
+      <form method="post">{% csrf_token %}
+        <div class="prf-form">
+          {% for f in form %}<div><label for="{{ f.id_for_label }}">{{ f.label }}</label>{{ f }}{% if f.errors %}<small style="color:#dc2626">{{ f.errors|join:" " }}</small>{% endif %}</div>{% endfor %}
+        </div>
+        <div class="prf-actions"><button type="submit" class="btn nz-btn-success"><i class="fas fa-check"></i> {% translate "Saqlash" %}</button></div>
+      </form>
+    </div>
+
+    <div class="prf-card" style="margin-bottom:18px">
+      <h3><i class="fas fa-compass"></i> {% translate "Tezkor o'tish" %}</h3>
+      <div class="prf-links">
+        <a class="prf-link" style="--t:#2563eb" href="{% url 'admin:nz_settings_overview' %}"><i class="fas fa-palette"></i> {% translate "Brend va sozlamalar" %}</a>
+        <a class="prf-link" style="--t:#16a34a" href="{% url 'admin:pos_salemodel_changelist' %}"><i class="fas fa-chart-line"></i> {% translate "Savdolar" %}</a>
+        <a class="prf-link" style="--t:#f59e0b" href="{% url 'admin:stores_stocktransfer_changelist' %}"><i class="fas fa-warehouse"></i> {% translate "Ombor" %}</a>
+        <a class="prf-link" style="--t:#9333ea" href="{% url 'admin:identity_user_changelist' %}"><i class="fas fa-users"></i> {% translate "Foydalanuvchilar" %}</a>
+        <a class="prf-link" style="--t:#0891b2" href="{% url 'admin:loyalty_wallet_changelist' %}"><i class="fas fa-coins"></i> Loyalty</a>
+        <a class="prf-link" style="--t:#db2777" href="{% url 'admin:auth_user_changelist' %}"><i class="fas fa-user-shield"></i> {% translate "Xodimlar" %}</a>
+      </div>
+    </div>
+
+    <div class="prf-card">
+      <h3><i class="fas fa-clock-rotate-left"></i> {% translate "So'nggi faollik" %}</h3>
+      {% if feed %}
+      <ul class="prf-feed">
+        {% for f in feed %}
+        <li><span class="ic" style="--t:{{ f.tone }}"><i class="fas {{ f.icon }}"></i></span><span>{% if f.url %}<a href="{% url 'admin:index' %}{{ f.url }}">{% endif %}<b>{{ f.title }}</b>{% if f.url %}</a>{% endif %}<small>{{ f.object|truncatechars:80 }}</small></span><time>{{ f.when }}</time></li>
+        {% endfor %}
+      </ul>
+      {% else %}<p style="color:var(--nz-text-muted);margin:0">{% translate "Hali amallar yo'q." %}</p>{% endif %}
+    </div>
+  </div>
+</div>
+{% endblock %}

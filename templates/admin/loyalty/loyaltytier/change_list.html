@@ -1,0 +1,74 @@
+{% extends "admin/change_list.html" %}
+{% load i18n static %}
+{# Loyalty darajalari: KPIs, the ladder as steps (members per tier), a cashback calculator and the one-form bulk editor (LadderFormSet). #}
+{% block extrastyle %}{{ block.super }}<link rel="stylesheet" href="{% static 'admin/css/nutrizone-platform.css' %}?v=5"><link rel="stylesheet" href="{% static 'admin/css/nutrizone-premium.css' %}?v=6"><link rel="stylesheet" href="{% static 'admin/css/nutrizone-loyalty.css' %}?v=1">{% endblock %}
+{% block content_title %}{% endblock %}
+{% block object-tools %}{% endblock %}
+{% block search %}{% endblock %}
+{% block filters %}{% endblock %}
+{% block date_hierarchy %}{% endblock %}
+{% block result_list %}{% endblock %}
+{% block pagination %}{% endblock %}
+{% block content %}
+<div class="nzp nzi nzl">
+  <header class="nzp-hero">
+    <div class="nzp-hero-main">
+      <span class="nzp-hero-icon" style="--c:#d4a017"><i class="fas fa-ranking-star" aria-hidden="true"></i></span>
+      <div><h2>Loyalty darajalari</h2><p>Mijoz oxirgi {% if nz_window %}{{ nz_window }} kundagi{% else %}barcha{% endif %} xaridlari summasiga qarab darajaga tushadi va har bir yangi xariddan shu darajaning foizicha coin oladi (1 so'm = 1 coin).</p></div>
+    </div>
+    <div class="nzp-hero-actions">
+      <a class="nzp-btn nzp-btn-ghost" href="{% url 'admin:loyalty_loyaltysettings_changelist' %}"><i class="fas fa-sliders" aria-hidden="true"></i> Sozlamalar</a>
+      <a class="nzp-btn nzp-btn-ghost" href="{% url 'admin:loyalty_wallet_changelist' %}"><i class="fas fa-wallet" aria-hidden="true"></i> Mijozlar va coinlar</a>
+      {% if has_add_permission %}<a class="nzp-btn nzp-btn-primary" href="{% url 'admin:loyalty_loyaltytier_add' %}"><i class="fas fa-plus" aria-hidden="true"></i> Yangi daraja</a>{% endif %}
+    </div>
+  </header>
+
+  <div class="nzi-stats">{% for s in nz_stats %}{% if s.href %}<a class="nzi-stat" href="{{ s.href }}" style="--t:{{ s.tone }}">{% else %}<div class="nzi-stat" style="--t:{{ s.tone }}">{% endif %}<i class="fas {{ s.icon }}" aria-hidden="true"></i><div><b>{{ s.value }}</b><span>{{ s.label }}</span>{% if s.sub %}<small>{{ s.sub }}</small>{% endif %}</div>{% if s.href %}</a>{% else %}</div>{% endif %}{% endfor %}</div>
+
+  {% for w in nz_warnings %}<div class="nzp-note nzl-warn"><i class="fas fa-triangle-exclamation" aria-hidden="true"></i> {{ w }}</div>{% endfor %}
+
+  {% if nz_ladder %}
+  <section class="nzp-card nzl-ladder-card">
+    <header class="nzl-sec-h"><div><b>Darajalar zinapoyasi</b><small>Har bir pog'ona: hisoblanadigan xarid oralig'i, keshbek foizi va hozir shu darajadagi mijozlar.</small></div>
+      <label class="nzl-calc"><span>Buyurtma summasi</span><input type="text" inputmode="numeric" value="1 000 000" data-nzl-calc aria-label="Buyurtma summasi"><em>so'm →</em></label></header>
+    <ol class="nzl-ladder">
+      {% for r in nz_ladder %}
+      <li style="--t:{{ r.t.color }};--h:{{ forloop.counter }}">
+        <a href="{{ r.url }}" class="nzl-step">
+          <span class="nzl-glyph">{{ r.glyph }}</span>
+          <b>{{ r.t.name }}</b>
+          <span class="nzl-pct">{{ r.percent }}%</span>
+          <small>{{ r.min }}{% if r.max %} – {{ r.max }}{% else %}+{% endif %} so'm</small>
+          <span class="nzl-reward" data-nzl-pct="{{ r.percent }}">—</span>
+          <span class="nzl-members"><i class="fas fa-users" aria-hidden="true"></i> {% if nz_members_known %}{{ r.members }}{% else %}—{% endif %}</span>
+        </a>
+      </li>
+      {% endfor %}
+    </ol>
+  </section>
+  {% endif %}
+
+  <form method="post" id="changelist-form" class="nzl-editor" novalidate>{% csrf_token %}
+    {{ cl.formset.management_form }}
+    {% if cl.formset.non_form_errors %}<div class="nzp-note nzp-alert-error"><i class="fas fa-circle-exclamation" aria-hidden="true"></i> {% for e in cl.formset.non_form_errors %}{{ e }} {% endfor %}</div>{% endif %}
+    <section class="nzp-card nzi-list">
+      <header class="nzl-sec-h"><div><b>Tahrirlash</b><small>Oraliq va foizlarni shu yerda bir vaqtda o'zgartiring — butun zinapoya birga tekshiriladi (ustma-ust tushish va bo'shliqlar).</small></div>
+        <button type="submit" name="_save" class="nzp-btn nzp-btn-primary nzp-btn-sm"><i class="fas fa-floppy-disk" aria-hidden="true"></i> Saqlash</button></header>
+      <div class="nzi-table" role="table" style="--cols:minmax(180px,1.4fr) minmax(140px,1fr) minmax(140px,1fr) 110px 90px 130px 44px">
+        <div class="nzi-tr nzi-th" role="row"><span>Daraja</span><span>Minimal xarid (so'm)</span><span>Maksimal xarid (so'm)</span><span>Keshbek %</span><span>Faol</span><span class="r">1 mln xariddan</span><span></span></div>
+        {% for form in cl.formset.forms %}
+        <div class="nzi-tr nzl-row{% if form.errors %} has-error{% endif %}{% if not form.instance.is_active %} is-off{% endif %}" role="row">
+          {% for h in form.hidden_fields %}{{ h }}{% endfor %}
+          <span><span class="nzl-tier" style="--t:{{ form.instance.color }}">{{ form.instance.name }}</span>{% if form.errors %}<small class="nzl-err">{% for f in form %}{{ f.errors|striptags }} {% endfor %}{{ form.non_field_errors|striptags }}</small>{% endif %}</span>
+          <span>{{ form.min_spend }}</span><span>{{ form.max_spend }}</span><span>{{ form.percent }}</span>
+          <span><label class="nzl-switch">{{ form.is_active }}<i aria-hidden="true"></i></label></span>
+          <span class="r nzl-ex" data-nzl-row-pct>—</span>
+          <span><a class="nzl-edit" href="{% url 'admin:loyalty_loyaltytier_change' form.instance.pk %}" aria-label="Batafsil tahrirlash"><i class="fas fa-pen" aria-hidden="true"></i></a></span>
+        </div>
+        {% endfor %}
+      </div>
+    </section>
+  </form>
+</div>
+<script src="{% static 'admin/js/nutrizone-loyalty.js' %}?v=1" defer></script>
+{% endblock %}

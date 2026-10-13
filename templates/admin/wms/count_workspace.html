@@ -1,0 +1,17 @@
+{% extends "admin/base_site.html" %}
+{% load i18n static %}
+{# Stock count workspace -- rendered by nutrizone-count.js from <id>/data/; actions POST to <id>/do/<action>/. #}
+{% block extrastyle %}{{ block.super }}<link rel="stylesheet" href="{% static 'admin/css/nutrizone-platform.css' %}?v=5"><link rel="stylesheet" href="{% static 'admin/css/nutrizone-orderdesk.css' %}?v=5"><link rel="stylesheet" href="{% static 'admin/css/nutrizone-wmsx.css' %}?v=9">{% endblock %}
+{% block breadcrumbs %}<ol class="breadcrumb"><li class="breadcrumb-item"><a href="{% url 'admin:index' %}">{% translate "Home" %}</a></li><li class="breadcrumb-item"><a href="{% url 'admin:stores_stockcount_changelist' %}">{% translate "Inventarizatsiya" %}</a></li><li class="breadcrumb-item active">{{ count.number }}</li></ol>{% endblock %}
+{% block content_title %}{% endblock %}
+{% block content %}
+<div class="nzp nzd wx">
+  <div id="wx-count" aria-live="polite"><div class="nzb-loading"><i class="fas fa-spinner fa-spin" aria-hidden="true"></i></div></div>
+  <dialog class="nzd-dialog" id="wx-dialog"><form method="dialog" data-wx-dialog></form></dialog>
+  <div class="nzp-toast" data-nzp-toast role="status" aria-live="polite" hidden></div>
+</div>
+{% csrf_token %}
+{{ config|json_script:"wx-config" }}
+{{ i18n|json_script:"wx-i18n" }}
+{% endblock %}
+{% block extrajs %}{{ block.super }}<script src="{% static 'admin/js/nutrizone-count.js' %}?v=5"></script>{% endblock %}

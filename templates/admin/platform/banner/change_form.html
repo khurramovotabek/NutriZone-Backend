@@ -1,0 +1,191 @@
+{% extends "admin/change_form.html" %}
+{% load i18n static admin_urls %}
+{# Banner editor: grouped form cards on the left, a live storefront-style slide preview on the right (desktop / mobile), sticky save bar. Field names are the stock BannerAdminForm ones, so the normal admin POST handles saving. #}
+
+{% block extrastyle %}
+{{ block.super }}
+<link rel="stylesheet" href="{% static 'admin/css/nutrizone-platform.css' %}?v=6">
+{% endblock %}
+
+{% block content_title %}{% endblock %}
+
+{% block content %}
+{% with f=adminform.form %}
+<div class="nzp nzp-editor" data-nzp-banner-editor>
+  <header class="nzp-hero">
+    <div class="nzp-hero-main">
+      <a class="nzp-back" href="{% url 'admin:platform_banner_changelist' %}{% if preserved_filters %}?{{ preserved_filters }}{% endif %}" title="{% translate 'Back to banners' %}" aria-label="{% translate 'Back to banners' %}"><i class="fas fa-arrow-left" aria-hidden="true"></i></a>
+      <div>
+        <h2>{% if add %}{% translate "New banner" %}{% else %}{{ original.title }}{% endif %}</h2>
+        <p>
+          {% if add %}{% translate "Create a slide for the homepage hero slider." %}
+          {% else %}
+            <span class="nzp-pill {% if original.is_active %}on{% else %}off{% endif %}">{% if original.is_active %}{% translate "Shown" %}{% else %}{% translate "Hidden" %}{% endif %}</span>
+            {% blocktranslate with date=original.updated_at|date:"d.m.Y H:i" %}Updated {{ date }}{% endblocktranslate %}
+          {% endif %}
+        </p>
+      </div>
+    </div>
+    <div class="nzp-hero-actions">
+      {% if nz_frontend_url %}<a class="nzp-btn nzp-btn-ghost" href="{{ nz_frontend_url }}/" target="_blank" rel="noopener"><i class="fas fa-arrow-up-right-from-square" aria-hidden="true"></i> {% translate "Open storefront" %}</a>{% endif %}
+      {% if not add %}<a class="nzp-btn nzp-btn-ghost" href="{% url 'admin:platform_banner_history' original.pk|admin_urlquote %}"><i class="fas fa-clock-rotate-left" aria-hidden="true"></i> {% translate "History" %}</a>{% endif %}
+    </div>
+  </header>
+
+  {% if errors %}
+  <div class="nzp-alert nzp-alert-error"><i class="fas fa-circle-exclamation" aria-hidden="true"></i>
+    <div>{% if errors|length == 1 %}{% translate "Please correct the error below." %}{% else %}{% translate "Please correct the errors below." %}{% endif %}{% for e in f.non_field_errors %}<br>{{ e }}{% endfor %}</div>
+  </div>
+  {% endif %}
+
+  <form {% if has_file_field %}enctype="multipart/form-data" {% endif %}action="{{ form_url }}" method="post" id="{{ opts.model_name }}_form" novalidate data-nzp-form>{% csrf_token %}
+    {% if is_popup %}<input type="hidden" name="{{ is_popup_var }}" value="1">{% endif %}
+    {% if to_field %}<input type="hidden" name="{{ to_field_var }}" value="{{ to_field }}">{% endif %}
+
+    <div class="nzp-editor-grid">
+      <div class="nzp-editor-main">
+        {# --- Content --- #}
+        <section class="nzp-card">
+          <header class="nzp-card-head"><span class="nzp-card-icon" style="--c:#6366f1"><i class="fas fa-heading" aria-hidden="true"></i></span><div><h3>{% translate "Content" %}</h3><p>{% translate "Large heading and a short line under it." %}</p></div></header>
+          <div class="nzp-field{% if f.title.errors %} has-error{% endif %}">
+            <label for="{{ f.title.id_for_label }}">{% translate "Title" %} <em>*</em><span class="nzp-count" data-nzp-count-for="{{ f.title.id_for_label }}" data-max="200"></span></label>
+            {{ f.title }}
+            {% for e in f.title.errors %}<p class="nzp-error">{{ e }}</p>{% endfor %}
+          </div>
+          <div class="nzp-field{% if f.subtitle.errors %} has-error{% endif %}">
+            <label for="{{ f.subtitle.id_for_label }}">{% translate "Subtitle" %}<span class="nzp-count" data-nzp-count-for="{{ f.subtitle.id_for_label }}" data-max="300"></span></label>
+            {{ f.subtitle }}
+            {% for e in f.subtitle.errors %}<p class="nzp-error">{{ e }}</p>{% endfor %}
+          </div>
+        </section>
+
+        {# --- Other storefront languages (empty = the Uzbek text above is shown) --- #}
+        <section class="nzp-card">
+          <header class="nzp-card-head"><span class="nzp-card-icon" style="--c:#8b5cf6"><i class="fas fa-language" aria-hidden="true"></i></span><div><h3>{% translate "Tarjimalar" %}</h3><p>{% translate "Yuqoridagi matnlar o'zbekcha. Ruscha va inglizcha saytda shu tarjimalar ko'rinadi; bo'sh qolsa — o'zbekchasi." %}</p></div></header>
+          {% for lang, label, t, s, c in nz_banner_langs %}
+          <details class="nzp-lang"{% if t.value or s.value or c.value or t.errors or s.errors or c.errors %} open{% endif %}>
+            <summary>{{ label }}{% if t.value %} <span class="nzp-lang-ok"><i class="fas fa-check" aria-hidden="true"></i></span>{% endif %}</summary>
+            <div class="nzp-field{% if t.errors %} has-error{% endif %}"><label for="{{ t.id_for_label }}">{% translate "Title" %}</label>{{ t }}{% for e in t.errors %}<p class="nzp-error">{{ e }}</p>{% endfor %}</div>
+            <div class="nzp-field{% if s.errors %} has-error{% endif %}"><label for="{{ s.id_for_label }}">{% translate "Subtitle" %}</label>{{ s }}{% for e in s.errors %}<p class="nzp-error">{{ e }}</p>{% endfor %}</div>
+            <div class="nzp-field{% if c.errors %} has-error{% endif %}"><label for="{{ c.id_for_label }}">{% translate "Button text" %}</label>{{ c }}{% for e in c.errors %}<p class="nzp-error">{{ e }}</p>{% endfor %}</div>
+          </details>
+          {% endfor %}
+        </section>
+
+        {# --- Image --- #}
+        <section class="nzp-card">
+          <header class="nzp-card-head"><span class="nzp-card-icon" style="--c:#0ea5e9"><i class="fas fa-image" aria-hidden="true"></i></span><div><h3>{% translate "Image" %}</h3><p>{% translate "Wide image, about 1920×700 px. Keep the important part in the centre -- the sides are cropped on phones." %}</p></div></header>
+          <label class="nzp-drop{% if f.image_upload.errors %} has-error{% endif %}" for="{{ f.image_upload.id_for_label }}" data-nzp-drop>
+            <span class="nzp-drop-thumb" data-nzp-drop-thumb>{% if nz_banner_image %}<img src="{{ nz_banner_image }}" alt="">{% else %}<i class="fas fa-cloud-arrow-up" aria-hidden="true"></i>{% endif %}</span>
+            <span class="nzp-drop-text">
+              <strong data-nzp-drop-title>{% if nz_banner_image %}{% translate "Replace image" %}{% else %}{% translate "Upload image" %}{% endif %}</strong>
+              <small data-nzp-drop-name>{% translate "Drag a file here or click to choose · JPEG, PNG or WebP" %}</small>
+            </span>
+          </label>
+          <input type="file" name="{{ f.image_upload.html_name }}" id="{{ f.image_upload.id_for_label }}" accept="image/jpeg,image/png,image/webp" class="nzp-file" data-nzp-image-input>
+          {% for e in f.image_upload.errors %}<p class="nzp-error">{{ e }}</p>{% endfor %}
+        </section>
+
+        {# --- Button --- #}
+        <section class="nzp-card">
+          <header class="nzp-card-head"><span class="nzp-card-icon" style="--c:#10b981"><i class="fas fa-hand-pointer" aria-hidden="true"></i></span><div><h3>{% translate "Button" %}</h3><p>{% translate "Optional. The button appears only when both fields are filled in." %}</p></div></header>
+          <div class="nzp-two">
+            <div class="nzp-field{% if f.cta_text.errors %} has-error{% endif %}">
+              <label for="{{ f.cta_text.id_for_label }}">{% translate "Button text" %}<span class="nzp-count" data-nzp-count-for="{{ f.cta_text.id_for_label }}" data-max="60"></span></label>
+              {{ f.cta_text }}
+              <div class="nzp-chips" data-nzp-chips-for="{{ f.cta_text.id_for_label }}">
+                <button type="button">{% translate "Shop now" %}</button><button type="button">{% translate "View offers" %}</button><button type="button">{% translate "Learn more" %}</button>
+              </div>
+              {% for e in f.cta_text.errors %}<p class="nzp-error">{{ e }}</p>{% endfor %}
+            </div>
+            <div class="nzp-field{% if f.cta_url.errors %} has-error{% endif %}">
+              <label for="{{ f.cta_url.id_for_label }}">{% translate "Button link" %}</label>
+              <div class="nzp-input-icon"><i class="fas fa-link" aria-hidden="true"></i>{{ f.cta_url }}</div>
+              <div class="nzp-chips" data-nzp-chips-for="{{ f.cta_url.id_for_label }}">
+                <button type="button" data-value="/products">/products</button><button type="button" data-value="/products?sale=1">/products?sale=1</button><button type="button" data-value="/brands">/brands</button>
+              </div>
+              <p class="nzp-help">{% translate "A storefront path like /products or a full https:// link." %}</p>
+              {% for e in f.cta_url.errors %}<p class="nzp-error">{{ e }}</p>{% endfor %}
+            </div>
+          </div>
+        </section>
+
+        {# --- Display --- #}
+        <section class="nzp-card">
+          <header class="nzp-card-head"><span class="nzp-card-icon" style="--c:#f59e0b"><i class="fas fa-sliders" aria-hidden="true"></i></span><div><h3>{% translate "Display" %}</h3><p>{% translate "Visibility, order and how long the slide stays on screen." %}</p></div></header>
+          <div class="nzp-toggle-row">
+            <div><strong>{% translate "Show on homepage" %}</strong><small>{% translate "Hidden banners are kept but not shown to customers." %}</small></div>
+            <label class="nzp-switch-input"><input type="checkbox" name="{{ f.is_active.html_name }}" id="{{ f.is_active.id_for_label }}"{% if f.is_active.value %} checked{% endif %}><span></span></label>
+          </div>
+          <div class="nzp-two">
+            <div class="nzp-field{% if f.duration_seconds.errors %} has-error{% endif %}">
+              <label for="{{ f.duration_seconds.id_for_label }}">{% translate "Display duration" %}</label>
+              <div class="nzp-range">
+                <input type="range" min="3" max="120" step="1" value="{{ f.duration_seconds.value|default:45 }}" data-nzp-range-for="{{ f.duration_seconds.id_for_label }}" aria-label="{% translate 'Display duration' %}">
+                <div class="nzp-suffix">{{ f.duration_seconds }}<span>{% translate "sec" %}</span></div>
+              </div>
+              <p class="nzp-help">{% translate "3 to 300 seconds. 6–10 seconds suits most slides." %}</p>
+              {% for e in f.duration_seconds.errors %}<p class="nzp-error">{{ e }}</p>{% endfor %}
+            </div>
+            <div class="nzp-field{% if f.sort_order.errors %} has-error{% endif %}">
+              <label for="{{ f.sort_order.id_for_label }}">{% translate "Sort order" %}</label>
+              {{ f.sort_order }}
+              <p class="nzp-help">{% translate "Smaller numbers come first. You can also drag cards in the banner list." %}</p>
+              {% for e in f.sort_order.errors %}<p class="nzp-error">{{ e }}</p>{% endfor %}
+            </div>
+          </div>
+        </section>
+      </div>
+
+      <aside class="nzp-editor-side">
+        <section class="nzp-card nzp-preview-card">
+          <header class="nzp-preview-head">
+            <h3><i class="fas fa-eye" aria-hidden="true"></i> {% translate "Live preview" %}</h3>
+            <div class="nzp-seg" role="group" aria-label="{% translate 'Preview size' %}">
+              <button type="button" class="on" data-nzp-device="desktop" title="{% translate 'Desktop' %}" aria-label="{% translate 'Desktop' %}"><i class="fas fa-desktop" aria-hidden="true"></i></button>
+              <button type="button" data-nzp-device="mobile" title="{% translate 'Phone' %}" aria-label="{% translate 'Phone' %}"><i class="fas fa-mobile-screen" aria-hidden="true"></i></button>
+            </div>
+          </header>
+          <div class="nzp-slide-wrap" data-nzp-slide-wrap>
+            <div class="nzp-slide" data-nzp-slide>
+              <img data-nzp-prev-img {% if nz_banner_image %}src="{{ nz_banner_image }}"{% else %}hidden{% endif %} alt="">
+              <div class="nzp-slide-shade"></div>
+              <div class="nzp-slide-bars"><span class="on"><i style="animation-duration: {{ f.duration_seconds.value|default:45 }}s" data-nzp-prev-bar></i></span><span></span><span></span></div>
+              <div class="nzp-slide-body">
+                <h4 data-nzp-prev-title>{{ f.title.value|default:"" }}</h4>
+                <p data-nzp-prev-subtitle>{{ f.subtitle.value|default:"" }}</p>
+                <span class="nzp-slide-cta" data-nzp-prev-cta>{{ f.cta_text.value|default:"" }}</span>
+              </div>
+            </div>
+          </div>
+          <ul class="nzp-facts">
+            <li><span>{% translate "Status" %}</span><b data-nzp-prev-status data-on="{% translate 'Shown' %}" data-off="{% translate 'Hidden' %}"></b></li>
+            <li><span>{% translate "On screen" %}</span><b><span data-nzp-prev-duration>{{ f.duration_seconds.value|default:45 }}</span> {% translate "sec" %}</b></li>
+            <li><span>{% translate "Shown banners" %}</span><b>{{ nz_active_count }}</b></li>
+            {% if not add %}<li><span>{% translate "Created" %}</span><b>{{ original.created_at|date:"d.m.Y H:i" }}</b></li>{% endif %}
+          </ul>
+        </section>
+      </aside>
+    </div>
+
+    <div class="nzp-savebar">
+      {% if not add and has_delete_permission %}
+        {% url opts|admin_urlname:'delete' original.pk|admin_urlquote as delete_url %}
+        <a class="nzp-btn nzp-btn-danger-ghost" href="{% add_preserved_filters delete_url %}"><i class="fas fa-trash" aria-hidden="true"></i> <span class="nzp-btn-label">{% translate "Delete" %}</span></a>
+      {% endif %}
+      <span class="nzp-dirty" data-nzp-dirty hidden><i class="fas fa-circle" aria-hidden="true"></i> {% translate "You have unsaved changes" %}</span>
+      <div class="nzp-savebar-right">
+        {% if add %}<button type="submit" name="_addanother" class="nzp-btn nzp-btn-ghost" title="{% translate 'Save and add another' %}"><i class="fas fa-plus" aria-hidden="true"></i> <span class="nzp-btn-label">{% translate "Save and add another" %}</span></button>{% endif %}
+        <button type="submit" name="_continue" class="nzp-btn nzp-btn-ghost" title="{% translate 'Save and continue editing' %}"><i class="fas fa-floppy-disk" aria-hidden="true"></i> <span class="nzp-btn-label">{% translate "Save and continue editing" %}</span></button>
+        <button type="submit" name="_save" class="nzp-btn nzp-btn-primary"><i class="fas fa-check" aria-hidden="true"></i> {% translate "Save" %}</button>
+      </div>
+    </div>
+  </form>
+</div>
+{% endwith %}
+{% endblock %}
+
+{% block extrajs %}
+{{ block.super }}
+<script src="{% static 'admin/js/nutrizone-platform.js' %}?v=5"></script>
+{% endblock %}

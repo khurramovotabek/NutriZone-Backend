@@ -1,0 +1,78 @@
+{% extends "admin/base_site.html" %}
+{% load i18n static nza %}
+{# Dashboard → Sotuv rejasi (apps/platform/infrastructure/growth_view.py, sales_plan.py). #}
+{% block extrastyle %}{{ block.super }}<link rel="stylesheet" href="{% static 'admin/css/nutrizone-analytics.css' %}?v=5"><link rel="stylesheet" href="{% static 'admin/css/nutrizone-growth.css' %}?v=1">{% endblock %}
+{% block breadcrumbs %}<ol class="breadcrumb"><li class="breadcrumb-item"><a href="{% url 'admin:index' %}">{% translate "Home" %}</a></li><li class="breadcrumb-item active">{{ title }}</li></ol>{% endblock %}
+{% block content_title %}{% endblock %}
+{% block content %}
+<div class="nza nzg">
+  <header class="nza-hero nzg-hero-plan">
+    <div class="nza-hero-main">
+      <span class="nza-hero-icon"><i class="fas fa-bullseye" aria-hidden="true"></i></span>
+      <div class="nza-hero-text">
+        <p class="nza-eyebrow">NutriZone · Sales plan</p>
+        <h2>{{ title }}</h2>
+        <p class="nza-hero-sub"><b>{{ d.label }}</b> · {{ d.days }} kun{% if is_current %} <span class="nza-live"><span></span>joriy oy</span>{% endif %}</p>
+      </div>
+    </div>
+    <div class="nza-hero-actions">
+      <a class="nza-btn" href="?m={{ prev }}" aria-label="Oldingi oy"><i class="fas fa-chevron-left" aria-hidden="true"></i></a>
+      {% if not is_current %}<a class="nza-btn" href="?">Joriy oy</a>{% endif %}
+      <a class="nza-btn" href="?m={{ next }}" aria-label="Keyingi oy"><i class="fas fa-chevron-right" aria-hidden="true"></i></a>
+    </div>
+  </header>
+
+  {% with c=d.company %}{% if c %}
+  <section class="nza-kpis" aria-label="Kompaniya rejasi">
+    <article class="nza-kpi nza-kpi-hero" style="--t:#4f46e5">
+      <div class="nza-kpi-top"><span class="nza-kpi-icon"><i class="fas fa-flag-checkered" aria-hidden="true"></i></span><span class="nza-kpi-label">Bajarildi</span></div>
+      <strong title="{{ c.done|som }}">{{ c.done|compact }} <small>so'm</small></strong>
+      <div class="nza-kpi-foot">{% if c.target %}<span>rejadan {{ c.pct|pct }}</span>{% else %}<span>reja kiritilmagan</span>{% endif %}</div>
+    </article>
+    <article class="nza-kpi" style="--t:#0891b2">
+      <div class="nza-kpi-top"><span class="nza-kpi-icon"><i class="fas fa-bullseye" aria-hidden="true"></i></span><span class="nza-kpi-label">Oylik reja</span></div>
+      <strong>{% if c.target %}{{ c.target|compact }} <small>so'm</small>{% else %}<span class="nza-na">—</span>{% endif %}</strong>
+      <div class="nza-kpi-foot"><span>{% if c.expected %}hozirgacha kutilgan {{ c.expected|compact }}{% else %}pastda kiriting{% endif %}</span></div>
+    </article>
+    <article class="nza-kpi" style="--t:{% if c.state == 'ok' %}#16a34a{% elif c.state == 'warn' %}#d97706{% elif c.state == 'bad' %}#dc2626{% else %}#64748b{% endif %}">
+      <div class="nza-kpi-top"><span class="nza-kpi-icon"><i class="fas fa-chart-line" aria-hidden="true"></i></span><span class="nza-kpi-label">Oy oxiriga prognoz</span></div>
+      <strong title="{{ c.forecast|som }}">{{ c.forecast|compact }} <small>so'm</small></strong>
+      <div class="nza-kpi-foot"><span>{% if c.forecast_pct %}rejaning {{ c.forecast_pct|pct }}i — hozirgi sur'atda{% else %}hozirgi sur'atda{% endif %}</span></div>
+    </article>
+    {% if c.needed_per_day is not None %}
+    <article class="nza-kpi" style="--t:#7c3aed">
+      <div class="nza-kpi-top"><span class="nza-kpi-icon"><i class="fas fa-calendar-day" aria-hidden="true"></i></span><span class="nza-kpi-label">Kuniga kerak</span></div>
+      <strong>{{ c.needed_per_day|compact }} <small>so'm</small></strong>
+      <div class="nza-kpi-foot"><span>bugun {{ c.today|compact }} / {{ c.today_target|compact }} ({{ c.today_pct|default:0 }}%)</span></div>
+    </article>
+    {% endif %}
+  </section>
+  {% endif %}{% endwith %}
+
+  <form method="post" action="{% url 'admin:nz_sales_plan_save' %}" class="nza-card nzg-plan">
+    {% csrf_token %}<input type="hidden" name="month" value="{{ month|date:'Y-m' }}">
+    <div class="nza-card-head"><h3><i class="fas fa-store" aria-hidden="true"></i> Filiallar bo'yicha</h3>{% if can_edit %}<button type="submit" class="nzg-save"><i class="fas fa-floppy-disk" aria-hidden="true"></i> Rejani saqlash</button>{% endif %}</div>
+    <div class="nzg-rows">
+      {% for r in rows %}
+      <article class="nzg-row is-{{ r.state }}" style="--c:{{ r.color }}">
+        <div class="nzg-name"><span class="nzg-dot" aria-hidden="true"></span><b>{{ r.name }}</b></div>
+        <div class="nzg-bar" role="img" aria-label="{{ r.name }}: {% if r.pct is not None %}{{ r.pct }}%{% else %}reja yo'q{% endif %}">
+          <span class="nzg-fill" style="width:{% if r.pct is not None %}{% if r.pct > 100 %}100{% else %}{{ r.pct|floatformat:0 }}{% endif %}{% else %}0{% endif %}%"></span>
+          {% if r.target and r.expected %}<span class="nzg-marker" style="left:{% widthratio r.expected r.target 100 %}%" title="Hozirgacha kutilgan"></span>{% endif %}
+        </div>
+        <dl class="nzg-facts">
+          <div><dt>Bajarildi</dt><dd>{{ r.done|compact }}</dd></div>
+          <div><dt>Foiz</dt><dd>{% if r.pct is not None %}{{ r.pct|pct }}{% else %}—{% endif %}</dd></div>
+          <div><dt>Prognoz</dt><dd>{{ r.forecast|compact }}{% if r.forecast_pct %} <small>({{ r.forecast_pct|floatformat:0 }}%)</small>{% endif %}</dd></div>
+          {% if r.needed_per_day is not None %}<div><dt>Kuniga kerak</dt><dd>{{ r.needed_per_day|compact }}</dd></div>{% endif %}
+          {% if r.ahead is not None %}<div><dt>{% if r.ahead >= 0 %}Oldinda{% else %}Orqada{% endif %}</dt><dd class="{% if r.ahead >= 0 %}ok{% else %}bad{% endif %}">{{ r.ahead|compact }}</dd></div>{% endif %}
+        </dl>
+        <label class="nzg-input"><span>Oylik reja, so'm</span><input name="target_{% if r.store_id %}{{ r.store_id }}{% else %}company{% endif %}" inputmode="numeric" value="{% if r.target %}{{ r.target|floatformat:0 }}{% endif %}" placeholder="masalan 120000000"{% if not can_edit %} disabled{% endif %}></label>
+        {% if r.sellers %}<details class="nzg-sellers"><summary>Kassirlar ({{ r.sellers|length }})</summary><ol>{% for s in r.sellers %}<li><span>{{ s.name }}{% if not r.store_id %} <small>{{ s.branch }}</small>{% endif %}</span><b>{{ s.revenue|compact }}</b><small>{{ s.count }} chek</small></li>{% endfor %}</ol></details>{% endif %}
+      </article>
+      {% endfor %}
+    </div>
+    <p class="nza-note"><i class="fas fa-circle-info" aria-hidden="true"></i> Tushum — do'kon kassalari (qaytarishlarsiz) + filialga biriktirilgan yetkazilgan onlayn buyurtmalar. Kompaniya qatori barcha kanallarni, shu jumladan Dashboard POS ni hisoblaydi. Prognoz — oyning shu paytigacha bo'lgan sur'ati.</p>
+  </form>
+</div>
+{% endblock %}

@@ -1,0 +1,83 @@
+{% extends "admin/base_site.html" %}
+{% load i18n static %}
+{# Warehouse reports: turnover KPIs, flow in / out by movement type, ABC, per-product table with dead-stock / ABC tabs, Excel. Built by planning_admin.reports_view. #}
+{% block extrastyle %}{{ block.super }}<link rel="stylesheet" href="{% static 'admin/css/nutrizone-platform.css' %}?v=5"><link rel="stylesheet" href="{% static 'admin/css/nutrizone-orderdesk.css' %}?v=5"><link rel="stylesheet" href="{% static 'admin/css/nutrizone-wmsx.css' %}?v=9">{% endblock %}
+{% block content_title %}{% endblock %}
+{% block content %}
+<div class="nzp nzd wx">
+  <header class="nzp-hero">
+    <div class="nzp-hero-main">
+      <span class="nzp-hero-icon" style="--c:#6366f1"><i class="fas fa-chart-column" aria-hidden="true"></i></span>
+      <div><h2>{% translate "Ombor hisobotlari" %}</h2><p>{% translate "How fast stock turns into sales, what lies on the shelf without selling, which products carry the business (ABC) and where units go. Values at cost." %}</p></div>
+    </div>
+    <div class="nzp-hero-actions"><a class="nzp-btn nzp-btn-ghost" href="?{% if current %}location={{ current.pk }}&{% endif %}days={{ days }}&tab={{ tab }}&export=xlsx"><i class="fas fa-file-excel" aria-hidden="true"></i> Excel</a></div>
+  </header>
+
+  <form class="nzp-toolbar" method="get">
+    <input type="hidden" name="tab" value="{{ tab }}">
+    <nav class="nzp-tabs" aria-label="{% translate 'Period' %}">
+      {% for p in periods %}<a class="nzp-tab{% if days == p %} on{% endif %}" href="?{% if current %}location={{ current.pk }}&{% endif %}days={{ p }}&tab={{ tab }}" style="--t:#6366f1">{% blocktranslate count d=p %}{{ d }} day{% plural %}{{ d }} days{% endblocktranslate %}</a>{% endfor %}
+    </nav>
+    <input type="hidden" name="days" value="{{ days }}">
+    <select name="location" class="nzp-select" onchange="this.form.submit()" aria-label="{% translate 'Location' %}"><option value="">{% translate "All locations" %}</option>{% for s in locations %}<option value="{{ s.pk }}"{% if current and current.pk == s.pk %} selected{% endif %}>{{ s.name }}</option>{% endfor %}</select>
+  </form>
+
+  <div class="nzp-stats">
+    <div class="nzp-stat" style="--c:#f59e0b"><i class="fas fa-coins" aria-hidden="true"></i><div><b>{{ k.stock_value }}<small> {% translate "so'm" %}</small></b><span>{% translate "Stock value now" %}</span></div></div>
+    <div class="nzp-stat" style="--c:#3b82f6"><i class="fas fa-cart-shopping" aria-hidden="true"></i><div><b>{{ k.cogs }}<small> {% translate "so'm" %}</small></b><span>{% blocktranslate with n=rep.units_sold %}Sold at cost · {{ n }} pcs{% endblocktranslate %}</span></div></div>
+    <div class="nzp-stat" style="--c:#10b981"><i class="fas fa-rotate" aria-hidden="true"></i><div><b>{% if rep.turnover is not None %}{{ rep.turnover }}×{% else %}—{% endif %}</b><span>{% if rep.days_inventory is not None %}{% blocktranslate with d=rep.days_inventory %}Turnover a year · stock lasts {{ d }} days{% endblocktranslate %}{% else %}{% translate "Turnover a year" %}{% endif %}</span></div></div>
+    <a class="nzp-stat" href="?{% if current %}location={{ current.pk }}&{% endif %}days={{ days }}&tab=dead" style="--c:#ef4444"><i class="fas fa-box-archive" aria-hidden="true"></i><div><b>{{ k.dead_value }}<small> {% translate "so'm" %}</small></b><span>{% blocktranslate count n=rep.dead|length %}Not selling · {{ n }} product{% plural %}Not selling · {{ n }} products{% endblocktranslate %}</span></div></a>
+  </div>
+  {% if rep.unpriced %}<div class="nzp-note nzp-note-info"><i class="fas fa-circle-info" aria-hidden="true"></i> {% blocktranslate count n=rep.unpriced %}{{ n }} product has no cost yet -- its value counts as 0. Enter the cost on goods receipts.{% plural %}{{ n }} products have no cost yet -- their value counts as 0. Enter the cost on goods receipts.{% endblocktranslate %}</div>{% endif %}
+
+  <div class="wx-report-grid">
+    <section class="nzp-card">
+      <header class="nzp-card-head nzp-card-head-sm"><span class="nzp-card-icon" style="--c:#10b981"><i class="fas fa-arrow-down" aria-hidden="true"></i></span><div><h3>{% translate "Units in" %}</h3></div></header>
+      {% for f in flow_in %}<div class="wx-flow"><span><i style="background:{{ f.color }}"></i>{{ f.label }}</span><b>+{{ f.units }}</b><small>{{ f.value }}</small><em><i style="width:{{ f.share }}%;background:{{ f.color }}"></i></em></div>{% empty %}<p class="wx-muted">{% translate "Nothing came in during this period." %}</p>{% endfor %}
+    </section>
+    <section class="nzp-card">
+      <header class="nzp-card-head nzp-card-head-sm"><span class="nzp-card-icon" style="--c:#e11d48"><i class="fas fa-arrow-up" aria-hidden="true"></i></span><div><h3>{% translate "Units out" %}</h3></div></header>
+      {% for f in flow_out %}<div class="wx-flow"><span><i style="background:{{ f.color }}"></i>{{ f.label }}</span><b>−{{ f.units }}</b><small>{{ f.value }}</small><em><i style="width:{{ f.share }}%;background:{{ f.color }}"></i></em></div>{% empty %}<p class="wx-muted">{% translate "Nothing left during this period." %}</p>{% endfor %}
+      {% if rep.loss_units %}<p class="wx-loss"><i class="fas fa-triangle-exclamation" aria-hidden="true"></i> {% blocktranslate with n=rep.loss_units v=k.loss_value %}Lost (damaged / expired / written off): {{ n }} pcs · {{ v }} so'm{% endblocktranslate %}</p>{% endif %}
+    </section>
+    <section class="nzp-card">
+      <header class="nzp-card-head nzp-card-head-sm"><span class="nzp-card-icon" style="--c:#6366f1"><i class="fas fa-ranking-star" aria-hidden="true"></i></span><div><h3>{% translate "ABC analysis" %}</h3><p class="wx-muted">{% translate "By sales value in the period" %}</p></div></header>
+      <div class="wx-abc">
+        <a href="?{% if current %}location={{ current.pk }}&{% endif %}days={{ days }}&tab=A" style="--c:#10b981"><b>A</b><span>{{ k.abc.A.n }} {% translate "products" %}</span><small>{% translate "80% of sales -- never let them run out" %}</small></a>
+        <a href="?{% if current %}location={{ current.pk }}&{% endif %}days={{ days }}&tab=B" style="--c:#f59e0b"><b>B</b><span>{{ k.abc.B.n }} {% translate "products" %}</span><small>{% translate "next 15% -- normal control" %}</small></a>
+        <a href="?{% if current %}location={{ current.pk }}&{% endif %}days={{ days }}&tab=C" style="--c:#94a3b8"><b>C</b><span>{{ k.abc.C.n }} {% translate "products" %}</span><small>{% translate "last 5% -- keep little in stock" %}</small></a>
+      </div>
+    </section>
+  </div>
+
+  <nav class="nzp-tabs wx-report-tabs" aria-label="{% translate 'Filter' %}">
+    <a class="nzp-tab{% if tab == 'all' %} on{% endif %}" href="?{% if current %}location={{ current.pk }}&{% endif %}days={{ days }}&tab=all" style="--t:#64748b"><i class="fas fa-layer-group" aria-hidden="true"></i> {% translate "All products" %}</a>
+    <a class="nzp-tab{% if tab == 'fast' %} on{% endif %}" href="?{% if current %}location={{ current.pk }}&{% endif %}days={{ days }}&tab=fast" style="--t:#10b981"><i class="fas fa-bolt" aria-hidden="true"></i> {% translate "Best sellers" %}</a>
+    <a class="nzp-tab{% if tab == 'dead' %} on{% endif %}" href="?{% if current %}location={{ current.pk }}&{% endif %}days={{ days }}&tab=dead" style="--t:#ef4444"><i class="fas fa-box-archive" aria-hidden="true"></i> {% translate "Not selling" %} <b>{{ rep.dead|length }}</b></a>
+    {% for c in "ABC" %}<a class="nzp-tab{% if tab == c %} on{% endif %}" href="?{% if current %}location={{ current.pk }}&{% endif %}days={{ days }}&tab={{ c }}" style="--t:#6366f1">{{ c }}</a>{% endfor %}
+  </nav>
+
+  <section class="nzp-card nzp-inbox">
+    {% if rows %}
+    <div class="nzd-table wx-report-table" role="table">
+      <div class="nzd-tr nzd-th" role="row"><span>{% translate "Product" %}</span><span class="r">{% translate "On hand" %}</span><span class="r">{% translate "Sold" %}</span><span class="r">{% translate "Sales / day" %}</span><span class="r">{% translate "Lasts" %}</span><span>{% translate "Last sale" %}</span><span class="r">{% translate "Stock value" %}</span><span class="c">ABC</span></div>
+      {% for x in rows %}{% with r=x.r %}
+      <div class="nzd-tr{% if r.dead %} wx-rp-out{% endif %}" role="row">
+        <span class="wx-prod">{% if r.info.image_url %}<img src="{{ r.info.image_url }}" alt="">{% else %}<span class="ph"><i class="fas fa-box" aria-hidden="true"></i></span>{% endif %}<span><b>{{ r.info.name }}</b><small>{{ r.info.sku }}{% if r.info.size %} · {{ r.info.size }}{% endif %}</small></span></span>
+        <span class="r"><b class="wx-num">{{ r.on_hand }}</b></span>
+        <span class="r">{% if r.sold %}<b>{{ r.sold }}</b><small>{{ x.sales_value }}</small>{% else %}<small>—</small>{% endif %}</span>
+        <span class="r">{% if r.sold %}<b>{{ x.per_day }}</b>{% else %}<small>—</small>{% endif %}</span>
+        <span class="r">{% if r.cover is not None %}<b class="{% if r.cover < 7 %}wx-minus{% elif r.cover > 120 %}wx-debt{% endif %}">{% blocktranslate count d=r.cover %}{{ d }} day{% plural %}{{ d }} days{% endblocktranslate %}</b>{% elif r.on_hand %}<span class="wx-state out">{% translate "no sales" %}</span>{% else %}<small>—</small>{% endif %}</span>
+        <span>{% if x.last %}<b>{{ x.last }}</b><small>{% blocktranslate count d=x.idle %}{{ d }} day ago{% plural %}{{ d }} days ago{% endblocktranslate %}</small>{% else %}<small>{% translate "never sold" %}</small>{% endif %}</span>
+        <span class="r">{% if x.value %}<b>{{ x.value }}</b>{% elif r.on_hand %}<span class="wx-nodata">{% translate "no cost" %}</span>{% else %}<small>—</small>{% endif %}</span>
+        <span class="c">{% if r.sold %}<span class="wx-abc-badge wx-abc-{{ r.abc }}">{{ r.abc }}</span>{% endif %}</span>
+      </div>
+      {% endwith %}{% endfor %}
+    </div>
+    {% if total_rows > 400 %}<p class="wx-muted" style="padding:10px 16px">{% blocktranslate with n=total_rows %}Showing 400 of {{ n }} products -- download Excel for all.{% endblocktranslate %}</p>{% endif %}
+    {% else %}
+    <div class="nzp-empty"><span class="nzp-empty-icon" style="--c:#6366f1"><i class="fas fa-chart-column" aria-hidden="true"></i></span><h3>{% translate "Nothing here" %}</h3><p>{% translate "No products match this filter in the period." %}</p></div>
+    {% endif %}
+  </section>
+</div>
+{% endblock %}

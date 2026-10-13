@@ -1,0 +1,56 @@
+{% extends "admin/change_list.html" %}
+{% load i18n static admin_list %}
+{# Transfers: KPIs, status tabs, rows with route, progress (received / sent), age and discrepancy flags. Rows annotated in StockTransferAdmin.get_changelist_instance. #}
+{% block extrastyle %}{{ block.super }}<link rel="stylesheet" href="{% static 'admin/css/nutrizone-platform.css' %}?v=5"><link rel="stylesheet" href="{% static 'admin/css/nutrizone-orderdesk.css' %}?v=5"><link rel="stylesheet" href="{% static 'admin/css/nutrizone-wmsx.css' %}?v=9">{% endblock %}
+{% block content_title %}{% endblock %}
+{% block content %}
+<div class="nzp nzd wx">
+  <header class="nzp-hero">
+    <div class="nzp-hero-main">
+      <span class="nzp-hero-icon" style="--c:#6366f1"><i class="fas fa-right-left" aria-hidden="true"></i></span>
+      <div><h2>{% translate "Transferlar" %}</h2><p>{% translate "Goods moving between the warehouse and branches: reserve → pick → send → receive, every step in the stock ledger." %}</p></div>
+    </div>
+    <div class="nzp-hero-actions">
+      <a class="nzp-btn nzp-btn-ghost" href="{% url 'admin:stores_stocktransfer_export' %}{% if export_query %}?{{ export_query }}{% endif %}"><i class="fas fa-file-excel" aria-hidden="true"></i> {% translate "Excel" %}</a>
+      <a class="nzp-btn nzp-btn-ghost" href="{% url 'admin:nz_wms_stock' %}?view=matrix"><i class="fas fa-table-cells" aria-hidden="true"></i> {% translate "Stock matrix" %}</a>
+      {% if can_create %}<a class="nzp-btn nzp-btn-primary" href="{% url 'admin:stores_stocktransfer_new' %}"><i class="fas fa-plus" aria-hidden="true"></i> {% translate "Yangi transfer" %}</a>{% endif %}
+    </div>
+  </header>
+
+  <div class="nzp-stats">
+    <a class="nzp-stat nzb-stat-link" style="--c:#6366f1" href="?status=in_transit"><i class="fas fa-truck-fast" aria-hidden="true"></i><div><b>{{ wms_kpis.in_transit }}</b><span>{% translate "On the way" %} · {{ wms_kpis.units_in_transit }} {% translate "units" %}</span></div></a>
+    <a class="nzp-stat nzb-stat-link" style="--c:#f59e0b" href="?status=awaiting"><i class="fas fa-box-open" aria-hidden="true"></i><div><b>{{ wms_kpis.receiving }}</b><span>{% translate "Being received" %}</span></div></a>
+    <a class="nzp-stat nzb-stat-link" style="--c:#e11d48" href="?status=partial"><i class="fas fa-triangle-exclamation" aria-hidden="true"></i><div><b>{{ wms_kpis.discrepancy }}</b><span>{% translate "Discrepancies to approve" %}</span></div></a>
+    <a class="nzp-stat nzb-stat-link" style="--c:#64748b" href="?status=draft"><i class="fas fa-file-pen" aria-hidden="true"></i><div><b>{{ wms_kpis.drafts }}</b><span>{% translate "Drafts / ready to send" %}</span></div></a>
+  </div>
+
+  <div class="nzp-toolbar">
+    <nav class="nzp-tabs" aria-label="{% translate 'Status' %}">
+      {% for t in nz_tabs %}<a href="?{% if t.key %}status={{ t.key }}{% endif %}" class="nzp-tab{% if t.on %} on{% endif %}" style="--t:{{ t.color }}">{{ t.label }} <b>{{ t.n }}</b></a>{% endfor %}
+    </nav>
+    <form class="nzd-filters" method="get">{% if nz_status %}<input type="hidden" name="status" value="{{ nz_status }}">{% endif %}<label class="nzp-search"><i class="fas fa-magnifying-glass" aria-hidden="true"></i><input type="search" name="q" value="{{ cl.query }}" placeholder="{% translate 'TR number or product…' %}"></label></form>
+  </div>
+
+  <section class="nzp-card nzp-inbox">
+    {% if cl.result_list %}
+    <div class="nzd-table wx-transfer-table" role="table">
+      <div class="nzd-tr nzd-th" role="row"><span>{% translate "Number" %}</span><span>{% translate "Route" %}</span><span class="r">{% translate "Units" %}</span><span>{% translate "Received" %}</span><span>{% translate "Sent / received" %}</span><span>{% translate "Status" %}</span></div>
+      {% for t in cl.result_list %}
+      <a class="nzd-tr{% if t.discrepancy_open or t.nz.stuck %} is-open{% endif %}" role="row" href="{% url 'admin:stores_stocktransfer_workspace' t.pk %}" style="--i:{{ forloop.counter0 }}">
+        <span><b class="nz-num">{{ t.number }}</b><small>{{ t.nz.created }} · {{ t.created_by }}</small></span>
+        <span class="wx-route"><i class="wms-dot" style="background:{{ t.source.color|default:'#94a3b8' }}"></i>{{ t.source.name }} <i class="fas fa-arrow-right arrow" aria-hidden="true"></i> <i class="wms-dot" style="background:{{ t.destination.color|default:'#94a3b8' }}"></i>{{ t.destination.name }}</span>
+        <span class="r"><b class="wx-num">{{ t.nz.units }}</b><small>{{ t.nz.lines }} {% translate "products" %}{% if t.nz.value %} · {{ t.nz.value }} so'm{% endif %}</small></span>
+        <span>{% if t.nz.units %}<span class="wx-progress"><i style="width:{{ t.nz.progress }}%"></i></span><small>{{ t.nz.received }} / {{ t.nz.units }}</small>{% else %}<small>—</small>{% endif %}</span>
+        <span><small>{% if t.nz.sent %}<i class="fas fa-truck" aria-hidden="true"></i> {{ t.nz.sent }}{% if t.dispatched_by %} · {{ t.dispatched_by }}{% endif %}{% else %}—{% endif %}</small><small>{% if t.nz.received_at %}<i class="fas fa-box" aria-hidden="true"></i> {{ t.nz.received_at }}{% if t.received_by %} · {{ t.received_by }}{% endif %}{% endif %}</small></span>
+        <span><span class="nzd-pill" style="--t:{{ t.nz.color }}">{{ t.get_status_display }}</span>{% if t.discrepancy_open %}<small class="wx-minus"><i class="fas fa-triangle-exclamation" aria-hidden="true"></i> {% translate "discrepancy" %}</small>{% elif t.nz.stuck %}<small class="wx-minus"><i class="fas fa-hourglass-half" aria-hidden="true"></i> {% translate "on the way 2+ days" %}</small>{% endif %}</span>
+      </a>
+      {% endfor %}
+    </div>
+    {% else %}
+    <div class="nzp-empty"><span class="nzp-empty-icon" style="--c:#6366f1"><i class="fas fa-right-left" aria-hidden="true"></i></span><h3>{% if cl.query or nz_status %}{% translate "Nothing found" %}{% else %}{% translate "No transfers yet" %}{% endif %}</h3>
+      {% if can_create %}<a class="nzp-btn nzp-btn-primary" href="{% url 'admin:stores_stocktransfer_new' %}"><i class="fas fa-plus" aria-hidden="true"></i> {% translate "Yangi transfer" %}</a>{% endif %}</div>
+    {% endif %}
+  </section>
+  {% if cl.result_count > cl.list_per_page %}<div class="nzp-pagination">{% pagination cl %}</div>{% endif %}
+</div>
+{% endblock %}

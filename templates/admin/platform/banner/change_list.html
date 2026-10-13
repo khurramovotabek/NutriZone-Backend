@@ -1,0 +1,133 @@
+{% extends "admin/change_list.html" %}
+{% load i18n static admin_list admin_urls %}
+{# Banners as a visual gallery: stats, filter tabs, cards with live on/off toggles and drag-to-reorder (BannerAdmin.toggle_view / reorder_view). Bulk actions still go through Django's own changelist POST. #}
+
+{% block extrastyle %}
+{{ block.super }}
+<link rel="stylesheet" href="{% static 'admin/css/nutrizone-platform.css' %}?v=5">
+{% endblock %}
+
+{% block content_title %}{% endblock %}
+
+{% block content %}
+{% url 'admin:platform_banner_add' as add_url %}
+<div class="nzp" data-nzp-banners
+     data-reorder-url="{% url 'admin:platform_banner_reorder' %}"
+     data-msg-saved="{% translate 'Order saved' %}"
+     data-msg-shown="{% translate 'Banner is now shown on the homepage' %}"
+     data-msg-hidden="{% translate 'Banner is now hidden' %}"
+     data-msg-error="{% translate 'Could not save. Please try again.' %}">
+
+  <header class="nzp-hero">
+    <div class="nzp-hero-main">
+      <span class="nzp-hero-icon"><i class="fas fa-images" aria-hidden="true"></i></span>
+      <div>
+        <h2>{% translate "Banners" %}</h2>
+        <p>{% translate "Homepage hero slider. Drag cards to change the order, use the switch to show or hide a banner." %}</p>
+      </div>
+    </div>
+    <div class="nzp-hero-actions">
+      {% if nz_frontend_url %}<a class="nzp-btn nzp-btn-ghost" href="{{ nz_frontend_url }}/" target="_blank" rel="noopener"><i class="fas fa-arrow-up-right-from-square" aria-hidden="true"></i> {% translate "Open storefront" %}</a>{% endif %}
+      {% if has_add_permission %}<a class="nzp-btn nzp-btn-primary" href="{% add_preserved_filters add_url is_popup to_field %}"><i class="fas fa-plus" aria-hidden="true"></i> {% translate "New banner" %}</a>{% endif %}
+    </div>
+  </header>
+
+  <div class="nzp-stats">
+    <div class="nzp-stat" style="--c:#6366f1"><i class="fas fa-layer-group" aria-hidden="true"></i><div><b>{{ nz_banner_stats.total }}</b><span>{% translate "Total" %}</span></div></div>
+    <div class="nzp-stat" style="--c:#10b981"><i class="fas fa-eye" aria-hidden="true"></i><div><b data-nzp-active-count>{{ nz_banner_stats.active }}</b><span>{% translate "Shown" %}</span></div></div>
+    <div class="nzp-stat" style="--c:#94a3b8"><i class="fas fa-eye-slash" aria-hidden="true"></i><div><b data-nzp-hidden-count>{{ nz_banner_stats.hidden }}</b><span>{% translate "Hidden" %}</span></div></div>
+    <div class="nzp-stat" style="--c:#f59e0b"><i class="fas fa-stopwatch" aria-hidden="true"></i><div><b>{{ nz_banner_stats.cycle }}<small> {% translate "sec" %}</small></b><span>{% translate "Full slider cycle" %}</span></div></div>
+  </div>
+
+  {% if nz_banner_stats.no_image %}
+  <div class="nzp-note"><i class="fas fa-triangle-exclamation" aria-hidden="true"></i> {% blocktranslate count n=nz_banner_stats.no_image %}{{ n }} banner has no image -- it shows as a plain colour block on the storefront.{% plural %}{{ n }} banners have no image -- they show as plain colour blocks on the storefront.{% endblocktranslate %}</div>
+  {% endif %}
+
+  <div class="nzp-toolbar">
+    <nav class="nzp-tabs" aria-label="{% translate 'Filter' %}">
+      <a href="?{% if cl.query %}q={{ cl.query|urlencode }}{% endif %}" class="nzp-tab{% if not nz_filter_active %} on{% endif %}">{% translate "All" %} <b>{{ nz_banner_stats.total }}</b></a>
+      <a href="?is_active__exact=1{% if cl.query %}&q={{ cl.query|urlencode }}{% endif %}" class="nzp-tab{% if nz_filter_active == '1' %} on{% endif %}" style="--t:#10b981">{% translate "Shown" %} <b>{{ nz_banner_stats.active }}</b></a>
+      <a href="?is_active__exact=0{% if cl.query %}&q={{ cl.query|urlencode }}{% endif %}" class="nzp-tab{% if nz_filter_active == '0' %} on{% endif %}" style="--t:#94a3b8">{% translate "Hidden" %} <b>{{ nz_banner_stats.hidden }}</b></a>
+    </nav>
+    <form class="nzp-search" method="get">
+      {% if nz_filter_active %}<input type="hidden" name="is_active__exact" value="{{ nz_filter_active }}">{% endif %}
+      <i class="fas fa-magnifying-glass" aria-hidden="true"></i>
+      <input type="search" name="q" value="{{ cl.query }}" placeholder="{% translate 'Search banners…' %}" aria-label="{% translate 'Search banners…' %}">
+    </form>
+  </div>
+
+  <form method="post" class="nzp-bulk-form" data-nzp-bulk novalidate>{% csrf_token %}
+    <input type="hidden" name="index" value="0">
+    <input type="hidden" name="select_across" value="0">
+
+    {% if action_form and cl.result_list %}
+    <div class="nzp-bulkbar" data-nzp-bulkbar data-always>
+      <label class="nzp-check"><input type="checkbox" data-nzp-select-all> <span data-nzp-selected-label>{% translate "Select all" %}</span></label>
+      <select name="action" class="nzp-select" aria-label="{% translate 'Action' %}">
+        {% for value, label in action_form.fields.action.choices %}<option value="{{ value }}">{{ label }}</option>{% endfor %}
+      </select>
+      <button type="submit" class="nzp-btn nzp-btn-primary nzp-btn-sm" data-nzp-bulk-go disabled>{% translate "Apply" %}</button>
+    </div>
+    {% endif %}
+
+    {% if cl.result_list %}
+    <div class="nzp-banner-grid" data-nzp-grid{% if not cl.query and not nz_filter_active and nz_can_change %} data-sortable{% endif %}>
+      {% for b in cl.result_list %}
+      {% url 'admin:platform_banner_change' b.pk|admin_urlquote as change_url %}
+      <article class="nzp-banner{% if not b.is_active %} is-off{% endif %}" data-id="{{ b.pk }}" style="--i: {{ forloop.counter0 }}">
+        <div class="nzp-banner-media">
+          {% if b.nz_image %}<img src="{{ b.nz_image }}" alt="" loading="lazy">{% else %}<div class="nzp-banner-noimg"><i class="fas fa-image" aria-hidden="true"></i><span>{% translate "No image" %}</span></div>{% endif %}
+          <div class="nzp-banner-shade"></div>
+          <div class="nzp-banner-top">
+            {% if nz_can_change %}<span class="nzp-drag" title="{% translate 'Drag to reorder' %}" aria-hidden="true"><i class="fas fa-grip-vertical"></i></span>{% endif %}
+            <span class="nzp-pos" data-nzp-pos>#{{ forloop.counter }}</span>
+            <span class="nzp-pill {% if b.is_active %}on{% else %}off{% endif %}" data-nzp-pill>{% if b.is_active %}{% translate "Shown" %}{% else %}{% translate "Hidden" %}{% endif %}</span>
+            {% if action_form %}<label class="nzp-select-card" title="{% translate 'Select' %}"><input type="checkbox" name="_selected_action" value="{{ b.pk }}" data-nzp-row-check aria-label="{% translate 'Select' %}: {{ b.title }}"></label>{% endif %}
+          </div>
+          <div class="nzp-banner-caption">
+            <h3>{{ b.title }}</h3>
+            {% if b.subtitle %}<p>{{ b.subtitle }}</p>{% endif %}
+            {% if b.cta_text %}<span class="nzp-cta">{{ b.cta_text }} <i class="fas fa-arrow-right" aria-hidden="true"></i></span>{% endif %}
+          </div>
+        </div>
+        <footer class="nzp-banner-foot">
+          <div class="nzp-banner-meta">
+            <span title="{% translate 'Display duration' %}"><i class="fas fa-stopwatch" aria-hidden="true"></i> {{ b.duration_seconds }} {% translate "sec" %}</span>
+            {% if b.cta_url %}<span class="nzp-link-meta" title="{{ b.cta_url }}"><i class="fas fa-link" aria-hidden="true"></i> {{ b.cta_url|cut:"https://"|cut:"http://"|truncatechars:28 }}</span>{% endif %}
+          </div>
+          <div class="nzp-banner-actions">
+            {% if nz_can_change %}
+            <button type="button" class="nzp-switch{% if b.is_active %} on{% endif %}" role="switch" aria-checked="{% if b.is_active %}true{% else %}false{% endif %}" data-nzp-toggle="{% url 'admin:platform_banner_toggle' b.pk %}" title="{% translate 'Show on homepage' %}" aria-label="{% translate 'Show on homepage' %}: {{ b.title }}"><span></span></button>
+            {% endif %}
+            <a class="nzp-icon-btn" href="{% add_preserved_filters change_url %}" title="{% translate 'Edit' %}" aria-label="{% translate 'Edit' %}: {{ b.title }}"><i class="fas fa-pen" aria-hidden="true"></i></a>
+          </div>
+        </footer>
+      </article>
+      {% endfor %}
+    </div>
+    {% else %}
+    <div class="nzp-empty">
+      <span class="nzp-empty-icon"><i class="fas fa-images" aria-hidden="true"></i></span>
+      {% if cl.query or nz_filter_active %}
+        <h3>{% translate "Nothing found" %}</h3>
+        <p>{% translate "Try a different search or filter." %}</p>
+        <a class="nzp-btn nzp-btn-ghost" href="?">{% translate "Clear filters" %}</a>
+      {% else %}
+        <h3>{% translate "No banners yet" %}</h3>
+        <p>{% translate "Add the first slide for the homepage hero slider." %}</p>
+        {% if has_add_permission %}<a class="nzp-btn nzp-btn-primary" href="{{ add_url }}"><i class="fas fa-plus" aria-hidden="true"></i> {% translate "New banner" %}</a>{% endif %}
+      {% endif %}
+    </div>
+    {% endif %}
+  </form>
+
+  {% if cl.result_list and not cl.query and not nz_filter_active and nz_can_change %}<p class="nzp-hint"><i class="fas fa-hand-pointer" aria-hidden="true"></i> {% translate "Tip: drag a card by its handle to reorder. The order is saved automatically." %}</p>{% endif %}
+  {% if cl.result_count > cl.list_per_page %}<div class="nzp-pagination">{% pagination cl %}</div>{% endif %}
+  <div class="nzp-toast" data-nzp-toast role="status" aria-live="polite" hidden></div>
+</div>
+{% endblock %}
+
+{% block extrajs %}
+{{ block.super }}
+<script src="{% static 'admin/js/nutrizone-platform.js' %}?v=5"></script>
+{% endblock %}

@@ -1,0 +1,157 @@
+{% extends "admin/base_site.html" %}
+{% load i18n static %}
+
+{% block breadcrumbs %}
+<div class="breadcrumbs">
+  <a href="{% url 'admin:index' %}">{% translate "Home" %}</a>
+  &rsaquo; {{ title }}
+</div>
+{% endblock %}
+
+{% block content %}
+<div class="nz-dashboard" data-nz-reports>
+  <div class="nz-dashboard-header">
+    <div>
+      <h2 class="nz-dashboard-title">{% translate "Reports & Business Intelligence" %}</h2>
+      <p class="nz-dashboard-subtitle">
+        {% blocktranslate with period=period_label %}Showing data for {{ period }}{% endblocktranslate %}
+        &middot; {% translate "Last updated" %}: {{ last_updated|date:"Y-m-d H:i" }}
+      </p>
+    </div>
+  </div>
+
+  {# --- Sales Report --- #}
+  <div class="nz-card">
+    <h3>{% translate "Sales" %} <a href="{% url 'admin:nz_reports_sales_export' %}" class="btn btn-sm btn-outline-primary">{% translate "Export to Excel" %}</a></h3>
+    {% if sales.ok %}
+      {% with s=sales.data %}
+      <div class="nz-kpi-grid">
+        <div class="nz-card nz-kpi-card">
+          <div class="nz-kpi-label">{% translate "Gross Sales" %}</div>
+          <div class="nz-stat-number">{{ s.gross_sales|floatformat:0 }} UZS</div>
+          {% if s.revenue_change.value is not None %}
+          <div class="nz-kpi-trend nz-trend-{{ s.revenue_change.direction }}">{{ s.revenue_change.value }}% {% translate "vs previous period" %}</div>
+          {% else %}
+          <div class="nz-kpi-trend nz-trend-muted">{% translate "No previous data" %}</div>
+          {% endif %}
+        </div>
+        <div class="nz-card nz-kpi-card">
+          <div class="nz-kpi-label">{% translate "Orders" %}</div>
+          <div class="nz-stat-number">{{ s.orders }}</div>
+          {% if s.orders_change.value is not None %}
+          <div class="nz-kpi-trend nz-trend-{{ s.orders_change.direction }}">{{ s.orders_change.value }}%</div>
+          {% else %}
+          <div class="nz-kpi-trend nz-trend-muted">{% translate "No previous data" %}</div>
+          {% endif %}
+        </div>
+        <div class="nz-card nz-kpi-card">
+          <div class="nz-kpi-label">{% translate "Average Order Value" %}</div>
+          <div class="nz-stat-number">{{ s.average_order_value|floatformat:0 }} UZS</div>
+        </div>
+        <div class="nz-card nz-kpi-card">
+          <div class="nz-kpi-label">{% translate "Cancelled Orders" %}</div>
+          <div class="nz-stat-number">{{ s.cancelled_orders }}</div>
+        </div>
+      </div>
+      {% if s.order_status_distribution %}
+        <div style="height:200px; margin-top: var(--nz-space-4);">
+          <canvas id="nz-order-status-chart"></canvas>
+        </div>
+        {{ s.order_status_distribution|json_script:"nz-order-status-series-data" }}
+      {% endif %}
+      {% endwith %}
+    {% else %}
+      <p class="nz-error-state">&#9888; {% translate "Unable to load sales data" %}</p>
+    {% endif %}
+  </div>
+
+  <div class="nz-dashboard-columns">
+    {# --- Customers --- #}
+    <div class="nz-card">
+      <h3>{% translate "Customers" %}</h3>
+      {% if customers.ok %}
+        <div class="nz-stat-number">{{ customers.data.total_customers }}</div>
+        <div class="nz-kpi-trend nz-trend-muted">{% translate "Total registered customers" %}</div>
+      {% else %}
+        <p class="nz-error-state">&#9888; {% translate "Unable to load customer data" %}</p>
+      {% endif %}
+    </div>
+
+    {# --- Products --- #}
+    <div class="nz-card">
+      <h3>{% translate "Top Products" %} {% if products.ok %}<a href="{% url 'admin:nz_reports_section_export' 'products' %}" class="btn btn-sm btn-outline-primary">{% translate "Export to Excel" %}</a>{% endif %}</h3>
+      {% if products.ok and products.data.top_products %}
+        <div style="height:260px;">
+          <canvas id="nz-top-products-chart"></canvas>
+        </div>
+        {{ products.data.top_products|json_script:"nz-top-products-series-data" }}
+      {% elif products.ok %}
+        <p class="nz-empty-state">{% translate "No product sales data available yet." %}</p>
+      {% else %}
+        <p class="nz-error-state">&#9888; {% translate "Unable to load product data" %}</p>
+      {% endif %}
+    </div>
+
+    {# --- Phase E2: real category distribution --- #}
+    <div class="nz-card">
+      <h3>{% translate "Products by Category" %}</h3>
+      {% if products.ok and products.data.products_by_category %}
+        <div style="height:220px;">
+          <canvas id="nz-category-chart"></canvas>
+        </div>
+        {{ products.data.products_by_category|json_script:"nz-category-series-data" }}
+      {% elif products.ok %}
+        <p class="nz-empty-state">{% translate "No category data available yet." %}</p>
+      {% else %}
+        <p class="nz-error-state">&#9888; {% translate "Unable to load product data" %}</p>
+      {% endif %}
+    </div>
+  </div>
+
+  <div class="nz-dashboard-columns">
+    {# --- Inventory --- #}
+    <div class="nz-card">
+      <h3>{% translate "Inventory" %} {% if inventory.ok %}<a href="{% url 'admin:nz_reports_section_export' 'inventory' %}" class="btn btn-sm btn-outline-primary">{% translate "Export to Excel" %}</a>{% endif %}</h3>
+      {% if inventory.ok %}
+        <div class="nz-kpi-trend nz-trend-muted">{% translate "Low stock" %}: {{ inventory.data.low_stock_total }}</div>
+        <div class="nz-kpi-trend nz-trend-muted">{% translate "Out of stock" %}: {{ inventory.data.out_of_stock_total }}</div>
+      {% else %}
+        <p class="nz-error-state">&#9888; {% translate "Unable to load inventory data" %}</p>
+      {% endif %}
+    </div>
+
+    {# --- Marketing --- #}
+    <div class="nz-card">
+      <h3>{% translate "Marketing" %} {% if marketing.ok %}<a href="{% url 'admin:nz_reports_section_export' 'marketing' %}" class="btn btn-sm btn-outline-primary">{% translate "Export to Excel" %}</a>{% endif %}</h3>
+      {% if marketing.ok %}
+        <div class="nz-kpi-trend nz-trend-muted">{% translate "Total coupon redemptions" %}: {{ marketing.data.total_redemptions }}</div>
+        {% for status, count in marketing.data.coupon_counts_by_status.items %}
+        <div class="nz-kpi-trend nz-trend-muted">{% translate "Coupons" %} ({{ status }}): {{ count }}</div>
+        {% endfor %}
+        {% for status, count in marketing.data.campaign_counts_by_status.items %}
+        <div class="nz-kpi-trend nz-trend-muted">{% translate "Campaigns" %} ({{ status }}): {{ count }}</div>
+        {% endfor %}
+      {% else %}
+        <p class="nz-error-state">&#9888; {% translate "Unable to load marketing data" %}</p>
+      {% endif %}
+    </div>
+  </div>
+
+  {# --- Reviews --- #}
+  <div class="nz-card">
+    <h3>{% translate "Reviews" %} {% if reviews.ok %}<a href="{% url 'admin:nz_reports_section_export' 'reviews' %}" class="btn btn-sm btn-outline-primary">{% translate "Export to Excel" %}</a>{% endif %}</h3>
+    {% if reviews.ok and reviews.data.counts_by_status %}
+      <div style="height:220px;">
+        <canvas id="nz-reviews-chart"></canvas>
+      </div>
+      {{ reviews.data.counts_by_status|json_script:"nz-reviews-series-data" }}
+    {% elif reviews.ok %}
+      <p class="nz-empty-state">{% translate "No review data available yet." %}</p>
+    {% else %}
+      <p class="nz-error-state">&#9888; {% translate "Unable to load review data" %}</p>
+    {% endif %}
+  </div>
+</div>
+<script src="{% static 'admin/vendor/chartjs/chart.umd.js' %}"></script>
+<script src="{% static 'admin/js/nutrizone-dashboard-charts.js' %}"></script>
+{% endblock %}

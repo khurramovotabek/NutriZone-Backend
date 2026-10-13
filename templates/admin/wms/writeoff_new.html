@@ -1,0 +1,20 @@
+{% extends "admin/base_site.html" %}
+{% load i18n static %}
+{# New write-off -- rendered by nutrizone-writeoff.js (location, scan / search the location's stock, reason per line); posts to new/post/. #}
+{% block extrastyle %}{{ block.super }}<link rel="stylesheet" href="{% static 'admin/css/nutrizone-platform.css' %}?v=5"><link rel="stylesheet" href="{% static 'admin/css/nutrizone-orderdesk.css' %}?v=5"><link rel="stylesheet" href="{% static 'admin/css/nutrizone-wmsx.css' %}?v=9">{% endblock %}
+{% block breadcrumbs %}<ol class="breadcrumb"><li class="breadcrumb-item"><a href="{% url 'admin:index' %}">{% translate "Home" %}</a></li><li class="breadcrumb-item"><a href="{% url 'admin:stores_writeoff_changelist' %}">{% translate "Hisobdan chiqarish" %}</a></li><li class="breadcrumb-item active">{{ title }}</li></ol>{% endblock %}
+{% block content_title %}{% endblock %}
+{% block content %}
+<div class="nzp nzd wx">
+  <header class="nzp-hero"><div class="nzp-hero-main">
+    <a class="nzp-back" href="{% url 'admin:stores_writeoff_changelist' %}" aria-label="{% translate 'Back' %}"><i class="fas fa-arrow-left" aria-hidden="true"></i></a>
+    <div><h2>{{ title }}</h2><p>{% translate "The units are set aside at once (not sellable) and leave stock when a manager approves." %}</p></div>
+  </div></header>
+  <div id="wx-writeoff"></div>
+  <div class="nzp-toast" data-nzp-toast role="status" aria-live="polite" hidden></div>
+</div>
+{% csrf_token %}
+{{ config|json_script:"wx-config" }}
+{{ i18n|json_script:"wx-i18n" }}
+{% endblock %}
+{% block extrajs %}{{ block.super }}<script src="{% static 'admin/js/nutrizone-writeoff.js' %}?v=2"></script>{% endblock %}

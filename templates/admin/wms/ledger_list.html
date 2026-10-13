@@ -1,0 +1,64 @@
+{% extends "admin/change_list.html" %}
+{% load i18n static admin_list %}
+{# Stock ledger (Ombor tarixi): today's in/out, movement-type chips, location + date filters, search, Excel of the current filter. Rows annotated in StockMovementAdmin.get_changelist_instance. #}
+{% block extrastyle %}{{ block.super }}<link rel="stylesheet" href="{% static 'admin/css/nutrizone-platform.css' %}?v=5"><link rel="stylesheet" href="{% static 'admin/css/nutrizone-orderdesk.css' %}?v=5"><link rel="stylesheet" href="{% static 'admin/css/nutrizone-wmsx.css' %}?v=9">{% endblock %}
+{% block content_title %}{% endblock %}
+{% block content %}
+<div class="nzp nzd wx">
+  <header class="nzp-hero">
+    <div class="nzp-hero-main">
+      <span class="nzp-hero-icon" style="--c:#64748b"><i class="fas fa-clock-rotate-left" aria-hidden="true"></i></span>
+      <div><h2>{% translate "Ombor tarixi" %}</h2><p>{% translate "Every stock change in every location -- receipts, sales, transfers, counts, reservations -- with who did it and the balance after." %}</p></div>
+    </div>
+    <div class="nzp-hero-actions"><a class="nzp-btn nzp-btn-ghost" href="{{ nz_export }}"><i class="fas fa-file-excel" aria-hidden="true"></i> {% translate "Excel (current filter)" %}</a></div>
+  </header>
+
+  <div class="nzp-stats">
+    <div class="nzp-stat" style="--c:#64748b"><i class="fas fa-list" aria-hidden="true"></i><div><b>{{ nz_today.n }}</b><span>{% translate "Movements today" %}</span></div></div>
+    <div class="nzp-stat" style="--c:#10b981"><i class="fas fa-arrow-down" aria-hidden="true"></i><div><b>+{{ nz_today.in }}</b><span>{% translate "Units in today" %}</span></div></div>
+    <div class="nzp-stat" style="--c:#e11d48"><i class="fas fa-arrow-up" aria-hidden="true"></i><div><b>−{{ nz_today.out }}</b><span>{% translate "Units out today" %}</span></div></div>
+    <div class="nzp-stat" style="--c:#3b82f6"><i class="fas fa-filter" aria-hidden="true"></i><div><b>{{ cl.result_count }}</b><span>{% translate "Matching the filter" %}</span></div></div>
+  </div>
+
+  <nav class="wx-type-chips" aria-label="{% translate 'Type' %}">
+    {% for t in nz_types %}<a href="{{ t.url }}" class="{% if t.on %}on{% endif %}" style="--t:{{ t.color }}"><i></i>{{ t.label }}</a>{% endfor %}
+  </nav>
+
+  <form class="nzp-toolbar" method="get">
+    {% if request.GET.movement_type__exact %}<input type="hidden" name="movement_type__exact" value="{{ request.GET.movement_type__exact }}">{% endif %}
+    <div class="wx-date-filter">
+      <select name="store__id__exact" class="nzp-select" onchange="this.form.submit()" aria-label="{% translate 'Location' %}">
+        <option value="">{% translate "All locations" %}</option>
+        {% for s in nz_locations %}<option value="{{ s.pk }}"{% if nz_store == s.pk|stringformat:"s" %} selected{% endif %}>{{ s.name }}</option>{% endfor %}
+      </select>
+      <input type="date" name="created_at__gte" value="{{ nz_from }}" aria-label="{% translate 'From' %}" onchange="this.form.submit()">
+      <span class="wx-muted">—</span>
+      <input type="date" name="created_at__lt" value="{{ nz_to }}" aria-label="{% translate 'Until' %}" onchange="this.form.submit()">
+    </div>
+    <label class="nzp-search"><i class="fas fa-magnifying-glass" aria-hidden="true"></i><input type="search" name="q" value="{{ cl.query }}" placeholder="{% translate 'Product, SKU, document (TR-, KR-, IC-, HC-, ORD-)…' %}"></label>
+  </form>
+
+  <section class="nzp-card nzp-inbox">
+    {% if cl.result_list %}
+    <div class="nzd-table wx-ledger-table" role="table">
+      <div class="nzd-tr nzd-th" role="row"><span>{% translate "When" %}</span><span>{% translate "Product" %}</span><span>{% translate "Location" %}</span><span>{% translate "Type" %}</span><span class="r">{% translate "Change" %}</span><span class="r">{% translate "Balance" %}</span><span>{% translate "Document" %}</span><span>{% translate "Who / note" %}</span></div>
+      {% for m in cl.result_list %}
+      <div class="nzd-tr" role="row">
+        <span><small>{{ m.nz.when }}</small></span>
+        <span class="wx-prod">{% if m.nz.image %}<img src="{{ m.nz.image }}" alt="" loading="lazy">{% else %}<span class="ph"><i class="fas fa-box" aria-hidden="true"></i></span>{% endif %}<span><b>{{ m.nz.name }}</b><small>{{ m.product_variant.sku }}{% if m.batch_number %} · LOT {{ m.batch_number }}{% endif %}</small></span></span>
+        <span class="wx-loc-cell"><i class="wms-dot" style="background:{{ m.store.color|default:'#94a3b8' }}"></i><span><b>{{ m.store.name }}</b></span></span>
+        <span><span class="nzd-pill" style="--t:{{ m.nz.color }}">{{ m.get_movement_type_display }}</span></span>
+        <span class="r"><b class="wx-qty-{{ m.nz.cls }}">{{ m.nz.qty }}</b>{% if m.nz.reserve %}<small>{% translate "reserved" %}</small>{% endif %}</span>
+        <span class="r"><b class="wx-num">{{ m.balance_after }}</b>{% if m.reserved_after %}<small>{{ m.reserved_after }} {% translate "reserved" %}</small>{% endif %}</span>
+        <span>{% if m.nz.link %}<a href="{{ m.nz.link }}" class="nz-num">{{ m.reference }}</a>{% else %}<small>{{ m.reference|default:"—" }}</small>{% endif %}</span>
+        <span><b>{{ m.actor|default:"—" }}</b><small title="{{ m.note }}">{{ m.note|truncatechars:60 }}</small></span>
+      </div>
+      {% endfor %}
+    </div>
+    {% else %}
+    <div class="nzp-empty"><h3>{% translate "Nothing found" %}</h3><p>{% translate "Try a different search or filter." %}</p><a class="nzp-btn nzp-btn-ghost" href="?">{% translate "Clear filters" %}</a></div>
+    {% endif %}
+  </section>
+  {% if cl.result_count > cl.list_per_page %}<div class="nzp-pagination">{% pagination cl %}</div>{% endif %}
+</div>
+{% endblock %}

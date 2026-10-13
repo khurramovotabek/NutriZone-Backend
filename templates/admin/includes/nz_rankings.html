@@ -1,0 +1,48 @@
+{% load i18n static %}
+{# Dashboard home: leaderboards for 7 / 30 / 90 days -- best-selling products (tills + online), branches, cashiers (apps/platform/infrastructure/dashboard_rankings.py). #}
+<link rel="stylesheet" href="{% static 'admin/css/nutrizone-rankings.css' %}?v=2">
+{% with r=nz_rankings.data %}
+<section class="nz-card nzr" aria-labelledby="nzr-title">
+  <header class="nzr-head">
+    <div><h3 id="nzr-title"><i class="fas fa-trophy" aria-hidden="true"></i> {% translate "Sales leaderboard" %}</h3><p>{% translate "Best-selling products, branches and cashiers" %}</p></div>
+    {% if r %}<nav class="nzr-periods" aria-label="{% translate 'Period' %}">{% for p in r.periods %}<a href="?rank={{ p }}#nzr-title" class="{% if r.days == p %}on{% endif %}">{% blocktranslate count d=p %}{{ d }} day{% plural %}{{ d }} days{% endblocktranslate %}</a>{% endfor %}</nav>{% endif %}
+  </header>
+  {% if nz_rankings.ok %}
+  <div class="nzr-grid">
+    <article class="nzr-col">
+      <h4><i class="fas fa-fire" aria-hidden="true" style="color:#f97316"></i> {% translate "Top 8 products" %}</h4>
+      {% if r.products %}<ol class="nzr-list">
+        {% for p in r.products %}
+        <li><span class="nzr-rank nzr-rank-{{ forloop.counter }}">{{ forloop.counter }}</span>
+          <span class="nzr-img">{% if p.image %}<img src="{{ p.image }}" alt="">{% else %}<i class="fas fa-box" aria-hidden="true"></i>{% endif %}</span>
+          <span class="nzr-main"><b>{{ p.name }}</b><small>{% if p.size %}{{ p.size }} · {% endif %}{% blocktranslate with a=p.pos b=p.online %}till {{ a }} · online {{ b }}{% endblocktranslate %}</small><em class="nzr-bar"><i style="width:{{ p.pct }}%;--c:#f97316"></i></em></span>
+          <span class="nzr-val"><b>{{ p.units }} {% translate "pcs" %}</b><small>{{ p.revenue }}</small></span></li>
+        {% endfor %}
+      </ol>{% else %}<p class="nzr-empty">{% translate "No sales in this period." %}</p>{% endif %}
+    </article>
+    <article class="nzr-col">
+      <h4><i class="fas fa-store" aria-hidden="true" style="color:#10b981"></i> {% translate "Top branches" %}</h4>
+      {% if r.branches %}<ol class="nzr-list">
+        {% for b in r.branches %}
+        <li><span class="nzr-rank nzr-rank-{{ forloop.counter }}">{{ forloop.counter }}</span>
+          <span class="nzr-dot" style="--c:{{ b.color }}"><i class="fas {% if b.online %}fa-globe{% else %}fa-store{% endif %}" aria-hidden="true"></i></span>
+          <span class="nzr-main"><b>{{ b.name }}</b><small>{% blocktranslate count n=b.sales %}{{ n }} sale{% plural %}{{ n }} sales{% endblocktranslate %} · {{ b.share }}%</small><em class="nzr-bar"><i style="width:{{ b.share }}%;--c:{{ b.color }}"></i></em></span>
+          <span class="nzr-val"><b>{{ b.revenue }}</b><small>{% translate "so'm" %}</small></span></li>
+        {% endfor %}
+      </ol>{% else %}<p class="nzr-empty">{% translate "No sales in this period." %}</p>{% endif %}
+    </article>
+    <article class="nzr-col">
+      <h4><i class="fas fa-id-badge" aria-hidden="true" style="color:#2563eb"></i> {% translate "Top cashiers" %}</h4>
+      {% if r.cashiers %}<ol class="nzr-list">
+        {% for c in r.cashiers %}
+        <li><span class="nzr-rank nzr-rank-{{ forloop.counter }}">{{ forloop.counter }}</span>
+          <span class="nzr-av">{{ c.initials }}</span>
+          <span class="nzr-main"><b>{{ c.name }}</b><small>{% blocktranslate count n=c.sales %}{{ n }} sale{% plural %}{{ n }} sales{% endblocktranslate %} · {% translate "avg" %} {{ c.avg }}{% if c.branch %} · {{ c.branch }}{% endif %}</small><em class="nzr-bar"><i style="width:{{ c.pct }}%;--c:#2563eb"></i></em></span>
+          <span class="nzr-val"><b>{{ c.revenue }}</b><small>{% translate "so'm" %}</small></span></li>
+        {% endfor %}
+      </ol>{% else %}<p class="nzr-empty">{% translate "No till sales in this period." %}</p>{% endif %}
+    </article>
+  </div>
+  {% else %}<p class="nzr-empty">{% translate "Could not load the leaderboard." %}</p>{% endif %}
+</section>
+{% endwith %}

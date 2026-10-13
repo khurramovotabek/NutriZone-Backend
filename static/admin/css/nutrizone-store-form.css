@@ -1,0 +1,93 @@
+/* Do'konlar: list cells, the store form's widgets (kind cards, status pills, phones, city, map, weekly hours, special days) and the summary strip. */
+.nzs-store { display: inline-flex; align-items: center; gap: 12px; }
+.nzs-logo { position: relative; flex-shrink: 0; width: 42px; height: 42px; border-radius: 13px; overflow: hidden; display: grid; place-items: center; font-weight: 800; color: #fff;
+  background: linear-gradient(135deg, var(--c), color-mix(in srgb, var(--c) 55%, #000)); box-shadow: 0 0 0 2px color-mix(in srgb, var(--c) 45%, transparent), 0 8px 18px -10px var(--c); }
+.nzs-logo img { width: 100%; height: 100%; object-fit: cover; background: #fff; }
+.nzs-dot { width: 10px; height: 10px; border-radius: 50%; background: var(--c); box-shadow: 0 0 0 3px color-mix(in srgb, var(--c) 25%, transparent); }
+.nzs-stars i { font-size: .8em; }
+
+/* summary strip on the change page */
+.nzf-summary { margin: 0 0 18px; padding: 16px 18px; border-radius: 20px; border: 1px solid var(--nz-glass-border, var(--nz-border));
+  background: linear-gradient(150deg, color-mix(in srgb, var(--nz-surface) 85%, transparent), color-mix(in srgb, var(--nz-surface) 60%, transparent)); backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px); }
+.nzf-sum-head { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; margin-bottom: 14px; }
+.nzf-sum-head img, .nzf-sum-mark { width: 48px; height: 48px; border-radius: 14px; object-fit: cover; background: #fff; box-shadow: 0 0 0 2px var(--c); }
+.nzf-sum-mark { display: grid; place-items: center; font-weight: 800; font-size: 1.2rem; color: #fff; background: var(--c); }
+.nzf-sum-head b { display: block; font-size: 1.1rem; color: var(--nz-text-primary); }
+.nzf-sum-head small { color: var(--nz-text-muted); }
+.nzf-open { margin-left: auto; padding: 5px 12px; border-radius: 999px; font-size: .78rem; font-weight: 800; color: #64748b; background: rgba(100,116,139,.14); }
+.nzf-open.on { color: #16a34a; background: rgba(22,163,74,.14); }
+.nzf-sum-kpis { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; }
+.nzf-sum-kpis > div { padding: 12px 14px; border-radius: 14px; background: color-mix(in srgb, var(--t) 11%, transparent); border: 1px solid color-mix(in srgb, var(--t) 25%, transparent); }
+.nzf-sum-kpis span { display: block; font-size: .66rem; font-weight: 800; text-transform: uppercase; letter-spacing: .06em; color: var(--nz-text-muted); }
+.nzf-sum-kpis b { display: block; margin-top: 4px; font-size: 1.05rem; color: var(--nz-text-primary); }
+.nzf-sum-kpis small { font-size: .72rem; color: var(--nz-text-muted); }
+
+/* kind cards + status pills */
+.model-store .nzf-cards, .model-store ul#id_kind, .model-store #id_kind { display: flex; flex-wrap: wrap; gap: 10px; list-style: none; padding: 0; margin: 0; }
+.model-store #id_kind label, .model-store #id_status label { display: flex; align-items: center; gap: 8px; margin: 0; cursor: pointer; font-weight: 700; }
+.model-store #id_kind > div, .model-store #id_kind > li { flex: 1 1 200px; }
+.model-store #id_kind label { padding: 14px 16px; border-radius: 16px; border: 1px solid var(--nz-border); background: var(--nz-surface); transition: all .15s; }
+.model-store #id_kind label:has(input:checked) { border-color: #10b981; background: color-mix(in srgb, #10b981 12%, var(--nz-surface)); box-shadow: 0 0 0 2px color-mix(in srgb, #10b981 40%, transparent); }
+.model-store #id_status { display: flex; flex-wrap: wrap; gap: 8px; list-style: none; padding: 0; margin: 0; }
+.model-store #id_status label { padding: 7px 14px; border-radius: 999px; border: 1px solid var(--nz-border); font-size: .82rem; }
+.model-store #id_status label:has(input:checked) { border-color: #10b981; color: #10b981; background: color-mix(in srgb, #10b981 10%, transparent); }
+.model-store #id_kind input, .model-store #id_status input { accent-color: #10b981; }
+
+/* shared little controls */
+.nzf-add { display: inline-flex; align-items: center; gap: 6px; padding: 6px 12px; border-radius: 999px; font-size: .78rem; font-weight: 700; cursor: pointer;
+  color: #0d9488 !important; background: color-mix(in srgb, #14b8a6 10%, transparent); border: 1px solid color-mix(in srgb, #14b8a6 30%, transparent); text-decoration: none !important; }
+.nzf-add:hover { background: color-mix(in srgb, #14b8a6 18%, transparent); }
+.nzf-x { width: 30px; height: 30px; flex-shrink: 0; border-radius: 9px; border: 1px solid var(--nz-border); background: transparent; color: #e11d48; cursor: pointer; font-size: 1.1rem; line-height: 1; }
+.nzf-phones, .nzf-sdays { display: flex; flex-direction: column; gap: 8px; align-items: flex-start; }
+.nzf-phone { display: flex; align-items: center; gap: 6px; }
+.nzf-prefix { width: 34px; height: 34px; border-radius: 10px; display: grid; place-items: center; color: #10b981; background: color-mix(in srgb, #10b981 12%, transparent); }
+.nzf-phone input { width: 230px; font-variant-numeric: tabular-nums; }
+.nzf-city { display: flex; flex-wrap: wrap; gap: 8px; }
+.nzf-select { min-width: 280px; padding: 7px 10px; border-radius: 10px; border: 1px solid var(--nz-border); background: var(--nz-surface); color: var(--nz-text-primary); }
+.nzf-sday { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; padding: 8px 10px; border-radius: 12px; border: 1px solid var(--nz-border); background: color-mix(in srgb, var(--nz-surface) 80%, transparent); }
+.nzf-sday.is-closed input[type=time], .nzf-sday.is-closed > span { opacity: .35; pointer-events: none; }
+.nzf-chk { display: inline-flex; align-items: center; gap: 6px; margin: 0; font-weight: 600; font-size: .82rem; }
+
+/* map picker */
+.nzf-map-wrap { width: 100%; max-width: 760px; }
+.nzf-map { height: 320px; border-radius: 16px; border: 1px solid var(--nz-border); overflow: hidden; z-index: 0; }
+.nzf-map-bar { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 8px; margin-top: 8px; font-size: .78rem; color: var(--nz-text-muted); }
+
+/* weekly hours grid */
+.nzf-hours-set { border: 0; padding: 0; margin: 0 0 8px; }
+.nzf-hours-tools { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin: 4px 0 12px; }
+.nzf-hours-now { margin-left: auto; font-size: .8rem; font-weight: 700; color: var(--nz-text-muted); }
+.nzf-hours { display: grid; gap: 8px; max-width: 760px; }
+.nzf-hour-row { display: grid; grid-template-columns: 120px 150px auto 12px auto 1fr; align-items: center; gap: 10px; padding: 10px 14px; border-radius: 14px;
+  border: 1px solid var(--nz-border); background: color-mix(in srgb, var(--nz-surface) 85%, transparent); transition: opacity .15s, background .15s; }
+.nzf-hour-row.is-today { border-color: #10b981; box-shadow: 0 0 0 2px color-mix(in srgb, #10b981 25%, transparent); }
+.nzf-hour-row.is-off { background: color-mix(in srgb, #64748b 8%, transparent); }
+.nzf-hour-row.is-off .nzf-time, .nzf-hour-row.is-off .nzf-dash { opacity: .3; pointer-events: none; }
+.nzf-day { font-weight: 800; color: var(--nz-text-primary); }
+.nzf-time input { padding: 6px 8px; border-radius: 9px; border: 1px solid var(--nz-border); background: var(--nz-surface); color: var(--nz-text-primary); font-variant-numeric: tabular-nums; }
+.nzf-dur { justify-self: end; font-size: .76rem; color: var(--nz-text-muted); }
+.nzf-err { grid-column: 1 / -1; margin: 0; }
+.nzf-switch { position: relative; display: inline-flex; align-items: center; gap: 8px; margin: 0; cursor: pointer; font-size: .8rem; font-weight: 700; }
+.nzf-switch input { position: absolute; opacity: 0; pointer-events: none; }
+.nzf-switch-ui { width: 38px; height: 22px; border-radius: 999px; background: #10b981; position: relative; transition: background .2s; flex-shrink: 0; }
+.nzf-switch-ui::after { content: ""; position: absolute; top: 2px; left: 18px; width: 18px; height: 18px; border-radius: 50%; background: #fff; transition: left .2s; box-shadow: 0 1px 3px rgba(0,0,0,.3); }
+.nzf-switch input:checked + .nzf-switch-ui { background: #64748b; }
+.nzf-switch input:checked + .nzf-switch-ui::after { left: 2px; }
+.nzf-switch-text::before { content: "Ochiq"; color: #10b981; }
+.nzf-switch input:checked ~ .nzf-switch-text::before { content: "Dam olish"; color: #64748b; }
+.nzf-switch input:focus-visible + .nzf-switch-ui { outline: 2px solid var(--nz-focus-ring); outline-offset: 2px; }
+
+@media (max-width: 900px) { .nzf-sum-kpis { grid-template-columns: 1fr 1fr; } }
+@media (max-width: 640px) {
+  .nzf-hour-row { grid-template-columns: 1fr auto; }
+  .nzf-hour-row .nzf-dash, .nzf-dur { display: none; }
+  .nzf-phone input, .nzf-select { width: 100%; min-width: 0; }
+  .nzf-map { height: 240px; }
+}
+.model-store .form-row input.vTextField, .model-store input[type=email], .model-store #id_name, .model-store #id_slug,
+.model-store #id_address, .model-store #id_district, .model-store #id_telegram_username, .model-store #id_instagram_username, .model-store #id_email { width: 100%; max-width: 520px; }
+.model-store #id_description { width: 100%; max-width: 640px; }
+.model-store #id_latitude, .model-store #id_longitude { width: 170px; font-variant-numeric: tabular-nums; }
+.nzs-review { max-width: 460px; font-size: .82rem; line-height: 1.45; color: var(--nz-text-secondary); white-space: normal; }
+.nzs-quote { margin: 0; padding: 14px 18px; border-left: 4px solid #f59e0b; border-radius: 12px; background: color-mix(in srgb, #f59e0b 8%, transparent); font-size: .95rem; line-height: 1.6; white-space: pre-line; max-width: 720px; }
+.nzs-quote footer { margin-top: 8px; font-size: .78rem; color: var(--nz-text-muted); }

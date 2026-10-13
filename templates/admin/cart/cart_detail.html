@@ -1,0 +1,86 @@
+{% extends "admin/base_site.html" %}
+{% load i18n static %}
+{# One cart: customer, products at today's price, orders placed from it, timeline, reminder / archive / restore (CartAdmin.change_view). #}
+{% block extrastyle %}{{ block.super }}<link rel="stylesheet" href="{% static 'admin/css/nutrizone-platform.css' %}?v=5"><link rel="stylesheet" href="{% static 'admin/css/nutrizone-orderdesk.css' %}?v=5"><link rel="stylesheet" href="{% static 'admin/css/nutrizone-wmsx.css' %}?v=9">{% endblock %}
+{% block breadcrumbs %}<ol class="breadcrumb"><li class="breadcrumb-item"><a href="{% url 'admin:index' %}">{% translate "Home" %}</a></li><li class="breadcrumb-item"><a href="{% url 'admin:cart_cartmodel_changelist' %}">{% translate "Savatlar" %}</a></li><li class="breadcrumb-item active">{{ c.code }}</li></ol>{% endblock %}
+{% block content_title %}{% endblock %}
+{% block content %}
+<div class="nzp nzd wx">
+  <header class="nzp-hero">
+    <div class="nzp-hero-main">
+      <a class="nzp-back" href="{% url 'admin:cart_cartmodel_changelist' %}" aria-label="{% translate 'Back' %}"><i class="fas fa-arrow-left" aria-hidden="true"></i></a>
+      <div><h2 class="nzd-number">{% translate "Cart" %} <span class="nz-num">{{ c.code }}</span> <span class="nzd-pill" style="--t:{{ tone }}">{{ label }}</span></h2>
+        <p><span><i class="fas {{ source_icon }}" aria-hidden="true"></i> {{ source }}</span><span>{% translate "created" %} {{ created }}</span><span>{% translate "last activity" %} {{ ago }}</span></p></div>
+    </div>
+    {% if can_change %}<div class="nzp-hero-actions">
+      {% if c.status == "archived" %}<form method="post" action="{% url 'admin:cart_cartmodel_restore' c.pk %}">{% csrf_token %}<button class="nzp-btn nzp-btn-ghost"><i class="fas fa-rotate-left" aria-hidden="true"></i> {% translate "Restore" %}</button></form>
+      {% elif c.status == "active" and not orders %}<form method="post" action="{% url 'admin:cart_cartmodel_archive' c.pk %}">{% csrf_token %}<button class="nzp-btn nzp-btn-ghost"><i class="fas fa-box-archive" aria-hidden="true"></i> {% translate "Archive" %}</button></form>{% endif %}
+      {% if can_remind %}<form method="post" action="{% url 'admin:cart_cartmodel_remind' c.pk %}">{% csrf_token %}<button class="nzp-btn nzp-btn-primary"><i class="fas fa-bell" aria-hidden="true"></i> {% translate "Remind the customer" %}</button></form>{% endif %}
+    </div>{% endif %}
+  </header>
+
+  {% if abandoned %}
+  <div class="nzp-note nzp-note-info wx-abandoned-note"><i class="fas fa-person-walking-arrow-right" aria-hidden="true"></i>
+    {% if u %}{% if last_reminder %}{% blocktranslate with w=last_reminder %}Abandoned cart. A reminder was sent on {{ w }}.{% endblocktranslate %}{% else %}{% translate "Abandoned cart -- the customer left without ordering. Send a reminder (inbox + Telegram) or call them." %}{% endif %}
+    {% else %}{% translate "Abandoned guest cart -- the visitor didn't sign in, so they can't be contacted." %}{% endif %}</div>
+  {% endif %}
+
+  <div class="nzp-stats">
+    <div class="nzp-stat" style="--c:#2563eb"><i class="fas fa-boxes-stacked" aria-hidden="true"></i><div><b>{{ lines|length }}</b><span>{% blocktranslate with n=units %}Products · {{ n }} pcs{% endblocktranslate %}</span></div></div>
+    <div class="nzp-stat" style="--c:#10b981"><i class="fas fa-sack-dollar" aria-hidden="true"></i><div><b>{{ total }}<small> {% translate "so'm" %}</small></b><span>{% translate "At today's prices" %}</span></div></div>
+    <div class="nzp-stat" style="--c:#0ea5e9"><i class="fas fa-bag-shopping" aria-hidden="true"></i><div><b>{{ orders|length }}</b><span>{% translate "Orders from this cart" %}</span></div></div>
+    <div class="nzp-stat" style="--c:#f59e0b"><i class="fas fa-ticket" aria-hidden="true"></i><div><b>{% if coupons %}{{ coupons|join:", " }}{% else %}—{% endif %}</b><span>{% translate "Coupon" %}</span></div></div>
+  </div>
+
+  <div class="wx-card-grid">
+    <div class="wx-card-main">
+      <section class="nzp-card nzd-items">
+        <header class="nzp-card-head nzp-card-head-sm"><span class="nzp-card-icon" style="--c:#2563eb"><i class="fas fa-cart-shopping" aria-hidden="true"></i></span><div><h3>{% translate "In the cart" %}</h3>{% if removed %}<p class="wx-muted">{% blocktranslate count n=removed %}{{ n }} product was removed{% plural %}{{ n }} products were removed{% endblocktranslate %}</p>{% endif %}</div></header>
+        {% if lines %}
+        <ul class="nzd-lines">
+          {% for l in lines %}
+          <li class="nzd-line">
+            <span class="nzd-thumb">{% if l.card.thumb %}<img src="{{ l.card.thumb }}" alt="">{% else %}<i class="fas fa-box" aria-hidden="true"></i>{% endif %}</span>
+            <div class="nzd-line-main"><strong>{{ l.card.name }}</strong><small>{{ l.card.sku }} · {% translate "added" %} {{ l.added }}</small>
+              {% if l.added_price %}<span class="nzd-line-tags"><span class="nzd-tag" style="--t:{% if l.cheaper %}#10b981{% else %}#f59e0b{% endif %}">{% if l.cheaper %}{% blocktranslate with p=l.added_price %}cheaper now -- was {{ p }}{% endblocktranslate %}{% else %}{% blocktranslate with p=l.added_price %}price went up -- was {{ p }}{% endblocktranslate %}{% endif %}</span></span>{% endif %}</div>
+            <div class="nzd-line-qty"><b>× {{ l.i.quantity }}</b><small>{% if l.price %}{{ l.price }} {% translate "so'm" %}{% else %}{% translate "no price" %}{% endif %}</small></div>
+            <div class="nzd-line-total">{% if l.line %}{{ l.line }} <small>{% translate "so'm" %}</small>{% else %}—{% endif %}</div>
+          </li>
+          {% endfor %}
+        </ul>
+        <div class="nzd-total-row wx-cart-total"><span>{% translate "Total" %}</span><b>{{ total }} {% translate "so'm" %}</b></div>
+        {% else %}<div class="nzp-empty"><p>{% translate "The cart is empty." %}</p></div>{% endif %}
+        {% if c.note %}<div class="nzp-note nzp-note-info"><i class="fas fa-note-sticky" aria-hidden="true"></i> {{ c.note }}</div>{% endif %}
+      </section>
+
+      <section class="nzp-card">
+        <header class="nzp-card-head nzp-card-head-sm"><span class="nzp-card-icon" style="--c:#64748b"><i class="fas fa-clock-rotate-left" aria-hidden="true"></i></span><div><h3>{% translate "History" %}</h3></div></header>
+        {% if timeline %}
+        <ol class="wx-timeline">
+          {% for t in timeline %}<li style="--c:{{ t.color }}"><i class="fas {{ t.icon }}" aria-hidden="true"></i><div><b>{{ t.text }}</b><small>{{ t.when }} · {{ t.ago }}</small></div></li>{% endfor %}
+        </ol>
+        {% else %}<p class="wx-muted">{% translate "No events yet." %}</p>{% endif %}
+      </section>
+    </div>
+
+    <aside class="wx-card-side">
+      <section class="nzp-card">
+        <header class="nzp-card-head nzp-card-head-sm"><span class="nzp-card-icon" style="--c:#6366f1"><i class="fas fa-user" aria-hidden="true"></i></span><div><h3>{% translate "Customer" %}</h3></div></header>
+        {% if u %}
+        <div class="wx-customer"><span class="ph wx-avatar">{{ u.full_name|default:"?"|slice:":1"|upper }}</span><div><b>{{ u.full_name|default:_("Customer") }}</b><small>{% blocktranslate count n=customer_orders %}{{ n }} order in total{% plural %}{{ n }} orders in total{% endblocktranslate %}</small></div></div>
+        <div class="wx-contact">
+          <a class="nzp-btn nzp-btn-ghost" href="tel:{{ u.phone_number }}"><i class="fas fa-phone" aria-hidden="true"></i> {{ u.phone_number }}</a>
+          {% if u.telegram_user_id %}<a class="nzp-btn nzp-btn-ghost" href="tg://user?id={{ u.telegram_user_id }}"><i class="fab fa-telegram" aria-hidden="true"></i> Telegram</a>{% endif %}
+          <a class="nzp-btn nzp-btn-ghost" href="{% url 'admin:ordering_ordermodel_changelist' %}?q={{ u.phone_number|urlencode }}"><i class="fas fa-receipt" aria-hidden="true"></i> {% translate "Their orders" %}</a>
+        </div>
+        {% else %}<p class="wx-muted"><i class="fas fa-user-secret" aria-hidden="true"></i> {% translate "Guest -- the visitor didn't sign in." %}</p>{% endif %}
+      </section>
+      <section class="nzp-card">
+        <header class="nzp-card-head nzp-card-head-sm"><span class="nzp-card-icon" style="--c:#0ea5e9"><i class="fas fa-bag-shopping" aria-hidden="true"></i></span><div><h3>{% translate "Orders from this cart" %}</h3></div></header>
+        {% if orders %}<ul class="wx-buy-list">{% for o in orders %}<li><a class="nz-num" href="{% url 'admin:ordering_ordermodel_change' o.id %}">{{ o.order_number }}</a><span class="wx-cost"><b>{{ o.total }}</b><small>{{ o.when }}</small></span></li>{% endfor %}</ul>
+        {% else %}<p class="wx-muted">{% translate "No order was placed from this cart yet." %}</p>{% endif %}
+      </section>
+    </aside>
+  </div>
+</div>
+{% endblock %}

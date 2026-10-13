@@ -1,0 +1,53 @@
+{% extends "admin/base_site.html" %}
+{% load i18n %}
+
+{% block breadcrumbs %}
+<div class="breadcrumbs">
+  <a href="{% url 'admin:index' %}">{% translate "Home" %}</a>
+  &rsaquo; {{ title }}
+</div>
+{% endblock %}
+
+{% block content %}
+<div class="nz-dashboard" data-nz-audit-timeline>
+  <div class="nz-dashboard-header">
+    <div>
+      <h2 class="nz-dashboard-title">{% translate "Audit Timeline" %}</h2>
+      <p class="nz-dashboard-subtitle">{% translate "Recent administrative and business events, merged from existing module event logs." %}</p>
+    </div>
+  </div>
+
+  <div class="nz-card">
+    {% if events.ok and events.data %}
+      <div class="table-responsive">
+        <table class="nz-table">
+          <thead>
+            <tr>
+              <th>{% translate "Timestamp" %}</th>
+              <th>{% translate "Module" %}</th>
+              <th>{% translate "Event" %}</th>
+              <th>{% translate "Correlation ID" %}</th>
+              <th>{% translate "Delivered" %}</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for event in events.data %}
+            <tr>
+              <td>{{ event.created_at|date:"Y-m-d H:i:s" }}</td>
+              <td>{{ event.module }}</td>
+              <td>{{ event.event_type }}</td>
+              <td>{{ event.correlation_id|default:"—" }}</td>
+              <td><span class="nz-badge">{% if event.delivered %}{% translate "Yes" %}{% else %}{% translate "Pending" %}{% endif %}</span></td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    {% elif events.ok %}
+      <p class="nz-empty-state">{% translate "No recent events." %}</p>
+    {% else %}
+      <p class="nz-error-state">&#9888; {% translate "Unable to load audit timeline" %}</p>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

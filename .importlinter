@@ -1,0 +1,130 @@
+[importlinter]
+root_packages =
+    apps
+    common
+    core
+    shared
+    config
+
+# -----------------------------------------------------------------------
+# Layers within any single bounded-context app (Django Implementation
+# Blueprint §3/§4): domain -> application -> infrastructure -> interfaces,
+# dependencies point inward only. Enforced per-app below.
+# -----------------------------------------------------------------------
+[importlinter:contract:layers-identity]
+name = identity: layered architecture
+type = layers
+layers =
+    apps.identity.interfaces
+    apps.identity.infrastructure
+    apps.identity.application
+    apps.identity.domain
+
+[importlinter:contract:layers-catalog]
+name = catalog: layered architecture
+type = layers
+layers =
+    apps.catalog.interfaces
+    apps.catalog.infrastructure
+    apps.catalog.application
+    apps.catalog.domain
+
+[importlinter:contract:layers-pricing]
+name = pricing: layered architecture
+type = layers
+layers =
+    apps.pricing.interfaces
+    apps.pricing.infrastructure
+    apps.pricing.application
+    apps.pricing.domain
+
+[importlinter:contract:layers-inventory]
+name = inventory: layered architecture
+type = layers
+layers =
+    apps.inventory.interfaces
+    apps.inventory.infrastructure
+    apps.inventory.application
+    apps.inventory.domain
+
+[importlinter:contract:layers-ordering]
+name = ordering: layered architecture
+type = layers
+layers =
+    apps.ordering.interfaces
+    apps.ordering.infrastructure
+    apps.ordering.application
+    apps.ordering.domain
+
+# Real, closed gap: this file previously carried layers-wallet and a
+# forbidden-loyalty-wallet-infrastructure contract for apps.wallet /
+# apps.loyalty, neither of which exists under apps/ -- import-linter
+# fails its own config validation ("no such package") the moment any
+# contract references a package that isn't importable, which meant
+# `lint-imports` could not run *at all*, for any app, not just the
+# missing ones. Removed here (and the apps.wallet.infrastructure lines
+# below) so the tool is actually runnable; re-add both contracts, in
+# the same shape as layers-identity above, once those two apps are
+# scaffolded past the placeholder stage.
+
+# Additional per-app layer contracts follow the identical pattern above
+# and are added as each app is scaffolded past the placeholder stage --
+# omitted here only for file brevity, not because the rule doesn't apply
+# uniformly to all 21 apps (Universal Module Implementation Contract
+# §2.1/§2.3).
+
+# -----------------------------------------------------------------------
+# Cross-app forbidden-dependency contracts (Django Implementation
+# Blueprint §2's App Catalogue "Forbidden Dependencies" column). A
+# representative subset of the highest-risk pairs is encoded now; the
+# full 21x21 matrix is populated as each app's business code is written,
+# since an empty placeholder app produces no real import to lint against
+# yet.
+# -----------------------------------------------------------------------
+[importlinter:contract:forbidden-analytics-reach-through]
+name = analytics must never import another app's infrastructure directly
+type = forbidden
+source_modules =
+    apps.analytics
+forbidden_modules =
+    apps.catalog.infrastructure
+    apps.ordering.infrastructure
+    apps.inventory.infrastructure
+
+[importlinter:contract:forbidden-search-reach-through]
+name = search must never import another app's infrastructure directly
+type = forbidden
+source_modules =
+    apps.search
+forbidden_modules =
+    apps.catalog.infrastructure
+    apps.pricing.infrastructure
+    apps.inventory.infrastructure
+    apps.reviews.infrastructure
+
+[importlinter:contract:forbidden-audit-reach-through]
+name = audit must never import another app's infrastructure directly
+type = forbidden
+source_modules =
+    apps.audit
+forbidden_modules =
+    apps.catalog.infrastructure
+    apps.ordering.infrastructure
+
+[importlinter:contract:forbidden-catalog-downstream]
+name = catalog must never depend on downstream contexts
+type = forbidden
+source_modules =
+    apps.catalog
+forbidden_modules =
+    apps.pricing
+    apps.inventory
+    apps.ordering
+
+[importlinter:contract:layers-loyalty]
+name = loyalty: layered architecture
+type = layers
+layers =
+    apps.loyalty.interfaces
+    apps.loyalty.infrastructure
+    apps.loyalty.domain

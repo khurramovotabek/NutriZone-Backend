@@ -1,0 +1,70 @@
+{% extends "admin/change_list.html" %}
+{% load i18n static admin_list %}
+{# Inventarizatsiya list: open counts on top, month KPIs, status tabs, rows with progress / result. #}
+{% block extrastyle %}{{ block.super }}<link rel="stylesheet" href="{% static 'admin/css/nutrizone-platform.css' %}?v=5"><link rel="stylesheet" href="{% static 'admin/css/nutrizone-orderdesk.css' %}?v=5"><link rel="stylesheet" href="{% static 'admin/css/nutrizone-wmsx.css' %}?v=9">{% endblock %}
+{% block content_title %}{% endblock %}
+{% block content %}
+<div class="nzp nzd wx">
+  <header class="nzp-hero">
+    <div class="nzp-hero-main">
+      <span class="nzp-hero-icon" style="--c:#0ea5e9"><i class="fas fa-clipboard-check" aria-hidden="true"></i></span>
+      <div><h2>{% translate "Inventarizatsiya" %}</h2><p>{% translate "Count what is on the shelf, compare it with the system and correct the difference with a reason." %}</p></div>
+    </div>
+    <div class="nzp-hero-actions">
+      <a class="nzp-btn nzp-btn-ghost" href="{% url 'admin:nz_wms_stock' %}"><i class="fas fa-cubes" aria-hidden="true"></i> {% translate "Qoldiqlar" %}</a>
+      {% if can_create %}<a class="nzp-btn nzp-btn-primary" href="{% url 'admin:stores_stockcount_new' %}"><i class="fas fa-plus" aria-hidden="true"></i> {% translate "New count" %}</a>{% endif %}
+    </div>
+  </header>
+
+  <div class="nzp-stats">
+    <div class="nzp-stat" style="--c:#0ea5e9"><i class="fas fa-barcode" aria-hidden="true"></i><div><b>{{ nz_open|length }}</b><span>{% translate "Open counts" %}</span></div></div>
+    <div class="nzp-stat" style="--c:#10b981"><i class="fas fa-bullseye" aria-hidden="true"></i><div><b>{% if nz_kpis.accuracy is not None %}{{ nz_kpis.accuracy }}%{% else %}—{% endif %}</b><span>{% translate "Accuracy this month" %}</span></div></div>
+    <div class="nzp-stat" style="--c:#e11d48"><i class="fas fa-arrow-trend-down" aria-hidden="true"></i><div><b>{{ nz_kpis.short }}<small> {% translate "so'm" %}</small></b><span>{% translate "Shortage this month" %}</span></div></div>
+    <div class="nzp-stat" style="--c:#6366f1"><i class="fas fa-arrow-trend-up" aria-hidden="true"></i><div><b>{{ nz_kpis.excess }}<small> {% translate "so'm" %}</small></b><span>{% translate "Excess this month" %}</span></div></div>
+  </div>
+
+  {% if nz_open %}
+  <section class="wx-open">
+    {% for c in nz_open %}
+    <a class="wx-open-card" href="{% url 'admin:stores_stockcount_workspace' c.pk %}" style="--c:{{ c.store.color|default:'#0ea5e9' }}">
+      <span class="wx-open-icon"><i class="fas {% if c.status == 'review' %}fa-magnifying-glass-chart{% else %}fa-barcode{% endif %}" aria-hidden="true"></i></span>
+      <span><b>{{ c.number }} · {{ c.store.name }}</b><small>{% if c.status == 'review' %}{% translate "Waiting for review and posting" %}{% else %}{% translate "Counting in progress" %}{% endif %} · {{ c.created_by }}</small></span>
+      <i class="fas fa-arrow-right" aria-hidden="true"></i>
+    </a>
+    {% endfor %}
+  </section>
+  {% endif %}
+
+  <div class="nzp-toolbar">
+    <nav class="nzp-tabs" aria-label="{% translate 'Status' %}">
+      {% for t in nz_tabs %}<a href="?{% if t.key %}status__exact={{ t.key }}{% endif %}" class="nzp-tab{% if t.on %} on{% endif %}" style="--t:{{ t.color }}"><i class="fas {{ t.icon }}" aria-hidden="true"></i> {{ t.label }} <b>{{ t.n }}</b></a>{% endfor %}
+    </nav>
+    <form class="nzd-filters" method="get"><label class="nzp-search"><i class="fas fa-magnifying-glass" aria-hidden="true"></i><input type="search" name="q" value="{{ cl.query }}" placeholder="{% translate 'Number, note or person…' %}" aria-label="{% translate 'Number, note or person…' %}"></label></form>
+  </div>
+
+  <section class="nzp-card nzp-inbox">
+    {% if cl.result_list %}
+    <div class="nzd-table wx-count-table" role="table">
+      <div class="nzd-tr nzd-th" role="row"><span>{% translate "Number" %}</span><span>{% translate "Location" %}</span><span>{% translate "Progress / result" %}</span><span class="r">{% translate "Shortage" %}</span><span class="r">{% translate "Excess" %}</span><span>{% translate "Status" %}</span></div>
+      {% for c in cl.result_list %}
+      <a class="nzd-tr" role="row" href="{% url 'admin:stores_stockcount_workspace' c.pk %}" style="--i:{{ forloop.counter0 }}">
+        <span><b class="nz-num">{{ c.number }}</b><small>{{ c.nz.created }} · {{ c.created_by }}</small></span>
+        <span class="wx-loc-cell"><i class="wms-dot" style="background:{{ c.store.color|default:'#94a3b8' }}"></i><span><b>{{ c.store.name }}</b><small>{{ c.get_scope_display }}{% if c.blind %} · {% translate "blind" %}{% endif %}</small></span></span>
+        <span>{% if c.status == "posted" %}<b>{{ c.lines_matched }}/{{ c.lines_total }} {% translate "matched" %}</b><small>{{ c.nz.posted }} · {{ c.posted_by }}</small>{% else %}<span class="wx-progress"><i style="width:{{ c.nz.progress }}%"></i></span><small>{{ c.nz.counted }}/{{ c.nz.lines }} {% translate "counted" %}</small>{% endif %}</span>
+        <span class="r">{% if c.status == "posted" %}<b class="wx-minus">{% if c.shortage_units %}−{{ c.shortage_units }}{% else %}0{% endif %}</b><small>{{ c.shortage_value|floatformat:0 }} {% translate "so'm" %}</small>{% else %}<small>—</small>{% endif %}</span>
+        <span class="r">{% if c.status == "posted" %}<b class="wx-plus">{% if c.excess_units %}+{{ c.excess_units }}{% else %}0{% endif %}</b><small>{{ c.excess_value|floatformat:0 }} {% translate "so'm" %}</small>{% else %}<small>—</small>{% endif %}</span>
+        <span><span class="nzd-pill" style="--t:{{ c.nz.color }}"><i class="fas {{ c.nz.icon }}" aria-hidden="true"></i> {{ c.get_status_display }}</span></span>
+      </a>
+      {% endfor %}
+    </div>
+    {% else %}
+    <div class="nzp-empty"><span class="nzp-empty-icon" style="--c:#0ea5e9"><i class="fas fa-clipboard-check" aria-hidden="true"></i></span>
+      <h3>{% translate "No stock counts yet" %}</h3>
+      <p>{% translate "Start with a full count of the main warehouse: scan every product on the shelf and let the system show the differences." %}</p>
+      {% if can_create %}<a class="nzp-btn nzp-btn-primary" href="{% url 'admin:stores_stockcount_new' %}"><i class="fas fa-plus" aria-hidden="true"></i> {% translate "New count" %}</a>{% endif %}
+    </div>
+    {% endif %}
+  </section>
+  {% if cl.result_count > cl.list_per_page %}<div class="nzp-pagination">{% pagination cl %}</div>{% endif %}
+</div>
+{% endblock %}

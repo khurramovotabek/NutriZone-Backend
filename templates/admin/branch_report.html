@@ -1,0 +1,95 @@
+{% extends "admin/base_site.html" %}
+{% load i18n static %}
+{# Filial hisoboti (apps/stores/infrastructure/branch_report.py): online orders per branch -- volume, speed, outcomes, hand-backs. #}
+{% block extrastyle %}{{ block.super }}<link rel="stylesheet" href="{% static 'admin/css/nutrizone-platform.css' %}?v=5"><link rel="stylesheet" href="{% static 'admin/css/nutrizone-premium.css' %}?v=6"><link rel="stylesheet" href="{% static 'admin/css/nutrizone-chat-desk.css' %}?v=6">{% endblock %}
+{% block breadcrumbs %}<ol class="breadcrumb"><li class="breadcrumb-item"><a href="{% url 'admin:index' %}">{% translate "Home" %}</a></li><li class="breadcrumb-item"><a href="{{ orders_url }}">Buyurtmalar</a></li><li class="breadcrumb-item active">{{ title }}</li></ol>{% endblock %}
+{% block content_title %}{% endblock %}
+{% block content %}
+<div class="nzp nzr">
+  <header class="nzp-hero">
+    <div class="nzp-hero-main">
+      <span class="nzp-hero-icon" style="--c:#4f46e5"><i class="fas fa-store" aria-hidden="true"></i></span>
+      <div><h2>{{ title }}</h2><p>{{ report.since }} dan buyon har bir filial: qancha onlayn buyurtma berildi, qanchalik tez qabul qilindi, nechtasi yakunlandi, qaytarildi yoki omborga qaytarildi.</p></div>
+    </div>
+    <div class="nzp-hero-actions">
+      <a class="nzp-btn nzp-btn-ghost" href="{{ export_url }}" download><i class="fas fa-file-excel" aria-hidden="true"></i> Excel</a>
+      <a class="nzp-btn nzp-btn-ghost" href="{{ board_url }}"><i class="fas fa-table-columns" aria-hidden="true"></i> Buyurtmalar paneli</a>
+    </div>
+  </header>
+
+  <div class="nzi-stats">
+    {% for s in stats %}
+    <div class="nzi-stat" style="--t:{{ s.tone }}"><i class="fas {{ s.icon }}" aria-hidden="true"></i><div><b>{{ s.value }}</b><span>{{ s.label }}</span>{% if s.sub %}<small>{{ s.sub }}</small>{% endif %}</div></div>
+    {% endfor %}
+  </div>
+
+  <div class="nzi-toolbar">
+    <nav class="nzp-tabs" aria-label="Davr">{% for t in tabs %}<a href="{{ t.url }}" class="nzp-tab{% if t.on %} on{% endif %}" style="--t:#4f46e5">{{ t.label }}</a>{% endfor %}</nav>
+  </div>
+
+  <section class="nzr-card">
+    <h3><i class="fas fa-chart-column" aria-hidden="true"></i> Filiallarga berilgan buyurtmalar — kunlar bo'yicha</h3>
+    <div class="nzr-trend" role="img" aria-label="Kunlik dinamika">
+      {% for d in report.series %}<span title="{{ d.date|date:'d.m' }}: {{ d.n }} ta" style="--h:{{ d.pct }}%"><i></i><small>{% if forloop.first or forloop.last or forloop.counter|divisibleby:7 %}{{ d.date|date:'d.m' }}{% endif %}</small></span>{% endfor %}
+    </div>
+  </section>
+
+  <section class="nzr-card">
+    <h3><i class="fas fa-store" aria-hidden="true"></i> Filiallar</h3>
+    {% if report.rows %}
+    <div class="nzr-scroll">
+      <table class="nzr-table">
+        <thead><tr>
+          <th scope="col">Filial</th>
+          <th scope="col" title="Checkoutda tanlangan (olib ketish) va dispetcher biriktirgan buyurtmalar">Berilgan</th>
+          <th scope="col" title="Biriktirilgandan filialning birinchi qadamigacha">Qabul qilish</th>
+          <th scope="col">{{ report.sla }} daq ichida</th>
+          <th scope="col" title="Biriktirilgandan «olib ketishga tayyor»gacha">Tayyorlash</th>
+          <th scope="col">Yakunlangan</th>
+          <th scope="col">Faol</th>
+          <th scope="col">Qaytarilgan / bekor</th>
+          <th scope="col">Omborga qaytargan</th>
+          <th scope="col">Tushum</th>
+        </tr></thead>
+        <tbody>
+        {% for r in report.rows %}
+        <tr>
+          <th scope="row"><a class="nzr-who" href="{% url 'admin:stores_store_change' r.store.pk %}"><span class="nzc-av" style="--a:{{ r.store.color|default:'#4f46e5' }}">{{ r.store.name|slice:":1"|upper }}</span><span><b>{{ r.store.name }}</b><br><small class="nzr-muted">{{ r.pickup }} olib ketish · {{ r.delivery }} yetkazish</small></span></a></th>
+          <td><b>{{ r.handled }}</b></td>
+          <td><span class="nzr-time{% if r.accept_median is not None and r.accept_median > 60 %} slow{% elif r.accept_median is not None and r.accept_median <= report.sla %} fast{% endif %}">{{ r.accept_label }}</span></td>
+          <td>{% if r.accept_sla is not None %}<span class="nzr-bar" style="--p:{{ r.accept_sla }}%"><i></i><b>{{ r.accept_sla }}%</b></span>{% else %}<span class="nzr-muted">—</span>{% endif %}</td>
+          <td class="nzr-muted">{{ r.ready_label }}</td>
+          <td><b>{{ r.done }}</b> <span class="nzr-muted">({{ r.done_pct }}%)</span></td>
+          <td>{{ r.active }}</td>
+          <td>{% if r.returned or r.cancelled %}<span class="nzi-chip" style="--t:#dc2626">{{ r.returned }} / {{ r.cancelled }}</span>{% else %}<span class="nzr-muted">0 / 0</span>{% endif %}</td>
+          <td>{% if r.handed_back %}<span class="nzi-chip" style="--t:#d97706">{{ r.handed_back }} · {{ r.handed_back_pct }}%</span>{% else %}<span class="nzr-muted">0</span>{% endif %}</td>
+          <td><b>{{ r.revenue_label }}</b> <span class="nzr-muted">so'm</span></td>
+        </tr>
+        {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% else %}
+    <div class="nzc-empty"><i class="fas fa-store-slash" aria-hidden="true"></i><b>Bu davrda filiallarga onlayn buyurtma berilmagan</b></div>
+    {% endif %}
+    <p class="nzr-note"><i class="fas fa-circle-info" aria-hidden="true"></i> «Qabul qilish» — buyurtma filialga berilgandan filial birinchi qadamni (qabul qilish yoki yig'ish) qilgunicha, median. «Omborga qaytargan» — filial ololmay qaytargan buyurtmalar, berilganlarga nisbatan.</p>
+  </section>
+
+  <section class="nzr-card">
+    <h3><i class="fas fa-warehouse" aria-hidden="true"></i> So'nggi omborga qaytarishlar</h3>
+    {% if report.hand_backs %}
+    <ul class="nzr-low">
+      {% for l in report.hand_backs %}
+      <li>
+        <span class="nzi-chip" style="--t:#d97706"><i class="fas fa-rotate-left" aria-hidden="true"></i> {{ l.order_number }}</span>
+        <div><b>{% if l.reason %}«{{ l.reason }}»{% else %}Sababsiz{% endif %}</b><small>{{ l.store.name }} · {{ l.when }}{% if l.actor %} · {{ l.actor }}{% endif %}</small></div>
+        <a class="nzp-btn nzp-btn-sm nzp-btn-ghost" href="{{ orders_url }}?q={{ l.order_number }}">Ochish</a>
+      </li>
+      {% endfor %}
+    </ul>
+    {% else %}
+    <div class="nzc-empty small"><i class="fas fa-face-smile" aria-hidden="true"></i><b>Omborga qaytarilgan buyurtma yo'q</b></div>
+    {% endif %}
+  </section>
+</div>
+{% endblock %}

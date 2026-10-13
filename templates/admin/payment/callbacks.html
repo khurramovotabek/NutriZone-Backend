@@ -1,0 +1,40 @@
+{% extends "admin/change_list.html" %}
+{% load i18n static admin_list %}
+{# Callback journal (PaymentCallbackLogAdmin): every provider request and our answer. #}
+{% block extrastyle %}{{ block.super }}{% include "admin/payment/_head.html" %}{% endblock %}
+{% block content_title %}{% endblock %}
+{% block content %}
+<div class="nzp nzd wx">
+  <header class="nzp-hero">
+    <div class="nzp-hero-main">
+      <span class="nzp-hero-icon" style="--c:#8b5cf6"><i class="fas fa-satellite-dish" aria-hidden="true"></i></span>
+      <div><h2>{% translate "Callback jurnali" %}</h2><p>{% translate "Payme, Click va Uzum yuborgan har bir so'rov va bizning javobimiz — integratsiyani sinash va nizolarni hal qilish uchun." %}</p></div>
+    </div>
+  </header>
+  <div class="nzp-stats">
+    <div class="nzp-stat" style="--c:#2563eb"><i class="fas fa-arrow-right-arrow-left" aria-hidden="true"></i><div><b>{{ kpi.day }}</b><span>{% translate "So'rovlar (24 soat)" %}</span></div></div>
+    <a class="nzp-stat" href="?errors=1" style="--c:{% if kpi.errors %}#e11d48{% else %}#10b981{% endif %}"><i class="fas fa-triangle-exclamation" aria-hidden="true"></i><div><b>{{ kpi.errors }}</b><span>{% translate "Xato javoblar (24 soat)" %}</span></div></a>
+  </div>
+  <div class="nzp-toolbar">{% with section="log" %}{% include "admin/payment/_nav.html" %}{% endwith %}</div>
+  <div class="nzp-toolbar">
+    <nav class="nzp-tabs"><a class="nzp-tab{% if not errors_only %} on{% endif %}" href="?{% if provider %}provider__exact={{ provider }}{% endif %}" style="--t:#64748b">{% translate "Barchasi" %}</a><a class="nzp-tab{% if errors_only %} on{% endif %}" href="?errors=1{% if provider %}&provider__exact={{ provider }}{% endif %}" style="--t:#e11d48"><i class="fas fa-triangle-exclamation" aria-hidden="true"></i> {% translate "Faqat xatolar" %}</a></nav>
+    <form class="pay-filters" method="get">{% if errors_only %}<input type="hidden" name="errors" value="1">{% endif %}
+      <select class="nzp-select" name="provider__exact" onchange="this.form.submit()" aria-label="{% translate 'Provayder' %}"><option value="">{% translate "Barcha provayderlar" %}</option>{% for k, v in providers %}<option value="{{ k }}"{% if provider == k %} selected{% endif %}>{{ v }}</option>{% endfor %}</select>
+      <label class="nzp-search"><i class="fas fa-magnifying-glass" aria-hidden="true"></i><input type="search" name="q" value="{{ q }}" placeholder="{% translate 'Buyurtma yoki metod…' %}" aria-label="{% translate 'Qidirish' %}"></label>
+    </form>
+  </div>
+  <section class="nzp-card">
+    {% if cl.result_list %}
+    <ul class="pay-timeline">
+      {% for lg in cl.result_list %}<li><span class="pay-dot" style="--d:{% if lg.nz.ok %}#10b981{% else %}#e11d48{% endif %}"></span>
+        <details class="pay-log"><summary><span class="pay-method"><img src="{{ lg.nz.logo }}" alt=""></span><b>{{ lg.method }}</b><small>{{ lg.nz.when }}</small>{% if lg.order_number %}<small>#{{ lg.order_number }}</small>{% endif %}
+          <span class="r">{% if lg.payment_id %}<a href="{% url 'admin:payment_paymentmodel_change' lg.payment_id %}" onclick="event.stopPropagation()">{% translate "tranzaksiya" %} →</a>{% endif %}{% if lg.nz.ok %}<span class="pay-tag" style="--t:#10b981">OK</span>{% else %}<span class="pay-tag" style="--t:#e11d48">{{ lg.error_code }}</span>{% endif %}<small>{{ lg.duration_ms }} ms</small></span></summary>
+          <div class="pay-json"><div><h4>{% translate "So'rov" %}</h4><pre>{{ lg.nz.req }}</pre></div><div><h4>{% translate "Javob" %}</h4><pre>{{ lg.nz.res }}</pre></div></div></details></li>{% endfor %}
+    </ul>
+    {% else %}
+    <div class="nzp-empty"><span class="nzp-empty-icon" style="--c:#8b5cf6"><i class="fas fa-satellite-dish" aria-hidden="true"></i></span><h3>{% translate "Jurnal bo'sh" %}</h3><p>{% translate "Provayder birinchi so'rovni yuborganda u shu yerda paydo bo'ladi." %}</p></div>
+    {% endif %}
+  </section>
+  {% if cl.result_count > cl.list_per_page %}<div class="nzp-pagination">{% pagination cl %}</div>{% endif %}
+</div>
+{% endblock %}

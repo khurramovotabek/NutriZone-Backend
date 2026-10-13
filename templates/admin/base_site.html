@@ -1,0 +1,80 @@
+{% extends "admin/base.html" %}
+{% load static i18n %}
+
+{# Phase 08.1: NutriZone Admin Dashboard Foundation.
+   Scope note: this styles the existing /django-admin/ engineering/ops
+   tool (Django Implementation Blueprint §13) -- it does not create a
+   second admin surface. See config/settings/components/jazzmin.py's
+   own module docstring for the full architectural context. #}
+
+{% block title %}{% if subtitle %}{{ subtitle }} | {% endif %}{{ title }} | {{ site_settings.site_name|default:"NutriZone" }}{% endblock %}
+
+{% block branding %}
+<h1 id="site-name">
+  <a href="{% url 'admin:index' %}">
+    {% if site_settings.logo %}
+      <img src="{{ site_settings.logo.url }}" alt="{{ site_settings.site_name }}" style="max-height: 32px; vertical-align: middle;">
+    {% else %}
+      {{ site_settings.site_name|default:"NutriZone" }}
+    {% endif %}
+  </a>
+</h1>
+{% endblock %}
+
+{% block extrahead %}
+{{ block.super }}
+<script src="{% static 'admin/js/nutrizone-theme.js' %}"></script>
+{% endblock %}
+
+{% block extrastyle %}
+{{ block.super }}
+<link rel="stylesheet" href="{% static 'admin/css/nutrizone-admin.css' %}?v=2026.10.11.1">
+<link rel="stylesheet" href="{% static 'admin/css/nutrizone-theme.css' %}">
+<link rel="stylesheet" href="{% static 'admin/css/nutrizone-responsive.css' %}">
+<link rel="stylesheet" href="{% static 'admin/css/nutrizone-palette.css' %}?v=1">
+<link rel="stylesheet" href="{% static 'admin/css/nutrizone-sidebar.css' %}?v=3">
+{% include "admin/nz_branding.html" %}
+{% endblock %}
+
+{% block extrajs %}
+{{ block.super }}
+<script>
+  window.NZ_CSRF_TOKEN = "{{ csrf_token }}";
+  window.NZ_I18N = {
+    theme: "{% translate 'Theme' %}",
+    light: "{% translate 'Light' %}",
+    dark: "{% translate 'Dark' %}",
+    system: "{% translate 'System' %}",
+    language: "{% translate 'Language' %}",
+    setLanguageUrl: "{% url 'set_language' %}",
+    currentLanguage: "{{ LANGUAGE_CODE }}",
+    search: {
+      placeholder: "{% translate 'Search products, orders, customers...' %}",
+      startTyping: "{% translate 'Start typing to search...' %}",
+      loading: "{% translate 'Searching...' %}",
+      noResults: "{% translate 'No results found.' %}"
+    },
+    sidebar: {
+      placeholder: "{% translate 'Filter menu…' %}",
+      empty: "{% translate 'Nothing found' %}",
+      superadmin: "{% translate 'Superadmin' %}",
+      staff: "{% translate 'Staff' %}"
+    },
+    languages: [
+      {% get_available_languages as LANGUAGES %}
+      {% for code, name in LANGUAGES %}
+      { code: "{{ code }}", name: "{{ name }}" }{% if not forloop.last %},{% endif %}
+      {% endfor %}
+    ]
+  };
+</script>
+<script src="{% static 'admin/js/nutrizone-navigation.js' %}"></script>
+<script src="{% static 'admin/js/nutrizone-switchers.js' %}"></script>
+<script src="{% static 'admin/js/nutrizone-search.js' %}"></script>
+{% if request.user.is_authenticated %}<script>window.NZ_USER = { name: "{{ request.user.get_full_name|default:request.user.get_username|escapejs }}", isSuperuser: {{ request.user.is_superuser|yesno:"true,false" }} };</script>{% endif %}
+<script src="{% static 'admin/js/nutrizone-sidebar.js' %}?v=2"></script>
+<script>
+  // Site Settings' own site name replaces Jazzmin's static brand text.
+  document.querySelectorAll(".brand-link .brand-text").forEach(function (el) { el.textContent = "{{ site_settings.site_name|default:'NutriZone'|escapejs }}"; });
+</script>
+{% endblock %}

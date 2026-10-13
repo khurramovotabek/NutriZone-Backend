@@ -1,0 +1,364 @@
+msgid ""
+msgstr ""
+"Content-Type: text/plain; charset=UTF-8\n"
+"Language: en\n"
+
+#, python-format
+msgid "%(order)s savdosi bekor qilindi."
+msgstr "Sale %(order)s was cancelled."
+
+#, python-format
+msgid "%(order)s savdosi qaytarildi, mahsulotlar omborga qaytarildi."
+msgstr "Sale %(order)s was refunded; the products were returned to stock."
+
+msgid "Aniq moslik"
+msgstr "Exact match"
+
+msgid "Avval savatga mahsulot tanlang"
+msgstr "Add a product to the cart first"
+
+msgid "Barcha filiallar (umumiy)"
+msgstr "All branches (total)"
+
+msgid "Bekor qilingan"
+msgstr "Cancelled"
+
+msgid "Bosqichlar"
+msgstr "Steps"
+
+#, python-format
+msgid "Bu amal %(status)s holatidagi savdo uchun mavjud emas."
+msgstr "This action is not available for a sale in %(status)s status."
+
+msgid "Bu filialda yo'q"
+msgstr "Not in this branch"
+
+msgid "Bu savdo yakuniy holatda — holatni o'zgartirib bo'lmaydi."
+msgstr "This sale is final — its status can't be changed."
+
+msgid "Buyurtma"
+msgstr "Order"
+
+msgid "Buyurtma raqami, mijoz ismi yoki telefon raqami bo'yicha qidiring"
+msgstr "Search by order number, customer name or phone"
+
+msgid "Buyurtma tarkibi"
+msgstr "Order items"
+
+msgid "Buyurtma xulosasi"
+msgstr "Order summary"
+
+msgid "Buyurtma yakunlanmadi. Savatcha saqlab qolindi — qayta urinib ko'ring."
+msgstr "The order wasn't completed. The cart was kept — please try again."
+
+msgid "Buyurtmani yakunlang va to'lovni qabul qiling"
+msgstr "Complete the order and take the payment"
+
+msgid "Buyurtmani yakunlash"
+msgstr "Complete order"
+
+msgid "Chegirma"
+msgstr "Discount"
+
+msgid "Chekni chop etish"
+msgstr "Print receipt"
+
+msgid "Enter — savatga qo'shish"
+msgstr "Enter — add to cart"
+
+msgid "Filial"
+msgstr "Branch"
+
+msgid "Filiallar boyicha"
+msgstr "By branch"
+
+msgid "Ha, bekor qilish"
+msgstr "Yes, cancel"
+
+msgid "Ha, qaytarish"
+msgstr "Yes, refund"
+
+msgid "Hech qanday mahsulot topilmadi."
+msgstr "No products found."
+
+msgid "Holat"
+msgstr "Status"
+
+msgid "Holatni o'zgartirib bo'lmadi: savdo boshqa joyda o'zgargan bo'lishi mumkin. Sahifani yangilab, qayta urinib ko'ring."
+msgstr "Couldn't change the status: the sale may have been changed elsewhere. Refresh the page and try again."
+
+msgid "Hozircha faqat naqd to'lov qabul qilinadi."
+msgstr "Only cash payments are accepted for now."
+
+msgid "Ism familiya"
+msgstr "Full name"
+
+msgid "Jami"
+msgstr "Total"
+
+msgid "Jami summaga qaytarish"
+msgstr "Reset to total"
+
+msgid "Karta"
+msgstr "Card"
+
+msgid "Kassir"
+msgstr "Cashier"
+
+msgid "Kupon kodi"
+msgstr "Coupon code"
+
+msgid "Kupon kodini kiriting"
+msgstr "Enter coupon code"
+
+msgid "Kupon olib tashlandi"
+msgstr "Coupon removed"
+
+msgid "Kupon qo'llandi"
+msgstr "Coupon applied"
+
+msgid "Kupon yaroqsiz yoki bu mahsulotlarga amal qilmaydi"
+msgstr "The coupon is invalid or doesn't apply to these products"
+
+msgid "Kuponni tekshirib bo'lmadi. Qayta urinib ko'ring."
+msgstr "Couldn't check the coupon. Please try again."
+
+msgid "Mahsulot"
+msgstr "Product"
+
+msgid "Mahsulot nomi yoki SKU boyicha qidiring..."
+msgstr "Search by product name or SKU..."
+
+msgid "Mahsulot soni"
+msgstr "Items"
+
+msgid "Mahsulot tanlang va savdoni boshlang."
+msgstr "Pick a product to start the sale."
+
+msgid "Mahsulot tugagan"
+msgstr "Out of stock"
+
+msgid "Mahsulotlar"
+msgstr "Products"
+
+msgid "Mahsulotlar summasi"
+msgstr "Products total"
+
+msgid "Mahsulotlar va zaxira"
+msgstr "Products and stock"
+
+msgid "Mahsulotlarga qaytish"
+msgstr "Back to products"
+
+msgid "Mahsulotlarni yuklab bo'lmadi. Sahifani yangilang."
+msgstr "Couldn't load products. Refresh the page."
+
+msgid "Mahsulotni savatga qo'shib bo'lmadi. Qayta urinib ko'ring."
+msgstr "Couldn't add the product to the cart. Please try again."
+
+msgid "Mahsulotni toping, savatga qo'shing va to'lovni tez yakunlang"
+msgstr "Find a product, add it to the cart and check out fast"
+
+msgid "Mavjud mijoz"
+msgstr "Existing customer"
+
+msgid "Mijoz"
+msgstr "Customer"
+
+msgid "Mijoz ma'lumotlari"
+msgstr "Customer details"
+
+msgid "Mijozdan olinadigan summa"
+msgstr "Amount to collect from customer"
+
+msgid "Mijozga pulini qaytarib berishni unutmang."
+msgstr "Don't forget to give the customer their money back."
+
+msgid "Narx mavjud emas"
+msgstr "No price"
+
+msgid "Narxi"
+msgstr "Price"
+
+msgid "Noma'lum"
+msgstr "Unknown"
+
+msgid "Noma'lum mahsulot"
+msgstr "Unknown product"
+
+msgid "Ochiq"
+msgstr "Open"
+
+msgid "Olingan summa yetarli emas"
+msgstr "The amount received is not enough"
+
+msgid "Omborda yetarli mahsulot yo'q"
+msgstr "Not enough stock"
+
+msgid "Onlayn"
+msgstr "Online"
+
+msgid "Oxirgi mahsulot sonini oshirish / kamaytirish"
+msgstr "Increase / decrease the last item's quantity"
+
+msgid "Oynani yopish / qidiruvni tozalash"
+msgstr "Close dialog / clear search"
+
+msgid "Promo kod"
+msgstr "Promo code"
+
+msgid "Promo kodni olib tashlash"
+msgstr "Remove promo code"
+
+msgid "Qaytarilgan"
+msgstr "Returned"
+
+msgid "Qaytarilgan sana"
+msgstr "Refund date"
+
+msgid "Qaytarish (vozvrat)"
+msgstr "Refund"
+
+msgid "Qidirilmoqda..."
+msgstr "Searching..."
+
+msgid "Qo'llash"
+msgstr "Apply"
+
+msgid "SKU bo'yicha topildi"
+msgstr "Found by SKU"
+
+msgid "Sahifalar"
+msgstr "Pages"
+
+msgid "Sana"
+msgstr "Date"
+
+msgid "Savatcha"
+msgstr "Cart"
+
+msgid "Savatcha bo'sh"
+msgstr "The cart is empty"
+
+msgid "Savatchani tahrirlash"
+msgstr "Edit cart"
+
+msgid "Savatchani yangilab bo'lmadi. Qayta urinib ko'ring."
+msgstr "Couldn't update the cart. Please try again."
+
+msgid "Savatda"
+msgstr "In cart"
+
+msgid "Savatga qo'shish"
+msgstr "Add to cart"
+
+msgid "Savdo holati \"Qaytarilgan\" bo'ladi. Bu amalni ortga qaytarib bo'lmaydi."
+msgstr "The sale will be marked \"Refunded\". This can't be undone."
+
+msgid "Savdolar ro'yxatiga qaytish"
+msgstr "Back to sales"
+
+msgid "Savdoni bekor qilib bo'lmadi. Qayta urinib ko'ring."
+msgstr "Couldn't cancel the sale. Please try again."
+
+msgid "Savdoni qaytarish (vozvrat)"
+msgstr "Refund sale"
+
+msgid "Shtrix-kod bo'yicha topildi"
+msgstr "Found by barcode"
+
+msgid "Shtrix-kodni skanerlash uchun qidiruv maydoniga fokus qiling"
+msgstr "Focus the search field to scan a barcode"
+
+msgid "Skanerga tayyor — shtrix-kodni skanerlang"
+msgstr "Scanner ready — scan a barcode"
+
+msgid "Skanerlash"
+msgstr "Scan"
+
+msgid "Soni"
+msgstr "Qty"
+
+msgid "Sotilgan mahsulotlar omborga qaytariladi."
+msgstr "The sold products go back into stock."
+
+msgid "Summa"
+msgstr "Amount"
+
+msgid "Telefon raqami"
+msgstr "Phone number"
+
+msgid "Telefon raqami majburiy"
+msgstr "Phone number is required"
+
+msgid "Telefon raqami noto'g'ri. Masalan: 90 123 45 67"
+msgstr "Invalid phone number. Example: 90 123 45 67"
+
+msgid "Tez orada"
+msgstr "Coming soon"
+
+msgid "To'lanadigan summa"
+msgstr "Amount due"
+
+msgid "To'lov"
+msgstr "Payment"
+
+msgid "To'lovga o'tish"
+msgstr "Go to payment"
+
+msgid "To'lovga o'tish / buyurtmani yakunlash"
+msgstr "Go to payment / complete order"
+
+msgid "Topilgan mahsulotni savatga qo'shish"
+msgstr "Add the found product to the cart"
+
+msgid "Tozalash"
+msgstr "Clear"
+
+msgid "Umumiy zaxira"
+msgstr "Total stock"
+
+msgid "Ushbu filialdagi soni"
+msgstr "Quantity in this branch"
+
+msgid "Xarid summasi"
+msgstr "Purchase amount"
+
+msgid "Yakunlangan"
+msgstr "Completed"
+
+msgid "Yakunlanmagan savdo \"Bekor qilingan\" bo'ladi. Bu amalni ortga qaytarib bo'lmaydi."
+msgstr "The unfinished sale will be marked \"Cancelled\". This can't be undone."
+
+msgid "Yangi mijoz sifatida saqlanadi"
+msgstr "Will be saved as a new customer"
+
+msgid "Yangi savdoni boshlash"
+msgstr "Start a new sale"
+
+msgid "Yangilashda xatolik yuz berdi."
+msgstr "Update failed."
+
+msgid "Yetishmayapti"
+msgstr "Short by"
+
+msgid "Yetkazib berish"
+msgstr "Delivery"
+
+msgid "Yetkazib berish puli"
+msgstr "Delivery fee"
+
+msgid "Yo'q"
+msgstr "None"
+
+msgid "Yuklashda xatolik yuz berdi."
+msgstr "Loading failed."
+
+msgid "ixtiyoriy"
+msgstr "optional"
+
+msgid "ta mahsulot"
+msgstr "products"
+
+msgid "Buyurtmalar paneli"
+msgstr "Order board"

@@ -1,0 +1,130 @@
+{% extends "admin/base_site.html" %}
+{% load i18n static %}
+{# Cashier payroll (StoreCashierAdmin.payroll_view): base salary + KPI % of the cashier's own net sales, per month. #}
+{% block extrastyle %}{{ block.super }}<link rel="stylesheet" href="{% static 'admin/css/nutrizone-platform.css' %}?v=5"><link rel="stylesheet" href="{% static 'admin/css/nutrizone-orderdesk.css' %}?v=6"><link rel="stylesheet" href="{% static 'admin/css/nutrizone-wmsx.css' %}?v=12"><link rel="stylesheet" href="{% static 'admin/css/nutrizone-pos-terminal.css' %}?v=9">{% endblock %}
+{% block breadcrumbs %}<ol class="breadcrumb float-sm-right"><li class="breadcrumb-item"><a href="{% url 'admin:index' %}">{% translate "Home" %}</a></li><li class="breadcrumb-item"><a href="{% url 'admin:stores_storecashier_changelist' %}">{% translate "Kassalar va kassirlar" %}</a></li><li class="breadcrumb-item active">{% translate "Oylik va KPI" %}</li></ol>{% endblock %}
+{% block content_title %}{% endblock %}
+{% block content %}
+<div class="nzp nzd wx pk py">
+  <header class="nzp-hero">
+    <div class="nzp-hero-main">
+      <span class="nzp-hero-icon" style="--c:#059669"><i class="fas fa-sack-dollar" aria-hidden="true"></i></span>
+      <div><h2>{% translate "Oylik va KPI" %}</h2><p>{% translate "Every cashier earns a fixed base salary plus KPI -- a percentage of their own net sales that month (returns deducted). Rates are set per cashier; paying a month freezes it and notifies the cashier." %}</p></div>
+    </div>
+    <div class="nzp-hero-actions">
+      <nav class="py-month" aria-label="{% translate 'Month' %}">
+        <a href="?month={{ prev }}" aria-label="{% translate 'Previous month' %}"><i class="fas fa-chevron-left" aria-hidden="true"></i></a>
+        <b>{{ month_label }}{% if current %} <em>{% translate "in progress" %}</em>{% endif %}</b>
+        {% if next %}<a href="?month={{ next }}" aria-label="{% translate 'Next month' %}"><i class="fas fa-chevron-right" aria-hidden="true"></i></a>{% else %}<span class="off"><i class="fas fa-chevron-right" aria-hidden="true"></i></span>{% endif %}
+      </nav>
+      <a class="nzp-btn nzp-btn-ghost" href="{% url 'admin:stores_storecashier_payroll_excel' %}?month={{ month_key }}"><i class="fas fa-file-excel" aria-hidden="true"></i> {% translate "Payroll sheet" %}</a>
+    </div>
+  </header>
+
+  <div class="nzp-stats wx-stats-5">
+    <div class="nzp-stat" style="--c:#059669"><i class="fas fa-wallet" aria-hidden="true"></i><div><b>{{ t.total }}<small> so'm</small></b><span>{% blocktranslate with n=t.n %}Payroll fund · {{ n }} cashiers{% endblocktranslate %}</span></div></div>
+    <div class="nzp-stat" style="--c:#2563eb"><i class="fas fa-chart-line" aria-hidden="true"></i><div><b>{{ t.revenue }}</b><span>{% blocktranslate with n=t.sales %}Their net sales · {{ n }} sales{% endblocktranslate %}</span></div></div>
+    <div class="nzp-stat" style="--c:#d97706"><i class="fas fa-bullseye" aria-hidden="true"></i><div><b>{{ t.kpi }}</b><span>{% blocktranslate with p=t.kpi_share %}KPI · {{ p }} of the fund{% endblocktranslate %}</span></div></div>
+    <div class="nzp-stat" style="--c:#7c3aed"><i class="fas fa-building-columns" aria-hidden="true"></i><div><b>{{ t.base }}</b><span>{% translate "Base salaries" %}</span></div></div>
+    <div class="nzp-stat" style="--c:{% if t.paid_n == t.n and t.n %}#10b981{% else %}#e11d48{% endif %}"><i class="fas fa-circle-check" aria-hidden="true"></i><div><b>{{ t.paid_n }}/{{ t.n }}</b><span>{% blocktranslate with u=t.unpaid %}Paid · {{ u }} left{% endblocktranslate %}</span></div></div>
+  </div>
+  {% if t.fund_share %}<p class="py-note"><i class="fas fa-circle-info" aria-hidden="true"></i> {% blocktranslate with p=t.fund_share %}Cashier pay is {{ p }} of what they sold this month.{% endblocktranslate %}{% if current %} {% translate "The month isn't over -- KPI keeps growing with every sale." %}{% endif %}</p>{% endif %}
+
+  <section class="nzp-card nzp-inbox">
+    {% if rows %}
+    <div class="nzd-table py-table" role="table">
+      <div class="nzd-tr nzd-th" role="row"><span>{% translate "Cashier" %}</span><span class="r">{% translate "Net sales" %}</span><span class="r">{% translate "KPI" %}</span><span class="r">{% translate "Base salary" %}</span><span class="r">{% translate "Adjustment" %}</span><span class="r">{% translate "To pay" %}</span><span>{% translate "Status" %}</span></div>
+      {% for r in rows %}
+      <div class="nzd-tr" role="row" style="--i:{{ forloop.counter0 }}">
+        <span class="py-who"><span class="px-mini-av pk-av" style="--c:{{ r.color }}">{{ r.initials }}</span><span><b>{{ r.name }}</b><small><i class="wms-dot" style="background:{{ r.store_color }}"></i>{{ r.store }} · {{ r.phone|default:"" }}</small></span></span>
+        <span class="r py-rev"><b>{{ r.revenue }}</b><small>{{ r.sales }} {% translate "sales" %}</small><i class="py-bar"><i style="width:{{ r.share }}%"></i></i></span>
+        <span class="r"><b class="py-kpi">{{ r.kpi }}</b><small>{{ r.percent }}%</small></span>
+        <span class="r"><b>{{ r.base }}</b></span>
+        <span class="r">{% if r.adjustment %}<b class="{% if r.adjustment > 0 %}wx-plus{% else %}wx-minus{% endif %}">{% if r.adjustment > 0 %}+{% else %}−{% endif %}{{ r.adjustment_s }}</b><small title="{{ r.note }}">{{ r.note|truncatechars:24 }}</small>{% else %}<small class="wx-muted">—</small>{% endif %}</span>
+        <span class="r"><b class="py-total">{{ r.total }}</b><small>so'm</small></span>
+        <span class="py-act">
+          {% if r.payout_id %}<span class="nzd-pill" style="--t:#10b981" title="{{ r.paid_by }}"><i class="fas fa-check" aria-hidden="true"></i> {% translate "Paid" %} {{ r.paid_at|slice:":10" }}</span>
+            {% if is_super %}<form method="post" action="{% url 'admin:stores_storecashier_undo' r.payout_id %}" data-confirm>{% csrf_token %}<input type="hidden" name="month" value="{{ month_key }}"><button class="pk-x" title="{% translate 'Cancel the payment' %}" aria-label="{% translate 'Cancel the payment' %}"><i class="fas fa-rotate-left" aria-hidden="true"></i></button></form>{% endif %}
+          {% elif can_edit and r.link_id %}
+            <button type="button" class="pk-x" data-terms="{{ r.link_id }}" data-name="{{ r.name }}" data-base="{{ r.base_raw }}" data-pct="{{ r.percent_raw }}" title="{% translate 'Base salary and KPI' %}" aria-label="{% translate 'Base salary and KPI' %}"><i class="fas fa-sliders" aria-hidden="true"></i></button>
+            <button type="button" class="nzp-btn nzp-btn-primary nzp-btn-sm" data-pay="{{ r.link_id }}" data-name="{{ r.name }}" data-base="{{ r.base_now }}" data-kpi="{{ r.kpi_raw }}"><i class="fas fa-hand-holding-dollar" aria-hidden="true"></i> {% translate "Pay" %}</button>
+          {% endif %}
+        </span>
+      </div>
+      {% endfor %}
+      <div class="nzd-tr py-sum" role="row"><span><b>{% translate "Total" %}</b></span><span class="r"><b>{{ t.revenue }}</b></span><span class="r"><b>{{ t.kpi }}</b></span><span class="r"><b>{{ t.base }}</b></span><span></span><span class="r"><b class="py-total">{{ t.total }}</b></span><span></span></div>
+    </div>
+    {% else %}
+    <div class="nzp-empty"><span class="nzp-empty-icon" style="--c:#059669"><i class="fas fa-sack-dollar" aria-hidden="true"></i></span><h3>{% translate "No cashiers yet" %}</h3><p>{% translate "Link cashiers to the kassas first -- their pay is computed here every month." %}</p><a class="nzp-btn nzp-btn-primary" href="{% url 'admin:stores_storecashier_changelist' %}"><i class="fas fa-id-badge" aria-hidden="true"></i> {% translate "Kassalar va kassirlar" %}</a></div>
+    {% endif %}
+  </section>
+
+  {% if can_edit %}
+  <dialog class="nzd-dialog" id="py-terms"><form method="post" data-terms-form>{% csrf_token %}<input type="hidden" name="month" value="{{ month_key }}">
+    <header><span class="nzd-dialog-icon" style="color:#7c3aed;background:color-mix(in srgb,#7c3aed 13%,transparent)"><i class="fas fa-sliders" aria-hidden="true"></i></span><div><h3 data-t-name></h3><p>{% translate "Monthly pay = base salary + KPI % of the cashier's own net sales. Unpaid months use the new rates at once." %}</p></div></header>
+    <div class="wx-two">
+      <label class="nzd-field-label">{% translate "Base salary" %} (so'm)<input class="nzd-input py-num" name="base_salary" inputmode="numeric" required></label>
+      <label class="nzd-field-label">{% translate "KPI, % of sales" %}<input class="nzd-input py-num" name="kpi_percent" inputmode="decimal" required></label>
+    </div>
+    <p class="py-preview" data-t-preview></p>
+    <div class="nzd-next-row" style="justify-content:flex-end"><button type="button" class="nzp-btn nzp-btn-ghost" data-close>{% translate "Cancel" %}</button><button class="nzp-btn nzp-btn-primary"><i class="fas fa-check" aria-hidden="true"></i> {% translate "Save" %}</button></div>
+  </form></dialog>
+
+  <dialog class="nzd-dialog" id="py-pay"><form method="post" data-pay-form>{% csrf_token %}<input type="hidden" name="month" value="{{ month_key }}">
+    <header><span class="nzd-dialog-icon" style="color:#059669;background:color-mix(in srgb,#10b981 13%,transparent)"><i class="fas fa-hand-holding-dollar" aria-hidden="true"></i></span><div><h3 data-p-name></h3><p>{{ month_label }} · {% translate "the figures are frozen and the cashier is notified" %}{% if current %} · <b class="wx-minus">{% translate "the month isn't over yet" %}</b>{% endif %}</p></div></header>
+    <dl class="py-calc"><div><dt>{% translate "Base salary" %}</dt><dd data-p-base></dd></div><div><dt>KPI</dt><dd data-p-kpi></dd></div><div><dt>{% translate "Adjustment" %}</dt><dd data-p-adj>0</dd></div><div class="py-calc-total"><dt>{% translate "To pay" %}</dt><dd data-p-total></dd></div></dl>
+    <div class="wx-two">
+      <label class="nzd-field-label">{% translate "Bonus (+) or deduction (−), so'm" %}<input class="nzd-input py-num" name="adjustment" inputmode="numeric" placeholder="0" data-p-input></label>
+      <label class="nzd-field-label">{% translate "Reason" %}<input class="nzd-input" name="note" maxlength="255" placeholder="{% translate 'e.g. holiday bonus, shortage' %}"></label>
+    </div>
+    <div class="nzd-next-row" style="justify-content:flex-end"><button type="button" class="nzp-btn nzp-btn-ghost" data-close>{% translate "Cancel" %}</button><button class="nzp-btn nzp-btn-primary"><i class="fas fa-check" aria-hidden="true"></i> {% translate "Mark as paid" %}</button></div>
+  </form></dialog>
+
+  <dialog class="nzd-dialog" id="py-confirm"><form method="dialog">
+    <header><span class="nzd-dialog-icon"><i class="fas fa-rotate-left" aria-hidden="true"></i></span><div><h3>{% translate "Cancel this payment?" %}</h3><p>{% translate "The month goes back to unpaid and is computed live from the sales again." %}</p></div></header>
+    <div class="nzd-next-row" style="justify-content:flex-end"><button value="0" class="nzp-btn nzp-btn-ghost">{% translate "Back" %}</button><button value="1" class="nzp-btn nzp-btn-danger">{% translate "Cancel the payment" %}</button></div>
+  </form></dialog>
+  {% endif %}
+</div>
+<script>
+(function () {
+  var terms = document.getElementById("py-terms"), payD = document.getElementById("py-pay"), conf = document.getElementById("py-confirm");
+  if (!terms) return;
+  var termsUrl = "{% url 'admin:stores_storecashier_terms' '00000000-0000-0000-0000-000000000000' %}", payUrl = "{% url 'admin:stores_storecashier_pay' '00000000-0000-0000-0000-000000000000' %}";
+  var Z = "00000000-0000-0000-0000-000000000000", cur = null;
+  function money(n) { return Math.round(n || 0).toLocaleString("ru-RU").replace(/ /g, " "); }
+  function num(v) { return Number(String(v || "").replace(/\s/g, "").replace(",", ".").replace("−", "-")) || 0; }
+  function preview() {
+    var f = terms.querySelector("form");
+    terms.querySelector("[data-t-preview]").textContent = "{{ _('Example: with 100 000 000 so\'m of sales the pay is')|escapejs }} " + money(num(f.base_salary.value) + 1e8 * num(f.kpi_percent.value) / 100) + " so'm";
+  }
+  function calc() {
+    var adj = num(payD.querySelector("[data-p-input]").value);
+    payD.querySelector("[data-p-adj]").textContent = (adj > 0 ? "+" : adj < 0 ? "−" : "") + money(Math.abs(adj));
+    payD.querySelector("[data-p-total]").textContent = money(cur.base + cur.kpi + adj) + " so'm";
+  }
+  document.addEventListener("click", function (e) {
+    var b;
+    if ((b = e.target.closest("[data-terms]"))) {
+      var f = terms.querySelector("form"); f.action = termsUrl.replace(Z, b.getAttribute("data-terms"));
+      terms.querySelector("[data-t-name]").textContent = b.getAttribute("data-name");
+      f.base_salary.value = money(Number(b.getAttribute("data-base"))); f.kpi_percent.value = b.getAttribute("data-pct"); preview(); terms.showModal(); return;
+    }
+    if ((b = e.target.closest("[data-pay]"))) {
+      var g = payD.querySelector("form"); g.action = payUrl.replace(Z, b.getAttribute("data-pay")); g.reset();
+      cur = { base: Number(b.getAttribute("data-base")), kpi: Number(b.getAttribute("data-kpi")) };
+      payD.querySelector("[data-p-name]").textContent = b.getAttribute("data-name");
+      payD.querySelector("[data-p-base]").textContent = money(cur.base); payD.querySelector("[data-p-kpi]").textContent = money(cur.kpi); calc(); payD.showModal(); return;
+    }
+    if ((b = e.target.closest("[data-close]"))) b.closest("dialog").close();
+  });
+  terms.addEventListener("input", function (e) { if (e.target.name === "base_salary") { var v = e.target.value.replace(/[^\d]/g, ""); e.target.value = v ? money(Number(v)) : ""; } preview(); });
+  payD.addEventListener("input", function (e) { if (e.target.matches("[data-p-input]")) { var neg = /^[-−]/.test(e.target.value.trim()), v = e.target.value.replace(/[^\d]/g, ""); e.target.value = (neg ? "−" : "") + (v ? money(Number(v)) : ""); calc(); } });
+  payD.querySelector("form").addEventListener("submit", function () { var i = payD.querySelector("[data-p-input]"); i.value = String(num(i.value)); });
+  terms.querySelector("form").addEventListener("submit", function () { var f = terms.querySelector("form"); f.base_salary.value = String(num(f.base_salary.value)); });
+  var pending = null;
+  document.addEventListener("submit", function (e) { var f = e.target.closest("form[data-confirm]"); if (f && f !== pending) { e.preventDefault(); pending = f; conf.showModal(); } });
+  conf.addEventListener("close", function () { if (conf.returnValue === "1" && pending) pending.submit(); else pending = null; });
+})();
+</script>
+{% endblock %}

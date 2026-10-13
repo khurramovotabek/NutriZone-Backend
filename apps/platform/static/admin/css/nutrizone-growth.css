@@ -1,0 +1,53 @@
+/* Dashboard → Sotuv rejasi + Mijozlar segmentlari (templates/admin/platform/sales_plan.html, segments.html). Prefix nzg-; base nza-. */
+.nzg h3, .nzg h4 { text-transform: none !important; letter-spacing: -.01em !important; color: var(--nz-text-primary) !important; }
+.nzg-hero-plan { background: radial-gradient(120% 140% at 100% 0%, #22c55e 0%, transparent 45%), radial-gradient(90% 120% at 0% 100%, #0ea5e9 0%, transparent 50%), linear-gradient(135deg, #064e3b 0%, #0f766e 55%, #1e3a8a 100%); }
+.nzg-hero-seg { background: radial-gradient(120% 140% at 100% 0%, #f97316 0%, transparent 45%), radial-gradient(90% 120% at 0% 100%, #ec4899 0%, transparent 50%), linear-gradient(135deg, #3b0764 0%, #7c3aed 55%, #be185d 100%); }
+.nzg-save { display: inline-flex; align-items: center; gap: 8px; padding: 9px 14px; border: 0; border-radius: 12px; font-size: 13px; font-weight: 700; cursor: pointer; color: #fff !important; text-decoration: none !important; background: linear-gradient(135deg, #4f46e5, #6366f1); box-shadow: 0 8px 18px -10px #4f46e5; }
+.nzg-save.is-ghost { color: var(--nz-text-primary) !important; background: var(--nz-surface-secondary); box-shadow: inset 0 0 0 1px var(--nz-border); }
+.nzg-actions { display: flex; flex-wrap: wrap; gap: 8px; }
+.nzg-rows { display: grid; gap: 10px; }
+.nzg-row { --c: #64748b; display: grid; grid-template-columns: minmax(0, 1.2fr) minmax(0, 2fr) minmax(0, 2.6fr) 200px; gap: 10px 16px; align-items: center; padding: 14px 16px; border-radius: 16px; background: var(--nz-surface-secondary); box-shadow: inset 4px 0 0 var(--c), inset 0 0 0 1px var(--nz-border); }
+.nzg-name { display: flex; align-items: center; gap: 8px; min-width: 0; }
+.nzg-name b { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.nzg-dot { width: 10px; height: 10px; border-radius: 50%; background: var(--c); flex: none; }
+.nzg-bar { position: relative; height: 12px; border-radius: 99px; background: color-mix(in srgb, var(--nz-text-muted) 18%, transparent); overflow: visible; }
+.nzg-fill { position: absolute; inset: 0 auto 0 0; border-radius: inherit; background: linear-gradient(90deg, var(--c), color-mix(in srgb, var(--c) 60%, #22c55e)); }
+.nzg-row.is-ok .nzg-fill { background: linear-gradient(90deg, #16a34a, #22c55e); }
+.nzg-row.is-warn .nzg-fill { background: linear-gradient(90deg, #d97706, #f59e0b); }
+.nzg-row.is-bad .nzg-fill { background: linear-gradient(90deg, #dc2626, #f97316); }
+.nzg-marker { position: absolute; top: -4px; bottom: -4px; width: 3px; margin-left: -1px; border-radius: 2px; background: var(--nz-text-primary); opacity: .65; }
+.nzg-facts { display: flex; flex-wrap: wrap; gap: 6px 16px; margin: 0; }
+.nzg-facts dt { font-size: 10.5px; font-weight: 700; text-transform: uppercase; letter-spacing: .04em; color: var(--nz-text-muted); }
+.nzg-facts dd { margin: 0; font-weight: 800; font-variant-numeric: tabular-nums; }
+.nzg-facts dd small { font-weight: 600; color: var(--nz-text-muted); }
+.nzg-facts dd.ok { color: #16a34a; } .nzg-facts dd.bad { color: #dc2626; }
+.nzg-input { display: grid; gap: 3px; margin: 0; font-size: 10.5px; font-weight: 700; text-transform: uppercase; letter-spacing: .04em; color: var(--nz-text-muted); }
+.nzg-input input { height: 36px; padding: 0 10px; border-radius: 10px; border: 1px solid var(--nz-border); background: var(--nz-surface); color: var(--nz-text-primary); font-size: 14px; font-weight: 700; font-variant-numeric: tabular-nums; text-transform: none; }
+.nzg-input input:focus { outline: 2px solid #6366f1; outline-offset: 0; }
+.nzg-sellers { grid-column: 1 / -1; font-size: 12.5px; }
+.nzg-sellers summary { cursor: pointer; font-weight: 700; color: var(--nz-text-secondary); }
+.nzg-sellers ol { margin: 8px 0 0; padding: 0; list-style: none; display: grid; gap: 4px; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); }
+.nzg-sellers li { display: flex; gap: 8px; align-items: baseline; padding: 6px 10px; border-radius: 10px; background: var(--nz-surface); }
+.nzg-sellers li span { flex: 1; min-width: 0; } .nzg-sellers li small { color: var(--nz-text-muted); }
+/* segments */
+.nzg-segs { display: grid; gap: 10px; margin-bottom: 16px; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); }
+.nzg-seg { --t: #64748b; display: grid; gap: 2px; padding: 14px; border-radius: 16px; color: inherit !important; text-decoration: none !important; background: var(--nz-surface); box-shadow: inset 0 0 0 1px var(--nz-border); transition: transform .15s, box-shadow .15s; }
+.nzg-seg:hover { transform: translateY(-2px); }
+.nzg-seg.is-on { box-shadow: inset 0 0 0 2px var(--t), 0 12px 26px -18px var(--t); }
+.nzg-seg-icon { width: 32px; height: 32px; display: grid; place-items: center; border-radius: 10px; margin-bottom: 6px; color: #fff; background: var(--t); }
+.nzg-seg b { font-size: 24px; font-weight: 850; font-variant-numeric: tabular-nums; }
+.nzg-seg-label { font-size: 13px; font-weight: 700; }
+.nzg-seg small { font-size: 11px; color: var(--nz-text-muted); }
+.nzg-hint { margin: -4px 0 12px; font-size: 13px; line-height: 1.55; color: var(--nz-text-secondary); }
+.nzg-table { display: grid; }
+.nzg-tr { display: grid; grid-template-columns: minmax(0, 2fr) minmax(0, 1.2fr) 80px 120px 110px; gap: 10px; align-items: center; padding: 9px 4px; border-bottom: 1px solid var(--nz-border); font-size: 13px; }
+.nzg-tr span { min-width: 0; overflow-wrap: anywhere; } .nzg-tr .r { text-align: right; font-variant-numeric: tabular-nums; }
+.nzg-tr small { display: block; color: var(--nz-text-muted); font-size: 11px; }
+.nzg-th { font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: .04em; color: var(--nz-text-muted); }
+.nzg-tg { color: #0ea5e9; }
+@media (max-width: 1100px) { .nzg-row { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); } .nzg-facts, .nzg-input { grid-column: 1 / -1; } }
+@media (max-width: 640px) {
+  .nzg-row { grid-template-columns: minmax(0, 1fr); }
+  .nzg-tr { grid-template-columns: minmax(0, 1fr) 90px; }
+  .nzg-tr > span:nth-child(2), .nzg-tr > span:nth-child(3), .nzg-tr > span:nth-child(5) { display: none; }
+}

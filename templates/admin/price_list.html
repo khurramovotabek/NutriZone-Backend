@@ -1,0 +1,155 @@
+{% extends "admin/base_site.html" %}
+{% load i18n static %}
+{# Price list: pricing health KPIs, filters, one row per product (its default variant) with inline cost / price / old price, margin, discount, stock; other variants in an expandable panel; price history. Saves via price_list_api_save (SetPrice). #}
+{% block extrastyle %}{{ block.super }}<link rel="stylesheet" href="{% static 'admin/css/nutrizone-platform.css' %}?v=5"><link rel="stylesheet" href="{% static 'admin/css/nutrizone-orderdesk.css' %}?v=5"><link rel="stylesheet" href="{% static 'admin/css/nutrizone-wmsx.css' %}?v=11">{% endblock %}
+{% block breadcrumbs %}<ol class="breadcrumb"><li class="breadcrumb-item"><a href="{% url 'admin:index' %}">{% translate "Home" %}</a></li><li class="breadcrumb-item">{% translate "Narxlash" %}</li><li class="breadcrumb-item active">{% translate "Narxlar ro'yxati" %}</li></ol>{% endblock %}
+{% block content_title %}{% endblock %}
+{% block content %}
+<div class="nzp nzd wx nz-price-list" id="wx-prices" data-save="/django-admin/products/price-list/api/save/" data-history="/django-admin/products/price-list/api/history/">
+  <header class="nzp-hero">
+    <div class="nzp-hero-main">
+      <span class="nzp-hero-icon" style="--c:#10b981"><i class="fas fa-tags" aria-hidden="true"></i></span>
+      <div><h2>{% translate "Narxlar ro'yxati" %}</h2><p>{% translate "Selling price, old (crossed-out) price and cost of every product in one place. Type and press Enter -- the price is saved and recorded in the price history." %}</p></div>
+    </div>
+    <div class="nzp-hero-actions">
+      <a class="nzp-btn nzp-btn-ghost" href="{% url 'admin:pricing_couponmodel_changelist' %}"><i class="fas fa-ticket" aria-hidden="true"></i> {% translate "Kuponlar" %}</a>
+      <a class="nzp-btn nzp-btn-primary" href="{% url 'admin:products_product_add' %}"><i class="fas fa-plus" aria-hidden="true"></i> {% translate "New product" %}</a>
+    </div>
+  </header>
+
+  <div class="nzp-stats">
+    <div class="nzp-stat" style="--c:#2563eb"><i class="fas fa-boxes-stacked" aria-hidden="true"></i><div><b>{{ kpi.products }}</b><span>{% blocktranslate with n=kpi.variants %}Products · {{ n }} variants{% endblocktranslate %}</span></div></div>
+    <a class="nzp-stat" href="?missing=1" style="--c:#e11d48"><i class="fas fa-circle-exclamation" aria-hidden="true"></i><div><b>{{ kpi.unpriced }}</b><span>{% translate "Variants without a price -- can't be bought" %}</span></div></a>
+    <a class="nzp-stat" href="?discount=discounted" style="--c:#f59e0b"><i class="fas fa-percent" aria-hidden="true"></i><div><b>{{ kpi.discounted }}</b><span>{% translate "With a discount (old price)" %}</span></div></a>
+    <div class="nzp-stat" style="--c:#10b981"><i class="fas fa-chart-line" aria-hidden="true"></i><div><b>{% if kpi.margin is not None %}{{ kpi.margin }}%{% else %}—{% endif %}</b><span>{% blocktranslate with n=kpi.no_cost %}Average margin · {{ n }} without cost{% endblocktranslate %}</span></div></div>
+  </div>
+
+  <form method="get" class="nzp-toolbar wx-pl-filters">
+    <input type="hidden" name="sort" value="{{ sort }}">
+    <nav class="nzp-tabs" aria-label="{% translate 'Filter' %}">
+      <a class="nzp-tab{% if not missing and not selected_discount %} on{% endif %}" href="?" style="--t:#64748b"><i class="fas fa-layer-group" aria-hidden="true"></i> {% translate "All" %}</a>
+      <a class="nzp-tab{% if missing %} on{% endif %}" href="?missing=1" style="--t:#e11d48"><i class="fas fa-circle-exclamation" aria-hidden="true"></i> {% translate "No price" %} <b>{{ kpi.unpriced_products }}</b></a>
+      <a class="nzp-tab{% if selected_discount == 'discounted' %} on{% endif %}" href="?discount=discounted" style="--t:#f59e0b"><i class="fas fa-percent" aria-hidden="true"></i> {% translate "Discounted" %}</a>
+    </nav>
+    <div class="wx-date-filter">
+      {% if missing %}<input type="hidden" name="missing" value="1">{% endif %}
+      <select name="category" class="nzp-select" onchange="this.form.submit()" aria-label="{% translate 'Category' %}"><option value="">{% translate "All categories" %}</option>{% for c in categories %}<option value="{{ c.id }}"{% if selected_category == c.id %} selected{% endif %}>{{ c.name }}</option>{% endfor %}</select>
+      <select name="brand" class="nzp-select" onchange="this.form.submit()" aria-label="{% translate 'Brand' %}"><option value="">{% translate "All brands" %}</option>{% for b in brands %}<option value="{{ b.id }}"{% if selected_brand == b.id %} selected{% endif %}>{{ b.name }}</option>{% endfor %}</select>
+      <select name="stock" class="nzp-select" onchange="this.form.submit()" aria-label="{% translate 'Stock' %}"><option value="">{% translate "Any stock" %}</option><option value="in"{% if selected_stock == "in" %} selected{% endif %}>{% translate "In stock" %}</option><option value="low"{% if selected_stock == "low" %} selected{% endif %}>{% translate "Low stock" %}</option><option value="out"{% if selected_stock == "out" %} selected{% endif %}>{% translate "Out of stock" %}</option><option value="not_tracked"{% if selected_stock == "not_tracked" %} selected{% endif %}>{% translate "Not tracked" %}</option></select>
+      {% if selected_discount %}<input type="hidden" name="discount" value="{{ selected_discount }}">{% endif %}
+      <label class="nzp-search"><i class="fas fa-magnifying-glass" aria-hidden="true"></i><input type="search" name="q" value="{{ query }}" placeholder="{% translate 'Search products, SKU, brand...' %}" aria-label="{% translate 'Search products, SKU, brand...' %}"></label>
+    </div>
+  </form>
+  {% if active_filters %}<div class="wx-type-chips">{% for chip in active_filters %}<a href="{{ chip.remove_url }}" class="on" style="--t:#2563eb"><i></i>{{ chip.label }} ×</a>{% endfor %}<a href="{% url 'admin:nz_price_list' %}" style="--t:#64748b"><i></i>{% translate "Clear all" %}</a></div>{% endif %}
+
+  <section class="nzp-card nzp-inbox">
+    {% if rows %}
+    <div class="nzd-table wx-pl-table" role="table">
+      <div class="nzd-tr nzd-th" role="row">
+        <span><a href="?q={{ query|urlencode }}&sort={{ sort_columns.name.next_sort }}">{% translate "Product" %} {{ sort_columns.name.arrow }}</a></span>
+        <span class="r"><a href="?q={{ query|urlencode }}&sort={{ sort_columns.base_price.next_sort }}">{% translate "Cost" %} {{ sort_columns.base_price.arrow }}</a></span>
+        <span class="r"><a href="?q={{ query|urlencode }}&sort={{ sort_columns.price.next_sort }}">{% translate "Price" %} {{ sort_columns.price.arrow }}</a></span>
+        <span class="r"><a href="?q={{ query|urlencode }}&sort={{ sort_columns.old_price.next_sort }}">{% translate "Old price" %} {{ sort_columns.old_price.arrow }}</a></span>
+        <span class="r">{% translate "Margin / discount" %}</span>
+        <span class="r">{% translate "Stock" %}</span>
+        <span></span>
+      </div>
+      {% for row in rows %}
+      <div class="wx-pl-group" style="--i:{{ forloop.counter0 }}">
+        <div class="nzd-tr wx-pl-row{% if row.price is None %} is-unpriced{% endif %}" role="row" data-variant-id="{{ row.id }}" data-price="{{ row.price|default_if_none:'' }}">
+          <span class="wx-prod"><span class="wx-pl-thumb">{{ row.image_html }}</span><span><b>{{ row.name|linebreaksbr }}{% if row.variant_count > 1 %} <span class="nz-badge nz-badge-neutral nz-price-list-variant-count" title="{% blocktranslate count counter=row.variant_count %}This product has {{ counter }} variant.{% plural %}This product has {{ counter }} variants.{% endblocktranslate %}">&times;{{ row.variant_count }}</span>{% endif %}</b>
+            <small>{{ row.sku }}{% if row.size %} · {{ row.size }}{% endif %}{% if row.unpriced_variants %} · <span class="wx-minus">{% blocktranslate count n=row.unpriced_variants %}{{ n }} variant without price{% plural %}{{ n }} variants without price{% endblocktranslate %}</span>{% endif %}</small></span></span>
+          {% include "admin/_price_cells.html" with v=row %}
+          <span class="r">{% if row.stock is None %}<span class="nz-stock-untracked wx-muted">{% translate "Not tracked" %}</span>{% elif row.stock == 0 %}<span class="wx-state out nz-stock-out">{% translate "Out of stock" %}</span>{% elif row.stock_state == "low" %}<span class="wx-state low nz-stock-low">{{ row.stock }}</span>{% else %}<b class="wx-num"><span class="nz-stock-value">{{ row.stock }}</span></b>{% endif %}</span>
+          <span class="wx-row-actions">
+            <a href="#" data-history-for="{{ row.id }}" title="{% translate 'Price history' %}" aria-label="{% translate 'Price history' %}"><i class="fas fa-clock-rotate-left" aria-hidden="true"></i></a>
+            {% if row.variants %}<a href="#" data-toggle-variants title="{% translate 'Other variants' %}" aria-label="{% translate 'Other variants' %}"><i class="fas fa-chevron-down" aria-hidden="true"></i></a>{% endif %}
+            <a href="{% url 'admin:products_product_change' row.product_id %}" title="{% translate 'Edit product' %}" aria-label="{% translate 'Edit product' %}"><i class="fas fa-pen" aria-hidden="true"></i></a>
+          </span>
+        </div>
+        {% if row.variants %}
+        <div class="wx-pl-variants" hidden>
+          {% for v in row.variants %}
+          <div class="nzd-tr wx-pl-row wx-pl-sub{% if v.price is None %} is-unpriced{% endif %}" role="row" data-sub-variant-id="{{ v.id }}">
+            <span class="wx-prod"><span class="ph"><i class="fas fa-turn-up fa-rotate-90" aria-hidden="true"></i></span><span><b>{{ v.sku }}{% if v.size %} · {{ v.size }}{% endif %}</b><small>{% if v.status != "active" %}{{ v.status }}{% else %}{% translate "variant" %}{% endif %}</small></span></span>
+            {% include "admin/_price_cells.html" with v=v %}
+            <span></span>
+            <span class="wx-row-actions"><a href="#" data-history-for="{{ v.id }}" title="{% translate 'Price history' %}" aria-label="{% translate 'Price history' %}"><i class="fas fa-clock-rotate-left" aria-hidden="true"></i></a></span>
+          </div>
+          {% endfor %}
+        </div>
+        {% endif %}
+      </div>
+      {% endfor %}
+    </div>
+    <div class="wx-pl-foot"><span>{% blocktranslate with a=page_start b=page_end n=total_count %}Showing {{ a }}–{{ b }} of {{ n }} products{% endblocktranslate %}</span>
+      {% if total_pages > 1 %}<span class="wx-pl-pages">{% if page > 1 %}<a class="nzp-btn nzp-btn-ghost nzp-btn-sm" href="?q={{ query|urlencode }}&sort={{ sort }}&page={{ page|add:'-1' }}{% if missing %}&missing=1{% endif %}">‹</a>{% endif %}<b>{{ page }} / {{ total_pages }}</b>{% if page < total_pages %}<a class="nzp-btn nzp-btn-ghost nzp-btn-sm" href="?q={{ query|urlencode }}&sort={{ sort }}&page={{ page|add:'1' }}{% if missing %}&missing=1{% endif %}">›</a>{% endif %}</span>{% endif %}</div>
+    {% else %}
+    <div class="nzp-empty"><span class="nzp-empty-icon" style="--c:#10b981"><i class="fas fa-tags" aria-hidden="true"></i></span><h3>{% translate "No products found" %}</h3><p>{% if missing %}{% translate "Every variant has a price." %}{% else %}{% translate "Try a different search or filter." %}{% endif %}</p></div>
+    {% endif %}
+  </section>
+  <div class="nzp-note nzp-note-info"><i class="fas fa-lightbulb" aria-hidden="true"></i> {% translate "Cost is what you pay the supplier (staff only); the hint under it is the last goods-receipt cost. Old price is shown crossed out next to the price on the storefront and must be higher than the price." %}</div>
+
+  <dialog class="nzd-dialog" id="wx-history"><form method="dialog"><header><span class="nzd-dialog-icon" style="color:#2563eb;background:color-mix(in srgb,#2563eb 13%,transparent)"><i class="fas fa-clock-rotate-left" aria-hidden="true"></i></span><div><h3>{% translate "Price history" %}</h3><p data-history-sub></p></div></header><ul class="wx-history-list" data-history-list></ul><div class="nzd-next-row" style="justify-content:flex-end"><button class="nzp-btn nzp-btn-ghost">{% translate "Close" %}</button></div></form></dialog>
+  <div class="nzp-toast" data-nzp-toast role="status" aria-live="polite" hidden></div>
+  {% csrf_token %}
+</div>
+<script>
+(function () {
+  var root = document.getElementById("wx-prices"); if (!root) return;
+  var L = { saved: "{{ _('Price saved')|escapejs }}", err: "{{ _('Could not save. Please try again.')|escapejs }}", empty: "{{ _('No changes yet.')|escapejs }}", som: "{{ _("so'm")|escapejs }}", oldGt: "{{ _('Old price must be greater than Price.')|escapejs }}", need: "{{ _('Enter the selling price first.')|escapejs }}" };
+  function csrf() { var i = root.querySelector("input[name=csrfmiddlewaretoken]"); return i ? i.value : ""; }
+  function num(v) { v = String(v || "").replace(/\s/g, "").replace(",", "."); return v === "" ? null : Number(v); }
+  function money(n) { return Math.round(Number(n) || 0).toLocaleString("ru-RU").replace(/ /g, " "); }
+  function toast(t, bad) { var el = root.querySelector("[data-nzp-toast]"); el.textContent = t; el.classList.toggle("is-error", !!bad); el.hidden = false; clearTimeout(toast.t); toast.t = setTimeout(function () { el.hidden = true; }, bad ? 4000 : 1600); }
+  function vid(row) { return row.getAttribute("data-variant-id") || row.getAttribute("data-sub-variant-id"); }
+  function recalc(row) {
+    var cost = num(row.querySelector("[data-f=base_price]").value), price = num(row.querySelector("[data-f=price]").value), old = num(row.querySelector("[data-f=old_price]").value);
+    var out = [];
+    if (price && cost !== null) { var m = Math.round((price - cost) * 100 / price); out.push('<b class="' + (m < 15 ? "wx-minus" : "wx-plus") + '">' + m + "%</b>"); }
+    if (price && old && old > price) out.push('<span class="nzd-tag" style="--t:#e11d48">−' + Math.round((1 - price / old) * 100) + "%</span>");
+    row.querySelector("[data-calc]").innerHTML = out.join("") || "<small>—</small>";
+    row.classList.toggle("is-unpriced", !price);
+    row.querySelector("[data-f=old_price]").classList.toggle("is-bad", !!(old && price && old <= price));
+  }
+  function save(row) {
+    var body = {}, changed = false;
+    row.querySelectorAll("[data-f]").forEach(function (inp) {
+      var v = inp.value.replace(/\s/g, ""), was = inp.getAttribute("data-was") || "";
+      if (v !== was) changed = true;
+      body[inp.getAttribute("data-f")] = v === "" ? null : v;
+    });
+    if (!changed) return;
+    if (!body.price) { toast(L.need, true); return; }
+    if (body.old_price && Number(body.old_price) <= Number(body.price)) { toast(L.oldGt, true); return; }
+    row.classList.add("is-saving");
+    fetch(root.getAttribute("data-save") + vid(row), { method: "POST", credentials: "same-origin", headers: { "X-CSRFToken": csrf(), "Content-Type": "application/json" }, body: JSON.stringify(body) })
+      .then(function (r) { return r.json().then(function (j) { if (!r.ok || !j.success) throw new Error((j.error && j.error.message) || L.err); return j.data; }); })
+      .then(function (d) {
+        row.querySelectorAll("[data-f]").forEach(function (inp) { var v = d[inp.getAttribute("data-f")]; v = v == null ? "" : String(Math.round(Number(v))); inp.value = v; inp.setAttribute("data-was", v); });
+        row.classList.remove("is-saving"); row.classList.add("flash"); setTimeout(function () { row.classList.remove("flash"); }, 900);
+        recalc(row); toast("✓ " + L.saved);
+      })
+      .catch(function (e) { row.classList.remove("is-saving"); toast(e.message, true); });
+  }
+  root.addEventListener("input", function (e) { if (e.target.matches("[data-f]")) { e.target.value = e.target.value.replace(/[^\d\s]/g, ""); recalc(e.target.closest("[role=row]")); } });
+  root.addEventListener("keydown", function (e) { if (e.target.matches("[data-f]") && e.key === "Enter") { e.preventDefault(); save(e.target.closest("[role=row]")); } if (e.target.matches("[data-f]") && e.key === "Escape") { var i = e.target; i.value = i.getAttribute("data-was") || ""; recalc(i.closest("[role=row]")); } });
+  root.addEventListener("focusout", function (e) { if (e.target.matches("[data-f]")) { var row = e.target.closest("[role=row]"); setTimeout(function () { if (!row.contains(document.activeElement)) save(row); }, 50); } });
+  root.addEventListener("click", function (e) {
+    var t = e.target.closest("[data-toggle-variants]");
+    if (t) { e.preventDefault(); var panel = t.closest(".wx-pl-group").querySelector(".wx-pl-variants"); panel.hidden = !panel.hidden; t.classList.toggle("on", !panel.hidden); return; }
+    var h = e.target.closest("[data-history-for]");
+    if (h) {
+      e.preventDefault();
+      var dlg = document.getElementById("wx-history"), list = dlg.querySelector("[data-history-list]");
+      dlg.querySelector("[data-history-sub]").textContent = h.closest("[role=row]").querySelector(".wx-prod b").textContent.trim();
+      list.innerHTML = "<li>…</li>"; dlg.showModal();
+      fetch(root.getAttribute("data-history") + h.getAttribute("data-history-for"), { credentials: "same-origin" }).then(function (r) { return r.json(); }).then(function (j) {
+        list.innerHTML = (j.data || []).map(function (x) { return "<li><b>" + x.type + "</b><span>" + (x.old ? money(x.old) + " → " : "") + money(x.new) + " " + L.som + "</span><small>" + x.when + "</small></li>"; }).join("") || "<li>" + L.empty + "</li>";
+      });
+    }
+  });
+  root.querySelectorAll("[role=row][data-variant-id], [role=row][data-sub-variant-id]").forEach(recalc);
+})();
+</script>
+{% endblock %}

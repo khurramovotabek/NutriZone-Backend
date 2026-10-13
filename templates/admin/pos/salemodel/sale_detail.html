@@ -1,0 +1,77 @@
+{% extends "admin/base_site.html" %}
+{% load i18n static nz_money %}
+{# One till sale as a receipt card (SaleAdmin.change_view): lines, payment split, customer, where / who / shift, returns, return or cancel. #}
+{% block extrastyle %}{{ block.super }}<link rel="stylesheet" href="{% static 'admin/css/nutrizone-platform.css' %}?v=5"><link rel="stylesheet" href="{% static 'admin/css/nutrizone-orderdesk.css' %}?v=5"><link rel="stylesheet" href="{% static 'admin/css/nutrizone-wmsx.css' %}?v=12"><link rel="stylesheet" href="{% static 'admin/css/nutrizone-pos-terminal.css' %}?v=7">{% endblock %}
+{% block breadcrumbs %}<ol class="breadcrumb"><li class="breadcrumb-item"><a href="{% url 'admin:index' %}">{% translate "Home" %}</a></li><li class="breadcrumb-item"><a href="{% url 'admin:pos_salemodel_changelist' %}">{% translate "Savdolar" %}</a></li><li class="breadcrumb-item active">{{ rc.number }}</li></ol>{% endblock %}
+{% block content_title %}{% endblock %}
+{% block content %}
+<div class="nzp nzd wx">
+  <header class="nzp-hero">
+    <div class="nzp-hero-main">
+      <a class="nzp-back" href="{% url 'admin:pos_salemodel_changelist' %}" aria-label="{% translate 'Back' %}"><i class="fas fa-arrow-left" aria-hidden="true"></i></a>
+      <div><h2 class="nzd-number">{% translate "Chek" %} <span class="nz-num">{{ rc.number }}</span> <span class="nzd-pill" style="--t:{{ tone }}">{{ label }}</span></h2>
+        <p><span><i class="wms-dot" style="background:{{ color }}"></i> {{ branch }}</span><span>{{ when }}</span><span><i class="fas fa-user-tie" aria-hidden="true"></i> {{ seller }}</span></p></div>
+    </div>
+    <div class="nzp-hero-actions">
+      <a class="nzp-btn nzp-btn-ghost" href="{% url 'admin:nz_pos2_receipt' s.pk %}" target="_blank" rel="noopener"><i class="fas fa-print" aria-hidden="true"></i> {% translate "Print receipt" %}</a>
+      {% if e_receipt %}<a class="nzp-btn nzp-btn-ghost" href="{{ e_receipt }}" target="_blank" rel="noopener"><i class="fas fa-qrcode" aria-hidden="true"></i> {% translate "Elektron chek" %}</a>{% endif %}
+      {% if action %}<a class="nzp-btn nzp-btn-danger-ghost" href="{{ action.url }}"><i class="{{ action.icon }}" aria-hidden="true"></i> {{ action.label }}</a>{% endif %}
+    </div>
+  </header>
+
+  <div class="nzp-stats">
+    <div class="nzp-stat" style="--c:#10b981"><i class="fas fa-sack-dollar" aria-hidden="true"></i><div><b>{{ rc.total|som }}<small> so'm</small></b><span>{% translate "Paid" %}{% if rc.returned != "0" and rc.returned != "0.00" %} · <span class="wx-minus">−{{ rc.returned|som }} {% translate "qaytarildi" %}</span>{% endif %}</span></div></div>
+    <div class="nzp-stat" style="--c:#2563eb"><i class="fas fa-boxes-stacked" aria-hidden="true"></i><div><b>{{ rc.item_count }}</b><span>{% translate "pcs" %} · {{ rc.items|length }} {% translate "products" %}</span></div></div>
+    <div class="nzp-stat" style="--c:#d4a017"><i class="fas fa-coins" aria-hidden="true"></i><div><b>{{ rc.coins|som }}</b><span>{% translate "Paid with coins" %}{% if rc.coins_earned %} · +{{ rc.coins_earned }} {% translate "earned" %}{% endif %}</span></div></div>
+    <div class="nzp-stat" style="--c:#c026d3"><i class="fas fa-percent" aria-hidden="true"></i><div><b>{{ rc.discount|som }}</b><span>{% translate "Chegirma" %}{% if s.discount_reason %} · {{ s.discount_reason }}{% endif %}</span></div></div>
+  </div>
+
+  <div class="wx-card-grid">
+    <section class="nzp-card nzd-items">
+      <header class="nzp-card-head nzp-card-head-sm"><span class="nzp-card-icon" style="--c:#2563eb"><i class="fas fa-receipt" aria-hidden="true"></i></span><div><h3>{% translate "Mahsulotlar" %}</h3></div></header>
+      <ul class="nzd-lines">
+        {% for i in rc.items %}
+        <li class="nzd-line">
+          <span class="nzd-thumb"><i class="fas fa-box" aria-hidden="true"></i></span>
+          <div class="nzd-line-main"><strong>{{ i.name }}</strong><small>{% if i.variant_label %}{{ i.variant_label }} · {% endif %}{{ i.sku|default:"" }}</small>
+            {% if i.refunded_quantity %}<span class="nzd-line-tags"><span class="nzd-tag" style="--t:#e11d48">{{ i.refunded_quantity }} {% translate "qaytarildi" %}</span></span>{% endif %}</div>
+          <div class="nzd-line-qty"><b>× {{ i.quantity }}</b><small>{{ i.unit_price|som }} so'm</small></div>
+          <div class="nzd-line-total">{{ i.line_total|som }} <small>so'm</small></div>
+        </li>
+        {% endfor %}
+      </ul>
+      <dl class="px-z px-receipt-sum">
+        <dt>{% translate "Mahsulotlar summasi" %}</dt><dd>{{ rc.subtotal|som }}</dd>
+        {% if rc.discount != "0" and rc.discount != "0.00" %}<dt>{% translate "Chegirma" %}</dt><dd class="wx-minus">−{{ rc.discount|som }}</dd>{% endif %}
+        {% if rc.coins != "0" and rc.coins != "0.00" %}<dt>{% translate "Coins" %}</dt><dd class="wx-minus">−{{ rc.coins|som }}</dd>{% endif %}
+        {% if rc.delivery != "0" and rc.delivery != "0.00" %}<dt>{% translate "Yetkazib berish" %}</dt><dd>{{ rc.delivery|som }}</dd>{% endif %}
+        <dt><b>{% translate "Jami" %}</b></dt><dd><b>{{ rc.total|som }} so'm</b></dd>
+      </dl>
+    </section>
+    <aside class="wx-card-side">
+      <section class="nzp-card">
+        <header class="nzp-card-head nzp-card-head-sm"><span class="nzp-card-icon" style="--c:#10b981"><i class="fas fa-wallet" aria-hidden="true"></i></span><div><h3>{% translate "To'lov" %}</h3></div></header>
+        <ul class="wx-buy-list">{% for p in pays %}<li><span class="nzd-tag" style="--t:{{ p.tone }}">{{ p.label }}</span><b>{{ p.amount|som }} so'm</b></li>{% empty %}<li class="wx-muted">—</li>{% endfor %}</ul>
+        {% if rc.amount_tendered %}<p class="wx-muted px-tender">{% translate "Qabul qilindi / qaytim" %}: <b>{{ rc.amount_tendered|som }}</b> / <b>{{ rc.change|som }}</b></p>{% endif %}
+      </section>
+      <section class="nzp-card">
+        <header class="nzp-card-head nzp-card-head-sm"><span class="nzp-card-icon" style="--c:#6366f1"><i class="fas fa-user" aria-hidden="true"></i></span><div><h3>{% translate "Mijoz" %}</h3></div></header>
+        {% if customer %}<div class="wx-customer"><span class="ph wx-avatar">{{ customer.full_name|default:"?"|slice:":1"|upper }}</span><div><b>{{ customer.full_name|default:"—" }}</b><small><a href="tel:{{ customer.phone_number }}">{{ customer.phone_number }}</a></small></div></div>
+        {% else %}<p class="wx-muted"><i class="fas fa-user-secret" aria-hidden="true"></i> {% translate "Guest" %}</p>{% endif %}
+      </section>
+      <section class="nzp-card wx-requisites">
+        <header class="nzp-card-head nzp-card-head-sm"><span class="nzp-card-icon" style="--c:#64748b"><i class="fas fa-store" aria-hidden="true"></i></span><div><h3>{% translate "Kim va qayerda" %}</h3></div></header>
+        <dl><dt>{% translate "Filial" %}</dt><dd>{{ branch }}</dd><dt>{% translate "Sotuvchi" %}</dt><dd>{{ seller }}</dd><dt>{% translate "Sana" %}</dt><dd>{{ when }}</dd>
+          {% if shift %}<dt>{% translate "Kassa smenasi" %}</dt><dd><a href="{{ shift }}">{% translate "Open" %} →</a></dd>{% endif %}
+          {% if refunded_at %}<dt>{% translate "Qaytarilgan sana" %}</dt><dd>{{ refunded_at }}</dd>{% endif %}</dl>
+      </section>
+      {% if rc.refunds %}
+      <section class="nzp-card">
+        <header class="nzp-card-head nzp-card-head-sm"><span class="nzp-card-icon" style="--c:#e11d48"><i class="fas fa-rotate-left" aria-hidden="true"></i></span><div><h3>{% translate "Qaytarishlar" %}</h3></div></header>
+        <ul class="wx-buy-list">{% for r in rc.refunds %}<li><span><b>{{ r.number }}</b><small class="wx-muted"> · {{ r.items }} {% translate "pcs" %}</small></span><b class="wx-minus">−{{ r.value|som }}</b></li>{% endfor %}</ul>
+      </section>
+      {% endif %}
+    </aside>
+  </div>
+</div>
+{% endblock %}

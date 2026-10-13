@@ -1,0 +1,15 @@
+{% autoescape off %}/* Generated from Site Settings (apps/platform/infrastructure/branding_css.py). */
+{% if primary %}:root, html[data-nz-theme="light"] {
+  --nz-primary: {{ primary }};
+  --nz-primary-hover: color-mix(in srgb, {{ primary }} 80%, #000);
+  --nz-hover: color-mix(in srgb, {{ primary }} 7%, transparent);
+  --nz-focus-ring: color-mix(in srgb, {{ primary }} 35%, transparent);
+}
+html[data-nz-theme="dark"] {
+  --nz-primary: color-mix(in srgb, {{ primary }} 72%, #fff);
+  --nz-primary-hover: color-mix(in srgb, {{ primary }} 55%, #fff);
+  --nz-hover: color-mix(in srgb, {{ primary }} 16%, transparent);
+  --nz-focus-ring: color-mix(in srgb, {{ primary }} 45%, transparent);
+}
+{% endif %}{% if logo_url %}.brand-link .brand-image, .nz-brand-logo { content: url("{{ logo_url }}"); }
+{% endif %}{% endautoescape %}

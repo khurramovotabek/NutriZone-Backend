@@ -1,0 +1,37 @@
+/* Dashboard → Sharhlar: stars, product cells, review text, media thumbs / gallery, the moderation timeline. Builds on nutrizone-premium.css. */
+.nzr-stars { color: #eab308; letter-spacing: 1px; font-size: .9rem; white-space: nowrap; }
+.nzr-stars .off { color: color-mix(in srgb, var(--nz-text-muted) 45%, transparent); }
+.nzr-prod { display: inline-flex; align-items: center; gap: 10px; min-width: 0; max-width: 100%; }
+.nzr-prod img, .nzr-prod .ph { width: 40px; height: 40px; flex-shrink: 0; border-radius: 10px; object-fit: contain; background: #fff; box-shadow: 0 0 0 1px var(--nz-border); }
+.nzr-prod .ph { display: grid; place-items: center; color: var(--nz-text-muted); background: var(--nz-surface-secondary); }
+.nzr-prod > span { min-width: 0; }
+.nzr-prod b { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; font-size: .84rem; color: var(--nz-text-primary); }
+.nzr-text { display: block; min-width: 0; }
+.nzr-text b { display: block; font-size: .84rem; color: var(--nz-text-primary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.nzr-text span { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; font-size: .8rem; line-height: 1.4; color: var(--nz-text-secondary); }
+.nzr-thumbs { display: inline-flex; align-items: center; gap: 4px; }
+.nzr-mini { position: relative; width: 34px; height: 34px; border-radius: 8px; overflow: hidden; background: var(--nz-surface-secondary); box-shadow: 0 0 0 1px var(--nz-border); }
+.nzr-mini img, .nzr-mini video { width: 100%; height: 100%; object-fit: cover; }
+.nzr-mini .nzr-play { font-size: .55rem; }
+.nzr-thumbs small { font-size: .7rem; font-weight: 700; color: var(--nz-text-muted); }
+.nzr-play { position: absolute; inset: 0; display: grid; place-items: center; color: #fff; background: rgba(0, 0, 0, .3); font-size: 1.2rem; pointer-events: none; }
+.nzr-badge { position: absolute; top: 8px; right: 8px; padding: 2px 7px; border-radius: 6px; font-size: .62rem; font-weight: 800; color: #fff; background: #db2777; }
+.nzr-verified { display: block; margin-top: 3px; color: #16a34a !important; font-weight: 700; }
+.nzi-card-line .nzi-pill { margin-top: 4px; }
+/* the card */
+.nzr-review { display: grid; gap: 10px; }
+.nzr-review header { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.nzr-review h4 { margin: 0; font-size: 1.05rem; font-weight: 800; color: var(--nz-text-primary); }
+.nzr-review blockquote { margin: 0; padding: 14px 16px; border-left: 3px solid #eab308; border-radius: 0 12px 12px 0; white-space: pre-wrap; line-height: 1.6;
+  font-size: .92rem; color: var(--nz-text-primary); background: var(--nz-surface-secondary); }
+.nzr-gallery { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 10px; }
+.nzr-shot { position: relative; display: block; border-radius: 12px; overflow: hidden; aspect-ratio: 1 / 1; background: var(--nz-surface-secondary); box-shadow: 0 0 0 1px var(--nz-border); }
+.nzr-shot img, .nzr-shot video { width: 100%; height: 100%; object-fit: cover; transition: transform .25s; }
+.nzr-shot:hover img { transform: scale(1.05); }
+.nzr-shot small { position: absolute; left: 0; right: 0; bottom: 0; padding: 4px 8px; font-size: .64rem; color: #fff; background: linear-gradient(transparent, rgba(0, 0, 0, .6)); }
+.nzr-timeline { display: flex; flex-wrap: wrap; gap: 8px; margin: 0; padding: 0; list-style: none; }
+.nzr-timeline li { --t: #64748b; flex: 1 1 150px; padding: 8px 12px; border-radius: 10px; border-left: 3px solid var(--t); background: var(--nz-surface-secondary); }
+.nzr-timeline b { display: block; font-size: .8rem; color: var(--nz-text-primary); }
+.nzr-timeline small { font-size: .72rem; color: var(--nz-text-muted); }
+.nzr-reason { display: inline-flex; gap: 6px; align-items: center; }
+.nzr-reason select { height: 34px; padding: 0 10px; border-radius: 10px; border: 1px solid var(--nz-border); background: var(--nz-surface); color: var(--nz-text-primary); font-size: .8rem; }

@@ -1,0 +1,276 @@
+/*
+ * NutriZone Admin -- premium sidebar.
+ * Jazzmin 3 / AdminLTE 4 markup: aside#jazzy-sidebar.app-sidebar >
+ * .sidebar-brand + .sidebar-wrapper > (.user-panel, nav > ul.sidebar-menu).
+ * The sidebar stays dark in both content themes (Jazzmin "sidebar-dark-primary"),
+ * so these rules use their own fixed dark palette rather than the theme tokens.
+ * Loaded after nutrizone-admin.css; ids keep it ahead of the older Phase 17 rules.
+ */
+
+#jazzy-sidebar {
+  --sb-bg-top: #0f1622;
+  --sb-bg-bottom: #0b1018;
+  --sb-line: rgba(255, 255, 255, 0.07);
+  --sb-text: rgba(226, 232, 240, 0.78);
+  --sb-text-strong: #f8fafc;
+  --sb-muted: rgba(148, 163, 184, 0.7);
+  --sb-hover: rgba(255, 255, 255, 0.055);
+  --sb-accent: var(--nz-primary, #3b82f6);
+  background: linear-gradient(180deg, var(--sb-bg-top) 0%, var(--sb-bg-bottom) 100%) !important;
+  border-right: 1px solid var(--sb-line);
+  box-shadow: 8px 0 32px -16px rgba(0, 0, 0, 0.6) !important;
+}
+/* Soft brand glow behind the logo row. */
+#jazzy-sidebar::before {
+  content: "";
+  position: absolute;
+  inset: 0 0 auto 0;
+  height: 220px;
+  pointer-events: none;
+  background: radial-gradient(120% 100% at 0% 0%, color-mix(in srgb, var(--sb-accent) 22%, transparent), transparent 70%);
+}
+
+/* --- Brand row --- */
+#jazzy-sidebar .sidebar-brand {
+  position: relative;
+  height: 64px;
+  padding: 0 16px;
+  display: flex;
+  align-items: center;
+  border-bottom: 1px solid var(--sb-line);
+}
+#jazzy-sidebar .brand-link {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 0;
+  color: var(--sb-text-strong) !important;
+}
+#jazzy-sidebar .brand-link .brand-image {
+  width: 38px;
+  height: 38px;
+  max-height: 38px;
+  margin: 0;
+  padding: 3px;
+  object-fit: contain;
+  border-radius: 12px;
+  background: #fff;
+  box-shadow: 0 6px 18px -6px color-mix(in srgb, var(--sb-accent) 70%, #000), 0 0 0 1px rgba(255, 255, 255, 0.12);
+}
+#jazzy-sidebar .brand-link .brand-text {
+  font-size: 17px;
+  font-weight: 800 !important;
+  letter-spacing: -0.01em;
+}
+
+/* --- Signed-in user card (enhanced by nutrizone-sidebar.js: initials avatar + role line) --- */
+#jazzy-sidebar .user-panel {
+  position: relative;
+  margin: 14px 12px 6px;
+  padding: 10px 12px !important;
+  border: 1px solid var(--sb-line) !important;
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.035);
+  align-items: center;
+  gap: 10px;
+}
+#jazzy-sidebar .user-panel .image { padding: 0 !important; display: flex; }
+#jazzy-sidebar .user-panel .user-profile { font-size: 30px; color: var(--sb-muted); }
+#jazzy-sidebar .nz-sb-avatar {
+  width: 36px;
+  height: 36px;
+  border-radius: 11px;
+  display: grid;
+  place-items: center;
+  font-size: 13px;
+  font-weight: 800;
+  color: #fff;
+  background: linear-gradient(140deg, var(--sb-accent), color-mix(in srgb, var(--sb-accent) 55%, #10b981));
+  box-shadow: 0 6px 14px -6px var(--sb-accent);
+}
+#jazzy-sidebar .user-panel .info { display: block !important; flex: 1; padding: 0 !important; min-width: 0; line-height: 1.25; }
+#jazzy-sidebar .user-panel .info a,
+#jazzy-sidebar .user-panel .info span.d-block {
+  color: var(--sb-text-strong) !important;
+  font-size: 13.5px;
+  font-weight: 700;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+#jazzy-sidebar .nz-sb-role {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  margin-top: 2px;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--sb-muted);
+}
+#jazzy-sidebar .nz-sb-role::before {
+  content: "";
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #22c55e;
+  box-shadow: 0 0 0 3px rgba(34, 197, 94, 0.18);
+}
+
+/* --- Menu filter (added by nutrizone-sidebar.js) --- */
+#jazzy-sidebar .nz-sb-filter {
+  position: relative;
+  margin: 8px 12px 6px;
+}
+#jazzy-sidebar .nz-sb-filter i {
+  position: absolute;
+  left: 11px;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 12px;
+  color: var(--sb-muted);
+  pointer-events: none;
+}
+#jazzy-sidebar .nz-sb-filter input {
+  width: 100%;
+  height: 34px;
+  padding: 0 10px 0 31px;
+  border-radius: 10px;
+  border: 1px solid var(--sb-line);
+  background: rgba(255, 255, 255, 0.04);
+  color: var(--sb-text-strong);
+  font-size: 12.5px;
+  outline: none;
+  transition: border-color 0.15s, background-color 0.15s;
+}
+#jazzy-sidebar .nz-sb-filter input::placeholder { color: var(--sb-muted); }
+#jazzy-sidebar .nz-sb-filter input:focus {
+  border-color: color-mix(in srgb, var(--sb-accent) 60%, transparent);
+  background: rgba(255, 255, 255, 0.07);
+}
+#jazzy-sidebar .nz-sb-empty {
+  margin: 8px 16px;
+  font-size: 12px;
+  color: var(--sb-muted);
+}
+
+/* --- Menu --- */
+#jazzy-sidebar .sidebar-menu { padding: 4px 10px 24px; }
+#jazzy-sidebar .sidebar-menu > .nav-item { margin: 1px 0; }
+#jazzy-sidebar .sidebar-menu .nav-link {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 38px;
+  padding: 6px 10px !important;
+  border-radius: 11px;
+  color: var(--sb-text) !important;
+  font-size: 13.5px;
+  font-weight: 500;
+  transition: background-color 0.15s, color 0.15s, transform 0.15s;
+}
+#jazzy-sidebar .sidebar-menu .nav-link > p {
+  flex: 1;
+  margin: 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+#jazzy-sidebar .sidebar-menu .nav-link .nav-icon {
+  flex: none;
+  width: 28px !important;
+  height: 28px;
+  margin: 0 !important;
+  display: grid;
+  place-items: center;
+  border-radius: 8px;
+  font-size: 13px !important;
+  color: var(--sb-muted);
+  background: rgba(255, 255, 255, 0.045);
+  opacity: 1 !important;
+  transition: background-color 0.15s, color 0.15s;
+}
+#jazzy-sidebar .sidebar-menu .nav-link:hover {
+  background: var(--sb-hover) !important;
+  color: var(--sb-text-strong) !important;
+}
+#jazzy-sidebar .sidebar-menu .nav-link:hover .nav-icon { color: var(--sb-text-strong); background: rgba(255, 255, 255, 0.08); }
+
+/* Open group */
+#jazzy-sidebar .sidebar-menu > .nav-item.menu-open > .nav-link {
+  color: var(--sb-text-strong) !important;
+  background: rgba(255, 255, 255, 0.04) !important;
+}
+#jazzy-sidebar .sidebar-menu > .nav-item.menu-open > .nav-link .nav-icon {
+  color: #fff;
+  background: color-mix(in srgb, var(--sb-accent) 35%, transparent);
+}
+#jazzy-sidebar .sidebar-menu .nav-arrow {
+  font-size: 10px !important;
+  color: var(--sb-muted);
+  transition: transform 0.2s ease;
+}
+#jazzy-sidebar .sidebar-menu .menu-open > .nav-link .nav-arrow { transform: rotate(90deg); }
+
+/* Active page: solid accent pill with a glow. */
+#jazzy-sidebar .sidebar-menu .nav-link.active {
+  color: #fff !important;
+  font-weight: 650;
+  background: linear-gradient(135deg, var(--sb-accent), color-mix(in srgb, var(--sb-accent) 72%, #000)) !important;
+  box-shadow: 0 8px 20px -10px var(--sb-accent), inset 0 1px 0 rgba(255, 255, 255, 0.18);
+}
+#jazzy-sidebar .sidebar-menu .nav-link.active .nav-icon {
+  color: #fff;
+  background: rgba(255, 255, 255, 0.18);
+}
+
+/* Sub-menu: indented, on a thin guide line. */
+#jazzy-sidebar .sidebar-menu .nav-treeview {
+  margin: 2px 0 6px 23px;
+  padding-left: 10px;
+  border-left: 1px solid var(--sb-line);
+}
+#jazzy-sidebar .sidebar-menu .nav-treeview .nav-link {
+  min-height: 32px;
+  padding: 4px 8px !important;
+  font-size: 12.75px;
+  border-radius: 9px;
+}
+#jazzy-sidebar .sidebar-menu .nav-treeview .nav-link .nav-icon {
+  width: 22px !important;
+  height: 22px;
+  font-size: 11px !important;
+  border-radius: 6px;
+  background: transparent;
+}
+#jazzy-sidebar .sidebar-menu .nav-treeview .nav-link.active {
+  background: color-mix(in srgb, var(--sb-accent) 22%, transparent) !important;
+  color: #fff !important;
+  box-shadow: inset 2px 0 0 var(--sb-accent);
+}
+#jazzy-sidebar .sidebar-menu .nav-treeview .nav-link .nav-icon.fa-circle { font-size: 5px !important; }
+#jazzy-sidebar .sidebar-menu .nav-treeview .nav-link.active .nav-icon { background: transparent; color: color-mix(in srgb, var(--sb-accent) 40%, #fff); }
+
+/* Hidden by the menu filter */
+#jazzy-sidebar .nz-sb-hidden { display: none !important; }
+
+/* Thin scrollbar */
+#jazzy-sidebar .sidebar-wrapper { scrollbar-width: thin; scrollbar-color: rgba(255, 255, 255, 0.14) transparent; }
+#jazzy-sidebar .sidebar-wrapper::-webkit-scrollbar { width: 6px; }
+#jazzy-sidebar .sidebar-wrapper::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, 0.14); border-radius: 6px; }
+
+/* Collapsed (mini) sidebar: icons only, centred. */
+.sidebar-collapse #jazzy-sidebar:not(:hover) .user-panel .info,
+.sidebar-collapse #jazzy-sidebar:not(:hover) .nz-sb-filter,
+.sidebar-collapse #jazzy-sidebar:not(:hover) .brand-text,
+.sidebar-collapse #jazzy-sidebar:not(:hover) .nav-link > p { display: none !important; }
+.sidebar-collapse #jazzy-sidebar:not(:hover) .user-panel { justify-content: center; padding: 8px !important; margin: 12px 8px 6px; }
+.sidebar-collapse #jazzy-sidebar:not(:hover) .sidebar-menu .nav-link { justify-content: center; }
+.sidebar-collapse #jazzy-sidebar:not(:hover) .sidebar-menu .nav-treeview { display: none !important; }
+
+@media (prefers-reduced-motion: reduce) {
+  #jazzy-sidebar .sidebar-menu .nav-link, #jazzy-sidebar .sidebar-menu .nav-arrow { transition: none; }
+}

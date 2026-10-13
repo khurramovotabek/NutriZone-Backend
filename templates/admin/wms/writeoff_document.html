@@ -1,0 +1,82 @@
+{% extends "admin/base_site.html" %}
+{% load i18n static %}
+{# One write-off as an act (dalolatnoma): lines with reason / batch / value, approve / reject / cancel (POST <id>/decide/), printable with signatures. #}
+{% block extrastyle %}{{ block.super }}<link rel="stylesheet" href="{% static 'admin/css/nutrizone-platform.css' %}?v=5"><link rel="stylesheet" href="{% static 'admin/css/nutrizone-orderdesk.css' %}?v=5"><link rel="stylesheet" href="{% static 'admin/css/nutrizone-wmsx.css' %}?v=9">{% endblock %}
+{% block breadcrumbs %}<ol class="breadcrumb"><li class="breadcrumb-item"><a href="{% url 'admin:index' %}">{% translate "Home" %}</a></li><li class="breadcrumb-item"><a href="{% url 'admin:stores_writeoff_changelist' %}">{% translate "Hisobdan chiqarish" %}</a></li><li class="breadcrumb-item active">{{ w.number }}</li></ol>{% endblock %}
+{% block content_title %}{% endblock %}
+{% block content %}
+<div class="nzp nzd wx wx-doc">
+  <header class="nzp-hero">
+    <div class="nzp-hero-main">
+      <a class="nzp-back" href="{% url 'admin:stores_writeoff_changelist' %}" aria-label="{% translate 'Back' %}"><i class="fas fa-arrow-left" aria-hidden="true"></i></a>
+      <div><h2 class="nzd-number">{% translate "Write-off act" %} <span class="nz-num">{{ w.number }}</span> <span class="nzd-pill" style="--t:{{ color }}"><i class="fas {{ icon }}" aria-hidden="true"></i> {{ w.get_status_display }}</span></h2>
+        <p><span><i class="wms-dot" style="background:{{ w.store.color|default:'#94a3b8' }}"></i> {{ w.store.name }}</span><span>{{ created }}</span><span>{{ w.created_by }}</span></p></div>
+    </div>
+    <div class="nzp-hero-actions">
+      <button type="button" class="nzp-btn nzp-btn-ghost" onclick="window.print()"><i class="fas fa-print" aria-hidden="true"></i> {% translate "Print" %}</button>
+      <a class="nzp-btn nzp-btn-ghost" href="{% url 'admin:stores_stockmovement_changelist' %}?q={{ w.number }}"><i class="fas fa-clock-rotate-left" aria-hidden="true"></i> {% translate "Ledger rows" %}</a>
+    </div>
+  </header>
+
+
+  {% if w.status == "pending" %}
+  <section class="nzp-card wx-decide">
+    <span class="wx-decide-icon"><i class="fas fa-hourglass-half" aria-hidden="true"></i></span>
+    <div><b>{% translate "Waiting for approval" %}</b><small>{% translate "The units are reserved: they can't be sold or sent. Approving removes them from stock; rejecting makes them sellable again." %}</small></div>
+    <div class="wx-decide-actions">
+      {% if can_cancel and not can_approve %}<button type="button" class="nzp-btn nzp-btn-ghost" data-open="wx-cancel"><i class="fas fa-ban" aria-hidden="true"></i> {% translate "Cancel" %}</button>{% endif %}
+      {% if can_approve %}
+      <button type="button" class="nzp-btn nzp-btn-danger-ghost" data-open="wx-reject"><i class="fas fa-circle-xmark" aria-hidden="true"></i> {% translate "Reject" %}</button>
+      <button type="button" class="nzp-btn nzp-btn-primary" data-open="wx-approve"><i class="fas fa-check-double" aria-hidden="true"></i> {% translate "Approve write-off" %}</button>
+      {% endif %}
+    </div>
+  </section>
+  {% elif w.decided_by %}
+  <div class="nzp-note nzp-note-info"><i class="fas {{ icon }}" aria-hidden="true" style="color:{{ color }}"></i> <b>{{ w.get_status_display }}</b> — {{ w.decided_by }}, {{ decided }}{% if w.decision_note %} · «{{ w.decision_note }}»{% endif %}</div>
+  {% endif %}
+
+  <div class="nzp-stats">
+    <div class="nzp-stat" style="--c:#3b82f6"><i class="fas fa-boxes-stacked" aria-hidden="true"></i><div><b>{{ rows|length }}</b><span>{% translate "Products" %}</span></div></div>
+    <div class="nzp-stat" style="--c:#ef4444"><i class="fas fa-cubes" aria-hidden="true"></i><div><b>−{{ w.total_units }}</b><span>{% translate "Units" %}</span></div></div>
+    <div class="nzp-stat" style="--c:#e11d48"><i class="fas fa-coins" aria-hidden="true"></i><div><b>{{ value|default:"—" }}{% if value %}<small> {% translate "so'm" %}</small>{% endif %}</b><span>{% translate "Loss at cost" %}</span></div></div>
+    <div class="nzp-stat" style="--c:#64748b"><i class="fas fa-user-pen" aria-hidden="true"></i><div><b>{{ w.created_by|default:"—" }}</b><span>{% translate "Prepared by" %}</span></div></div>
+  </div>
+  {% if w.note %}<div class="nzp-note nzp-note-info"><i class="fas fa-note-sticky" aria-hidden="true"></i> {{ w.note }}</div>{% endif %}
+
+  <section class="nzp-card nzd-items">
+    <ul class="nzd-lines">
+      {% for row in rows %}
+      <li class="nzd-line">
+        <span class="nzd-thumb">{% if row.info.image_url %}<img src="{{ row.info.image_url }}" alt="">{% else %}<i class="fas fa-box" aria-hidden="true"></i>{% endif %}</span>
+        <div class="nzd-line-main"><strong>{{ row.i.name }}</strong><small>{{ row.i.sku }}{% if row.i.barcode %} · {{ row.i.barcode }}{% endif %}</small>
+          <span class="nzd-line-tags"><span class="nzd-tag" style="--t:{{ row.color }}">{{ row.i.get_reason_display }}</span>{% if row.i.batch_number %}<span class="nzd-tag" style="--t:#6366f1">LOT {{ row.i.batch_number }}</span>{% endif %}{% if row.i.expiry_date %}<span class="nzd-tag" style="--t:#f59e0b">{% blocktranslate with d=row.i.expiry_date|date:"d.m.Y" %}until {{ d }}{% endblocktranslate %}</span>{% endif %}{% if row.i.note %}<span class="wx-muted">{{ row.i.note }}</span>{% endif %}</span></div>
+        <div class="nzd-line-qty"><b class="wx-minus">−{{ row.i.quantity }}</b><small>{% if row.i.unit_cost %}{{ row.i.unit_cost|floatformat:0 }} {% translate "so'm" %}{% else %}{% translate "no cost" %}{% endif %}</small></div>
+        <div class="nzd-line-total">{% if row.value %}{{ row.value }} <small>{% translate "so'm" %}</small>{% else %}—{% endif %}</div>
+      </li>
+      {% endfor %}
+    </ul>
+  </section>
+  <div class="wx-print-sign"><div>{% translate "Prepared by" %}: {{ w.created_by }}</div><div>{% translate "Responsible person" %}</div><div>{% translate "Approved by" %}{% if w.status == "approved" %}: {{ w.decided_by }}{% endif %}</div></div>
+
+  <dialog class="nzd-dialog" id="wx-approve"><form method="post" action="{% url 'admin:stores_writeoff_decide' w.pk %}">{% csrf_token %}<input type="hidden" name="action" value="approve">
+    <header><span class="nzd-dialog-icon"><i class="fas fa-check-double" aria-hidden="true"></i></span><div><h3>{% translate "Approve write-off?" %}</h3><p>{% blocktranslate with units=w.total_units %}{{ units }} unit(s) leave stock and are recorded in the ledger. This can't be undone.{% endblocktranslate %}</p></div></header>
+    <input class="nzd-input" name="note" maxlength="255" placeholder="{% translate 'Comment (optional)' %}">
+    <div class="nzd-next-row" style="justify-content:flex-end"><button type="button" class="nzp-btn nzp-btn-ghost" data-close>{% translate "Back" %}</button><button class="nzp-btn nzp-btn-primary">{% translate "Approve write-off" %}</button></div>
+  </form></dialog>
+  <dialog class="nzd-dialog" id="wx-reject"><form method="post" action="{% url 'admin:stores_writeoff_decide' w.pk %}">{% csrf_token %}<input type="hidden" name="action" value="reject">
+    <header><span class="nzd-dialog-icon"><i class="fas fa-circle-xmark" aria-hidden="true"></i></span><div><h3>{% translate "Reject write-off?" %}</h3><p>{% translate "The units become sellable again. Write the reason -- the author sees it." %}</p></div></header>
+    <textarea class="nzd-input" name="note" rows="3" maxlength="255" required placeholder="{% translate 'Reason' %}"></textarea>
+    <div class="nzd-next-row" style="justify-content:flex-end"><button type="button" class="nzp-btn nzp-btn-ghost" data-close>{% translate "Back" %}</button><button class="nzp-btn nzp-btn-danger">{% translate "Reject" %}</button></div>
+  </form></dialog>
+  <dialog class="nzd-dialog" id="wx-cancel"><form method="post" action="{% url 'admin:stores_writeoff_decide' w.pk %}">{% csrf_token %}<input type="hidden" name="action" value="cancel">
+    <header><span class="nzd-dialog-icon"><i class="fas fa-ban" aria-hidden="true"></i></span><div><h3>{% translate "Cancel this write-off?" %}</h3><p>{% translate "The units become sellable again." %}</p></div></header>
+    <div class="nzd-next-row" style="justify-content:flex-end"><button type="button" class="nzp-btn nzp-btn-ghost" data-close>{% translate "Back" %}</button><button class="nzp-btn nzp-btn-danger">{% translate "Cancel write-off" %}</button></div>
+  </form></dialog>
+</div>
+<script>
+document.addEventListener("click", function (e) {
+  var o = e.target.closest("[data-open]"); if (o) { document.getElementById(o.getAttribute("data-open")).showModal(); return; }
+  var c = e.target.closest("[data-close]"); if (c) c.closest("dialog").close();
+});
+</script>
+{% endblock %}

@@ -1,0 +1,111 @@
+/*
+ * Product change form -- Supplement Facts / Warnings / Directions.
+ * Real <fieldset>/<legend> groups (templates/admin/includes/fieldset.html)
+ * with the uz / ru / en versions side by side. Uses the admin theme tokens
+ * from nutrizone-theme.css, so light and dark modes both follow.
+ */
+.nz-fieldset {
+  --nz-fs-accent: var(--nz-primary, #3b82f6);
+  position: relative;
+  margin: 0 0 1.5rem;
+  padding: 1.75rem 1.5rem 1.25rem;
+  min-width: 0;
+  border: 1px solid var(--nz-border, #dfe3e8);
+  border-left: 4px solid var(--nz-fs-accent);
+  border-radius: 14px;
+  background: var(--nz-surface, #fff);
+  box-shadow: var(--nz-shadow-sm, 0 1px 2px rgba(0, 0, 0, 0.06));
+}
+.nz-fieldset--facts { --nz-fs-accent: var(--nz-success, #16a34a); }
+.nz-fieldset--warnings { --nz-fs-accent: var(--nz-warning, #d97706); }
+.nz-fieldset--directions { --nz-fs-accent: var(--nz-info, #2563eb); }
+
+.nz-fieldset__legend {
+  float: none;
+  width: auto;
+  margin: 0;
+  padding: 0.3rem 0.85rem;
+  font-size: 0.8rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--nz-fs-accent);
+  background: var(--nz-surface, #fff);
+  border: 1px solid color-mix(in srgb, var(--nz-fs-accent) 35%, transparent);
+  border-radius: 999px;
+}
+.nz-fieldset__legend::before {
+  display: inline-block;
+  margin-right: 0.45rem;
+}
+.nz-fieldset--facts .nz-fieldset__legend::before { content: "🧬"; }
+.nz-fieldset--warnings .nz-fieldset__legend::before { content: "⚠️"; }
+.nz-fieldset--directions .nz-fieldset__legend::before { content: "📋"; }
+
+.nz-fieldset__description {
+  margin: 0 0 1.1rem;
+  font-size: 0.82rem;
+  line-height: 1.5;
+  color: var(--nz-text-secondary, #5b6573);
+}
+.nz-fieldset__description code {
+  padding: 0.05rem 0.35rem;
+  border-radius: 5px;
+  font-size: 0.78rem;
+  color: var(--nz-text-primary, #111);
+  background: var(--nz-surface-secondary, #f3f5f8);
+}
+
+.nz-fieldset__grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 1rem;
+}
+@media (max-width: 1100px) {
+  .nz-fieldset__grid { grid-template-columns: 1fr; }
+}
+
+.nz-fieldset__field.form-group {
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+.nz-fieldset__label {
+  margin-bottom: 0.4rem;
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--nz-text-primary, #111);
+}
+
+.nz-fieldset textarea.nz-content-textarea {
+  width: 100% !important;
+  max-width: none !important;
+  min-height: 190px;
+  padding: 0.7rem 0.85rem;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 0.82rem;
+  line-height: 1.6;
+  resize: vertical;
+  color: var(--nz-text-primary, #111);
+  background: var(--nz-surface-secondary, #f8fafc);
+  border: 1px solid var(--nz-border, #dfe3e8);
+  border-radius: 10px;
+  transition: border-color 160ms ease, box-shadow 160ms ease;
+}
+.nz-fieldset textarea.nz-content-textarea::placeholder {
+  color: var(--nz-text-muted, #9aa3ad);
+  opacity: 0.8;
+}
+.nz-fieldset textarea.nz-content-textarea:focus {
+  outline: none;
+  border-color: var(--nz-fs-accent);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--nz-fs-accent) 22%, transparent);
+}
+.nz-fieldset .errors textarea.nz-content-textarea {
+  border-color: var(--nz-danger, #dc2626);
+}
+
+/* Variant table on the add page also carries cost / price / old price -- keep it inside its card */
+#variants-group .tabular, #variants-group fieldset.module { overflow-x: auto; }
+#variants-group input[name$="-price"], #variants-group input[name$="-base_cost_price"], #variants-group input[name$="-old_price"] { min-width: 110px; text-align: right; font-weight: 600; }

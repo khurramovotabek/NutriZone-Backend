@@ -1,0 +1,192 @@
+{% extends "admin/base_site.html" %}
+{% load i18n static %}
+{# Kassalar va kassirlar (StoreCashierAdmin.changelist_view): one card per kassa -- PIN, live shift, takings, cashiers. #}
+{% block extrastyle %}{{ block.super }}<link rel="stylesheet" href="{% static 'admin/css/nutrizone-platform.css' %}?v=5"><link rel="stylesheet" href="{% static 'admin/css/nutrizone-orderdesk.css' %}?v=6"><link rel="stylesheet" href="{% static 'admin/css/nutrizone-wmsx.css' %}?v=12"><link rel="stylesheet" href="{% static 'admin/css/nutrizone-pos-terminal.css' %}?v=9">{% endblock %}
+{% block breadcrumbs %}<ol class="breadcrumb float-sm-right"><li class="breadcrumb-item"><a href="{% url 'admin:index' %}">{% translate "Home" %}</a></li><li class="breadcrumb-item active">{% translate "Kassalar va kassirlar" %}</li></ol>{% endblock %}
+{% block content_title %}{% endblock %}
+{% block content %}
+<div class="nzp nzd wx pk">
+  <header class="nzp-hero">
+    <div class="nzp-hero-main">
+      <span class="nzp-hero-icon" style="--c:#2563eb"><i class="fas fa-id-badge" aria-hidden="true"></i></span>
+      <div><h2>{% translate "Kassalar va kassirlar" %}</h2><p>{% translate "Every kassa has one shared PIN -- it opens the shift and hands the terminal from one cashier to the next. Cashiers are customer accounts: they sell from their profile → My store → POS terminal, and every sale is recorded under them." %}</p></div>
+    </div>
+    <div class="nzp-hero-actions">
+      <a class="nzp-btn nzp-btn-ghost" href="{% url 'admin:stores_storecashier_payroll' %}"><i class="fas fa-sack-dollar" aria-hidden="true"></i> {% translate "Payroll & KPI" %}</a>
+      <a class="nzp-btn nzp-btn-ghost" href="{% url 'admin:stores_cashsession_changelist' %}"><i class="fas fa-clock-rotate-left" aria-hidden="true"></i> {% translate "Shifts" %}</a>
+      <a class="nzp-btn nzp-btn-primary" href="{% url 'admin:nz_pos_terminal' %}"><i class="fas fa-cash-register" aria-hidden="true"></i> {% translate "Onlayn kassa" %}</a>
+    </div>
+  </header>
+
+  <div class="nzp-stats wx-stats-5">
+    <div class="nzp-stat" style="--c:#2563eb"><i class="fas fa-cash-register" aria-hidden="true"></i><div><b>{{ kpis.kassas }}</b><span>{% translate "Kassas" %}</span></div></div>
+    <div class="nzp-stat" style="--c:{% if kpis.pins == kpis.kassas %}#10b981{% else %}#f59e0b{% endif %}"><i class="fas fa-key" aria-hidden="true"></i><div><b>{{ kpis.pins }}/{{ kpis.kassas }}</b><span>{% translate "PIN set" %}</span></div></div>
+    <div class="nzp-stat" style="--c:#7c3aed"><i class="fas fa-users" aria-hidden="true"></i><div><b>{{ kpis.cashiers }}</b><span>{% translate "Cashiers" %}</span></div></div>
+    <div class="nzp-stat" style="--c:#10b981"><i class="fas fa-lock-open" aria-hidden="true"></i><div><b>{{ kpis.open }}</b><span>{% translate "Open right now" %}</span></div></div>
+    <div class="nzp-stat" style="--c:#0891b2"><i class="fas fa-chart-line" aria-hidden="true"></i><div><b>{{ kpis.today_rev }}<small> so'm</small></b><span>{% blocktranslate with n=kpis.today %}Today · {{ n }} sales{% endblocktranslate %}</span></div></div>
+  </div>
+
+  <div class="pk-grid">
+    {% for k in cards %}
+    <section class="nzp-card pk-card{% if k.online %} pk-online{% endif %}" id="k-{{ k.id }}" style="--c:{{ k.color }};--i:{{ forloop.counter0 }}">
+      <header class="pk-head">
+        <span class="pk-icon"><i class="fas {% if k.online %}fa-globe{% else %}fa-store{% endif %}" aria-hidden="true"></i></span>
+        <div class="pk-title"><h3>{{ k.name }}</h3><small>{% if k.online %}{% translate "Dashboard staff · main warehouse stock" %} · {% endif %}{{ k.location|default:"" }}</small></div>
+        {% if k.open %}<a class="pk-live" href="{{ k.shift_url }}" title="{% translate 'Open the shift' %}"><i></i>{% translate "Open" %} · {{ k.open_since }}</a>{% else %}<span class="pk-closed">{% translate "Closed" %}</span>{% endif %}
+      </header>
+
+      <div class="pk-facts">
+        <div><span>{% translate "Today" %}</span><b>{{ k.today_rev }}</b><small>{{ k.today }} {% translate "sales" %}</small></div>
+        <div><span>{% translate "30 days" %}</span><b>{{ k.month_rev }}</b><small>so'm</small></div>
+        <div class="pk-pin-fact{% if not k.has_pin %} is-missing{% endif %}"><span>{% translate "Kassa PIN" %}</span>
+          {% if k.locked %}<b class="wx-minus"><i class="fas fa-lock" aria-hidden="true"></i> {% blocktranslate with m=k.locked %}locked · {{ m }} min{% endblocktranslate %}</b>
+          {% elif k.has_pin %}<b><i class="fas fa-circle-check" aria-hidden="true"></i> ••••</b><small>{{ k.pin_changed }}</small>
+          {% else %}<b><i class="fas fa-triangle-exclamation" aria-hidden="true"></i> {% translate "not set" %}</b><small>{% translate "the kassa can't open" %}</small>{% endif %}
+        </div>
+      </div>
+      {% if k.open %}<p class="pk-shift"><i class="fas fa-user-clock" aria-hidden="true"></i> {% blocktranslate with t=k.open_since who=k.open_by %}Shift opened at {{ t }} by {{ who }}{% endblocktranslate %}</p>{% endif %}
+
+      {% if not k.online %}
+      <div class="pk-people-head"><h4>{% translate "Cashiers" %} <span>{{ k.cashier_n }}</span></h4>{% if can_edit %}<button type="button" class="nzp-btn nzp-btn-ghost nzp-btn-sm" data-add="{{ k.id }}" data-kname="{{ k.name }}"><i class="fas fa-user-plus" aria-hidden="true"></i> {% translate "Add cashier" %}</button>{% endif %}</div>
+      <ul class="pk-people">
+        {% for p in k.people %}
+        <li class="pk-person">
+          <span class="px-mini-av pk-av" style="--c:{{ p.color }}">{{ p.initials }}</span>
+          <span class="pk-who"><b>{{ p.name }}{% if p.role == "owner" %} <em class="pk-role">{% translate "owner" %}</em>{% endif %}</b><small>{% if p.pay %}<span class="pk-pay" title="{% translate 'Base salary + KPI' %}">💼 {{ p.pay }}</span> · {% endif %}{{ p.phone|default:"" }}{% if p.last %} · {% translate "active" %} {{ p.last }}{% elif p.since %} · {% translate "since" %} {{ p.since }}{% endif %}</small></span>
+          <span class="pk-num"><b>{{ p.today_rev }}</b><small>{% translate "today" %} · {{ p.today }}</small></span>
+          <span class="pk-num pk-hide-sm"><b>{{ p.month_rev }}</b><small>{% translate "30 days" %} · {{ p.month }}</small></span>
+          {% if can_edit and p.link_id %}<form method="post" action="{% url 'admin:stores_storecashier_unlink' p.link_id %}" data-confirm data-who="{{ p.name }}">{% csrf_token %}<button class="pk-x" title="{% translate 'Remove from this kassa' %}" aria-label="{% translate 'Remove from this kassa' %}"><i class="fas fa-user-minus" aria-hidden="true"></i></button></form>{% else %}<span></span>{% endif %}
+        </li>
+        {% empty %}
+        <li class="pk-empty"><i class="fas fa-user-slash" aria-hidden="true"></i> {% translate "No cashiers yet -- add the people who sell at this kassa." %}</li>
+        {% endfor %}
+      </ul>
+      {% else %}
+      <p class="pk-online-note"><i class="fas fa-circle-info" aria-hidden="true"></i> {% translate "Branch sales go through the branch kassas. This kassa is for online sales only: any Dashboard staff member with POS access sells here under their own name." %}</p>
+      {% endif %}
+
+      {% if can_edit %}
+      <footer class="pk-foot">
+        <button type="button" class="nzp-btn {% if k.has_pin %}nzp-btn-ghost{% else %}nzp-btn-primary{% endif %} nzp-btn-sm" data-pin="{{ k.id }}" data-kname="{{ k.name }}"><i class="fas fa-key" aria-hidden="true"></i> {% if k.has_pin %}{% translate "Change PIN" %}{% else %}{% translate "Set the PIN" %}{% endif %}</button>
+      </footer>
+      {% endif %}
+    </section>
+    {% empty %}
+    <div class="nzp-empty"><span class="nzp-empty-icon" style="--c:#2563eb"><i class="fas fa-store" aria-hidden="true"></i></span><h3>{% translate "No kassas yet" %}</h3><p>{% translate "Add a branch in Stores -- each branch is a kassa." %}</p></div>
+    {% endfor %}
+  </div>
+
+  {% if can_edit %}
+  <dialog class="nzd-dialog" id="pk-pin"><form method="post" data-pin-form>{% csrf_token %}
+    <header><span class="nzd-dialog-icon" style="color:#10b981;background:color-mix(in srgb,#10b981 13%,transparent)"><i class="fas fa-key" aria-hidden="true"></i></span><div><h3 data-pin-title>{% translate "Kassa PIN" %}</h3><p>4–6 ta raqam. 1111, 1234, 4321 kabi oson PIN qabul qilinmaydi. PIN'ni faqat shu kassa kassirlariga ayting — u smenani ochadi va kassirlarni almashtiradi.</p></div></header>
+    <div class="wx-two">
+      <label class="nzd-field-label">{% translate "New PIN" %}<input class="nzd-input pk-pin-in" name="pin" type="password" inputmode="numeric" pattern="[0-9]{4,6}" minlength="4" maxlength="6" autocomplete="new-password" required></label>
+      <label class="nzd-field-label">{% translate "Repeat the PIN" %}<input class="nzd-input pk-pin-in" name="pin_again" type="password" inputmode="numeric" pattern="[0-9]{4,6}" minlength="4" maxlength="6" autocomplete="new-password" required></label>
+    </div>
+    <p class="pk-pin-match" data-match></p>
+    <p class="pk-pin-error" data-pin-error role="alert" hidden></p>
+    <div class="nzd-next-row" style="justify-content:flex-end"><button type="button" class="nzp-btn nzp-btn-ghost" data-close>{% translate "Cancel" %}</button><button class="nzp-btn nzp-btn-primary" data-pin-save disabled><i class="fas fa-check" aria-hidden="true"></i> {% translate "Save the PIN" %}</button></div>
+  </form></dialog>
+
+  <dialog class="nzd-dialog pk-add" id="pk-add"><form method="post" action="{% url 'admin:stores_storecashier_link' %}" data-add-form>{% csrf_token %}
+    <input type="hidden" name="store"><input type="hidden" name="user">
+    <header><span class="nzd-dialog-icon" style="color:#7c3aed;background:color-mix(in srgb,#7c3aed 13%,transparent)"><i class="fas fa-user-plus" aria-hidden="true"></i></span><div><h3 data-add-title>{% translate "Add cashier" %}</h3><p>{% translate "Find the person's customer account by name or phone. They sign in with it on the website and get the kassa under My store." %}</p></div></header>
+    <label class="nzp-search pk-search"><i class="fas fa-magnifying-glass" aria-hidden="true"></i><input type="search" data-uq placeholder="{% translate 'Name or phone (90 123 45 67)…' %}" autocomplete="off" aria-label="{% translate 'Name or phone (90 123 45 67)…' %}"></label>
+    <ul class="pk-results" data-results role="listbox"></ul>
+    <div class="nzd-next-row" style="justify-content:flex-end"><button type="button" class="nzp-btn nzp-btn-ghost" data-close>{% translate "Cancel" %}</button><button class="nzp-btn nzp-btn-primary" data-add-save disabled><i class="fas fa-check" aria-hidden="true"></i> {% translate "Make cashier" %}</button></div>
+  </form></dialog>
+
+  <dialog class="nzd-dialog" id="pk-confirm"><form method="dialog">
+    <header><span class="nzd-dialog-icon"><i class="fas fa-user-minus" aria-hidden="true"></i></span><div><h3>{% translate "Remove this cashier?" %}</h3><p data-confirm-who></p></div></header>
+    <div class="nzd-next-row" style="justify-content:flex-end"><button value="0" class="nzp-btn nzp-btn-ghost">{% translate "Back" %}</button><button value="1" class="nzp-btn nzp-btn-danger">{% translate "Remove" %}</button></div>
+  </form></dialog>
+  {% endif %}
+</div>
+{{ nz_cfg|json_script:"pk-config" }}
+<script>
+(function () {
+  var cfg = JSON.parse(document.getElementById("pk-config").textContent);
+  var pinDlg = document.getElementById("pk-pin"), addDlg = document.getElementById("pk-add"), confirmDlg = document.getElementById("pk-confirm");
+  if (!pinDlg) return;
+  var pinUrl = "{% url 'admin:stores_storecashier_pin' '00000000-0000-0000-0000-000000000000' %}";
+  var L = { match: "{{ _('The PINs match')|escapejs }}", nomatch: "{{ _('The PINs don\'t match.')|escapejs }}", none: "{{ _('Nobody found -- the person must sign up on the website first.')|escapejs }}",
+            worksAt: "{{ _('cashier at')|escapejs }}", owns: "{{ _('owns')|escapejs }}", removeWho: "{{ _('They keep their account, but can no longer sell at this kassa.')|escapejs }}" };
+  function esc(s) { return String(s == null ? "" : s).replace(/[&<>"']/g, function (c) { return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]; }); }
+
+  document.addEventListener("click", function (e) {
+    var b;
+    if ((b = e.target.closest("[data-pin]"))) { openPin(b.getAttribute("data-pin"), b.getAttribute("data-kname")); return; }
+    if ((b = e.target.closest("[data-add]"))) {
+      var g = addDlg.querySelector("form"); g.reset(); g.store.value = b.getAttribute("data-add"); g.user.value = "";
+      addDlg.querySelector("[data-add-title]").textContent = b.getAttribute("data-kname"); addDlg.querySelector("[data-results]").innerHTML = ""; addDlg.querySelector("[data-add-save]").disabled = true;
+      addDlg.showModal(); return;
+    }
+    if ((b = e.target.closest("[data-uid]"))) {
+      addDlg.querySelectorAll("[data-uid]").forEach(function (x) { x.setAttribute("aria-selected", "false"); });
+      b.setAttribute("aria-selected", "true"); addDlg.querySelector("form").user.value = b.getAttribute("data-uid"); addDlg.querySelector("[data-add-save]").disabled = false; return;
+    }
+    if ((b = e.target.closest("[data-close]"))) b.closest("dialog").close();
+  });
+
+  // the same rules as pos_cashiers.valid_pin -- the owner sees why before saving, not after a page reload
+  function pinProblem(p) {
+    if (p.length < 4 || p.length > 6) return "PIN_FORMAT";
+    if (/^(\d)\1+$/.test(p) || "0123456789".indexOf(p) >= 0 || "9876543210".indexOf(p) >= 0) return "PIN_TOO_SIMPLE";
+    return "";
+  }
+  function showPinError(code) {
+    var el = pinDlg.querySelector("[data-pin-error]");
+    el.textContent = code ? cfg.pin_errors[code] : ""; el.hidden = !code;
+  }
+  function checkPin() {
+    var f = pinDlg.querySelector("form"), a = f.pin.value.replace(/\D/g, ""), c = f.pin_again.value.replace(/\D/g, ""), m = pinDlg.querySelector("[data-match]");
+    f.pin.value = a; f.pin_again.value = c;
+    var problem = a.length >= 4 ? pinProblem(a) : "";
+    showPinError(problem);
+    var ready = !problem && a.length >= 4 && a === c;
+    m.textContent = !problem && c.length >= 4 ? (a === c ? "✓ PIN'lar mos" : "Ikki PIN bir xil emas") : "";
+    m.className = "pk-pin-match " + (!problem && c.length >= 4 ? (a === c ? "ok" : "bad") : "");
+    pinDlg.querySelector("[data-pin-save]").disabled = !ready;
+    return ready;
+  }
+  pinDlg.addEventListener("input", checkPin);
+  pinDlg.querySelector("form").addEventListener("submit", function (e) { if (!checkPin()) e.preventDefault(); });
+  function openPin(kassaId, kassaName) {
+    var f = pinDlg.querySelector("form"); f.action = pinUrl.replace("00000000-0000-0000-0000-000000000000", kassaId); f.reset();
+    pinDlg.querySelector("[data-pin-title]").textContent = kassaName; pinDlg.querySelector("[data-match]").textContent = "";
+    pinDlg.querySelector("[data-pin-save]").disabled = true; showPinError("");
+    pinDlg.showModal(); setTimeout(function () { f.pin.focus(); }, 30);
+  }
+  // after a rejected PIN the dialog comes back on the same kassa with the reason; a saved one flashes its card
+  if (cfg.pin_error && cfg.pin_kassa) {
+    var btn = document.querySelector('[data-pin="' + cfg.pin_kassa + '"]');
+    if (btn) { openPin(cfg.pin_kassa, btn.getAttribute("data-kname")); showPinError(cfg.pin_error); }
+  }
+  if (cfg.pin_ok) { var card = document.getElementById("k-" + cfg.pin_ok); if (card) card.classList.add("pk-pin-saved"); }
+  try { history.replaceState(null, "", location.pathname + location.hash); } catch (e) { /* ignore */ }
+
+  var timer, seq = 0;
+  addDlg.querySelector("[data-uq]").addEventListener("input", function (e) {
+    var q = e.target.value.trim(), box = addDlg.querySelector("[data-results]"), mine = ++seq;
+    clearTimeout(timer);
+    if (q.length < 2) { box.innerHTML = ""; return; }
+    timer = setTimeout(function () {
+      fetch(cfg.users + "?q=" + encodeURIComponent(q), { credentials: "same-origin" }).then(function (r) { return r.json(); }).then(function (d) {
+        if (mine !== seq) return;
+        box.innerHTML = (d.results || []).map(function (u) {
+          var note = u.owns ? L.owns + " " + u.owns : u.works_at ? L.worksAt + " " + u.works_at : "";
+          return '<li><button type="button" role="option" aria-selected="false" data-uid="' + u.id + '"' + (u.owns ? " disabled" : "") + '><span class="px-mini-av pk-av" style="--c:' + esc(u.color) + '">' + esc(u.initials) + "</span><span><b>" + esc(u.name) + "</b><small>" + esc(u.phone || "") + (note ? " · " + esc(note) : "") + '</small></span><i class="fas fa-check" aria-hidden="true"></i></button></li>';
+        }).join("") || '<li class="pk-none">' + esc(L.none) + "</li>";
+      });
+    }, 220);
+  });
+
+  var pending = null;
+  document.addEventListener("submit", function (e) {
+    var f = e.target.closest("form[data-confirm]");
+    if (f && f !== pending) { e.preventDefault(); pending = f; confirmDlg.querySelector("[data-confirm-who]").textContent = f.getAttribute("data-who") + " — " + L.removeWho; confirmDlg.showModal(); }
+  });
+  confirmDlg.addEventListener("close", function () { if (confirmDlg.returnValue === "1" && pending) pending.submit(); else pending = null; });
+})();
+</script>
+{% endblock %}

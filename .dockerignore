@@ -1,0 +1,26 @@
+# Never bake secrets, local data or build output into an image.
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+
+# Local runtime data -- uploads live in the media volume, collected static in the static volume (docker-compose.prod.yml)
+media/
+static/
+logs/
+dump.rdb
+*.xlsx
+*.sqlite3
+backups/
+
+# Tooling / VCS / caches
+.git
+.github
+.idea
+.vscode
+**/__pycache__
+**/*.pyc
+.pytest_cache
+.coverage
+htmlcov

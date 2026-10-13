@@ -1,0 +1,162 @@
+{% extends "admin/base_site.html" %}
+{% load i18n static nz_money %}
+
+{% block extrastyle %}
+{{ block.super }}
+<link rel="stylesheet" href="{% static 'admin/css/nutrizone-sales.css' %}?v=4">
+{% endblock %}
+
+{% block breadcrumbs %}
+<div class="breadcrumbs">
+  <a href="{% url 'admin:index' %}">{% translate "Home" %}</a>
+  &rsaquo; <a href="{% url 'admin:pos_salemodel_changelist' %}">{% translate "Savdolar" %}</a>
+  &rsaquo; {{ title }}
+</div>
+{% endblock %}
+
+{% block content_title %}{{ title }}{% endblock %}
+
+{% block content %}
+<div class="col-12">
+  <form method="get" class="nzs-filters">
+    {% for key, label in periods %}
+      <a class="nzs-chip{% if period == key %} on{% endif %}" href="?period={{ key }}{% if branch %}&amp;branch={{ branch }}{% endif %}">{{ label }}</a>
+    {% endfor %}
+    <span class="ms-2" style="opacity:.6">|</span>
+    <input type="date" name="from" value="{{ start|date:'Y-m-d' }}" class="form-control form-control-sm" style="width:auto">
+    <span>—</span>
+    <input type="date" name="to" value="{{ end|date:'Y-m-d' }}" class="form-control form-control-sm" style="width:auto">
+    <select name="branch" class="form-control form-control-sm" style="width:auto">
+      <option value="">{% translate "Barcha filiallar" %}</option>
+      {% for key, name in all_branches %}<option value="{{ key }}"{% if branch == key %} selected{% endif %}>{{ name }}</option>{% endfor %}
+    </select>
+    <button class="btn btn-sm btn-primary" type="submit"><i class="fas fa-filter"></i> {% translate "Ko'rsatish" %}</button>
+    <span class="ms-auto nzs-tools d-flex gap-2">
+      <a class="btn btn-sm btn-success" href="{% url 'admin:pos_salemodel_export' %}?{{ export_params }}&amp;format=xlsx"><i class="fas fa-file-excel"></i> Excel</a>
+      <a class="btn btn-sm btn-outline-secondary" href="{% url 'admin:pos_salemodel_export' %}?{{ export_params }}&amp;format=csv"><i class="fas fa-file-csv"></i> CSV</a>
+      <a class="btn btn-sm btn-outline-primary" href="{% url 'admin:pos_salemodel_changelist' %}?{{ export_params }}"><i class="fas fa-list"></i> {% translate "Savdolar ro'yxati" %}</a>
+    </span>
+  </form>
+
+  <p style="opacity:.7;margin:-6px 0 14px">{{ start|date:"d.m.Y" }} — {{ end|date:"d.m.Y" }}</p>
+
+  <div class="nzs-kpis">
+    <div class="nzs-kpi nzs-kpi-main">
+      <span class="nzs-kpi-label"><i class="fas fa-chart-line"></i> {% translate "Tushum" %}</span>
+      <strong>{{ summary.revenue|som }} <small>so'm</small></strong>
+      <span class="nzs-kpi-sub">{{ summary.count }} {% translate "ta savdo" %} · {% translate "o'rtacha chek" %} {{ summary.average|som }} · {{ summary.units }} {% translate "dona" %}</span>
+    </div>
+    <div class="nzs-kpi nzs-cash"><span class="nzs-kpi-label"><i class="fas fa-money-bill-wave"></i> {% translate "Naqd" %}</span><strong>{{ summary.by_method.cash|som }}</strong></div>
+    <div class="nzs-kpi nzs-uzcard"><span class="nzs-kpi-label"><i class="fas fa-credit-card"></i> Uzcard</span><strong>{{ summary.by_method.uzcard|som }}</strong></div>
+    <div class="nzs-kpi nzs-humo"><span class="nzs-kpi-label"><i class="fas fa-credit-card"></i> Humo</span><strong>{{ summary.by_method.humo|som }}</strong></div>
+    <div class="nzs-kpi nzs-coins"><span class="nzs-kpi-label">🪙 Coins</span><strong>{{ summary.coins|som }}</strong></div>
+    <div class="nzs-kpi nzs-discount"><span class="nzs-kpi-label"><i class="fas fa-percent"></i> {% translate "Chegirmalar" %}</span><strong>{{ summary.discount|som }}</strong></div>
+    <div class="nzs-kpi nzs-refund"><span class="nzs-kpi-label"><i class="fas fa-rotate-left"></i> {% translate "Qaytarilgan" %}</span><strong>{{ summary.refunds_total|som }}</strong><span class="nzs-kpi-sub">{{ summary.refunds_count }} {% translate "ta" %}</span></div>
+    <div class="nzs-kpi"><span class="nzs-kpi-label"><i class="fas fa-users"></i> {% translate "Mijozlar" %}</span><strong>{{ summary.customers }}</strong></div>
+  </div>
+
+  <div class="nzs-card" style="margin-bottom:16px">
+    <h3><i class="fas fa-chart-column"></i> {% translate "Tushum dinamikasi" %}
+      <span class="ms-auto d-flex gap-1">
+        {% for key, label in grains %}
+          <a class="nzs-chip{% if grain == key %} on{% endif %}" href="?period={{ period }}&amp;from={{ start|date:'Y-m-d' }}&amp;to={{ end|date:'Y-m-d' }}&amp;grain={{ key }}{% if branch %}&amp;branch={{ branch }}{% endif %}">{{ label }}</a>
+        {% endfor %}
+      </span>
+    </h3>
+    <div class="nzs-chart">
+      {% for b in series %}
+        <div class="col" title="{{ b.label }}: {{ b.revenue|som }} so'm · {{ b.count }} {% translate 'ta savdo' %}">
+          <i style="height:{{ b.share }}%"></i>
+          {% if series|length <= 31 or forloop.counter0|divisibleby:4 %}<small>{{ b.label }}</small>{% else %}<small>&nbsp;</small>{% endif %}
+        </div>
+      {% endfor %}
+    </div>
+  </div>
+
+  <div class="nzs-grid">
+    <div class="nzs-card">
+      <h3><i class="fas fa-store"></i> {% translate "Filiallar bo'yicha" %}</h3>
+      <table class="nzs-table">
+        <thead><tr><th>{% translate "Filial" %}</th><th class="num">{% translate "Savdo" %}</th><th class="num">{% translate "Tushum" %}</th><th class="num">{% translate "Naqd" %}</th><th class="num">{% translate "Karta" %}</th><th class="num">Coins</th><th></th></tr></thead>
+        <tbody>
+          {% for b in branches %}
+          <tr>
+            <td><a href="?period={{ period }}&amp;from={{ start|date:'Y-m-d' }}&amp;to={{ end|date:'Y-m-d' }}&amp;branch={{ b.key }}">{{ b.name }}</a></td>
+            <td class="num">{{ b.count }}</td>
+            <td class="num"><strong>{{ b.revenue|som }}</strong></td>
+            <td class="num">{{ b.by_method.cash|som }}</td>
+            <td class="num">{{ b.cards|som }}</td>
+            <td class="num">{{ b.coins|som }}</td>
+            <td style="width:90px"><div class="nzs-bar"><span style="width:{{ b.share }}%"></span></div></td>
+          </tr>
+          {% empty %}<tr><td colspan="7" style="opacity:.6">{% translate "Bu davrda savdo yo'q" %}</td></tr>{% endfor %}
+        </tbody>
+      </table>
+    </div>
+
+    <div class="nzs-card">
+      <h3><i class="fas fa-wallet"></i> {% translate "To'lov usullari bo'yicha tushum" %}</h3>
+      <table class="nzs-table">
+        <tbody>
+          {% for m in methods %}
+          <tr>
+            <td><span class="nzs-dot" style="background:{% for k, c in method_colors.items %}{% if k == m.code %}{{ c }}{% endif %}{% endfor %}"></span>{% for k, l in method_labels.items %}{% if k == m.code %}{{ l }}{% endif %}{% endfor %}</td>
+            <td class="num"><strong>{{ m.amount|som }}</strong></td>
+            <td class="num" style="width:50px">{{ m.share }}%</td>
+            <td style="width:120px"><div class="nzs-bar green"><span style="width:{{ m.share }}%"></span></div></td>
+          </tr>
+          {% empty %}<tr><td style="opacity:.6">{% translate "Bu davrda savdo yo'q" %}</td></tr>{% endfor %}
+        </tbody>
+      </table>
+    </div>
+
+    <div class="nzs-card">
+      <h3><i class="fas fa-user-tie"></i> {% translate "Sotuvchilar bo'yicha" %}</h3>
+      <table class="nzs-table">
+        <thead><tr><th>{% translate "Sotuvchi" %}</th><th>{% translate "Filial" %}</th><th class="num">{% translate "Savdo" %}</th><th class="num">{% translate "Tushum" %}</th><th></th></tr></thead>
+        <tbody>
+          {% for s in sellers %}
+          <tr>
+            <td><strong>{{ s.name }}</strong></td>
+            <td style="opacity:.75">{{ s.branch }}</td>
+            <td class="num">{{ s.count }}</td>
+            <td class="num"><strong>{{ s.revenue|som }}</strong></td>
+            <td style="width:90px"><div class="nzs-bar"><span style="width:{{ s.share }}%"></span></div></td>
+          </tr>
+          {% empty %}<tr><td colspan="5" style="opacity:.6">{% translate "Bu davrda savdo yo'q" %}</td></tr>{% endfor %}
+        </tbody>
+      </table>
+    </div>
+
+    <div class="nzs-card">
+      <h3><i class="fas fa-trophy"></i> {% translate "Eng ko'p sotilgan mahsulotlar" %}</h3>
+      <table class="nzs-table">
+        <thead><tr><th>#</th><th>{% translate "Mahsulot" %}</th><th class="num">{% translate "Soni" %}</th><th class="num">{% translate "Tushum" %}</th><th></th></tr></thead>
+        <tbody>
+          {% for p in top_products %}
+          <tr>
+            <td style="opacity:.6">{{ forloop.counter }}</td>
+            <td>{{ p.name }}</td>
+            <td class="num">{{ p.qty }}</td>
+            <td class="num"><strong>{{ p.revenue|som }}</strong></td>
+            <td style="width:90px"><div class="nzs-bar gold"><span style="width:{{ p.share }}%"></span></div></td>
+          </tr>
+          {% empty %}<tr><td colspan="5" style="opacity:.6">{% translate "Bu davrda savdo yo'q" %}</td></tr>{% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="nzs-card" style="margin-top:16px">
+    <h3><i class="fas fa-table"></i> {% for k, l in grains %}{% if k == grain %}{{ l }}{% endif %}{% endfor %} {% translate "hisobot" %}</h3>
+    <table class="nzs-table">
+      <thead><tr><th>{% translate "Davr" %}</th><th class="num">{% translate "Savdo" %}</th><th class="num">{% translate "Tushum" %}</th><th class="num">{% translate "Pul bilan" %}</th><th class="num">Coins</th></tr></thead>
+      <tbody>
+        {% for b in series reversed %}{% if b.count %}
+        <tr><td>{{ b.date|date:"d.m.Y" }}{% if grain == "week" %} — {% translate "hafta" %}{% endif %}</td><td class="num">{{ b.count }}</td><td class="num"><strong>{{ b.revenue|som }}</strong></td><td class="num">{{ b.paid|som }}</td><td class="num">{{ b.coins|som }}</td></tr>
+        {% endif %}{% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

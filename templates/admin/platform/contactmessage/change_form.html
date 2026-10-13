@@ -1,0 +1,114 @@
+{% extends "admin/change_form.html" %}
+{% load i18n static admin_urls %}
+{# Reading view for one contact message: sender card, the message itself, reply-by-email, status as a segmented control, newer/older navigation and other messages from the same sender. Only `status` is a form field (everything else is read-only in ContactMessageAdmin). #}
+
+{% block extrastyle %}
+{{ block.super }}
+<link rel="stylesheet" href="{% static 'admin/css/nutrizone-platform.css' %}?v=5">
+{% endblock %}
+
+{% block content_title %}{% endblock %}
+
+{% block content %}
+<div class="nzp nzp-reader" data-nzp-reader data-msg-copied="{% translate 'Copied' %}">
+  <header class="nzp-hero">
+    <div class="nzp-hero-main">
+      <a class="nzp-back" href="{% url 'admin:platform_contactmessage_changelist' %}{% if preserved_filters %}?{{ preserved_filters }}{% endif %}" title="{% translate 'Back to inbox' %}" aria-label="{% translate 'Back to inbox' %}"><i class="fas fa-arrow-left" aria-hidden="true"></i></a>
+      <div>
+        <h2>{% if original.subject %}{{ original.subject }}{% else %}{% translate "No subject" %}{% endif %}</h2>
+        <p>{% blocktranslate with date=original.created_at|date:"d.m.Y H:i" %}Received {{ date }}{% endblocktranslate %} · {% blocktranslate with timesince=original.created_at|timesince %}{{ timesince }} ago{% endblocktranslate %}</p>
+      </div>
+    </div>
+    <div class="nzp-hero-actions">
+      <div class="nzp-pager">
+        {% if nz_newer_url %}<a class="nzp-icon-btn" href="{{ nz_newer_url }}" title="{% translate 'Newer message' %}" aria-label="{% translate 'Newer message' %}" data-nzp-key="k"><i class="fas fa-chevron-up" aria-hidden="true"></i></a>{% else %}<span class="nzp-icon-btn is-disabled"><i class="fas fa-chevron-up" aria-hidden="true"></i></span>{% endif %}
+        {% if nz_older_url %}<a class="nzp-icon-btn" href="{{ nz_older_url }}" title="{% translate 'Older message' %}" aria-label="{% translate 'Older message' %}" data-nzp-key="j"><i class="fas fa-chevron-down" aria-hidden="true"></i></a>{% else %}<span class="nzp-icon-btn is-disabled"><i class="fas fa-chevron-down" aria-hidden="true"></i></span>{% endif %}
+      </div>
+    </div>
+  </header>
+
+  {% if nz_auto_read %}<div class="nzp-note nzp-note-info"><i class="fas fa-envelope-open" aria-hidden="true"></i> {% translate "This message was new and is now marked as read." %}</div>{% endif %}
+
+  <form action="{{ form_url }}" method="post" id="{{ opts.model_name }}_form" novalidate data-nzp-form>{% csrf_token %}
+    {% if is_popup %}<input type="hidden" name="{{ is_popup_var }}" value="1">{% endif %}
+    <div class="nzp-reader-grid">
+      <article class="nzp-card nzp-letter">
+        <header class="nzp-letter-head">
+          <span class="nzp-avatar nzp-avatar-lg" data-seed="{{ original.email }}">{{ nz_initials }}</span>
+          <div class="nzp-letter-from">
+            <strong>{{ original.name }}</strong>
+            <span class="nzp-letter-email">
+              <a href="mailto:{{ original.email }}">{{ original.email }}</a>
+              <button type="button" class="nzp-copy" data-nzp-copy="{{ original.email }}" title="{% translate 'Copy email' %}" aria-label="{% translate 'Copy email' %}"><i class="fas fa-copy" aria-hidden="true"></i></button>
+            </span>
+          </div>
+          <span class="nzp-status s-{{ original.status }}">{{ original.get_status_display }}</span>
+        </header>
+        <div class="nzp-letter-body">{{ original.message|linebreaksbr }}</div>
+        <footer class="nzp-letter-foot">
+          <a class="nzp-btn nzp-btn-primary" href="{{ nz_reply_href }}" data-nzp-reply><i class="fas fa-reply" aria-hidden="true"></i> {% translate "Reply by email" %}</a>
+          <button type="button" class="nzp-btn nzp-btn-ghost" data-nzp-copy="{{ original.message }}"><i class="fas fa-copy" aria-hidden="true"></i> {% translate "Copy text" %}</button>
+        </footer>
+      </article>
+
+      <aside class="nzp-reader-side">
+        <section class="nzp-card">
+          <header class="nzp-card-head nzp-card-head-sm"><span class="nzp-card-icon" style="--c:#6366f1"><i class="fas fa-list-check" aria-hidden="true"></i></span><div><h3>{% translate "Status" %}</h3><p>{% translate "Track where this message is in your workflow." %}</p></div></header>
+          <div class="nzp-status-picker" role="radiogroup" aria-label="{% translate 'Status' %}">
+            {% for value, label in nz_status_choices %}
+            <label class="nzp-status-opt s-{{ value }}">
+              <input type="radio" name="status" value="{{ value }}"{% if adminform.form.status.value == value %} checked{% endif %}{% if not has_change_permission %} disabled{% endif %}>
+              <span><i class="fas {% if value == 'new' %}fa-envelope{% elif value == 'read' %}fa-envelope-open{% else %}fa-reply{% endif %}" aria-hidden="true"></i> {{ label }}</span>
+            </label>
+            {% endfor %}
+          </div>
+          <p class="nzp-help" data-nzp-reply-hint hidden>{% translate "Sent your reply? Set the status to “Replied” and save." %}</p>
+          {% for e in adminform.form.status.errors %}<p class="nzp-error">{{ e }}</p>{% endfor %}
+        </section>
+
+        <section class="nzp-card">
+          <header class="nzp-card-head nzp-card-head-sm"><span class="nzp-card-icon" style="--c:#0ea5e9"><i class="fas fa-user" aria-hidden="true"></i></span><div><h3>{% translate "Sender" %}</h3></div></header>
+          <ul class="nzp-facts">
+            <li><span>{% translate "Name" %}</span><b>{{ original.name }}</b></li>
+            <li><span>{% translate "Email" %}</span><b class="nzp-break">{{ original.email }}</b></li>
+            <li><span>{% translate "Received" %}</span><b>{{ original.created_at|date:"d.m.Y H:i" }}</b></li>
+            <li><span>{% translate "Updated" %}</span><b>{{ original.updated_at|date:"d.m.Y H:i" }}</b></li>
+          </ul>
+        </section>
+
+        <section class="nzp-card">
+          <header class="nzp-card-head nzp-card-head-sm"><span class="nzp-card-icon" style="--c:#f59e0b"><i class="fas fa-clock-rotate-left" aria-hidden="true"></i></span><div><h3>{% translate "Earlier messages from this sender" %}</h3></div></header>
+          {% if nz_history %}
+          <ul class="nzp-history">
+            {% for h in nz_history %}
+            <li><a href="{{ h.url }}"><span class="nzp-dot s-{{ h.status }}" title="{{ h.status_label }}"></span><span class="nzp-history-subject">{% if h.subject %}{{ h.subject }}{% else %}{% translate "No subject" %}{% endif %}</span><time>{{ h.created_at|date:"d.m.Y" }}</time></a></li>
+            {% endfor %}
+          </ul>
+          {% else %}
+          <p class="nzp-muted">{% translate "This is the first message from this sender." %}</p>
+          {% endif %}
+        </section>
+      </aside>
+    </div>
+
+    <div class="nzp-savebar">
+      {% if has_delete_permission %}
+        {% url opts|admin_urlname:'delete' original.pk|admin_urlquote as delete_url %}
+        <a class="nzp-btn nzp-btn-danger-ghost" href="{% add_preserved_filters delete_url %}"><i class="fas fa-trash" aria-hidden="true"></i> <span class="nzp-btn-label">{% translate "Delete" %}</span></a>
+      {% endif %}
+      <span class="nzp-dirty" data-nzp-dirty hidden><i class="fas fa-circle" aria-hidden="true"></i> {% translate "You have unsaved changes" %}</span>
+      {% if has_change_permission %}
+      <div class="nzp-savebar-right">
+        <button type="submit" name="_continue" class="nzp-btn nzp-btn-ghost" title="{% translate 'Save and continue editing' %}"><i class="fas fa-floppy-disk" aria-hidden="true"></i> <span class="nzp-btn-label">{% translate "Save and continue editing" %}</span></button>
+        <button type="submit" name="_save" class="nzp-btn nzp-btn-primary"><i class="fas fa-check" aria-hidden="true"></i> {% translate "Save" %}</button>
+      </div>
+      {% endif %}
+    </div>
+  </form>
+</div>
+{% endblock %}
+
+{% block extrajs %}
+{{ block.super }}
+<script src="{% static 'admin/js/nutrizone-platform.js' %}?v=5"></script>
+{% endblock %}

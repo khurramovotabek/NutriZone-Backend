@@ -1,0 +1,114 @@
+[project]
+name = "nutrizone"
+version = "0.1.0"
+description = "NutriZone Enterprise Backend Foundation"
+requires-python = ">=3.13"
+
+# ---------------------------------------------------------------------------
+# ruff -- formatting (ruff format) + linting (covers flake8/isort/pyupgrade
+# rule sets in one fast tool), per Django Implementation Blueprint §15.
+# ---------------------------------------------------------------------------
+[tool.ruff]
+line-length = 110
+target-version = "py313"
+exclude = ["*/migrations/*"]
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "UP", "B", "C4", "SIM", "C90"]
+ignore = ["E501"]  # line length is enforced by the formatter, not the linter
+
+[tool.ruff.lint.isort]
+known-first-party = ["apps", "common", "core", "shared", "config"]
+section-order = ["future", "standard-library", "third-party", "first-party", "local-folder"]
+
+[tool.ruff.lint.mccabe]
+max-complexity = 10
+
+[tool.ruff.lint.per-file-ignores]
+# Placeholder domain/application/etc. stub files intentionally define
+# no symbols yet -- unused-import warnings don't apply to them.
+"apps/*/domain/*.py" = ["F401"]
+"apps/*/application/*.py" = ["F401"]
+"apps/*/infrastructure/*.py" = ["F401"]
+"apps/*/interfaces/**/*.py" = ["F401"]
+
+[tool.ruff.format]
+quote-style = "double"
+indent-style = "space"
+
+# ---------------------------------------------------------------------------
+# black -- used only as a secondary formatter check in CI if a
+# contributor's editor runs black directly; `ruff format` is authoritative.
+# ---------------------------------------------------------------------------
+[tool.black]
+line-length = 110
+target-version = ["py313"]
+extend-exclude = "migrations"
+
+# ---------------------------------------------------------------------------
+# isort -- kept for editor-integration compatibility; ruff's isort rules
+# (above) are what CI actually enforces.
+# ---------------------------------------------------------------------------
+[tool.isort]
+profile = "black"
+line_length = 110
+known_first_party = ["apps", "common", "core", "shared", "config"]
+skip_glob = ["*/migrations/*"]
+
+# ---------------------------------------------------------------------------
+# mypy -- strict on domain/application layers, standard elsewhere
+# (Django Implementation Blueprint §6, §15).
+# ---------------------------------------------------------------------------
+[tool.mypy]
+python_version = "3.13"
+plugins = ["mypy_django_plugin.main", "mypy_drf_plugin.main"]
+exclude = ["migrations"]
+warn_unused_ignores = true
+warn_redundant_casts = true
+# Real, closed gap: without this, `mypy apps common core shared config`
+# (what CI and a plain local run both need, to check the whole tree) fails
+# immediately with "Source file found twice under different module names:
+# 'exceptions' and 'common.exceptions'" before checking a single real file,
+# because several first-party packages don't sit under one shared rootdir
+# mypy can infer on its own. `pre-commit`'s per-file mypy invocation never
+# hit this (it type-checks only the files a commit touches), which is why
+# it went unnoticed.
+explicit_package_bases = true
+
+[[tool.mypy.overrides]]
+module = "apps.*.domain.*"
+disallow_untyped_defs = true
+disallow_incomplete_defs = true
+strict_optional = true
+
+[[tool.mypy.overrides]]
+module = "apps.*.application.*"
+disallow_untyped_defs = true
+disallow_incomplete_defs = true
+strict_optional = true
+
+[tool.django-stubs]
+django_settings_module = "config.settings.testing"
+
+# ---------------------------------------------------------------------------
+# pytest (Django Implementation Blueprint §11)
+# ---------------------------------------------------------------------------
+[tool.pytest.ini_options]
+DJANGO_SETTINGS_MODULE = "config.settings.testing"
+python_files = ["test_*.py", "*_test.py"]
+addopts = "-ra --strict-markers --cov=common --cov=core --cov=shared --cov=apps --cov-report=term-missing"
+testpaths = ["apps", "tests"]
+markers = [
+    "unit: fast, no external dependencies",
+    "integration: real database/broker required",
+    "concurrency: exercises pessimistic locking / race conditions",
+    "performance: load/perf scenario, not run per-commit",
+]
+
+[tool.coverage.run]
+branch = true
+omit = ["*/migrations/*", "*/tests/*", "manage.py", "config/*"]
+
+[tool.coverage.report]
+precision = 2
+skip_covered = false

@@ -1,0 +1,81 @@
+{% load i18n jazzmin log %}
+{# Dashboard lower half: every admin section as an icon card, and the signed-in user's recent actions. Replaces Jazzmin's plain app-list tables + timeline (admin/index.html block.super). #}
+{% get_side_menu using="app_list" as dashboard_list %}
+<div class="nzh-layout">
+  <section class="nzh-sections" aria-labelledby="nzh-sections-title">
+    <header class="nzh-head">
+      <div>
+        <h3 id="nzh-sections-title"><i class="fas fa-layer-group" aria-hidden="true"></i> {% translate "All sections" %}</h3>
+        <p>{% blocktranslate count n=dashboard_list|length %}{{ n }} section{% plural %}{{ n }} sections{% endblocktranslate %}</p>
+      </div>
+      <label class="nzh-filter">
+        <i class="fas fa-magnifying-glass" aria-hidden="true"></i>
+        <input type="search" data-nzh-filter placeholder="{% translate 'Find a section…' %}" aria-label="{% translate 'Find a section…' %}">
+      </label>
+    </header>
+
+    <div class="nzh-grid" data-nzh-grid>
+      {% for app in dashboard_list %}
+      <article class="nzh-app" data-nzh-app style="--i: {{ forloop.counter0 }}">
+        <header class="nzh-app-head">
+          <span class="nzh-app-icon"><i class="{{ app.icon|default:'fas fa-folder' }}" aria-hidden="true"></i></span>
+          <h4>{{ app.name }}</h4>
+          <span class="nzh-count">{{ app.models|length }}</span>
+        </header>
+        <ul class="nzh-models">
+          {% for model in app.models %}
+          <li data-nzh-model>
+            {% if model.url %}<a href="{{ model.url }}" class="nzh-model-link">{% else %}<span class="nzh-model-link is-disabled">{% endif %}
+              <i class="{{ model.icon|default:'fas fa-circle' }}" aria-hidden="true"></i>
+              <span>{{ model.name }}</span>
+            {% if model.url %}</a>{% else %}</span>{% endif %}
+            <span class="nzh-actions">
+              {% if model.add_url %}<a href="{{ model.add_url }}" class="nzh-btn nzh-add" title="{% translate 'Add' %}" aria-label="{% translate 'Add' %}: {{ model.name }}"><i class="fas fa-plus" aria-hidden="true"></i></a>{% endif %}
+              {% if model.url %}<a href="{{ model.url }}" class="nzh-btn" title="{% if model.view_only %}{% translate 'View' %}{% else %}{% translate 'Change' %}{% endif %}" aria-label="{% if model.view_only %}{% translate 'View' %}{% else %}{% translate 'Change' %}{% endif %}: {{ model.name }}"><i class="fas {% if model.view_only %}fa-eye{% else %}fa-arrow-right{% endif %}" aria-hidden="true"></i></a>{% endif %}
+            </span>
+          </li>
+          {% endfor %}
+        </ul>
+      </article>
+      {% endfor %}
+    </div>
+    <p class="nzh-empty" data-nzh-empty hidden>{% translate "Nothing found" %}</p>
+  </section>
+
+  <aside class="nzh-activity" aria-labelledby="nzh-activity-title">
+    <header class="nzh-head">
+      <div>
+        <h3 id="nzh-activity-title"><i class="fas fa-clock-rotate-left" aria-hidden="true"></i> {% translate "Recent actions" %}</h3>
+        <p>{% translate "Your latest changes in the dashboard" %}</p>
+      </div>
+      <a class="nzh-link" href="{% url 'admin:nz_audit_timeline' %}">{% translate "View all" %} <i class="fas fa-arrow-right" aria-hidden="true"></i></a>
+    </header>
+    {% get_admin_log 8 as admin_log for_user user %}
+    {% if not admin_log %}
+      <div class="nzh-activity-empty">
+        <i class="fas fa-inbox" aria-hidden="true"></i>
+        <p>{% translate "None available" %}</p>
+      </div>
+    {% else %}
+      <ol class="nzh-feed">
+        {% for entry in admin_log %}
+        <li class="nzh-event {% if entry.is_addition %}is-add{% elif entry.is_deletion %}is-del{% else %}is-change{% endif %}">
+          <span class="nzh-event-dot" aria-hidden="true"><i class="fas {% if entry.is_addition %}fa-plus{% elif entry.is_deletion %}fa-trash{% else %}fa-pen{% endif %}"></i></span>
+          <div class="nzh-event-body">
+            <div class="nzh-event-top">
+              <span class="nzh-event-type">{% if entry.is_addition %}{% translate "Added" %}{% elif entry.is_deletion %}{% translate "Deleted" %}{% else %}{% translate "Changed" %}{% endif %}</span>
+              <time datetime="{{ entry.action_time|date:'c' }}" title="{{ entry.action_time|date:'Y-m-d H:i' }}">{% blocktranslate with timesince=entry.action_time|timesince %}{{ timesince }} ago{% endblocktranslate %}</time>
+            </div>
+            <p class="nzh-event-title">
+              {% if entry.is_deletion or not entry.get_admin_url %}{{ entry.object_repr }}{% else %}<a href="{{ entry.get_admin_url }}">{{ entry.object_repr }}</a>{% endif %}
+            </p>
+            {% if entry.content_type %}<span class="nzh-chip">{{ entry.content_type.name|capfirst }}</span>{% endif %}
+            {# get_change_message(): human-readable ("Changed Name.") -- the raw JSON ("[]") used to leak through here. #}
+            {% if entry.is_change %}{% with msg=entry.get_change_message %}{% if msg %}<p class="nzh-event-msg">{{ msg }}</p>{% endif %}{% endwith %}{% endif %}
+          </div>
+        </li>
+        {% endfor %}
+      </ol>
+    {% endif %}
+  </aside>
+</div>

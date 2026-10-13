@@ -1,0 +1,84 @@
+{% extends "admin/base_site.html" %}
+{% load i18n static %}
+{# Chat → Operatorlar hisoboti (apps/platform/infrastructure/chat_view.py::chat_report_view, numbers from apps/chat/infrastructure/reports.py). #}
+{% block extrastyle %}{{ block.super }}<link rel="stylesheet" href="{% static 'admin/css/nutrizone-platform.css' %}?v=5"><link rel="stylesheet" href="{% static 'admin/css/nutrizone-premium.css' %}?v=6"><link rel="stylesheet" href="{% static 'admin/css/nutrizone-chat-desk.css' %}?v=5">{% endblock %}
+{% block breadcrumbs %}<ol class="breadcrumb"><li class="breadcrumb-item"><a href="{% url 'admin:index' %}">{% translate "Home" %}</a></li><li class="breadcrumb-item"><a href="{{ desk }}">Chat markazi</a></li><li class="breadcrumb-item active">{{ title }}</li></ol>{% endblock %}
+{% block content_title %}{% endblock %}
+{% block content %}
+<div class="nzp nzr">
+  <header class="nzp-hero">
+    <div class="nzp-hero-main">
+      <span class="nzp-hero-icon" style="--c:#4f46e5"><i class="fas fa-user-tie" aria-hidden="true"></i></span>
+      <div><h2>{{ title }}</h2><p>Chat · {{ report.since }} dan buyon har bir xodim: qancha murojaatga javob bergan, qanchalik tez, nechta suhbatni yopgan va mijozlar qanday baholagan.</p></div>
+    </div>
+    <div class="nzp-hero-actions"><a class="nzp-btn nzp-btn-ghost" href="{{ desk }}"><i class="fas fa-headset" aria-hidden="true"></i> Chat markazi</a></div>
+  </header>
+
+  <div class="nzi-stats">
+    {% for s in stats %}
+    {% if s.href %}<a class="nzi-stat" href="{{ s.href }}" style="--t:{{ s.tone }}">{% else %}<div class="nzi-stat" style="--t:{{ s.tone }}">{% endif %}
+      <i class="fas {{ s.icon }}" aria-hidden="true"></i><div><b>{{ s.value }}</b><span>{{ s.label }}</span>{% if s.sub %}<small>{{ s.sub }}</small>{% endif %}</div>
+    {% if s.href %}</a>{% else %}</div>{% endif %}
+    {% endfor %}
+  </div>
+
+  <div class="nzi-toolbar">
+    <nav class="nzp-tabs" aria-label="Davr">{% for t in tabs %}<a href="{{ t.url }}" class="nzp-tab{% if t.on %} on{% endif %}" style="--t:#4f46e5">{{ t.label }}</a>{% endfor %}</nav>
+  </div>
+
+  <section class="nzr-card">
+    <h3><i class="fas fa-users" aria-hidden="true"></i> Xodimlar</h3>
+    {% if report.rows %}
+    <div class="nzr-scroll">
+      <table class="nzr-table">
+        <thead><tr>
+          <th scope="col">Xodim</th>
+          <th scope="col" title="Mijoz yozgan va shu xodim birinchi bo'lib javob bergan murojaatlar">Javob bergan</th>
+          <th scope="col" title="Ish vaqti hisobida: tunda yozilgan xabar ish boshlanganidan hisoblanadi">Birinchi javob · median</th>
+          <th scope="col">O'rtacha</th>
+          <th scope="col">{{ report.sla_minutes }} daq ichida</th>
+          <th scope="col">Suhbat / xabar</th>
+          <th scope="col">Yopgan</th>
+          <th scope="col">Baho</th>
+        </tr></thead>
+        <tbody>
+        {% for r in report.rows %}
+        <tr>
+          <th scope="row"><span class="nzr-who"><span class="nzc-av" data-tone="{% cycle "4" "1" "5" "2" "3" "0" %}">{{ r.name|slice:":1"|upper }}</span><b>{{ r.name }}</b></span></th>
+          <td><b>{{ r.answered }}</b></td>
+          <td><span class="nzr-time{% if r.first_median is not None and r.first_median > 30 %} slow{% elif r.first_median is not None and r.first_median <= report.sla_minutes %} fast{% endif %}">{{ r.first_median_label }}</span></td>
+          <td class="nzr-muted">{{ r.first_avg_label }}</td>
+          <td>{% if r.sla is not None %}<span class="nzr-bar" style="--p:{{ r.sla }}%"><i></i><b>{{ r.sla }}%</b></span>{% else %}<span class="nzr-muted">—</span>{% endif %}</td>
+          <td>{{ r.chats }} <span class="nzr-muted">/ {{ r.messages }}</span></td>
+          <td>{{ r.closed }}</td>
+          <td>{% if r.rating_avg %}<span class="nzr-stars">{{ r.rating_avg }} ★</span> <span class="nzr-muted">({{ r.rating_count }})</span>{% if r.low %} <span class="nzi-chip" style="--t:#dc2626" title="Past baholar (1–2 ★)">{{ r.low }} past</span>{% endif %}{% else %}<span class="nzr-muted">—</span>{% endif %}</td>
+        </tr>
+        {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% else %}
+    <div class="nzc-empty"><i class="fas fa-inbox" aria-hidden="true"></i><b>Bu davrda xodimlar javobi yo'q</b></div>
+    {% endif %}
+    <p class="nzr-note"><i class="fas fa-circle-info" aria-hidden="true"></i> Javob vaqti ish soatlari bo'yicha hisoblanadi. Avtomatik javob va bot xabarlari javob hisoblanmaydi. «Yopgan» — suhbat yopilganda unga biriktirilgan xodim.</p>
+  </section>
+
+  <section class="nzr-card">
+    <h3><i class="fas fa-triangle-exclamation" aria-hidden="true"></i> So'nggi past baholar</h3>
+    {% if report.low %}
+    <ul class="nzr-low">
+      {% for l in report.low %}
+      <li>
+        <span class="nzr-stars low">{% for i in "12345"|make_list %}{% if forloop.counter <= l.score %}★{% else %}<i>★</i>{% endif %}{% endfor %}</span>
+        <div><b>{% if l.comment %}«{{ l.comment }}»{% else %}Izohsiz{% endif %}</b><small>{{ l.at }} · operator: {{ l.operator }}{% if l.status == "resolved" %} · hal qildi: {{ l.reviewed_by }}{% if l.note %} — {{ l.note }}{% endif %}{% endif %}</small></div>
+        {% if l.status == "open" %}<span class="nzi-chip" style="--t:#dc2626"><i class="fas fa-eye" aria-hidden="true"></i> Nazoratda</span>{% elif l.status == "resolved" %}<span class="nzi-chip" style="--t:#16a34a"><i class="fas fa-check" aria-hidden="true"></i> Hal qilindi</span>{% endif %}
+        <a class="nzp-btn nzp-btn-sm nzp-btn-ghost" href="{{ desk }}?c={{ l.conversation_id }}&f=review">Ochish</a>
+      </li>
+      {% endfor %}
+    </ul>
+    {% else %}
+    <div class="nzc-empty small"><i class="fas fa-face-smile" aria-hidden="true"></i><b>Past baho yo'q</b></div>
+    {% endif %}
+  </section>
+</div>
+{% endblock %}

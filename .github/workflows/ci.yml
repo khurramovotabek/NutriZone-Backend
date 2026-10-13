@@ -1,0 +1,115 @@
+name: Backend CI
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+
+# A second push to the same PR/branch cancels the still-running CI for the
+# previous push instead of queuing behind it.
+concurrency:
+  group: backend-ci-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  PYTHON_VERSION: "3.13"
+  DJANGO_SETTINGS_MODULE: config.settings.testing
+  # Only value base.py actually requires to be set at all -- any value
+  # works for CI, it is never a real secret here.
+  SECRET_KEY: ci-secret-key-not-for-production
+  POSTGRES_DB: nutrizone
+  POSTGRES_USER: nutrizone
+  POSTGRES_PASSWORD: nutrizone
+  POSTGRES_HOST: localhost
+  POSTGRES_PORT: "5432"
+  REDIS_URL: redis://localhost:6379/0
+  CHANNELS_REDIS_URL: redis://localhost:6379/1
+  CELERY_BROKER_URL: redis://localhost:6379/2
+  CELERY_RESULT_BACKEND: redis://localhost:6379/2
+
+jobs:
+  quality:
+    name: Lint, type-check & architecture
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: pip
+          cache-dependency-path: requirements/development.txt
+
+      - name: Install dependencies
+        run: pip install -r requirements/development.txt
+
+      # --- Required gates: must pass on every PR ---
+      - name: Django system check
+        run: python manage.py check
+
+      # --- Informational gates: not required yet. The baseline currently
+      # has real findings (ruff: ~650 findings across the tree, mostly
+      # auto-fixable; mypy: ~2500 findings, mostly missing annotations in
+      # older modules; import-linter: 3 real layering violations in
+      # identity/ordering/audit -- see the app-by-app audit). Reported on
+      # every run so regressions are visible, but `continue-on-error`
+      # keeps them from blocking merges until a dedicated cleanup pass
+      # fixes the existing backlog -- flip each to a required gate then,
+      # not before, or every PR turns red for pre-existing debt.
+      - name: Ruff lint
+        continue-on-error: true
+        run: ruff check .
+
+      - name: Ruff format check
+        continue-on-error: true
+        run: ruff format --check .
+
+      - name: mypy
+        continue-on-error: true
+        run: mypy apps common core shared config
+
+      - name: import-linter (architecture boundaries)
+        continue-on-error: true
+        run: lint-imports
+
+  test:
+    name: Test suite
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgis/postgis:16-3.4
+        env:
+          POSTGRES_DB: nutrizone
+          POSTGRES_USER: nutrizone
+          POSTGRES_PASSWORD: nutrizone
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U nutrizone"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 10
+      redis:
+        image: redis:7-alpine
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 10
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: pip
+          cache-dependency-path: requirements/testing.txt
+
+      - name: Install dependencies
+        run: pip install -r requirements/testing.txt
+
+      - name: Run test suite
+        run: pytest -p no:cacheprovider

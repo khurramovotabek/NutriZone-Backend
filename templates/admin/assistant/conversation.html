@@ -1,0 +1,36 @@
+{% extends "admin/base_site.html" %}
+{% load i18n static %}
+{# Dashboard → AI suhbatlar → one conversation (apps/assistant/infrastructure/admin.py). #}
+{% block extrastyle %}{{ block.super }}<link rel="stylesheet" href="{% static 'admin/css/nutrizone-assistant.css' %}?v=1">{% endblock %}
+{% block breadcrumbs %}<ol class="breadcrumb"><li class="breadcrumb-item"><a href="{% url 'admin:index' %}">{% translate "Home" %}</a></li><li class="breadcrumb-item"><a href="{% url 'admin:assistant_assistantconversation_changelist' %}">AI suhbatlar</a></li><li class="breadcrumb-item active">{{ c.created_at|date:"d.m.Y H:i" }}</li></ol>{% endblock %}
+{% block content_title %}{% endblock %}
+{% block content %}
+<div class="nzai">
+  <header class="nzai-head">
+    <span class="nzai-icon"><i class="fas fa-robot" aria-hidden="true"></i></span>
+    <div>
+      <h2>AI suhbat</h2>
+      <p>{% if customer %}<b>{{ customer.full_name|default:customer.phone_number }}</b> · {{ customer.phone_number }}{% else %}Mehmon (ro'yxatdan o'tmagan){% endif %} · {{ c.locale|upper }} · {{ c.channel }}</p>
+    </div>
+    <dl class="nzai-facts">
+      <div><dt>Savollar</dt><dd>{{ c.turns }}</dd></div>
+      <div><dt>Mahsulotlar</dt><dd>{{ c.products_shown }}</dd></div>
+      <div><dt>Baho</dt><dd>👍 {{ c.feedback_up }} · 👎 {{ c.feedback_down }}</dd></div>
+      <div><dt>Tokenlar</dt><dd>{{ c.input_tokens }} / {{ c.output_tokens }}<small> kesh: {{ c.cache_read_tokens }}</small></dd></div>
+      <div><dt>Xarajat</dt><dd>${{ cost }}<small> {{ model }}</small></dd></div>
+      {% if c.errors %}<div><dt>Xatolar</dt><dd class="bad">{{ c.errors }}</dd></div>{% endif %}
+    </dl>
+  </header>
+  <ol class="nzai-chat">
+    {% for m in c.transcript %}
+    <li class="nzai-msg is-{{ m.role }}">
+      <div class="nzai-bubble">
+        <p class="nzai-text">{{ m.text|linebreaksbr }}</p>
+        {% if m.products %}<div class="nzai-cards">{% for p in m.products %}<a class="nzai-card" href="{% url 'admin:products_product_change' p.id %}">{% if p.image %}<img src="{{ p.image }}" alt="">{% endif %}<span><b>{{ p.name }}</b><small>{{ p.price|default:"—" }} so'm · {% if p.in_stock %}bor{% else %}tugagan{% endif %}</small></span></a>{% endfor %}</div>{% endif %}
+      </div>
+      <small class="nzai-meta">{{ m.at|slice:":16"|cut:"T"|default:"" }}{% if m.feedback == "up" %} · 👍{% elif m.feedback == "down" %} · 👎 mijozga yoqmadi{% endif %}</small>
+    </li>
+    {% empty %}<li class="nzai-empty">Suhbat bo'sh.</li>{% endfor %}
+  </ol>
+</div>
+{% endblock %}

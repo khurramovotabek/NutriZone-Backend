@@ -1,0 +1,25 @@
+/* Dashboard → AI suhbatlar → one conversation (templates/admin/assistant/conversation.html). Prefix nzai-. */
+.nzai { max-width: 980px; color: var(--nz-text-primary); padding-bottom: 32px; }
+.nzai-head { display: flex; flex-wrap: wrap; align-items: center; gap: 14px; padding: 18px 20px; border-radius: 20px; margin-bottom: 16px; background: var(--nz-surface); box-shadow: inset 0 0 0 1px var(--nz-border); }
+.nzai-head h2 { margin: 0; font-size: 1.25rem; font-weight: 800; color: var(--nz-text-primary); }
+.nzai-head p { margin: 2px 0 0; color: var(--nz-text-secondary); font-size: .86rem; }
+.nzai-icon { width: 48px; height: 48px; display: grid; place-items: center; border-radius: 14px; color: #fff; font-size: 20px; background: linear-gradient(135deg, #8b5cf6, #6366f1); }
+.nzai-facts { display: flex; flex-wrap: wrap; gap: 8px 18px; margin: 0 0 0 auto; }
+.nzai-facts dt { font-size: .66rem; font-weight: 800; text-transform: uppercase; letter-spacing: .05em; color: var(--nz-text-muted); }
+.nzai-facts dd { margin: 0; font-weight: 800; font-variant-numeric: tabular-nums; }
+.nzai-facts dd small { display: block; font-weight: 600; color: var(--nz-text-muted); font-size: .7rem; }
+.nzai-facts dd.bad { color: #dc2626; }
+.nzai-chat { list-style: none; margin: 0; padding: 0; display: grid; gap: 12px; }
+.nzai-msg { display: flex; flex-direction: column; max-width: 78%; }
+.nzai-msg.is-user { margin-left: auto; align-items: flex-end; }
+.nzai-bubble { padding: 12px 14px; border-radius: 18px; background: var(--nz-surface); box-shadow: inset 0 0 0 1px var(--nz-border); }
+.nzai-msg.is-user .nzai-bubble { color: #fff; background: linear-gradient(135deg, #6366f1, #8b5cf6); box-shadow: none; border-bottom-right-radius: 6px; }
+.nzai-msg.is-assistant .nzai-bubble { border-bottom-left-radius: 6px; }
+.nzai-text { margin: 0; font-size: .9rem; line-height: 1.5; white-space: normal; overflow-wrap: anywhere; }
+.nzai-meta { margin-top: 3px; font-size: .7rem; color: var(--nz-text-muted); }
+.nzai-cards { display: grid; gap: 8px; margin-top: 10px; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); }
+.nzai-card { display: flex; gap: 10px; align-items: center; padding: 8px; border-radius: 12px; color: inherit !important; text-decoration: none !important; background: var(--nz-surface-secondary); }
+.nzai-card img { width: 44px; height: 44px; object-fit: contain; border-radius: 8px; background: #fff; }
+.nzai-card b { display: block; font-size: .8rem; line-height: 1.25; } .nzai-card small { color: var(--nz-text-muted); font-size: .72rem; }
+.nzai-empty { color: var(--nz-text-muted); }
+@media (max-width: 640px) { .nzai-msg { max-width: 92%; } .nzai-facts { margin-left: 0; } }

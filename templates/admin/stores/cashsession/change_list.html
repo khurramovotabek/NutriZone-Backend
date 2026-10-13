@@ -1,0 +1,35 @@
+{% extends "admin/change_list.html" %}
+{% load i18n static nz_money %}
+
+{% block extrastyle %}
+{{ block.super }}
+<link rel="stylesheet" href="{% static 'admin/css/nutrizone-sales.css' %}?v=2">
+{% endblock %}
+
+{% block content_title %}{% translate "Cash Register Management" %}{% endblock %}
+
+{% block date_hierarchy %}
+{% if shift_kpis %}
+<div class="col-12 nzs-kpis">
+  <div class="nzs-kpi nzs-open">
+    <span class="nzs-kpi-label"><i class="fas fa-lock-open"></i> {% translate "Open shifts" %}</span>
+    <strong>{{ shift_kpis.open }} <small>/ {{ shift_kpis.stores }}</small></strong>
+    <span class="nzs-kpi-sub">{% translate "branches with the register open now" %}</span>
+  </div>
+  <div class="nzs-kpi nzs-kpi-main">
+    <span class="nzs-kpi-label"><i class="fas fa-chart-line"></i> {% translate "Today's sales (all branches)" %}</span>
+    <strong>{{ shift_kpis.today.revenue|som }} <small>so'm</small></strong>
+    <span class="nzs-kpi-sub">{{ shift_kpis.today.count }} {% translate "sales" %}</span>
+  </div>
+  <div class="nzs-kpi nzs-cash"><span class="nzs-kpi-label"><i class="fas fa-money-bill-wave"></i> {% translate "Cash today" %}</span><strong>{{ shift_kpis.today.by_method.cash|som }}</strong></div>
+  <div class="nzs-kpi nzs-uzcard"><span class="nzs-kpi-label"><i class="fas fa-credit-card"></i> Uzcard / Humo</span><strong>{{ shift_kpis.today.cards|som }}</strong></div>
+  <div class="nzs-kpi nzs-coins"><span class="nzs-kpi-label">🪙 Coins</span><strong>{{ shift_kpis.today.coins|som }}</strong></div>
+  <div class="nzs-kpi nzs-refund">
+    <span class="nzs-kpi-label"><i class="fas fa-scale-unbalanced"></i> {% translate "This month" %}</span>
+    <strong style="color:#dc2626">{{ shift_kpis.shortage|som }}</strong>
+    <span class="nzs-kpi-sub">{% translate "shortage" %} · <span style="color:#d97706">+{{ shift_kpis.overage|som }}</span> {% translate "overage" %} · {{ shift_kpis.closed_month }} {% translate "closed shifts" %}</span>
+  </div>
+</div>
+{% endif %}
+{{ block.super }}
+{% endblock %}

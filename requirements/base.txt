@@ -1,0 +1,23 @@
+django==6.0
+djangorestframework==3.16.0
+djangorestframework-simplejwt==5.4.0
+drf-spectacular==0.28.0
+django-cors-headers==4.6.0
+django-celery-beat==2.9.0
+django-celery-results==2.5.1
+celery==5.4.0
+redis==5.2.1
+channels==4.2.0
+channels-redis==4.2.1
+daphne==4.2.0  # ASGI dev server behind `manage.py runserver` (HTTP + WebSockets in one process); see INSTALLED_APPS
+psycopg[binary]==3.2.3
+requests==2.33.1
+gunicorn==23.0.0
+uvicorn[standard]==0.32.1
+python-dotenv==1.0.1
+pydantic-settings==2.6.1
+prometheus-client==0.21.1
+Pillow==11.0.0
+django-jazzmin==3.0.5
+openpyxl==3.1.5
+anthropic==1.13.0  # AI shopping assistant (apps/assistant)

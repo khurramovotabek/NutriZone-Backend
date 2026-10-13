@@ -1,0 +1,43 @@
+{% extends "admin/base_site.html" %}
+{% load i18n static %}
+{# One transaction (PaymentTransactionAdmin.change_view): amount, status, facts, the provider conversation. #}
+{% block extrastyle %}{{ block.super }}{% include "admin/payment/_head.html" %}{% endblock %}
+{% block breadcrumbs %}<ol class="breadcrumb"><li class="breadcrumb-item"><a href="{% url 'admin:index' %}">{% translate "Home" %}</a></li><li class="breadcrumb-item"><a href="{% url 'admin:payment_paymentmodel_changelist' %}">{% translate "Tranzaksiyalar" %}</a></li><li class="breadcrumb-item active">{{ title }}</li></ol>{% endblock %}
+{% block content_title %}{% endblock %}
+{% block content %}
+<div class="nzp nzd wx">
+  <header class="nzp-hero">
+    <div class="nzp-hero-main">
+      <a class="nzp-back" href="{% url 'admin:payment_paymentmodel_changelist' %}" aria-label="{% translate 'Back' %}"><i class="fas fa-arrow-left" aria-hidden="true"></i></a>
+      <img class="pay-logo pay-logo-lg" src="{{ logo }}" alt="">
+      <div><h2>{{ amount }} <small style="font-size:.9rem;color:var(--nz-text-muted)">{% translate "so'm" %}</small> <span class="nzd-pill" style="--t:{{ style.color }}"><i class="fas {{ style.icon }}" aria-hidden="true"></i> {{ style.label }}</span>{% if p.is_test %} <span class="nzd-pill" style="--t:#f59e0b"><i class="fas fa-flask" aria-hidden="true"></i> {% translate "Test" %}</span>{% endif %}</h2>
+        <p>{% if order %}<span>{% translate "Buyurtma" %} <a href="{{ order_url }}"><b class="nz-num">{{ order.order_number }}</b></a></span>{% endif %}{% if customer %}<span>{{ customer.full_name|default:_("Mijoz") }} · {{ customer.phone_number }}</span>{% endif %}</p></div>
+    </div>
+    <div class="nzp-hero-actions">
+      {% if order_url %}<a class="nzp-btn nzp-btn-ghost" href="{{ order_url }}"><i class="fas fa-receipt" aria-hidden="true"></i> {% translate "Buyurtmani ochish" %}</a>{% endif %}
+      {% if can_cancel %}<form method="post" action="{% url 'admin:payment_paymentmodel_cancel' p.pk %}">{% csrf_token %}<button class="nzp-btn nzp-btn-danger-ghost"><i class="fas fa-ban" aria-hidden="true"></i> {% translate "Urinishni bekor qilish" %}</button></form>{% endif %}
+    </div>
+  </header>
+
+  <div class="wx-card-grid">
+    <div class="wx-card-main">
+      <section class="nzp-card">
+        <header class="nzp-card-head nzp-card-head-sm"><span class="nzp-card-icon" style="--c:#8b5cf6"><i class="fas fa-satellite-dish" aria-hidden="true"></i></span><div><h3>{% translate "Provayder bilan yozishma" %}</h3><p>{% translate "Har bir so'rov va bizning javobimiz (maxfiy qiymatlar yashirilgan)." %}</p></div></header>
+        {% if timeline %}
+        <ul class="pay-timeline">
+          {% for x in timeline %}<li><span class="pay-dot" style="--d:{% if x.ok %}#10b981{% else %}#e11d48{% endif %}"></span>
+            <details class="pay-log"><summary><b>{{ x.l.method }}</b><small>{{ x.when }}</small><span class="r">{% if x.ok %}<span class="pay-tag" style="--t:#10b981">OK</span>{% else %}<span class="pay-tag" style="--t:#e11d48">{{ x.l.error_code }}</span>{% endif %}<small>{{ x.l.duration_ms }} ms · {{ x.l.ip|default:"" }}</small></span></summary>
+              <div class="pay-json"><div><h4>{% translate "So'rov" %}</h4><pre>{{ x.req }}</pre></div><div><h4>{% translate "Javob" %}</h4><pre>{{ x.res }}</pre></div></div></details></li>{% endfor %}
+        </ul>
+        {% else %}<p class="wx-muted">{% translate "Mijoz hali to'lov sahifasida — provayderdan so'rov kelmagan." %}</p>{% endif %}
+      </section>
+    </div>
+    <aside class="wx-card-side">
+      <section class="nzp-card">
+        <header class="nzp-card-head nzp-card-head-sm"><span class="nzp-card-icon" style="--c:#2563eb"><i class="fas fa-circle-info" aria-hidden="true"></i></span><div><h3>{% translate "Tafsilotlar" %}</h3></div></header>
+        <dl class="pay-facts">{% for k, v in facts %}<div><dt>{{ k }}</dt><dd>{{ v }}</dd></div>{% endfor %}</dl>
+      </section>
+    </aside>
+  </div>
+</div>
+{% endblock %}

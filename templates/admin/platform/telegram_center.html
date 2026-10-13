@@ -1,0 +1,144 @@
+{% extends "admin/base_site.html" %}
+{% load i18n static %}
+{# Dashboard → Telegram botlar markazi (apps/platform/infrastructure/telegram_view.py, telegram_center.py). #}
+{% block extrastyle %}{{ block.super }}<link rel="stylesheet" href="{% static 'admin/css/nutrizone-analytics.css' %}?v=5"><link rel="stylesheet" href="{% static 'admin/css/nutrizone-telegram.css' %}?v=2">{% endblock %}
+{% block breadcrumbs %}<ol class="breadcrumb"><li class="breadcrumb-item"><a href="{% url 'admin:index' %}">{% translate "Home" %}</a></li><li class="breadcrumb-item active">{{ title }}</li></ol>{% endblock %}
+{% block content_title %}{% endblock %}
+{% block content %}
+<div class="nza nzt" data-nz-telegram-status>
+  <header class="nza-hero nzt-hero">
+    <div class="nza-hero-main">
+      <span class="nza-hero-icon"><i class="fab fa-telegram" aria-hidden="true"></i></span>
+      <div class="nza-hero-text">
+        <p class="nza-eyebrow">NutriZone · Telegram</p>
+        <h2>{{ title }}</h2>
+        <p class="nza-hero-sub">3 ta bot · Rich xabarlar (rasm, jadval, grafik, tugmalar) · tokenlar hech qachon ko'rsatilmaydi</p>
+      </div>
+    </div>
+    <div class="nza-hero-actions">
+      <span class="nzt-mode {% if gateway_live %}is-live{% endif %}"><i class="fas fa-circle" aria-hidden="true"></i> {% if gateway_live %}Jonli rejim (live){% else %}O'chirilgan (disabled){% endif %}</span>
+      {% if can_check %}<button type="button" class="nza-btn" data-check><i class="fas fa-plug-circle-check" aria-hidden="true"></i> Botlarni tekshirish</button>{% csrf_token %}{% endif %}
+    </div>
+  </header>
+
+  <section class="nzt-bots" aria-label="Botlar">
+    {% for b in bots %}
+    <article class="nzt-bot" style="--t:{{ b.tone }}" data-bot="{{ b.key }}">
+      <div class="nzt-bot-head">
+        <span class="nzt-bot-icon"><i class="fas {{ b.icon }}" aria-hidden="true"></i></span>
+        <div class="nzt-bot-name">
+          <h3>{{ b.title }}</h3>
+          <small>{% if b.username %}@{{ b.username }}{% else %}username kiritilmagan{% endif %}</small>
+        </div>
+        {% if b.configured %}<span class="nzt-pill is-ok"><i class="fas fa-check" aria-hidden="true"></i> Sozlangan</span>{% else %}<span class="nzt-pill is-bad"><i class="fas fa-xmark" aria-hidden="true"></i> Sozlanmagan</span>{% endif %}
+      </div>
+      <p class="nzt-about">{{ b.about }}</p>
+      <dl class="nzt-stats">
+        {% for label, value, note in b.stats %}<div><dt>{{ label }}</dt><dd>{{ value }}</dd><small>{{ note }}</small></div>{% endfor %}
+      </dl>
+      {% if b.extra %}<p class="nzt-extra"><i class="fas fa-satellite-dish" aria-hidden="true"></i> {{ b.extra }}</p>{% endif %}
+      <p class="nzt-check" data-check-result hidden></p>
+      {% if b.username %}<a class="nzt-open" href="https://t.me/{{ b.username }}" target="_blank" rel="noopener"><i class="fab fa-telegram" aria-hidden="true"></i> Botni ochish</a>{% endif %}
+    </article>
+    {% endfor %}
+  </section>
+
+  <section class="nza-card nzt-preview-card">
+    <div class="nza-card-head">
+      <h3><i class="fas fa-mobile-screen" aria-hidden="true"></i> Xabar ko'rinishi (jonli preview)</h3>
+      <div class="nzt-tabs" role="tablist" aria-label="Xabar turlari">
+        {% for p in previews %}<button type="button" role="tab" class="nzt-tab{% if forloop.first %} is-on{% endif %}" aria-selected="{% if forloop.first %}true{% else %}false{% endif %}" data-kind="{{ p.kind }}"><i class="fas {{ p.icon }}" aria-hidden="true"></i> {{ p.label }}</button>{% endfor %}
+      </div>
+    </div>
+    <div class="nzt-preview-wrap">
+      <div class="nzt-phone" aria-live="polite">
+        <div class="nzt-phone-bar"><i class="fab fa-telegram" aria-hidden="true"></i> <span data-phone-title>NutriZone</span></div>
+        <div class="nzt-chat"><div class="nzt-msg" data-preview><p class="nza-empty">Yuklanmoqda…</p></div><div class="nzt-kb" data-keyboard></div></div>
+      </div>
+      <aside class="nzt-preview-info">
+        <h4>Bu nima?</h4>
+        <p>Bot hozir yuboradigan xabar — xuddi shu Rich Message hujjati, eng so'nggi haqiqiy ma'lumotdan. Telegram'da jadval, rasm kollaji, xarita va tugmalar shunday ko'rinadi.</p>
+        <ul>
+          <li><b>Vitrina</b> — “📦 Mahsulotlar”: top mahsulotlar kollaji, narx/reyting/qoldiq jadvali, har biriga tugma</li>
+          <li><b>Mahsulot sahifasi</b> — rasm, chegirma, hajmlar jadvali, ozuqaviy qiymat, savatga/hozir sotib olish</li>
+          <li><b>Mijoz buyurtmasi</b> — holat bosqichlari, mahsulotlar nomi bilan, xarita</li>
+          <li><b>Orders bot</b> — mahsulot rasmlari, qoldiq, coins/naqd taqsimoti</li>
+          <li><b>Analytics bot</b> — KPI banner, dinamika, filiallar, top mahsulotlar grafigi</li>
+        </ul>
+        <p class="nza-muted" data-preview-meta></p>
+      </aside>
+    </div>
+  </section>
+
+  {% if subscribers is not None %}
+  <section class="nza-card">
+    <div class="nza-card-head"><h3><i class="fas fa-user-shield" aria-hidden="true"></i> Xodim botlari obunachilari <span class="nza-count">{{ subscribers|length }}</span></h3></div>
+    {% if subscribers %}
+    <div class="nzt-table" role="table">
+      <div class="nzt-tr nzt-th" role="row"><span>Kim</span><span>Bot</span><span>Ko'radi</span><span>Boshlagan</span><span>Oxirgi faollik</span></div>
+      {% for s in subscribers %}
+      <div class="nzt-tr{% if not s.active %} is-off{% endif %}" role="row">
+        <span><b>{{ s.name }}</b>{% if s.username %}<small>@{{ s.username }}</small>{% endif %}{% if not s.active %}<small class="nzt-blocked">botni bloklagan</small>{% endif %}</span>
+        <span>{{ s.bot }}</span>
+        <span><em class="nzt-access is-{{ s.tone }}">{{ s.access }}</em></span>
+        <span>{{ s.started|date:"d.m.Y" }}</span>
+        <span>{{ s.seen|date:"d.m.Y H:i" }}</span>
+      </div>
+      {% endfor %}
+    </div>
+    {% else %}<p class="nza-empty">Hali hech kim xodim botlarini ishga tushirmagan.</p>{% endif %}
+    <p class="nza-note"><i class="fas fa-shield-halved" aria-hidden="true"></i> Ruxsat har safar jonli tekshiriladi: filial egasi faqat o'z filiallarini ko'radi, hammasini — faqat ruxsat ro'yxatidagilar.</p>
+  </section>
+  {% endif %}
+</div>
+<script>
+(function () {
+  var root = document.querySelector("[data-nz-telegram-status]");
+  if (!root) return;
+  var box = root.querySelector("[data-preview]"), kb = root.querySelector("[data-keyboard]"), meta = root.querySelector("[data-preview-meta]");
+  var title = root.querySelector("[data-phone-title]");
+  var names = {showcase: "NutriZone", product: "NutriZone", customer_order: "NutriZone", order_post: "NutriZone Orders", sale_post: "NutriZone Orders", analytics: "NutriZone Analytics"};
+  var cache = {};
+  function show(kind, data) {
+    title.textContent = names[kind] || "NutriZone";
+    if (!data.ok) { box.innerHTML = '<p class="nza-empty"></p>'; box.firstChild.textContent = data.message || "Xatolik"; kb.innerHTML = ""; meta.textContent = ""; return; }
+    box.innerHTML = data.html;  // built server-side from escaped Rich Message helpers
+    kb.innerHTML = "";
+    (data.keyboard || []).forEach(function (row) {
+      var r = document.createElement("div"); r.className = "nzt-kb-row";
+      row.forEach(function (t) { var b = document.createElement("span"); b.textContent = t; r.appendChild(b); });
+      kb.appendChild(r);
+    });
+    meta.textContent = data.size.toLocaleString("ru-RU") + " belgi · " + data.images + " ta rasm (limit: 32 000 belgi, 50 rasm)";
+  }
+  function load(kind) {
+    root.querySelectorAll(".nzt-tab").forEach(function (t) { var on = t.dataset.kind === kind; t.classList.toggle("is-on", on); t.setAttribute("aria-selected", on ? "true" : "false"); });
+    if (cache[kind]) return show(kind, cache[kind]);
+    box.innerHTML = '<p class="nza-empty"><i class="fas fa-spinner fa-spin"></i> Yuklanmoqda…</p>'; kb.innerHTML = "";
+    fetch("{% url 'admin:nz_telegram_preview' %}?kind=" + encodeURIComponent(kind), {credentials: "same-origin"})
+      .then(function (r) { return r.json(); })
+      .then(function (d) { cache[kind] = d; show(kind, d); })
+      .catch(function () { show(kind, {ok: false, message: "Preview yuklanmadi"}); });
+  }
+  root.querySelectorAll(".nzt-tab").forEach(function (t) { t.addEventListener("click", function () { load(t.dataset.kind); }); });
+  var first = root.querySelector(".nzt-tab"); if (first) load(first.dataset.kind);
+
+  var btn = root.querySelector("[data-check]");
+  if (btn) btn.addEventListener("click", function () {
+    btn.disabled = true;
+    var csrf = root.querySelector("[name=csrfmiddlewaretoken]").value;
+    fetch("{% url 'admin:nz_telegram_check' %}", {method: "POST", credentials: "same-origin", headers: {"X-CSRFToken": csrf}})
+      .then(function (r) { return r.json(); })
+      .then(function (d) {
+        Object.keys(d.bots || {}).forEach(function (key) {
+          var res = d.bots[key], el = root.querySelector('[data-bot="' + key + '"] [data-check-result]');
+          if (!el) return;
+          el.hidden = false; el.className = "nzt-check " + (res.ok ? "is-ok" : "is-bad");
+          el.textContent = res.ok ? "✓ Telegram javob berdi: @" + res.username + " (" + res.name + ")" : "✕ " + res.error;
+        });
+      })
+      .finally(function () { btn.disabled = false; });
+  });
+})();
+</script>
+{% endblock %}

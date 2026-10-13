@@ -1,0 +1,81 @@
+{% extends "admin/base_site.html" %}
+{% load i18n static %}
+{# Rollar va ruxsatlar: KPIs, role cards and the permission matrix (modules × roles) -- RolePermissionOverviewAggregator. #}
+{% block extrastyle %}{{ block.super }}<link rel="stylesheet" href="{% static 'admin/css/nutrizone-platform.css' %}?v=5"><link rel="stylesheet" href="{% static 'admin/css/nutrizone-premium.css' %}?v=6">{% endblock %}
+{% block breadcrumbs %}<ol class="breadcrumb"><li class="breadcrumb-item"><a href="{% url 'admin:index' %}">{% translate "Home" %}</a></li><li class="breadcrumb-item"><a href="{% url 'admin:identity_role_changelist' %}">Rollar</a></li><li class="breadcrumb-item active">{{ title }}</li></ol>{% endblock %}
+{% block content_title %}{% endblock %}
+{% block content %}
+<div class="nzp nzi nzi-overview" data-nz-roles-overview>
+  <header class="nzp-hero">
+    <div class="nzp-hero-main">
+      <span class="nzp-hero-icon" style="--c:#6366f1"><i class="fas fa-table-cells" aria-hidden="true"></i></span>
+      <div><h2>Rollar va ruxsatlar</h2><p>Qaysi rol nima qila oladi va kimlarda bor — bitta jadvalda. Rolni o'zgartirish uchun uning nomini bosing.</p></div>
+    </div>
+    <div class="nzp-hero-actions">
+      <a class="nzp-btn nzp-btn-ghost" href="{% url 'admin:identity_permission_changelist' %}"><i class="fas fa-key" aria-hidden="true"></i> Ruxsatlar</a>
+      <a class="nzp-btn nzp-btn-ghost" href="{% url 'admin:identity_userrole_changelist' %}"><i class="fas fa-id-badge" aria-hidden="true"></i> Foydalanuvchi rollari</a>
+      <a class="nzp-btn nzp-btn-primary" href="{% url 'admin:identity_role_add' %}"><i class="fas fa-plus" aria-hidden="true"></i> Yangi rol</a>
+    </div>
+  </header>
+
+  {% if summary.ok %}{% with s=summary.data %}
+  <div class="nzi-stats">
+    <a class="nzi-stat" style="--t:#6366f1" href="{% url 'admin:identity_role_changelist' %}"><i class="fas fa-user-shield" aria-hidden="true"></i><div><b>{{ s.total_roles }}</b><span>Rollar</span><small>{{ s.system_roles }} tizim roli</small></div></a>
+    <a class="nzi-stat" style="--t:#0891b2" href="{% url 'admin:identity_permission_changelist' %}"><i class="fas fa-key" aria-hidden="true"></i><div><b>{{ s.total_permissions }}</b><span>Ruxsatlar</span><small>barcha modullar</small></div></a>
+    <a class="nzi-stat" style="--t:#16a34a" href="{% url 'admin:identity_userrole_changelist' %}"><i class="fas fa-id-badge" aria-hidden="true"></i><div><b>{{ s.total_role_assignments }}</b><span>Biriktirishlar</span><small>foydalanuvchi ↔ rol</small></div></a>
+    {% if unassigned_permissions.ok %}<a class="nzi-stat" style="--t:{% if unassigned_permissions.data %}#d97706{% else %}#16a34a{% endif %}" href="{% url 'admin:identity_permission_changelist' %}?used=0"><i class="fas {% if unassigned_permissions.data %}fa-triangle-exclamation{% else %}fa-circle-check{% endif %}" aria-hidden="true"></i><div><b>{{ unassigned_permissions.data|length }}</b><span>Ishlatilmayotgan</span><small>{% if unassigned_permissions.data %}hech bir rolda yo'q{% else %}hammasi biriktirilgan{% endif %}</small></div></a>{% endif %}
+  </div>
+  {% endwith %}{% else %}<div class="nzp-note nzp-alert-error">Umumiy ma'lumotlarni yuklab bo'lmadi.</div>{% endif %}
+
+  {% if matrix.ok %}{% with m=matrix.data %}
+  {% if m.roles %}
+  <div class="nzi-rolecards">
+    {% for r in m.roles %}
+    <a class="nzp-card nzi-rolecard" href="{% url 'admin:identity_role_change' r.id %}">
+      <span class="nzi-ico" style="--t:#6366f1"><i class="fas fa-user-shield" aria-hidden="true"></i></span>
+      <div><b>{{ r.name }}</b><small><code>{{ r.code }}</code>{% if r.system %} · <span class="nzi-sys">Tizim</span>{% endif %}</small></div>
+      <dl><div><dt>ruxsat</dt><dd>{{ r.perms }}</dd></div><div><dt>kishi</dt><dd>{{ r.users }}</dd></div></dl>
+    </a>
+    {% endfor %}
+  </div>
+
+  <section class="nzp-card nzi-matrix">
+    <header class="nzi-matrix-h"><div><b>Ruxsatlar matritsasi</b><small>✓ — rol shu amalga ruxsat beradi. Sariq qatorlar hech bir rolda yo'q.</small></div>
+      <label class="nzi-search"><i class="fas fa-magnifying-glass" aria-hidden="true"></i><input type="search" placeholder="Ruxsatni qidirish…" data-nzi-mx-q aria-label="Ruxsatni qidirish"></label></header>
+    <div class="nzi-mx-scroll">
+      <table>
+        <thead><tr><th class="nzi-mx-perm">Ruxsat</th>{% for r in m.roles %}<th><a href="{% url 'admin:identity_role_change' r.id %}">{{ r.name }}</a><small>{{ r.users }} kishi</small></th>{% endfor %}</tr></thead>
+        {% for mod in m.modules %}
+        <tbody data-nzi-mod>
+          <tr class="nzi-mx-mod" style="--t:{{ mod.color }}"><th class="nzi-mx-perm"><i class="fas {{ mod.icon }}" aria-hidden="true"></i> {{ mod.label }} <small>{{ mod.perms|length }}</small></th>{% for n in mod.counts %}<td><span class="nzi-mx-count{% if n == mod.perms|length %} full{% elif n %} part{% endif %}">{{ n }}/{{ mod.perms|length }}</span></td>{% endfor %}</tr>
+          {% for p in mod.perms %}
+          <tr class="nzi-mx-row{% if p.orphan %} is-orphan{% endif %}" data-q="{{ p.label|lower }} {{ p.code }}">
+            <th class="nzi-mx-perm"><span>{{ p.label }}</span><code>{{ p.code }}</code></th>
+            {% for on in p.cells %}<td>{% if on %}<span class="nzi-mx-yes" title="Ruxsat bor"><i class="fas fa-check" aria-hidden="true"></i></span>{% else %}<span class="nzi-mx-no" aria-label="Yo'q">·</span>{% endif %}</td>{% endfor %}
+          </tr>
+          {% endfor %}
+        </tbody>
+        {% endfor %}
+      </table>
+    </div>
+  </section>
+  {% else %}
+  <div class="nzp-empty"><span class="nzp-empty-icon" style="--c:#6366f1"><i class="fas fa-user-shield" aria-hidden="true"></i></span><h3>Hali rol yo'q</h3><a class="nzp-btn nzp-btn-primary" href="{% url 'admin:identity_role_add' %}">Rol yaratish</a></div>
+  {% endif %}
+  {% endwith %}{% else %}<div class="nzp-note nzp-alert-error">Matritsani yuklab bo'lmadi.</div>{% endif %}
+</div>
+<script>
+(function () {
+  var q = document.querySelector("[data-nzi-mx-q]");
+  if (!q) return;
+  q.addEventListener("input", function () {
+    var v = q.value.trim().toLowerCase();
+    document.querySelectorAll("[data-nzi-mod]").forEach(function (body) {
+      var shown = 0;
+      body.querySelectorAll(".nzi-mx-row").forEach(function (tr) { var hit = !v || tr.getAttribute("data-q").indexOf(v) >= 0; tr.hidden = !hit; if (hit) shown++; });
+      body.hidden = !shown;
+    });
+  });
+})();
+</script>
+{% endblock %}

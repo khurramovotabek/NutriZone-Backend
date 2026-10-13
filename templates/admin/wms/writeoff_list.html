@@ -1,0 +1,66 @@
+{% extends "admin/change_list.html" %}
+{% load i18n static admin_list %}
+{# Write-offs (Hisobdan chiqarish): month KPIs, value by reason, status tabs, the documents. Rows annotated in WriteOffAdmin.get_changelist_instance. #}
+{% block extrastyle %}{{ block.super }}<link rel="stylesheet" href="{% static 'admin/css/nutrizone-platform.css' %}?v=5"><link rel="stylesheet" href="{% static 'admin/css/nutrizone-orderdesk.css' %}?v=5"><link rel="stylesheet" href="{% static 'admin/css/nutrizone-wmsx.css' %}?v=9">{% endblock %}
+{% block content_title %}{% endblock %}
+{% block content %}
+<div class="nzp nzd wx">
+  <header class="nzp-hero">
+    <div class="nzp-hero-main">
+      <span class="nzp-hero-icon" style="--c:#ef4444"><i class="fas fa-trash-can-arrow-up" aria-hidden="true"></i></span>
+      <div><h2>{% translate "Hisobdan chiqarish" %}</h2><p>{% translate "Damaged, expired, defective or lost goods leave stock with a reason and a manager's approval -- every unit is traceable in the ledger." %}</p></div>
+    </div>
+    <div class="nzp-hero-actions">
+      <a class="nzp-btn nzp-btn-ghost" href="{% url 'admin:nz_wms_expiry' %}"><i class="fas fa-calendar-xmark" aria-hidden="true"></i> {% translate "Yaroqlilik muddati" %}</a>
+      {% if can_create %}<a class="nzp-btn nzp-btn-primary" href="{% url 'admin:stores_writeoff_new' %}"><i class="fas fa-plus" aria-hidden="true"></i> {% translate "New write-off" %}</a>{% endif %}
+    </div>
+  </header>
+
+  <div class="nzp-stats">
+    <a class="nzp-stat" href="?status__exact=pending" style="--c:#f59e0b"><i class="fas fa-hourglass-half" aria-hidden="true"></i><div><b>{{ nz_kpis.pending }}</b><span>{% translate "Waiting for approval" %}</span></div></a>
+    <div class="nzp-stat" style="--c:#ef4444"><i class="fas fa-file-circle-minus" aria-hidden="true"></i><div><b>{{ nz_kpis.month }}</b><span>{% translate "Approved this month" %}</span></div></div>
+    <div class="nzp-stat" style="--c:#64748b"><i class="fas fa-cubes" aria-hidden="true"></i><div><b>−{{ nz_kpis.units }}</b><span>{% translate "Units written off this month" %}</span></div></div>
+    <div class="nzp-stat" style="--c:#e11d48"><i class="fas fa-coins" aria-hidden="true"></i><div><b>{{ nz_kpis.value }}<small> {% translate "so'm" %}</small></b><span>{% translate "Loss at cost this month" %}</span></div></div>
+  </div>
+
+  {% if nz_by_reason %}
+  <section class="nzp-card wx-reasons-card">
+    <header class="nzp-card-head nzp-card-head-sm"><span class="nzp-card-icon" style="--c:#e11d48"><i class="fas fa-chart-pie" aria-hidden="true"></i></span><div><h3>{% translate "Why goods are lost this month" %}</h3></div></header>
+    <div class="wx-share-bar" role="img" aria-label="{% translate 'Why goods are lost this month' %}">{% for r in nz_by_reason %}<i style="--c:{{ r.color }};flex:{{ r.units }}" title="{{ r.label }} · {{ r.units }}"></i>{% endfor %}</div>
+    <ul class="wx-share-legend">{% for r in nz_by_reason %}<li style="--c:{{ r.color }}"><i class="fas {{ r.icon }}" aria-hidden="true"></i><span>{{ r.label }}</span><b>{{ r.units }} {% translate "pcs" %}</b><small>{{ r.value }} {% translate "so'm" %} · {{ r.share }}%</small></li>{% endfor %}</ul>
+  </section>
+  {% endif %}
+
+  <div class="nzp-toolbar">
+    <nav class="nzp-tabs" aria-label="{% translate 'Status' %}">
+      {% for t in nz_tabs %}<a href="?{% if t.key %}status__exact={{ t.key }}{% endif %}" class="nzp-tab{% if t.on %} on{% endif %}" style="--t:{{ t.color }}"><i class="fas {{ t.icon }}" aria-hidden="true"></i> {{ t.label }} <b>{{ t.n }}</b></a>{% endfor %}
+    </nav>
+    <form class="nzd-filters" method="get">{% if request.GET.status__exact %}<input type="hidden" name="status__exact" value="{{ request.GET.status__exact }}">{% endif %}<label class="nzp-search"><i class="fas fa-magnifying-glass" aria-hidden="true"></i><input type="search" name="q" value="{{ cl.query }}" placeholder="{% translate 'Number, product or person…' %}" aria-label="{% translate 'Number, product or person…' %}"></label></form>
+  </div>
+
+  <section class="nzp-card nzp-inbox">
+    {% if cl.result_list %}
+    <div class="nzd-table wx-writeoff-table" role="table">
+      <div class="nzd-tr nzd-th" role="row"><span>{% translate "Number" %}</span><span>{% translate "Location" %}</span><span>{% translate "Reason" %}</span><span class="r">{% translate "Units" %}</span><span class="r">{% translate "Value at cost" %}</span><span>{% translate "Status" %}</span></div>
+      {% for w in cl.result_list %}
+      <a class="nzd-tr" role="row" href="{% url 'admin:stores_writeoff_document' w.pk %}" style="--i:{{ forloop.counter0 }}">
+        <span><b class="nz-num">{{ w.number }}</b><small>{{ w.nz.created }} · {{ w.created_by }}</small></span>
+        <span class="wx-loc-cell"><i class="wms-dot" style="background:{{ w.store.color|default:'#94a3b8' }}"></i><span><b>{{ w.store.name }}</b><small>{{ w.nz.lines }} {% translate "products" %}</small></span></span>
+        <span class="wx-tags">{% for r in w.nz.reasons %}<span class="nzd-tag" style="--t:{{ r.color }}">{{ r.label }}</span>{% endfor %}</span>
+        <span class="r"><b class="wx-minus">−{{ w.total_units }}</b></span>
+        <span class="r">{% if w.nz.value %}<b>{{ w.nz.value }}</b>{% else %}<span class="wx-nodata">{% translate "no cost" %}</span>{% endif %}</span>
+        <span><span class="nzd-pill" style="--t:{{ w.nz.color }}"><i class="fas {{ w.nz.icon }}" aria-hidden="true"></i> {{ w.get_status_display }}</span>{% if w.decided_by %}<small>{{ w.decided_by }}</small>{% endif %}</span>
+      </a>
+      {% endfor %}
+    </div>
+    {% else %}
+    <div class="nzp-empty"><span class="nzp-empty-icon" style="--c:#ef4444"><i class="fas fa-trash-can-arrow-up" aria-hidden="true"></i></span>
+      <h3>{% translate "No write-offs yet" %}</h3>
+      <p>{% translate "When a product is damaged, expired or lost, write it off here instead of correcting stock by hand -- the loss is then visible in reports." %}</p>
+      {% if can_create %}<a class="nzp-btn nzp-btn-primary" href="{% url 'admin:stores_writeoff_new' %}"><i class="fas fa-plus" aria-hidden="true"></i> {% translate "New write-off" %}</a>{% endif %}
+    </div>
+    {% endif %}
+  </section>
+  {% if cl.result_count > cl.list_per_page %}<div class="nzp-pagination">{% pagination cl %}</div>{% endif %}
+</div>
+{% endblock %}

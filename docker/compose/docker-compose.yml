@@ -1,0 +1,231 @@
+name: nutrizone
+
+x-django-env: &django-env
+  env_file:
+    - ../../.env.local
+
+services:
+  db:
+    image: postgis/postgis:16-3.4
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-nutrizone}
+      POSTGRES_USER: ${POSTGRES_USER:-nutrizone}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-nutrizone}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-nutrizone}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    networks: [nutrizone_net]
+
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    volumes:
+      - redis_data:/data
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+    networks: [nutrizone_net]
+
+  # Real, closed gap: this is the ONLY service in this file that runs
+  # "python manage.py migrate". Previously web, channels, and all 4
+  # celery services shared one entrypoint that each independently ran
+  # migrate on its own startup -- with 6 containers racing to migrate
+  # the same database, PostgreSQL raised real errors (duplicate
+  # relations, duplicate constraint/sequence names). This service runs
+  # to completion and exits (`restart: "no"`); every app service below
+  # depends on it via `condition: service_completed_successfully`, so
+  # Docker Compose itself guarantees migration finishes -- exactly
+  # once -- before any app service starts.
+  migrate:
+    build:
+      context: ../../
+      dockerfile: docker/django/Dockerfile
+      target: development
+      args:
+        REQUIREMENTS_FILE: development.txt
+    <<: *django-env
+    environment:
+      DJANGO_ENV: development
+    entrypoint: ["/migrate-entrypoint.sh"]
+    command: []
+    restart: "no"
+    volumes:
+      - ../../:/app
+    depends_on:
+      db: {condition: service_healthy}
+    networks: [nutrizone_net]
+
+  web:
+    build:
+      context: ../../
+      dockerfile: docker/django/Dockerfile
+      target: development
+      args:
+        REQUIREMENTS_FILE: development.txt
+    <<: *django-env
+    environment:
+      DJANGO_ENV: development
+    command: ["python", "manage.py", "runserver", "0.0.0.0:8000"]
+    volumes:
+      - ../../:/app
+    ports:
+      - "8000:8000"
+    depends_on:
+      db: {condition: service_healthy}
+      redis: {condition: service_healthy}
+      migrate: {condition: service_completed_successfully}
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health/live"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+    networks: [nutrizone_net]
+
+  celery_worker_transactional:
+    build:
+      context: ../../
+      dockerfile: docker/django/Dockerfile
+      target: development
+      args:
+        REQUIREMENTS_FILE: development.txt
+    <<: *django-env
+    environment:
+      DJANGO_ENV: development
+    command: ["celery", "-A", "config", "worker", "-Q", "transactional,inventory_critical", "-c", "4", "-l", "info"]
+    volumes:
+      - ../../:/app
+    depends_on:
+      db: {condition: service_healthy}
+      redis: {condition: service_healthy}
+      migrate: {condition: service_completed_successfully}
+    networks: [nutrizone_net]
+
+  celery_worker_default:
+    build:
+      context: ../../
+      dockerfile: docker/django/Dockerfile
+      target: development
+      args:
+        REQUIREMENTS_FILE: development.txt
+    <<: *django-env
+    environment:
+      DJANGO_ENV: development
+    command: ["celery", "-A", "config", "worker", "-Q", "default", "-c", "2", "-l", "info"]
+    volumes:
+      - ../../:/app
+    depends_on:
+      db: {condition: service_healthy}
+      redis: {condition: service_healthy}
+      migrate: {condition: service_completed_successfully}
+    networks: [nutrizone_net]
+
+  celery_worker_bulk:
+    build:
+      context: ../../
+      dockerfile: docker/django/Dockerfile
+      target: development
+      args:
+        REQUIREMENTS_FILE: development.txt
+    <<: *django-env
+    environment:
+      DJANGO_ENV: development
+    # Separate worker pool so a search reindex/analytics rebuild can
+    # never starve transactional tasks (Django Implementation Blueprint §8).
+    command: ["celery", "-A", "config", "worker", "-Q", "bulk,dead_letter", "-c", "2", "-l", "info"]
+    volumes:
+      - ../../:/app
+    depends_on:
+      db: {condition: service_healthy}
+      redis: {condition: service_healthy}
+      migrate: {condition: service_completed_successfully}
+    networks: [nutrizone_net]
+
+  celery_beat:
+    build:
+      context: ../../
+      dockerfile: docker/django/Dockerfile
+      target: development
+      args:
+        REQUIREMENTS_FILE: development.txt
+    <<: *django-env
+    environment:
+      DJANGO_ENV: development
+    command: ["celery", "-A", "config", "beat", "-l", "info", "--scheduler", "django_celery_beat.schedulers:DatabaseScheduler"]
+    volumes:
+      - ../../:/app
+    depends_on:
+      db: {condition: service_healthy}
+      redis: {condition: service_healthy}
+      migrate: {condition: service_completed_successfully}
+    networks: [nutrizone_net]
+
+  nginx:
+    image: nginx:1.27-alpine
+    restart: unless-stopped
+    volumes:
+      - ../nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ../../static:/app/static:ro
+      - ../../media:/app/media:ro
+    ports:
+      - "80:80"
+    depends_on:
+      - web
+    networks: [nutrizone_net]
+
+  # Real, product-required capability: exposes this stack's own nginx
+  # (port 80) to the public internet via Cloudflare Tunnel, WITHOUT
+  # opening any inbound firewall port on the host -- cloudflared makes
+  # only an OUTBOUND connection to Cloudflare's edge.
+  #
+  # Two modes, chosen by which env var you set (see .env.example):
+  #
+  # 1. Quick Tunnel (fast, but the domain changes on every restart --
+  #    fine for a quick manual test, NOT for a stable Telegram webhook):
+  #      docker compose --profile cloudflare-quick up cloudflared-quick
+  #    Then `docker compose logs cloudflared-quick` for the generated
+  #    https://<random>.trycloudflare.com URL -- copy it into
+  #    PUBLIC_BASE_URL/FRONTEND_URL/ALLOWED_HOSTS/CORS_ALLOWED_ORIGINS/
+  #    CSRF_TRUSTED_ORIGINS and restart `web`/`storefront` to pick it up.
+  #
+  # 2. Named Tunnel (stable domain -- the professional, recommended
+  #    choice for anything Telegram needs to call back into, since the
+  #    webhook URL never has to be re-registered):
+  #      docker compose --profile cloudflare-named up cloudflared-named
+  #    Requires CLOUDFLARE_TUNNEL_TOKEN in .env.local (from
+  #    `cloudflared tunnel create` + `cloudflared tunnel route dns` --
+  #    see README for the exact one-time setup commands).
+  cloudflared-quick:
+    image: cloudflare/cloudflared:2025.1.0
+    restart: unless-stopped
+    command: tunnel --no-autoupdate --url http://nginx:80
+    depends_on: [nginx]
+    networks: [nutrizone_net]
+    profiles: [cloudflare-quick]
+
+  cloudflared-named:
+    image: cloudflare/cloudflared:2025.1.0
+    restart: unless-stopped
+    command: tunnel --no-autoupdate run --token ${CLOUDFLARE_TUNNEL_TOKEN}
+    depends_on: [nginx]
+    networks: [nutrizone_net]
+    profiles: [cloudflare-named]
+
+networks:
+  nutrizone_net:
+    driver: bridge
+
+volumes:
+  postgres_data:
+  redis_data:

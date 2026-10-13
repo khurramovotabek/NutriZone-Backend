@@ -1,0 +1,100 @@
+{% load jazzmin %}{% comment %}
+NutriZone override of jazzmin's admin/includes/fieldset.html.
+A fieldset whose classes contain "nz-fieldset" renders as a real, semantic
+<fieldset>/<legend> (screen readers announce the group) with its fields laid
+out as side-by-side language columns (UZ / RU / EN) -- used by ProductAdmin's
+Supplement Facts / Warnings / Directions groups. Every other fieldset falls
+through to jazzmin's original markup below, unchanged.
+{% endcomment %}{% if "nz-hours" in fieldset.classes %}
+<div class="card nzf-hours-card"><div class="card-header"><div class="card-title"><strong><i class="fas fa-clock"></i> {{ fieldset.name }}</strong></div></div><div class="p-5 card-body">
+<fieldset class="nzf-hours-set">
+    <div class="nzf-hours-tools">
+        <button type="button" class="nzf-add" data-hours-preset="09:00-21:00"><i class="fas fa-sun"></i> Har kuni 09:00–21:00</button>
+        <button type="button" class="nzf-add" data-hours-preset="10:00-20:00-sun"><i class="fas fa-mug-hot"></i> 10:00–20:00, yakshanba dam</button>
+        <button type="button" class="nzf-add" data-hours-copy><i class="fas fa-copy"></i> Dushanbani hammasiga nusxalash</button>
+        <span class="nzf-hours-now" data-hours-now></span>
+    </div>
+    <div class="nzf-hours">
+    {% for line in fieldset %}<div class="nzf-hour-row">{% for field in line %}
+        {% if forloop.first %}<span class="nzf-day">{{ field.field.label }}</span>
+        <label class="nzf-switch" title="Ochiq / dam olish kuni">{{ field.field }}<span class="nzf-switch-ui"></span><span class="nzf-switch-text"></span></label>
+        {% else %}<span class="nzf-time">{{ field.field }}</span>{% if forloop.counter == 2 %}<span class="nzf-dash">—</span>{% endif %}{% endif %}
+        {% if not field.is_readonly and field.errors %}<div class="help-block text-red nzf-err">{{ field.errors }}</div>{% endif %}
+    {% endfor %}<span class="nzf-dur"></span></div>{% endfor %}
+    </div>
+</fieldset>
+</div></div>
+{% elif "nz-fieldset" in fieldset.classes %}
+<fieldset class="{{ fieldset.classes|cut:"collapse" }}">
+    <legend class="nz-fieldset__legend">{{ fieldset.name }}</legend>
+    {% if fieldset.description %}<p class="nz-fieldset__description">{{ fieldset.description|safe }}</p>{% endif %}
+    <div class="nz-fieldset__grid">
+    {% for line in fieldset %}{% for field in line %}
+        <div class="nz-fieldset__field form-group{% if field.field.name %} field-{{ field.field.name }}{% endif %}{% if not field.is_readonly and field.errors %} errors{% endif %}">
+            <label class="nz-fieldset__label" for="id_{{ field.field.name }}">{{ field.field.label }}{% if field.field.field.required %} <span class="text-red">*</span>{% endif %}</label>
+            {% if field.is_readonly %}<div class="readonly">{{ field.contents }}</div>{% else %}{{ field.field }}{% endif %}
+            {% if field.field.help_text %}<div class="help-block">{{ field.field.help_text|safe }}</div>{% endif %}
+            {% if not field.is_readonly and field.errors %}<div class="help-block text-red">{{ field.errors }}</div>{% endif %}
+        </div>
+    {% endfor %}{% endfor %}
+    </div>
+</fieldset>
+{% else %}{% if card %}
+<div class="card {{ fieldset.classes|cut:"collapse" }}">
+    {% if card_header and fieldset.name %}
+        <div class="card-header">
+            <div class="card-title">
+                <strong>{{ fieldset.name }}</strong>{% if fieldset.description %} - <i>{{ fieldset.description }}</i>{% endif %}
+            </div>
+        </div>
+    {%elif fieldset.description %}
+    <div class="card-header">
+        <div class="card-title">
+            {{ fieldset.description }}
+        </div>
+    </div>
+    {%endif%}
+
+    <div class="p-5{% if fieldset.name %} card-body{% endif %}">
+{% endif %}
+
+    {% for line in fieldset %}
+    <div class="form-group{% if line.fields|length == 1 and line.errors %} errors{% endif %}{% if not line.has_visible_field %} hidden{% endif %}{% for field in line %}{% if field.field.name %} field-{{ field.field.name }}{% endif %}{% endfor %}">
+        <div class="row">
+            {% for field in line %}
+                <label class="{% if not line.fields|length == 1 and forloop.counter != 1 %}col-auto {% else %}col-sm-3 {% endif %}text-start" for="id_{{ field.field.name }}">
+                    {{ field.field.label|capfirst }}
+                    {% if field.field.field.required %}
+                    <span class="text-red">* </span>
+                    {% endif %}
+                </label>
+                <div class="{% if not line.fields|length == 1 %} col-auto  fieldBox {% else %} col-sm-9 {% endif %}
+                             {% if field.field.name %} field-{{ field.field.name }}{% endif %}
+                             {% if not field.is_readonly and field.errors %} errors{% endif %}
+                             {% if field.field.is_hidden %} hidden {% endif %}
+                             {% if field.is_checkcard %} checkcard-row{% endif %}">
+                    {% if field.is_readonly %}
+                        <div class="readonly">{{ field.contents }}</div>
+                    {% else %}
+                        {{ field.field }}
+                    {% endif %}
+                    <div class="help-block red">
+                        {% if not line.fields|length == 1 and not field.is_readonly %}{{ field.errors }}{% endif %}
+                    </div>
+                    {% if field.field.help_text %}
+                        <div class="help-block">{{ field.field.help_text|safe }}</div>
+                    {% endif %}
+                    <div class="help-block text-red">
+                        {% if line.fields|length == 1 %}{{ line.errors }}{% endif %}
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+    </div>
+    {% endfor %}
+
+{% if card %}
+    </div>
+</div>
+{% endif %}
+{% endif %}

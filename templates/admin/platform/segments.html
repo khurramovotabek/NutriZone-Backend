@@ -1,0 +1,58 @@
+{% extends "admin/base_site.html" %}
+{% load i18n static nza %}
+{# Dashboard → Mijozlar segmentlari (apps/platform/infrastructure/growth_view.py, segments.py). #}
+{% block extrastyle %}{{ block.super }}<link rel="stylesheet" href="{% static 'admin/css/nutrizone-analytics.css' %}?v=5"><link rel="stylesheet" href="{% static 'admin/css/nutrizone-growth.css' %}?v=1">{% endblock %}
+{% block breadcrumbs %}<ol class="breadcrumb"><li class="breadcrumb-item"><a href="{% url 'admin:index' %}">{% translate "Home" %}</a></li><li class="breadcrumb-item active">{{ title }}</li></ol>{% endblock %}
+{% block content_title %}{% endblock %}
+{% block content %}
+<div class="nza nzg">
+  <header class="nza-hero nzg-hero-seg">
+    <div class="nza-hero-main">
+      <span class="nza-hero-icon"><i class="fas fa-people-group" aria-hidden="true"></i></span>
+      <div class="nza-hero-text">
+        <p class="nza-eyebrow">NutriZone · Customers</p>
+        <h2>{{ title }}</h2>
+        <p class="nza-hero-sub">{{ total }} ta mijoz · oxirgi xarid, chastota va summa (RFM) bo'yicha · onlayn + do'kon</p>
+      </div>
+    </div>
+    <div class="nza-hero-actions"><a class="nza-btn" href="?s={{ code }}&refresh=1"><i class="fas fa-rotate" aria-hidden="true"></i> Yangilash</a></div>
+  </header>
+
+  <section class="nzg-segs" aria-label="Segmentlar">
+    {% for c in cards %}
+    <a class="nzg-seg{% if c.code == code %} is-on{% endif %}" href="?s={{ c.code }}" style="--t:{{ c.tone }}"{% if c.code == code %} aria-current="true"{% endif %}>
+      <span class="nzg-seg-icon"><i class="fas {{ c.icon }}" aria-hidden="true"></i></span>
+      <b>{{ c.count }}</b><span class="nzg-seg-label">{{ c.label }}</span>
+      <small>{% if c.revenue %}{{ c.revenue|compact }} so'm · {{ c.share|pct }}{% else %}{{ c.hint }}{% endif %}</small>
+    </a>
+    {% endfor %}
+  </section>
+
+  <section class="nza-card">
+    <div class="nza-card-head">
+      <h3 style="--t:{{ current.tone }}"><i class="fas {{ current.icon }}" aria-hidden="true"></i> {{ current.label }} <span class="nza-count">{{ current.count }}</span></h3>
+      <div class="nzg-actions">
+        <a class="nzg-save is-ghost" href="{{ export_url }}"><i class="fas fa-file-excel" aria-hidden="true"></i> Excel</a>
+        {% if broadcast_url and current.count %}<a class="nzg-save" href="{{ broadcast_url }}"><i class="fas fa-paper-plane" aria-hidden="true"></i> Xabar yuborish</a>{% endif %}
+      </div>
+    </div>
+    <p class="nzg-hint"><b>Kimlar:</b> {{ current.hint }}{% if current.avg_check %} · o'rtacha chek {{ current.avg_check|som }}{% endif %}{% if current.avg_days is not None %} · oxirgi xariddan beri o'rtacha {{ current.avg_days }} kun{% endif %}<br><b>Tavsiya:</b> {{ current.action }}</p>
+    {% if rows %}
+    <div class="nzg-table" role="table">
+      <div class="nzg-tr nzg-th" role="row"><span>Mijoz</span><span>Telefon</span><span class="r">Xaridlar</span><span class="r">Jami</span><span>Oxirgi xarid</span></div>
+      {% for r in rows %}
+      <div class="nzg-tr" role="row">
+        <span><b>{{ r.name }}</b>{% if r.telegram %} <i class="fab fa-telegram nzg-tg" title="Telegram ulangan" aria-label="Telegram"></i>{% endif %}<small>{{ r.channels|join:", "|default:"—" }}</small></span>
+        <span>{{ r.phone }}</span>
+        <span class="r">{{ r.purchases }}</span>
+        <span class="r"><b>{{ r.revenue|compact }}</b></span>
+        <span>{{ r.last|slice:":10"|default:"—" }}</span>
+      </div>
+      {% endfor %}
+    </div>
+    {% if current.count > rows|length %}<p class="nza-muted">Birinchi {{ rows|length }} ta ko'rsatildi — to'liq ro'yxat Excel'da.</p>{% endif %}
+    {% else %}<p class="nza-empty">Bu segmentda hozircha mijoz yo'q.</p>{% endif %}
+    <p class="nza-note"><i class="fas fa-shield-halved" aria-hidden="true"></i> Xabar mavjud “Xabar yuborish” tizimi orqali boradi: bloklangan mijozlar va bildirishnomani o'chirganlarga yuborilmaydi.</p>
+  </section>
+</div>
+{% endblock %}

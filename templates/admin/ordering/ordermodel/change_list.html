@@ -1,0 +1,19 @@
+{% extends "admin/products/analytics_change_list.html" %}
+{% load i18n static %}
+{% block extrastyle %}{{ block.super }}<link rel="stylesheet" href="{% static 'admin/css/nutrizone-orders.css' %}?v=1">{% endblock %}
+{% block date_hierarchy %}
+{{ block.super }}
+{% if order_tabs %}
+<nav class="nzo-tabs" aria-label="{% translate 'Holat bo\'yicha' %}">
+  {% for t in order_tabs %}
+  <a href="?{% if t.key %}status={{ t.key }}{% endif %}" class="nzo-tab{% if t.on %} on{% endif %}" style="--t:{{ t.color }}">
+    <i class="fas {{ t.icon }}"></i> {{ t.label }} <b>{{ t.n }}</b>
+  </a>
+  {% endfor %}
+</nav>
+{% endif %}
+{% endblock %}
+{% block object-tools-items %}
+<a href="{% url 'admin:ordering_ordermodel_board' %}" class="btn btn-primary nzo-board-link"><i class="fas fa-table-columns" aria-hidden="true"></i> {% translate "Order board" %}</a>
+{{ block.super }}
+{% endblock %}

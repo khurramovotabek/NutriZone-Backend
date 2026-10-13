@@ -1,0 +1,24 @@
+{% extends "admin/base_site.html" %}
+{% load i18n static %}
+{# Stand-alone refund form (OrderReturnAdmin.refund_view); the return workspace has the same form inline. #}
+{% block extrastyle %}{{ block.super }}<link rel="stylesheet" href="{% static 'admin/css/nutrizone-platform.css' %}?v=5"><link rel="stylesheet" href="{% static 'admin/css/nutrizone-orderdesk.css' %}?v=4">{% endblock %}
+{% block content_title %}{% endblock %}
+{% block content %}
+<div class="nzp nzd">
+  <header class="nzp-hero"><div class="nzp-hero-main">
+    <a class="nzp-back" href="{% url 'admin:ordering_orderreturnmodel_change' object.id %}" aria-label="{% translate 'Back' %}"><i class="fas fa-arrow-left" aria-hidden="true"></i></a>
+    <div><h2>{% blocktranslate with number=object.return_number %}Refund {{ number }}{% endblocktranslate %}</h2><p>{% translate "The refund amount cannot exceed the order's actual paid total minus any prior refunds." %}</p></div>
+  </div></header>
+  <section class="nzp-card nzd-narrow">
+    <form method="post" class="nzd-action-form">{% csrf_token %}
+      <div class="nzd-action-head"><strong><i class="fas fa-money-bill-wave" aria-hidden="true"></i> {% translate "Refund the customer" %}</strong><small>{% blocktranslate with paid=desk.paid left=desk.refundable %}The customer paid {{ paid }} so'm for this order; up to {{ left }} so'm can still be refunded.{% endblocktranslate %}</small></div>
+      <div class="nzd-amount"><input type="text" inputmode="decimal" name="amount" value="{{ desk.suggested }}" class="nzd-input nz-num" aria-label="{% translate 'Refund amount' %}"><span>{% translate "so'm" %}</span></div>
+      <input type="hidden" name="currency" value="{{ object.refund_currency|default:'UZS' }}">
+      <div class="nzd-next-row">
+        <button type="submit" class="nzp-btn nzp-btn-primary"><i class="fas fa-check" aria-hidden="true"></i> {% translate "Confirm Refund" %}</button>
+        <a class="nzp-btn nzp-btn-ghost" href="{% url 'admin:ordering_orderreturnmodel_change' object.id %}">{% translate "Cancel" %}</a>
+      </div>
+    </form>
+  </section>
+</div>
+{% endblock %}

@@ -1,0 +1,319 @@
+{% extends "admin/base_site.html" %}
+{% load i18n static %}
+{# Order workspace: lifecycle stepper with the next step as one button (ship = pick the location, stock-checked), items with photos, money split (coupon / coins / cash), customer, delivery map, notes, history, returns & cancellations. All changes POST to OrderAdmin.act_view / note_view. #}
+
+{% block extrastyle %}
+{{ block.super }}
+<link rel="stylesheet" href="{% static 'admin/css/nutrizone-platform.css' %}?v=5">
+<link rel="stylesheet" href="{% static 'admin/css/nutrizone-orderdesk.css' %}?v=6">
+{% endblock %}
+
+{% block breadcrumbs %}
+<ol class="breadcrumb">
+  <li class="breadcrumb-item"><a href="{% url 'admin:index' %}">{% translate "Home" %}</a></li>
+  <li class="breadcrumb-item"><a href="{% url 'admin:ordering_ordermodel_changelist' %}">{% translate "Buyurtmalar" %}</a></li>
+  <li class="breadcrumb-item active">{{ original.order_number }}</li>
+</ol>
+{% endblock %}
+
+{% block content_title %}{% endblock %}
+
+{% block content %}
+{% with d=desk o=desk.order %}
+{% url 'admin:ordering_ordermodel_act' o.pk as act_url %}
+<div class="nzp nzd" data-nzd-order>
+  <header class="nzp-hero">
+    <div class="nzp-hero-main">
+      <a class="nzp-back" href="{% url 'admin:ordering_ordermodel_changelist' %}{% if preserved_filters %}?{{ preserved_filters }}{% endif %}" title="{% translate 'Back to orders' %}" aria-label="{% translate 'Back to orders' %}"><i class="fas fa-arrow-left" aria-hidden="true"></i></a>
+      <div>
+        <h2 class="nzd-number">
+          {{ o.order_number }}
+          <button type="button" class="nzp-copy" data-nzd-copy="{{ o.order_number }}" title="{% translate 'Copy' %}" aria-label="{% translate 'Copy' %}"><i class="fas fa-copy" aria-hidden="true"></i></button>
+          <span class="nzd-pill" style="--t:{{ d.style.color }}"><i class="fas {{ d.style.icon }}" aria-hidden="true"></i> {{ d.style.label }}</span>
+          {% if o.is_archived %}<span class="nzd-pill" style="--t:#64748b"><i class="fas fa-box-archive" aria-hidden="true"></i> {% translate "Archived" %}</span>{% endif %}
+        </h2>
+        <p>
+          {% if o.placed_at %}<span><i class="fas fa-calendar" aria-hidden="true"></i> {{ o.placed_at|date:"d.m.Y H:i" }} · {% blocktranslate with timesince=o.placed_at|timesince %}{{ timesince }} ago{% endblocktranslate %}</span>{% endif %}
+          <span><i class="{{ d.channel.icon }}" aria-hidden="true"></i> {{ d.channel.label }}</span>
+          <span><i class="fas fa-cubes" aria-hidden="true"></i> {% blocktranslate count n=d.units %}{{ n }} item{% plural %}{{ n }} items{% endblocktranslate %}</span>
+        </p>
+      </div>
+    </div>
+    <div class="nzp-hero-actions">
+      <button type="button" class="nzp-btn nzp-btn-ghost" data-nzd-print><i class="fas fa-print" aria-hidden="true"></i> {% translate "Print" %}</button>
+      {% if has_change_permission %}
+        {% if o.is_archived %}
+          <form method="post" action="{{ act_url }}">{% csrf_token %}<input type="hidden" name="action" value="restore"><button class="nzp-btn nzp-btn-ghost"><i class="fas fa-box-open" aria-hidden="true"></i> {% translate "Restore" %}</button></form>
+        {% elif o.status in "delivered completed cancelled returned failed" %}
+          <form method="post" action="{{ act_url }}">{% csrf_token %}<input type="hidden" name="action" value="archive"><button class="nzp-btn nzp-btn-ghost"><i class="fas fa-box-archive" aria-hidden="true"></i> {% translate "Archive" %}</button></form>
+        {% endif %}
+      {% endif %}
+    </div>
+  </header>
+
+  {# ---------------- lifecycle ---------------- #}
+  <section class="nzp-card nzd-flow">
+    {% if o.status in "cancelled returned failed" %}
+      <div class="nzd-terminal" style="--t:{{ d.style.color }}">
+        <span class="nzd-terminal-icon"><i class="fas {{ d.style.icon }}" aria-hidden="true"></i></span>
+        <div>
+          <strong>{% if o.status == "cancelled" %}{% translate "This order was cancelled" %}{% elif o.status == "returned" %}{% translate "This order was returned" %}{% else %}{% translate "This order failed" %}{% endif %}</strong>
+          {% with last=d.history|last %}<small>{{ last.at|date:"d.m.Y H:i" }}{% if last.reason %} · {{ last.reason }}{% endif %}{% if last.actor %} · {{ last.actor }}{% endif %}</small>{% endwith %}
+        </div>
+      </div>
+    {% else %}
+      <ol class="nzd-steps">
+        {% for s in d.steps %}
+        <li class="is-{{ s.state }}" style="--t:{{ s.color }}">
+          <span class="nzd-step-dot"><i class="fas {% if s.state == 'done' %}fa-check{% else %}{{ s.icon }}{% endif %}" aria-hidden="true"></i></span>
+          <span class="nzd-step-label">{{ s.label }}</span>
+          <small>{% if s.at %}{{ s.at|date:"d.m H:i" }}{% else %}&nbsp;{% endif %}</small>
+        </li>
+        {% endfor %}
+      </ol>
+    {% endif %}
+
+    {% if has_change_permission and not o.is_archived %}{% if d.next or d.can_request_cancellation or d.can_return %}
+    <div class="nzd-next">
+      {% if d.next %}
+        {% if d.next.0 == "ship" %}
+          <form method="post" action="{{ act_url }}" class="nzd-ship" data-nzd-ship>{% csrf_token %}
+            <input type="hidden" name="action" value="ship">
+            <div class="nzd-ship-head">
+              <strong><i class="fas fa-warehouse" aria-hidden="true"></i> {% translate "Ship from" %}</strong>
+              <small>{% translate "Units are taken off this location's stock when the parcel leaves." %}</small>
+            </div>
+            {% if d.stock_options %}
+            <div class="nzd-locs" role="radiogroup" aria-label="{% translate 'Ship from' %}">
+              {% for loc in d.stock_options %}
+              <label class="nzd-loc{% if not loc.ok %} is-short{% endif %}">
+                <input type="radio" name="store_id" value="{{ loc.id }}"{% if loc.default %} checked{% endif %} data-ok="{% if loc.ok %}1{% else %}0{% endif %}">
+                <span class="nzd-loc-body">
+                  <span class="nzd-loc-name"><i class="fas {% if loc.is_warehouse %}fa-warehouse{% else %}fa-store{% endif %}" aria-hidden="true"></i> {{ loc.name }}{% if loc.reserved_here %} <em>{% translate "reserved here" %}</em>{% endif %}</span>
+                  {% if loc.ok %}<span class="nzd-loc-ok"><i class="fas fa-circle-check" aria-hidden="true"></i> {% translate "Everything in stock" %}</span>
+                  {% else %}<span class="nzd-loc-bad"><i class="fas fa-triangle-exclamation" aria-hidden="true"></i> {% blocktranslate count n=loc.missing|length %}{{ n }} item short{% plural %}{{ n }} items short{% endblocktranslate %}</span>
+                  <span class="nzd-loc-miss">{% for m in loc.missing %}{{ m.name|truncatechars:34 }} {{ m.have }}/{{ m.need }}{% if not forloop.last %}; {% endif %}{% endfor %}</span>{% endif %}
+                </span>
+              </label>
+              {% endfor %}
+            </div>
+            {% endif %}
+            <div class="nzd-next-row">
+              <button type="submit" class="nzp-btn nzp-btn-primary nzd-next-btn" data-nzd-ship-btn><i class="fas {{ d.next.2 }}" aria-hidden="true"></i> {{ d.next.1 }}</button>
+              <p class="nzd-ship-warn" data-nzd-ship-warn hidden><i class="fas fa-triangle-exclamation" aria-hidden="true"></i> {% translate "This location doesn't have every item -- receive stock or pick another location." %}</p>
+            </div>
+          </form>
+        {% else %}
+          <form method="post" action="{{ act_url }}" class="nzd-next-row">{% csrf_token %}
+            <input type="hidden" name="action" value="{{ d.next.0 }}">
+            <button type="submit" class="nzp-btn nzp-btn-primary nzd-next-btn"><i class="fas {{ d.next.2 }}" aria-hidden="true"></i> {{ d.next.1 }}</button>
+            <span class="nzd-next-hint">{% if d.next.0 == "confirm" %}{% translate "Stock is reserved at the warehouse on confirmation." %}{% elif d.next.0 == "start_processing" %}{% translate "The order goes to packing." %}{% elif d.next.0 == "deliver" %}{% translate "The customer receives coins once the order is delivered." %}{% endif %}</span>
+          </form>
+        {% endif %}
+      {% endif %}
+      <div class="nzd-next-side">
+        {% if d.can_cancel_now %}
+          <button type="button" class="nzp-btn nzp-btn-danger-ghost" data-nzd-open="cancel-dialog"><i class="fas fa-ban" aria-hidden="true"></i> {% translate "Cancel order" %}</button>
+        {% elif d.can_request_cancellation %}
+          <a class="nzp-btn nzp-btn-danger-ghost" href="{% url 'admin:ordering_ordercancellationmodel_add' %}?order={{ o.pk }}"><i class="fas fa-ban" aria-hidden="true"></i> {% translate "Cancel (parcel is on the way)" %}</a>
+        {% endif %}
+        {% if d.can_return %}
+          <a class="nzp-btn nzp-btn-ghost" href="{% url 'admin:ordering_orderreturnmodel_add' %}?order={{ o.pk }}"><i class="fas fa-rotate-left" aria-hidden="true"></i> {% translate "Open a return" %}</a>
+        {% endif %}
+      </div>
+    </div>
+    {% endif %}{% endif %}
+  </section>
+
+  <div class="nzd-grid">
+    <div class="nzd-main">
+      {# ---------------- items ---------------- #}
+      <section class="nzp-card nzd-items">
+        <header class="nzp-card-head"><span class="nzp-card-icon" style="--c:#6366f1"><i class="fas fa-basket-shopping" aria-hidden="true"></i></span><div><h3>{% translate "Items" %}</h3><p>{% blocktranslate count n=d.units %}{{ n }} item in this order{% plural %}{{ n }} items in this order{% endblocktranslate %}</p></div></header>
+        <ul class="nzd-lines">
+          {% for l in d.lines %}
+          <li class="nzd-line{% if not l.active %} is-off{% endif %}">
+            <span class="nzd-thumb">{% if l.image %}<img src="{{ l.image }}" alt="" loading="lazy">{% else %}<i class="fas fa-box" aria-hidden="true"></i>{% endif %}</span>
+            <div class="nzd-line-main">
+              <strong>{{ l.name }}</strong>
+              <small>{% if l.size %}{{ l.size }} · {% endif %}{% if l.sku %}SKU {{ l.sku }}{% endif %}</small>
+              <span class="nzd-line-tags">
+                {% if l.status == "cancelled" %}<span class="nzd-tag" style="--t:#e11d48">{% translate "Cancelled" %}</span>{% elif l.status == "returned" %}<span class="nzd-tag" style="--t:#f97316">{% translate "Returned" %}</span>{% endif %}
+                {% if l.active and l.returned %}<span class="nzd-tag" style="--t:#f97316">{% blocktranslate with n=l.returned %}{{ n }} in a return{% endblocktranslate %}</span>{% endif %}
+                {% if l.active and l.cancelled %}<span class="nzd-tag" style="--t:#e11d48">{% blocktranslate with n=l.cancelled %}{{ n }} in a cancellation{% endblocktranslate %}</span>{% endif %}
+              </span>
+            </div>
+            <div class="nzd-line-qty"><b>× {{ l.quantity }}</b><small>{{ l.unit }}{% if l.discount %} · <span class="nzd-minus">−{{ l.discount }}</span>{% endif %}</small></div>
+            <div class="nzd-line-total">{{ l.total }} <small>{% translate "so'm" %}</small></div>
+          </li>
+          {% endfor %}
+        </ul>
+        <dl class="nzd-totals nz-financial-summary">
+          <div><dt>{% translate "Subtotal" %}</dt><dd>{{ d.totals.subtotal }} {% translate "so'm" %}</dd></div>
+          {% if d.totals.coupon != "0" %}<div><dt>{% translate "Discount" %}</dt><dd class="nzd-minus">−{{ d.totals.coupon }} {% translate "so'm" %}</dd></div>{% endif %}
+          {% if d.totals.has_coins %}<div><dt><i class="fas fa-coins" aria-hidden="true"></i> {% translate "Paid with NutriZone Coins" %}</dt><dd class="nzd-coins">−{{ d.totals.coins }}</dd></div>{% endif %}
+          {% if d.totals.tax != "0" %}<div><dt>{% translate "Tax" %}</dt><dd>+{{ d.totals.tax }} {% translate "so'm" %}</dd></div>{% endif %}
+          <div class="nzd-total-row"><dt>{% translate "To pay in cash" %}</dt><dd>{{ d.totals.cash }} {% translate "so'm" %}</dd></div>
+        </dl>
+        {% if d.coins.earned %}
+        <p class="nzd-earned{% if d.coins.reversed %} is-reversed{% endif %}"><i class="fas fa-gift" aria-hidden="true"></i>
+          {% if d.coins.reversed %}{% blocktranslate with n=d.coins.earned %}{{ n }} coins cashback was taken back (order cancelled / returned).{% endblocktranslate %}
+          {% else %}{% blocktranslate with n=d.coins.earned %}The customer earned {{ n }} coins cashback for this order.{% endblocktranslate %}{% endif %}
+        </p>
+        {% endif %}
+      </section>
+
+      {# ---------------- returns & cancellations ---------------- #}
+      {% if d.returns or d.cancellations %}
+      <section class="nzp-card">
+        <header class="nzp-card-head"><span class="nzp-card-icon" style="--c:#f97316"><i class="fas fa-rotate-left" aria-hidden="true"></i></span><div><h3>{% translate "Returns and cancellations" %}</h3></div></header>
+        <ul class="nzd-related">
+          {% for r in d.returns %}
+          <li><a href="{% url 'admin:ordering_orderreturnmodel_change' r.obj.pk %}"><i class="fas fa-rotate-left" aria-hidden="true"></i><span><b>{{ r.obj.return_number }}</b><small>{{ r.obj.created_at|date:"d.m.Y" }}</small></span><span class="nzd-pill" style="--t:{{ r.style.color }}">{{ r.style.label }}</span></a></li>
+          {% endfor %}
+          {% for c in d.cancellations %}
+          <li><a href="{% url 'admin:ordering_ordercancellationmodel_change' c.obj.pk %}"><i class="fas fa-ban" aria-hidden="true"></i><span><b>{% translate "Cancellation" %}</b><small>{{ c.obj.created_at|date:"d.m.Y" }}</small></span><span class="nzd-pill" style="--t:{{ c.style.color }}">{{ c.style.label }}</span></a></li>
+          {% endfor %}
+        </ul>
+      </section>
+      {% endif %}
+
+      {# ---------------- history ---------------- #}
+      <section class="nzp-card">
+        <header class="nzp-card-head"><span class="nzp-card-icon" style="--c:#0ea5e9"><i class="fas fa-clock-rotate-left" aria-hidden="true"></i></span><div><h3>{% translate "History" %}</h3><p>{% translate "Every status change, who made it and when." %}</p></div></header>
+        {% if d.history %}
+        <ol class="nzd-timeline">
+          {% for h in d.history reversed %}
+          <li style="--t:{{ h.color }}">
+            <span class="nzd-tl-dot"><i class="fas {{ h.icon }}" aria-hidden="true"></i></span>
+            <div>
+              <strong><span class="nz-badge nz-badge-{% if h.key == 'delivered' or h.key == 'completed' %}success{% elif h.key == 'cancelled' or h.key == 'returned' or h.key == 'failed' %}danger{% else %}info{% endif %}">{{ h.label }}</span></strong>
+              <small>{{ h.at|date:"d.m.Y H:i" }}{% if h.actor %} · <i class="fas {% if h.is_customer %}fa-user{% else %}fa-user-tie{% endif %}" aria-hidden="true"></i> {{ h.actor }}{% endif %}</small>
+              {% if h.reason %}<p>{{ h.reason }}</p>{% endif %}
+            </div>
+          </li>
+          {% endfor %}
+        </ol>
+        {% else %}<p class="nzp-muted">{% translate "No status changes yet." %}</p>{% endif %}
+      </section>
+    </div>
+
+    <aside class="nzd-side">
+      {# ---------------- customer ---------------- #}
+      {% with c=d.customer %}
+      <section class="nzp-card">
+        <div class="nzd-person">
+          <span class="nzp-avatar nzp-avatar-lg" data-seed="{{ c.phone }}">{{ c.initials }}</span>
+          <div><strong>{{ c.name }}</strong>{% if c.phone %}<a href="tel:{{ c.phone }}">{{ c.phone }}</a>{% endif %}</div>
+        </div>
+        <div class="nzd-contact">
+          {% if c.phone %}<a class="nzp-btn nzp-btn-ghost nzp-btn-sm" href="tel:{{ c.phone }}"><i class="fas fa-phone" aria-hidden="true"></i> {% translate "Call" %}</a>{% endif %}
+          {% if c.telegram %}<a class="nzp-btn nzp-btn-ghost nzp-btn-sm" href="https://t.me/{{ c.telegram }}" target="_blank" rel="noopener"><i class="fab fa-telegram" aria-hidden="true"></i> Telegram</a>{% endif %}
+          {% if c.user_id %}<a class="nzp-btn nzp-btn-ghost nzp-btn-sm" href="{% url 'admin:identity_user_change' c.user_id %}"><i class="fas fa-id-card" aria-hidden="true"></i> {% translate "Profile" %}</a>{% endif %}
+        </div>
+        {% if c.user_id %}
+        <div class="nzd-mini-stats">
+          <div><b>{{ c.orders }}</b><small>{% translate "orders" %}</small></div>
+          <div><b>{{ c.delivered }}</b><small>{% translate "delivered" %}</small></div>
+          <div><b>{{ c.spent }}</b><small>{% translate "so'm spent" %}</small></div>
+        </div>
+        {% else %}<p class="nzp-muted">{% translate "Guest order -- no customer account." %}</p>{% endif %}
+      </section>
+      {% endwith %}
+
+      {# ---------------- delivery ---------------- #}
+      <section class="nzp-card">
+        {% with f=d.fulfilment %}
+        <header class="nzp-card-head nzp-card-head-sm"><span class="nzp-card-icon" style="--c:{% if f.pickup %}#ea580c{% else %}#10b981{% endif %}"><i class="fas {% if f.pickup %}fa-store{% else %}fa-location-dot{% endif %}" aria-hidden="true"></i></span>
+          <div><h3>{% if f.pickup %}Olib ketish{% else %}{% translate "Delivery" %}{% endif %}</h3><p>{% if f.store %}Mas'ul: <b>{{ f.store.name }}</b>{% else %}Asosiy ombor yig'adi{% endif %}</p></div></header>
+        {% endwith %}
+        <ul class="nzp-facts">
+          <li><span>{% translate "Recipient" %}</span><b>{{ o.shipping_recipient_name }}</b></li>
+          {% if o.shipping_phone %}<li><span>{% translate "Phone" %}</span><b><a href="tel:{{ o.shipping_phone }}">{{ o.shipping_phone }}</a></b></li>{% endif %}
+          <li><span>{% translate "City" %}</span><b>{{ o.shipping_city }}{% if o.shipping_region %}, {{ o.shipping_region }}{% endif %}</b></li>
+          <li><span>{% translate "Address" %}</span><b>{{ o.shipping_line1 }}{% if o.shipping_line2 %}, {{ o.shipping_line2 }}{% endif %}</b></li>
+        </ul>
+        {% if d.map %}
+        <div class="nzd-map">
+          <iframe title="{% translate 'Delivery location' %}" loading="lazy" src="https://www.openstreetmap.org/export/embed.html?bbox={{ d.map.bbox }}&amp;layer=mapnik&amp;marker={{ d.map.lat }},{{ d.map.lng }}"></iframe>
+        </div>
+        <div class="nzd-contact">
+          {{ d.fulfilment.links }}
+          <button type="button" class="nzp-btn nzp-btn-ghost nzp-btn-sm" data-nzd-copy="{{ o.order_number }} · {{ o.shipping_recipient_name }}{% if o.shipping_phone %} {{ o.shipping_phone }}{% endif %}&#10;{{ o.shipping_city }}, {{ o.shipping_line1 }}{% if o.shipping_line2 %} · {{ o.shipping_line2 }}{% endif %}&#10;https://yandex.uz/maps/?rtext=~{{ d.map.lat }},{{ d.map.lng }}&amp;rtt=auto"><i class="fas fa-copy" aria-hidden="true"></i> {% translate "Copy for courier" %}</button>
+        </div>
+        {% else %}<p class="nzp-muted"><i class="fas fa-map-pin" aria-hidden="true"></i> {% translate "The customer didn't share a map location." %}</p>{% endif %}
+        {% with f=d.fulfilment %}{% if f.can_assign and f.options and has_change_permission %}
+        <form method="post" action="act/" class="nzd-assign">{% csrf_token %}
+          <input type="hidden" name="action" value="assign_store">
+          <label for="nzd-assign-store"><i class="fas fa-store" aria-hidden="true"></i> Do'konga biriktirish</label>
+          <select id="nzd-assign-store" name="assign_store_id">
+            <option value="">Asosiy ombor (onlayn kassa)</option>
+            {% for b in f.options %}<option value="{{ b.id }}"{% if f.store and f.store.id|stringformat:"s" == b.id %} selected{% endif %}>{{ b.name }}{% if b.distance_km is not None %} · {{ b.distance_km }} km{% endif %} · {% if b.has_all %}hammasi bor{% else %}{{ b.missing_units }} dona yetishmaydi{% endif %}{% if not b.is_open_now %} · yopiq{% endif %}</option>{% endfor %}
+          </select>
+          <button type="submit" class="nzp-btn nzp-btn-primary nzp-btn-sm"><i class="fas fa-check" aria-hidden="true"></i> Biriktirish</button>
+          <small>Do'kon egasiga bildirishnoma boradi; u buyurtmani o'z panelidan qabul qiladi, yig'adi va jo'natadi (zaxira shu do'kondan).</small>
+        </form>
+        {% endif %}{% endwith %}
+      </section>
+
+      {# ---------------- online payment (Dashboard → To'lovlar) ---------------- #}
+      <section class="nzp-card">
+        <header class="nzp-card-head nzp-card-head-sm"><span class="nzp-card-icon" style="--c:#10b981"><i class="fas fa-credit-card" aria-hidden="true"></i></span><div><h3>{% translate "To'lov" %}</h3><p>{% if nz_payments %}{% translate "Onlayn to'lov urinishlari" %}{% else %}{% translate "Naqd — yetkazib berishda to'lanadi" %}{% endif %}</p></div></header>
+        {% for p in nz_payments %}
+        <a href="{{ p.url }}" style="display:flex;align-items:center;gap:10px;padding:8px 0;border-top:1px dashed var(--nz-border);color:inherit;text-decoration:none">
+          <img src="{{ p.logo }}" alt="" style="width:40px;height:27px;border-radius:6px">
+          <span style="flex:1;min-width:0"><b>{{ p.name }}</b>{% if p.test %} <small style="color:#f59e0b">· test</small>{% endif %}<br><small style="color:var(--nz-text-muted)">{{ p.when|date:"d.m.Y H:i" }}</small></span>
+          <b>{{ p.amount }}</b>
+          <span class="nzd-pill" style="--t:{{ p.color }}"><i class="fas {{ p.icon }}" aria-hidden="true"></i> {{ p.label }}</span>
+        </a>
+        {% endfor %}
+      </section>
+
+      {# ---------------- notes ---------------- #}
+      <section class="nzp-card">
+        <header class="nzp-card-head nzp-card-head-sm"><span class="nzp-card-icon" style="--c:#f59e0b"><i class="fas fa-note-sticky" aria-hidden="true"></i></span><div><h3>{% translate "Notes" %}</h3></div></header>
+        {% if o.customer_comment %}
+        <div class="nzd-quote"><small>{% translate "From the customer" %}</small><p>{{ o.customer_comment|linebreaksbr }}</p></div>
+        {% endif %}
+        {% if has_change_permission %}
+        <form method="post" action="{% url 'admin:ordering_ordermodel_note' o.pk %}" class="nzd-note-form">{% csrf_token %}
+          <label for="nzd-note">{% translate "Internal note (staff only)" %}</label>
+          <textarea id="nzd-note" name="note" rows="3" placeholder="{% translate 'e.g. call before delivery, gate code…' %}">{{ o.note|default:"" }}</textarea>
+          <button type="submit" class="nzp-btn nzp-btn-ghost nzp-btn-sm"><i class="fas fa-floppy-disk" aria-hidden="true"></i> {% translate "Save note" %}</button>
+        </form>
+        {% elif o.note %}<div class="nzd-quote"><p>{{ o.note|linebreaksbr }}</p></div>{% endif %}
+      </section>
+    </aside>
+  </div>
+
+  {# ---------------- cancel dialog ---------------- #}
+  {% if d.can_cancel_now and has_change_permission %}
+  <dialog class="nzd-dialog" id="cancel-dialog" aria-labelledby="cancel-title">
+    <form method="post" action="{{ act_url }}">{% csrf_token %}
+      <input type="hidden" name="action" value="cancel">
+      <header><span class="nzd-dialog-icon"><i class="fas fa-ban" aria-hidden="true"></i></span><div><h3 id="cancel-title">{% blocktranslate with number=o.order_number %}Cancel order {{ number }}?{% endblocktranslate %}</h3><p>{% translate "Reserved stock is released and coins paid with are returned to the customer." %}</p></div></header>
+      <fieldset class="nzd-reasons">
+        <legend>{% translate "Reason" %}</legend>
+        {% for value, label in d.cancel_reasons %}
+        <label><input type="radio" name="reason" value="{{ value }}"{% if forloop.first %} checked{% endif %}><span>{{ label }}</span></label>
+        {% endfor %}
+      </fieldset>
+      <label class="nzd-field-label" for="cancel-note">{% translate "Comment (optional)" %}</label>
+      <textarea id="cancel-note" name="note" rows="2"></textarea>
+      <footer>
+        <button type="button" class="nzp-btn nzp-btn-ghost" data-nzd-close>{% translate "Keep the order" %}</button>
+        <button type="submit" class="nzp-btn nzd-btn-danger"><i class="fas fa-ban" aria-hidden="true"></i> {% translate "Cancel order" %}</button>
+      </footer>
+    </form>
+  </dialog>
+  {% endif %}
+
+  <div class="nzp-toast" data-nzp-toast role="status" aria-live="polite" hidden></div>
+</div>
+{% endwith %}
+{% endblock %}
+
+{% block extrajs %}
+{{ block.super }}
+<script src="{% static 'admin/js/nutrizone-orderdesk.js' %}?v=1"></script>
+{% endblock %}

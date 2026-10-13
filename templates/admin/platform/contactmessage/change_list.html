@@ -1,0 +1,100 @@
+{% extends "admin/change_list.html" %}
+{% load i18n static admin_list admin_urls %}
+{# Contact messages as an inbox: status tabs with counts, search, sender rows with a message snippet, bulk triage via Django's own changelist actions. #}
+
+{% block extrastyle %}
+{{ block.super }}
+<link rel="stylesheet" href="{% static 'admin/css/nutrizone-platform.css' %}?v=5">
+{% endblock %}
+
+{% block content_title %}{% endblock %}
+
+{% block content %}
+<div class="nzp" data-nzp-inbox>
+  <header class="nzp-hero">
+    <div class="nzp-hero-main">
+      <span class="nzp-hero-icon" style="--c:#0ea5e9"><i class="fas fa-inbox" aria-hidden="true"></i></span>
+      <div>
+        <h2>{% translate "Contact Messages" %}</h2>
+        <p>{% translate "Messages customers send from the storefront Contact page." %}</p>
+      </div>
+    </div>
+  </header>
+
+  <div class="nzp-toolbar">
+    <nav class="nzp-tabs" aria-label="{% translate 'Status' %}">
+      {% for t in nz_inbox_tabs %}
+      <a href="?{% if t.key %}status__exact={{ t.key }}{% endif %}{% if nz_inbox_query %}{% if t.key %}&{% endif %}q={{ nz_inbox_query|urlencode }}{% endif %}" class="nzp-tab{% if t.on %} on{% endif %}" style="--t:{{ t.color }}">
+        <i class="fas {{ t.icon }}" aria-hidden="true"></i> {{ t.label }} <b>{{ t.n }}</b>
+      </a>
+      {% endfor %}
+    </nav>
+    <form class="nzp-search" method="get">
+      {% if nz_inbox_status %}<input type="hidden" name="status__exact" value="{{ nz_inbox_status }}">{% endif %}
+      <i class="fas fa-magnifying-glass" aria-hidden="true"></i>
+      <input type="search" name="q" value="{{ cl.query }}" placeholder="{% translate 'Search name, email or text…' %}" aria-label="{% translate 'Search name, email or text…' %}">
+    </form>
+  </div>
+
+  <form method="post" class="nzp-bulk-form" data-nzp-bulk novalidate>{% csrf_token %}
+    <input type="hidden" name="index" value="0">
+    <input type="hidden" name="select_across" value="0">
+
+    <section class="nzp-card nzp-inbox">
+      {% if cl.result_list %}
+      <div class="nzp-inbox-head">
+        {% if action_form %}<label class="nzp-check"><input type="checkbox" data-nzp-select-all aria-label="{% translate 'Select all' %}"> <span data-nzp-selected-label>{% blocktranslate count n=cl.result_count %}{{ n }} message{% plural %}{{ n }} messages{% endblocktranslate %}</span></label>{% endif %}
+        {% if action_form %}
+        <div class="nzp-inbox-bulk" data-nzp-bulkbar hidden>
+          <select name="action" class="nzp-select" aria-label="{% translate 'Action' %}">
+            {% for value, label in action_form.fields.action.choices %}<option value="{{ value }}">{{ label }}</option>{% endfor %}
+          </select>
+          <button type="submit" class="nzp-btn nzp-btn-primary nzp-btn-sm" data-nzp-bulk-go disabled>{% translate "Apply" %}</button>
+        </div>
+        {% endif %}
+      </div>
+      <ul class="nzp-mail-list">
+        {% for m in cl.result_list %}
+        {% url 'admin:platform_contactmessage_change' m.pk|admin_urlquote as change_url %}
+        <li class="nzp-mail is-{{ m.status }}" style="--i: {{ forloop.counter0 }}">
+          {% if action_form %}<label class="nzp-mail-check"><input type="checkbox" name="_selected_action" value="{{ m.pk }}" data-nzp-row-check aria-label="{% translate 'Select' %}: {{ m.name }}"></label>{% endif %}
+          <a class="nzp-mail-link" href="{% add_preserved_filters change_url %}">
+            <span class="nzp-avatar" data-seed="{{ m.email }}">{{ m.nz_initials }}</span>
+            <span class="nzp-mail-main">
+              <span class="nzp-mail-top">
+                <strong class="nzp-mail-name">{{ m.name }}</strong>
+                <span class="nzp-mail-email">{{ m.email }}</span>
+                <time datetime="{{ m.created_at|date:'c' }}" title="{{ m.created_at|date:'d.m.Y H:i' }}">{% blocktranslate with timesince=m.created_at|timesince %}{{ timesince }} ago{% endblocktranslate %}</time>
+              </span>
+              <span class="nzp-mail-subject">{% if m.subject %}{{ m.subject }}{% else %}<em>{% translate "No subject" %}</em>{% endif %}</span>
+              <span class="nzp-mail-snippet">{{ m.message|truncatechars:160 }}</span>
+            </span>
+            <span class="nzp-status s-{{ m.status }}">{{ m.get_status_display }}</span>
+          </a>
+        </li>
+        {% endfor %}
+      </ul>
+      {% else %}
+      <div class="nzp-empty">
+        <span class="nzp-empty-icon" style="--c:#0ea5e9"><i class="fas fa-envelope-open-text" aria-hidden="true"></i></span>
+        {% if cl.query or nz_inbox_status %}
+          <h3>{% translate "Nothing found" %}</h3>
+          <p>{% translate "Try a different search or filter." %}</p>
+          <a class="nzp-btn nzp-btn-ghost" href="?">{% translate "Clear filters" %}</a>
+        {% else %}
+          <h3>{% translate "Inbox is empty" %}</h3>
+          <p>{% translate "New messages from the Contact page will appear here." %}</p>
+        {% endif %}
+      </div>
+      {% endif %}
+    </section>
+  </form>
+
+  {% if cl.result_count > cl.list_per_page %}<div class="nzp-pagination">{% pagination cl %}</div>{% endif %}
+</div>
+{% endblock %}
+
+{% block extrajs %}
+{{ block.super }}
+<script src="{% static 'admin/js/nutrizone-platform.js' %}?v=5"></script>
+{% endblock %}

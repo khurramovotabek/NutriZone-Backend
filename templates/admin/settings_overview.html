@@ -1,0 +1,364 @@
+{% extends "admin/base_site.html" %}
+{% load i18n static %}
+
+{% block extrastyle %}
+{{ block.super }}
+<link rel="stylesheet" href="{% static 'admin/css/nutrizone-settings.css' %}?v=2026.10.05.3">
+{% endblock %}
+
+{% block breadcrumbs %}
+<div class="breadcrumbs">
+  <a href="{% url 'admin:index' %}">{% translate "Home" %}</a>
+  &rsaquo; {{ title }}
+</div>
+{% endblock %}
+
+{% block content %}
+<div class="nz-dashboard nz-st" data-nz-settings-overview>
+  <div class="nz-st-hero">
+    <div class="nz-st-hero-brand">
+      <img class="nz-st-hero-logo" data-nz-logo-preview src="{% if site_settings.logo %}{{ site_settings.logo.url }}{% else %}{% static 'admin/img/nutrizone-logo.svg' %}{% endif %}" alt="">
+      <div>
+        <h2 class="nz-dashboard-title">{% translate "Site Settings" %}</h2>
+        <p class="nz-dashboard-subtitle">{% translate "Brand, colors and contact details for the dashboard and the storefront -- in one place." %}</p>
+        {% if site_settings.updated_at %}<p class="nz-st-updated"><i class="fas fa-clock-rotate-left" aria-hidden="true"></i> {% blocktranslate with date=site_settings.updated_at|date:"d.m.Y H:i" %}Last saved {{ date }}{% endblocktranslate %}</p>{% endif %}
+      </div>
+    </div>
+    {% if nz_frontend_url %}<a class="nz-st-hero-link" href="{{ nz_frontend_url }}/" target="_blank" rel="noopener"><i class="fas fa-arrow-up-right-from-square" aria-hidden="true"></i> {% translate "Open storefront" %}</a>{% endif %}
+  </div>
+
+  <nav class="nz-st-nav" aria-label="{% translate 'Sections' %}" data-nz-st-nav>
+    <a href="#st-brand" class="is-active"><i class="fas fa-swatchbook" aria-hidden="true"></i> {% translate "Brand" %}</a>
+    <a href="#st-general"><i class="fas fa-sliders" aria-hidden="true"></i> {% translate "General" %}</a>
+    <a href="#st-contact"><i class="fas fa-headset" aria-hidden="true"></i> {% translate "Contact" %}</a>
+    <a href="#st-social"><i class="fas fa-share-nodes" aria-hidden="true"></i> {% translate "Social networks" %}</a>
+    <a href="#st-storefront"><i class="fas fa-store" aria-hidden="true"></i> {% translate "Storefront preview" %}</a>
+    <a href="#st-integrations"><i class="fas fa-plug" aria-hidden="true"></i> {% translate "Integrations" %}</a>
+  </nav>
+
+  {% if messages %}
+    {% for message in messages %}
+      <div class="nz-st-alert{% if message.tags %} nz-st-alert-{{ message.tags }}{% endif %}">
+        <i class="fas {% if message.tags == 'error' %}fa-circle-exclamation{% else %}fa-circle-check{% endif %}" aria-hidden="true"></i>
+        <span>{{ message }}</span>
+      </div>
+    {% endfor %}
+  {% endif %}
+
+  <form method="post" enctype="multipart/form-data" class="nz-st-form" novalidate>
+    {% csrf_token %}
+
+    <div class="nz-st-grid">
+      {# --- Brand --- #}
+      <section class="nz-card nz-st-card nz-st-card-wide" id="st-brand">
+        <header class="nz-st-card-head">
+          <span class="nz-st-icon"><i class="fas fa-swatchbook" aria-hidden="true"></i></span>
+          <div>
+            <h3>{% translate "Brand" %}</h3>
+            <p>{% translate "Logo and favicon are shown in the dashboard sidebar, on the login page and in the browser tab." %}</p>
+          </div>
+        </header>
+
+        <div class="nz-st-uploads">
+          <div class="nz-st-upload{% if form.logo.errors %} has-error{% endif %}">
+            <span class="nz-st-label">{% translate "Logo" %}</span>
+            <label class="nz-st-drop" for="{{ form.logo.id_for_label }}" data-nz-drop>
+              <img data-nz-logo-preview src="{% if site_settings.logo %}{{ site_settings.logo.url }}{% else %}{% static 'admin/img/nutrizone-logo.svg' %}{% endif %}" alt="">
+              <span class="nz-st-drop-text">
+                <strong>{% translate "Upload logo" %}</strong>
+                <small>{% translate "PNG, JPG or WebP · square · up to 2 MB" %}</small>
+              </span>
+            </label>
+            <input type="file" name="logo" id="{{ form.logo.id_for_label }}" accept="image/png,image/jpeg,image/webp" class="nz-st-file" data-nz-preview-target="logo">
+            {% if site_settings.logo %}
+              <label class="nz-st-check"><input type="checkbox" name="logo-clear" id="logo-clear_id"> {% translate "Remove logo" %}</label>
+            {% endif %}
+            {% for e in form.logo.errors %}<p class="nz-st-error">{{ e }}</p>{% endfor %}
+          </div>
+
+          <div class="nz-st-upload{% if form.favicon.errors %} has-error{% endif %}">
+            <span class="nz-st-label">{% translate "Favicon" %}</span>
+            <label class="nz-st-drop nz-st-drop-sm" for="{{ form.favicon.id_for_label }}" data-nz-drop>
+              <img data-nz-favicon-preview src="{% if site_settings.favicon %}{{ site_settings.favicon.url }}{% elif site_settings.logo %}{{ site_settings.logo.url }}{% else %}{% static 'admin/img/nutrizone-logo.svg' %}{% endif %}" alt="">
+              <span class="nz-st-drop-text">
+                <strong>{% translate "Upload favicon" %}</strong>
+                <small>{% translate "32×32 or 64×64 · optional, the logo is used otherwise" %}</small>
+              </span>
+            </label>
+            <input type="file" name="favicon" id="{{ form.favicon.id_for_label }}" accept="image/png,image/jpeg,image/webp,image/x-icon" class="nz-st-file" data-nz-preview-target="favicon">
+            {% if site_settings.favicon %}
+              <label class="nz-st-check"><input type="checkbox" name="favicon-clear" id="favicon-clear_id"> {% translate "Remove favicon" %}</label>
+            {% endif %}
+            {% for e in form.favicon.errors %}<p class="nz-st-error">{{ e }}</p>{% endfor %}
+          </div>
+        </div>
+
+        <div class="nz-st-colors">
+          {% for field in form %}{% if field.name == "primary_color" or field.name == "secondary_color" or field.name == "accent_color" %}
+          <div class="nz-st-field{% if field.errors %} has-error{% endif %}">
+            <label for="{{ field.id_for_label }}">
+              {% if field.name == "primary_color" %}{% translate "Primary color" %}{% elif field.name == "secondary_color" %}{% translate "Secondary color" %}{% else %}{% translate "Accent color" %}{% endif %}
+            </label>
+            <div class="nz-st-color">
+              <input type="color" class="nz-st-swatch" data-nz-color-for="{{ field.id_for_label }}" value="{{ field.value|default:'#1d4ed8' }}" aria-label="{% translate 'Pick a color' %}">
+              {{ field }}
+            </div>
+            {% for e in field.errors %}<p class="nz-st-error">{{ e }}</p>{% endfor %}
+          </div>
+          {% endif %}{% endfor %}
+        </div>
+
+        <div class="nz-st-presets" role="group" aria-label="{% translate 'Ready-made colors' %}">
+          <span class="nz-st-label">{% translate "Ready-made colors" %}</span>
+          <div class="nz-st-preset-row">
+            {% for c in color_presets %}
+              <button type="button" class="nz-st-preset" style="--c: {{ c }}" data-nz-preset="{{ c }}" title="{{ c }}"></button>
+            {% endfor %}
+          </div>
+        </div>
+
+        <div class="nz-st-preview" data-nz-brand-preview>
+          <span class="nz-st-label">{% translate "Preview" %}</span>
+          <div class="nz-st-preview-box">
+            <div class="nz-st-preview-side">
+              <div class="nz-st-preview-brand"><img data-nz-logo-preview src="{% if site_settings.logo %}{{ site_settings.logo.url }}{% else %}{% static 'admin/img/nutrizone-logo.svg' %}{% endif %}" alt=""><span data-nz-name-preview>{{ site_settings.site_name|default:"NutriZone" }}</span></div>
+              <div class="nz-st-preview-nav is-active"><i class="fas fa-gauge-high" aria-hidden="true"></i> {% translate "Dashboard" %}</div>
+              <div class="nz-st-preview-nav"><i class="fas fa-receipt" aria-hidden="true"></i> {% translate "Orders" %}</div>
+              <div class="nz-st-preview-nav"><i class="fas fa-warehouse" aria-hidden="true"></i> {% translate "Inventory" %}</div>
+            </div>
+            <div class="nz-st-preview-main">
+              <div class="nz-st-preview-line"></div>
+              <div class="nz-st-preview-line short"></div>
+              <div class="nz-st-preview-actions">
+                <span class="nz-st-preview-btn">{% translate "Save" %}</span>
+                <span class="nz-st-preview-chip">{% translate "New" %}</span>
+                <span class="nz-st-preview-link">{% translate "View all" %} →</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {# --- General --- #}
+      <section class="nz-card nz-st-card" id="st-general">
+        <header class="nz-st-card-head">
+          <span class="nz-st-icon"><i class="fas fa-sliders" aria-hidden="true"></i></span>
+          <div>
+            <h3>{% translate "General" %}</h3>
+            <p>{% translate "Name shown across the dashboard and the default language." %}</p>
+          </div>
+        </header>
+        {% include "admin/nz_settings_field.html" with field=form.site_name label=_("Site name") %}
+        {% include "admin/nz_settings_field.html" with field=form.short_name label=_("Short name") %}
+        {% include "admin/nz_settings_field.html" with field=form.default_language label=_("Default language") %}
+      </section>
+
+      {# --- Contact --- #}
+      <section class="nz-card nz-st-card" id="st-contact">
+        <header class="nz-st-card-head">
+          <span class="nz-st-icon"><i class="fas fa-headset" aria-hidden="true"></i></span>
+          <div>
+            <h3>{% translate "Contact" %}</h3>
+            <p>{% translate "Shown on the storefront Contact page, footer and in the Telegram bot." %}</p>
+          </div>
+        </header>
+        <div class="nz-st-two">
+          {% include "admin/nz_settings_field.html" with field=form.support_phone label=_("Support phone") icon="fa-phone" %}
+          {% include "admin/nz_settings_field.html" with field=form.support_email label=_("Support email") icon="fa-envelope" %}
+        </div>
+        {% include "admin/nz_settings_field.html" with field=form.address label=_("Address") icon="fa-location-dot" %}
+        {% include "admin/nz_settings_field.html" with field=form.working_hours label=_("Working hours") icon="fa-clock" %}
+      </section>
+
+      {# --- Social --- #}
+      <section class="nz-card nz-st-card" id="st-social">
+        <header class="nz-st-card-head">
+          <span class="nz-st-icon"><i class="fas fa-share-nodes" aria-hidden="true"></i></span>
+          <div>
+            <h3>{% translate "Social networks" %}</h3>
+            <p>{% translate "Links customers use to reach the store." %}</p>
+          </div>
+        </header>
+        {% include "admin/nz_settings_field.html" with field=form.telegram_username label=_("Telegram username") icon="fa-at" %}
+        {% include "admin/nz_settings_field.html" with field=form.telegram_channel_url label=_("Telegram channel") icon="fa-paper-plane" %}
+        {% include "admin/nz_settings_field.html" with field=form.instagram_url label=_("Instagram") icon="fa-camera" %}
+      </section>
+
+      {# --- Storefront contact preview (live) --- #}
+      <section class="nz-card nz-st-card" id="st-storefront">
+        <header class="nz-st-card-head">
+          <span class="nz-st-icon"><i class="fas fa-store" aria-hidden="true"></i></span>
+          <div>
+            <h3>{% translate "Storefront preview" %}</h3>
+            <p>{% translate "How the contact block looks to customers. Updates as you type." %}</p>
+          </div>
+        </header>
+        <div class="nz-st-shop">
+          <div class="nz-st-shop-brand">
+            <img data-nz-logo-preview src="{% if site_settings.logo %}{{ site_settings.logo.url }}{% else %}{% static 'admin/img/nutrizone-logo.svg' %}{% endif %}" alt="">
+            <strong data-nz-live="site_name" data-fallback="NutriZone">{{ site_settings.site_name|default:"NutriZone" }}</strong>
+          </div>
+          <ul class="nz-st-shop-list">
+            <li data-nz-live-row="support_phone"><i class="fas fa-phone" aria-hidden="true"></i><span data-nz-live="support_phone">{{ site_settings.support_phone }}</span></li>
+            <li data-nz-live-row="support_email"><i class="fas fa-envelope" aria-hidden="true"></i><span data-nz-live="support_email">{{ site_settings.support_email }}</span></li>
+            <li data-nz-live-row="address"><i class="fas fa-location-dot" aria-hidden="true"></i><span data-nz-live="address">{{ site_settings.address }}</span></li>
+            <li data-nz-live-row="working_hours"><i class="fas fa-clock" aria-hidden="true"></i><span data-nz-live="working_hours">{{ site_settings.working_hours }}</span></li>
+          </ul>
+          <div class="nz-st-shop-social">
+            <span data-nz-live-row="telegram_username"><i class="fab fa-telegram" aria-hidden="true"></i> <span class="nz-st-shop-handle" data-nz-live="telegram_username">{{ site_settings.telegram_username }}</span></span>
+            <span data-nz-live-row="telegram_channel_url"><i class="fas fa-paper-plane" aria-hidden="true"></i> {% translate "Channel" %}</span>
+            <span data-nz-live-row="instagram_url"><i class="fab fa-instagram" aria-hidden="true"></i> Instagram</span>
+          </div>
+          <p class="nz-st-shop-empty" data-nz-live-empty hidden>{% translate "No contact details yet -- fill in the Contact card." %}</p>
+        </div>
+      </section>
+
+      {# --- Integrations (read-only) --- #}
+      <section class="nz-card nz-st-card" id="st-integrations">
+        <header class="nz-st-card-head">
+          <span class="nz-st-icon"><i class="fas fa-plug" aria-hidden="true"></i></span>
+          <div>
+            <h3>{% translate "Integrations" %}</h3>
+            <p>{% translate "Configured on the server; shown here as status only." %}</p>
+          </div>
+        </header>
+        {% if integration_status.ok %}
+          {% with i=integration_status.data %}
+          <ul class="nz-st-status">
+            <li><span>{% translate "Telegram bot token" %}</span>{% if i.telegram_bot_token_configured %}<b class="ok">{% translate "Configured" %}</b>{% else %}<b class="bad">{% translate "Not configured" %}</b>{% endif %}</li>
+            <li><span>{% translate "Telegram bot username" %}</span>{% if i.telegram_bot_username_configured %}<b class="ok">{% translate "Configured" %}</b>{% else %}<b class="bad">{% translate "Not configured" %}</b>{% endif %}</li>
+            <li><span>{% translate "Telegram webhook secret" %}</span>{% if i.telegram_webhook_secret_configured %}<b class="ok">{% translate "Configured" %}</b>{% else %}<b class="warn">{% translate "Not configured" %}</b>{% endif %}</li>
+            <li><span>{% translate "SMS login" %}</span>{% if i.sms_login_enabled %}<b class="ok">{% translate "Enabled" %}</b>{% else %}<b class="off">{% translate "Disabled" %}</b>{% endif %}</li>
+          </ul>
+          {% endwith %}
+        {% else %}
+          <p class="nz-error-state">&#9888; {% translate "Unable to load integration status" %}</p>
+        {% endif %}
+      </section>
+    </div>
+
+    <div class="nz-st-savebar">
+      <span class="nz-st-savebar-hint" data-nz-dirty-hint hidden><i class="fas fa-circle" aria-hidden="true"></i> {% translate "You have unsaved changes" %}</span>
+      <button type="button" class="nz-st-discard" data-nz-discard hidden><i class="fas fa-rotate-left" aria-hidden="true"></i> {% translate "Discard changes" %}</button>
+      <button type="submit" class="nz-st-save"><i class="fas fa-check" aria-hidden="true"></i> {% translate "Save settings" %}</button>
+    </div>
+  </form>
+</div>
+
+<script>
+(function () {
+  "use strict";
+  var root = document.querySelector("[data-nz-settings-overview]");
+  if (!root) return;
+  var form = root.querySelector("form");
+  var hint = root.querySelector("[data-nz-dirty-hint]");
+  var HEX = /^#[0-9a-fA-F]{6}$/;
+  var discard = root.querySelector("[data-nz-discard]");
+  var isDirty = false, leaving = false;
+  function dirty() { isDirty = true; if (hint) hint.hidden = false; if (discard) discard.hidden = false; }
+  form.addEventListener("input", dirty);
+  form.addEventListener("change", dirty);
+  form.addEventListener("submit", function () { leaving = true; });
+  window.addEventListener("beforeunload", function (e) { if (isDirty && !leaving) { e.preventDefault(); e.returnValue = ""; } });
+  if (discard) discard.addEventListener("click", function () { leaving = true; window.location.reload(); });
+  // Ctrl/Cmd+S saves.
+  document.addEventListener("keydown", function (e) {
+    if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "s") { e.preventDefault(); leaving = true; form.requestSubmit ? form.requestSubmit() : form.submit(); }
+  });
+
+  // Live storefront contact preview.
+  var empty = root.querySelector("[data-nz-live-empty]");
+  function syncLive() {
+    var any = false;
+    root.querySelectorAll("[data-nz-live-row]").forEach(function (row) {
+      var input = form.querySelector("[name=" + row.getAttribute("data-nz-live-row") + "]");
+      var v = input ? input.value.trim().replace(/^@/, "") : "";
+      row.hidden = !v;
+      if (v) any = true;
+    });
+    root.querySelectorAll("[data-nz-live]").forEach(function (el) {
+      var input = form.querySelector("[name=" + el.getAttribute("data-nz-live") + "]");
+      if (input) el.textContent = input.value.trim().replace(/^@/, "") || el.getAttribute("data-fallback") || "";
+    });
+    if (empty) empty.hidden = any;
+  }
+  form.addEventListener("input", syncLive);
+  syncLive();
+
+  // Section nav: highlight the section in view.
+  var navLinks = Array.prototype.slice.call(root.querySelectorAll("[data-nz-st-nav] a"));
+  if ("IntersectionObserver" in window && navLinks.length) {
+    var io = new IntersectionObserver(function (entries) {
+      entries.forEach(function (en) {
+        if (!en.isIntersecting) return;
+        navLinks.forEach(function (a) { a.classList.toggle("is-active", a.getAttribute("href") === "#" + en.target.id); });
+      });
+    }, { rootMargin: "-20% 0px -65% 0px" });
+    navLinks.forEach(function (a) { var s = document.querySelector(a.getAttribute("href")); if (s) io.observe(s); });
+  }
+  navLinks.forEach(function (a) {
+    a.addEventListener("click", function (e) {
+      var s = document.querySelector(a.getAttribute("href"));
+      if (!s) return;
+      e.preventDefault();
+      s.scrollIntoView({ behavior: "smooth", block: "start" });
+      navLinks.forEach(function (x) { x.classList.toggle("is-active", x === a); });
+    });
+  });
+
+  function applyPrimary(value) {
+    if (!HEX.test(value)) return;
+    root.style.setProperty("--nz-primary", value);
+    root.style.setProperty("--nz-primary-hover", "color-mix(in srgb, " + value + " 80%, #000)");
+  }
+
+  // colour swatch <-> hex text stay in sync; the primary colour previews live
+  root.querySelectorAll("[data-nz-color-for]").forEach(function (swatch) {
+    var input = document.getElementById(swatch.getAttribute("data-nz-color-for"));
+    if (!input) return;
+    var isPrimary = input.name === "primary_color";
+    swatch.addEventListener("input", function () { input.value = swatch.value; if (isPrimary) applyPrimary(swatch.value); dirty(); });
+    input.addEventListener("input", function () {
+      var v = input.value.trim();
+      if (v && v.charAt(0) !== "#") v = "#" + v;
+      if (HEX.test(v)) { swatch.value = v.toLowerCase(); if (isPrimary) applyPrimary(v); }
+    });
+    if (isPrimary && HEX.test(input.value)) applyPrimary(input.value);
+  });
+
+  root.querySelectorAll("[data-nz-preset]").forEach(function (btn) {
+    btn.addEventListener("click", function () {
+      var c = btn.getAttribute("data-nz-preset");
+      var input = form.querySelector("[name=primary_color]");
+      var swatch = root.querySelector('[data-nz-color-for="' + input.id + '"]');
+      input.value = c; if (swatch) swatch.value = c;
+      applyPrimary(c); dirty();
+    });
+  });
+
+  // instant logo / favicon preview before saving
+  root.querySelectorAll("[data-nz-preview-target]").forEach(function (file) {
+    file.addEventListener("change", function () {
+      var f = file.files && file.files[0];
+      if (!f) return;
+      var url = URL.createObjectURL(f);
+      var sel = file.getAttribute("data-nz-preview-target") === "logo" ? "[data-nz-logo-preview]" : "[data-nz-favicon-preview]";
+      root.querySelectorAll(sel).forEach(function (img) { img.src = url; });
+    });
+  });
+  root.querySelectorAll("[data-nz-drop]").forEach(function (zone) {
+    var file = document.getElementById(zone.getAttribute("for"));
+    ["dragenter", "dragover"].forEach(function (ev) { zone.addEventListener(ev, function (e) { e.preventDefault(); zone.classList.add("is-over"); }); });
+    ["dragleave", "drop"].forEach(function (ev) { zone.addEventListener(ev, function () { zone.classList.remove("is-over"); }); });
+    zone.addEventListener("drop", function (e) {
+      e.preventDefault();
+      if (e.dataTransfer && e.dataTransfer.files.length) { file.files = e.dataTransfer.files; file.dispatchEvent(new Event("change")); }
+    });
+  });
+
+  var name = form.querySelector("[name=site_name]");
+  var namePreview = root.querySelector("[data-nz-name-preview]");
+  if (name && namePreview) name.addEventListener("input", function () { namePreview.textContent = name.value || "NutriZone"; });
+})();
+</script>
+{% endblock %}

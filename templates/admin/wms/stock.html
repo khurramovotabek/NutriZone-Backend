@@ -1,0 +1,149 @@
+{% extends "admin/base_site.html" %}
+{% load i18n static %}
+{# Ombor → Qoldiqlar: location cards, filters, stock table (cost / retail value, last movement), and the product × location matrix. #}
+{% block extrastyle %}{{ block.super }}<link rel="stylesheet" href="{% static 'admin/css/nutrizone-platform.css' %}?v=5"><link rel="stylesheet" href="{% static 'admin/css/nutrizone-orderdesk.css' %}?v=5"><link rel="stylesheet" href="{% static 'admin/css/nutrizone-wmsx.css' %}?v=9"><link rel="stylesheet" href="{% static 'admin/css/nutrizone-stock.css' %}?v=2">{% endblock %}
+{% block breadcrumbs %}<ol class="breadcrumb"><li class="breadcrumb-item"><a href="{% url 'admin:index' %}">{% translate "Home" %}</a></li><li class="breadcrumb-item">{% translate "Ombor" %}</li><li class="breadcrumb-item active">{{ title }}</li></ol>{% endblock %}
+{% block content_title %}{% endblock %}
+{% block content %}
+<div class="nzp nzd wx">
+  <header class="nzp-hero">
+    <div class="nzp-hero-main">
+      <span class="nzp-hero-icon" style="--c:#10b981"><i class="fas fa-cubes" aria-hidden="true"></i></span>
+      <div><h2>{% translate "Qoldiqlar" %}</h2><p>{% translate "What every warehouse and branch holds right now: on hand, reserved for orders and transfers, and available." %}</p></div>
+    </div>
+    <div class="nzp-hero-actions">
+      <a class="nzp-btn nzp-btn-ghost" href="{% url 'admin:stores_stockreceipt_new' %}"><i class="fas fa-dolly" aria-hidden="true"></i> {% translate "Kirim" %}</a>
+      <a class="nzp-btn nzp-btn-ghost" href="{% url 'admin:stores_stockcount_new' %}"><i class="fas fa-clipboard-check" aria-hidden="true"></i> {% translate "Inventarizatsiya" %}</a>
+      <a class="nzp-btn nzp-btn-primary" href="{% url 'admin:stores_stocktransfer_new' %}"><i class="fas fa-right-left" aria-hidden="true"></i> {% translate "Transfer" %}</a>
+    </div>
+  </header>
+
+  <div class="wx-loc-grid">
+    {% for c in cards %}
+    <a class="wx-loc{% if view != 'matrix' and current and c.s.pk == current.pk %} on{% endif %}" style="--c:{{ c.s.color|default:'#64748b' }}" href="?location={{ c.s.pk }}">
+      <span class="wx-loc-body">
+        <span class="wx-loc-icon"><i class="fas {% if c.s.kind == 'warehouse' %}fa-warehouse{% else %}fa-store{% endif %}" aria-hidden="true"></i></span>
+        <span class="wx-loc-text"><b>{{ c.s.name }}</b><small>{% if c.s.kind == 'warehouse' %}{% translate "Sklad" %}{% else %}{% translate "Filial" %}{% endif %}</small>
+          <span class="wx-loc-num">{{ c.lines }} {% translate "products" %} · {{ c.units }} {% translate "units" %}{% if c.value != "0" %} · {{ c.value }} {% translate "so'm" %}{% endif %}</span></span>
+      </span>
+    </a>
+    {% endfor %}
+    <a class="wx-loc{% if view == 'matrix' %} on{% endif %}" style="--c:#6366f1" href="?view=matrix">
+      <span class="wx-loc-body"><span class="wx-loc-icon"><i class="fas fa-table-cells" aria-hidden="true"></i></span><span class="wx-loc-text"><b>{% translate "All locations" %}</b><small>{% translate "Matrix: every product in every location" %}</small></span></span>
+    </a>
+  </div>
+
+  {% if view == "matrix" %}
+  <div class="nzp-stats">
+    <div class="nzp-stat" style="--c:#3b82f6"><i class="fas fa-boxes-stacked" aria-hidden="true"></i><div><b>{{ msum.skus }}</b><span>{% translate "mahsulot (variant)" %}</span></div></div>
+    <div class="nzp-stat" style="--c:#10b981"><i class="fas fa-cubes" aria-hidden="true"></i><div><b>{{ msum.units }}</b><span>{% translate "dona mavjud, hamma joyda" %}</span></div></div>
+    <div class="nzp-stat" style="--c:#f59e0b"><i class="fas fa-store-slash" aria-hidden="true"></i><div><b>{{ msum.gaps }}</b><span>{% translate "biror filialda tugagan" %}</span></div></div>
+    <div class="nzp-stat" style="--c:#e11d48"><i class="fas fa-circle-xmark" aria-hidden="true"></i><div><b>{{ msum.nowhere }}</b><span>{% translate "hech qayerda yo'q" %}{% if scope != 'all' and gap != 'none' %} · <a href="?view=matrix&amp;gap=none">{% translate "ko'rish" %}</a>{% endif %}</span></div></div>
+  </div>
+  <div class="nzp-toolbar">
+    <nav class="nzp-tabs" aria-label="{% translate 'Filter' %}">
+      <a class="nzp-tab{% if not scope and not gap %} on{% endif %}" href="?view=matrix{% if q %}&amp;q={{ q|urlencode }}{% endif %}"><i class="fas fa-cubes" aria-hidden="true"></i> {% translate "Qoldig'i borlar" %}</a>
+      <a class="nzp-tab{% if scope == 'all' and not gap %} on{% endif %}" style="--t:#6366f1" href="?view=matrix&amp;scope=all{% if q %}&amp;q={{ q|urlencode }}{% endif %}"><i class="fas fa-book-open" aria-hidden="true"></i> {% translate "Butun katalog" %}</a>
+      <a class="nzp-tab{% if gap == 'some' %} on{% endif %}" style="--t:#f59e0b" href="?view=matrix&amp;gap=some{% if q %}&amp;q={{ q|urlencode }}{% endif %}"><i class="fas fa-store-slash" aria-hidden="true"></i> {% translate "Filialda tugagan" %}</a>
+      <a class="nzp-tab{% if gap == 'none' %} on{% endif %}" style="--t:#e11d48" href="?view=matrix&amp;gap=none{% if q %}&amp;q={{ q|urlencode }}{% endif %}"><i class="fas fa-circle-xmark" aria-hidden="true"></i> {% translate "Hech qayerda yo'q" %}</a>
+    </nav>
+    <form class="nzd-filters" method="get"><input type="hidden" name="view" value="matrix">{% if scope %}<input type="hidden" name="scope" value="{{ scope }}">{% endif %}{% if gap %}<input type="hidden" name="gap" value="{{ gap }}">{% endif %}
+      <label class="nzp-search"><i class="fas fa-barcode" aria-hidden="true"></i><input type="search" name="q" value="{{ q }}" placeholder="{% translate 'Nom, SKU yoki shtrix-kod (skaner)…' %}" autofocus></label>
+      <a class="nzp-btn nzp-btn-ghost" href="?view=matrix&amp;export=xlsx{% if q %}&amp;q={{ q|urlencode }}{% endif %}{% if scope %}&amp;scope={{ scope }}{% endif %}{% if gap %}&amp;gap={{ gap }}{% endif %}"><i class="fas fa-file-excel" aria-hidden="true"></i> Excel</a>
+    </form>
+  </div>
+  <section class="nzp-card wx-matrix nzs-matrix">
+    {% if matrix %}
+    <div class="nzs-legend"><span class="ok">{% translate "Yetarli" %}</span><span class="low">{% translate "Kam (minimumdan past)" %}</span><span class="zero">{% translate "Qolmagan" %}</span><small>{% translate "Raqam — sotuvga mavjud dona (band qilinganlar ayirilgan). Mahsulot nomini bosing — barcha joylar bo'yicha batafsil." %}</small></div>
+    <div class="nzs-scroll">
+    <table>
+      <thead><tr><th class="nzs-sticky">{% translate "Mahsulot" %}</th>{% for s in locations %}<th><span class="nzs-loc-h"><i class="wms-dot" style="background:{{ s.color|default:'#94a3b8' }}"></i> {{ s.name }}</span><small>{% if s.kind == 'warehouse' %}{% translate "Sklad" %}{% else %}{% translate "Filial" %}{% endif %}</small></th>{% endfor %}<th>{% translate "Jami" %}</th></tr></thead>
+      <tbody>{% for m in matrix %}<tr>
+        <td class="nzs-sticky"><a class="nzs-prod" href="{% url 'admin:nz_wms_stock_product' m.info.id %}">{% if m.info.image_url %}<img src="{{ m.info.image_url }}" alt="">{% else %}<span class="ph"><i class="fas fa-box" aria-hidden="true"></i></span>{% endif %}<span><b>{{ m.info.name }}</b><small>{{ m.info.sku }}{% if m.info.size %} · {{ m.info.size }}{% endif %} · {{ m.covered }}/{{ locations|length }} {% translate "joyda" %}</small></span></a></td>
+        {% for c in m.cells %}<td class="nzs-cell {{ c.tone }}" title="{{ c.store.name }}: {{ c.v }} {% translate 'mavjud' %}{% if c.res %}, {{ c.res }} {% translate 'band' %}{% endif %}{% if c.min is not None %} · min {{ c.min }}{% endif %}"><b>{{ c.v }}</b>{% if c.res %}<small>+{{ c.res }} {% translate "band" %}</small>{% endif %}</td>{% endfor %}
+        <td class="nzs-total"><b>{{ m.total }}</b></td></tr>{% endfor %}</tbody>
+      <tfoot><tr><th class="nzs-sticky">{% translate "Jami" %}</th>{% for f in foot %}<th><b>{{ f.units }}</b><small>{{ f.skus }} {% translate "tur" %}{% if f.out %} · {{ f.out }} {% translate "yo'q" %}{% endif %}</small></th>{% endfor %}<th><b>{{ msum.units }}</b></th></tr></tfoot>
+    </table>
+    </div>
+    {% else %}<div class="nzp-empty"><span class="nzp-empty-icon" style="--c:#10b981"><i class="fas fa-check" aria-hidden="true"></i></span><h3>{% if gap %}{% translate "Bunday mahsulot yo'q" %}{% else %}{% translate "Nothing found" %}{% endif %}</h3></div>{% endif %}
+  </section>
+
+  {% elif current %}
+  <div class="nzp-stats">
+    <div class="nzp-stat" style="--c:#3b82f6"><i class="fas fa-boxes-stacked" aria-hidden="true"></i><div><b>{{ totals.lines }}</b><span>{% translate "Products" %}</span></div></div>
+    <div class="nzp-stat" style="--c:#10b981"><i class="fas fa-cubes" aria-hidden="true"></i><div><b>{{ totals.units }}</b><span>{% translate "Units on hand" %}{% if totals.reserved %} · {{ totals.reserved }} {% translate "reserved" %}{% endif %}</span></div></div>
+    <div class="nzp-stat" style="--c:#f59e0b"><i class="fas fa-coins" aria-hidden="true"></i><div><b>{{ totals.cost_value }}<small> {% translate "so'm" %}</small></b><span>{% translate "Value at cost" %}{% if totals.unpriced %} · {{ totals.unpriced }} {% translate "without cost" %}{% endif %}</span></div></div>
+    <div class="nzp-stat" style="--c:#8b5cf6"><i class="fas fa-tag" aria-hidden="true"></i><div><b>{{ totals.retail_value }}<small> {% translate "so'm" %}</small></b><span>{% translate "Value at selling price" %}</span></div></div>
+  </div>
+
+  <div class="nzp-toolbar">
+    <nav class="nzp-tabs" aria-label="{% translate 'Filter' %}">
+      <a class="nzp-tab{% if not state %} on{% endif %}" href="?location={{ current.pk }}{% if q %}&amp;q={{ q|urlencode }}{% endif %}">{% translate "All" %} <b>{{ counts.all }}</b></a>
+      <a class="nzp-tab{% if state == 'low' %} on{% endif %}" style="--t:#f59e0b" href="?location={{ current.pk }}&amp;state=low{% if q %}&amp;q={{ q|urlencode }}{% endif %}"><i class="fas fa-battery-quarter" aria-hidden="true"></i> {% translate "Running low" %} <b>{{ counts.low }}</b></a>
+      <a class="nzp-tab{% if state == 'out' %} on{% endif %}" style="--t:#e11d48" href="?location={{ current.pk }}&amp;state=out{% if q %}&amp;q={{ q|urlencode }}{% endif %}"><i class="fas fa-circle-xmark" aria-hidden="true"></i> {% translate "Out of stock" %} <b>{{ counts.out }}</b></a>
+      <a class="nzp-tab{% if state == 'reserved' %} on{% endif %}" style="--t:#0ea5e9" href="?location={{ current.pk }}&amp;state=reserved{% if q %}&amp;q={{ q|urlencode }}{% endif %}"><i class="fas fa-lock" aria-hidden="true"></i> {% translate "Reserved" %} <b>{{ counts.reserved }}</b></a>
+      <a class="nzp-tab{% if state == 'missing' %} on{% endif %}" style="--t:#8b5cf6" href="?location={{ current.pk }}&amp;state=missing{% if q %}&amp;q={{ q|urlencode }}{% endif %}" title="{% translate 'Katalogdagi, lekin bu joyda umuman yo‘q mahsulotlar' %}"><i class="fas fa-store-slash" aria-hidden="true"></i> {% translate "Bu yerda yo'q" %} <b>{{ counts.missing }}</b></a>
+    </nav>
+    <form class="nzd-filters" method="get">
+      <input type="hidden" name="location" value="{{ current.pk }}">{% if state %}<input type="hidden" name="state" value="{{ state }}">{% endif %}
+      <select name="sort" class="nzp-select" onchange="this.form.submit()" aria-label="{% translate 'Sort' %}">
+        <option value="">{% translate "Most units first" %}</option>
+        <option value="value"{% if sort == 'value' %} selected{% endif %}>{% translate "Highest value first" %}</option>
+        <option value="available"{% if sort == 'available' %} selected{% endif %}>{% translate "Least available first" %}</option>
+        <option value="name"{% if sort == 'name' %} selected{% endif %}>{% translate "By name" %}</option>
+      </select>
+      <label class="nzp-search"><i class="fas fa-magnifying-glass" aria-hidden="true"></i><input type="search" name="q" value="{{ q }}" placeholder="{% translate 'Name, SKU or barcode…' %}"></label>
+      <a class="nzp-btn nzp-btn-ghost" href="?location={{ current.pk }}&amp;export=xlsx{% if q %}&amp;q={{ q|urlencode }}{% endif %}{% if state %}&amp;state={{ state }}{% endif %}"><i class="fas fa-file-excel" aria-hidden="true"></i> Excel</a>
+    </form>
+  </div>
+
+  {% if state == "missing" %}
+  <section class="nzp-card nzs-missing">
+    <header class="nzs-sec-h"><i class="fas fa-store-slash" aria-hidden="true"></i><div><b>{% blocktranslate with name=current.name %}{{ name }}da yo'q mahsulotlar{% endblocktranslate %}</b><small>{% translate "Katalogda faol, lekin bu joyda bitta ham yo'q. Boshqa joyda bo'lsa — bir bosishda transfer." %}</small></div></header>
+    {% if missing %}
+    <div class="nzs-miss-list">
+      {% for m in missing %}
+      <div class="nzs-miss">
+        <a class="nzs-prod" href="{% url 'admin:nz_wms_stock_product' m.info.id %}">{% if m.info.image_url %}<img src="{{ m.info.image_url }}" alt="">{% else %}<span class="ph"><i class="fas fa-box" aria-hidden="true"></i></span>{% endif %}<span><b>{{ m.info.name }}</b><small>{{ m.info.sku }}{% if m.info.size %} · {{ m.info.size }}{% endif %}</small></span></a>
+        <div class="nzs-where">{% for w in m.where|slice:":4" %}<span class="nzs-chip" style="--c:{{ w.store.color|default:'#64748b' }}"><i class="fas {% if w.store.kind == 'warehouse' %}fa-warehouse{% else %}fa-store{% endif %}" aria-hidden="true"></i> {{ w.store.name }} <b>{{ w.available }}</b></span>{% empty %}<span class="nzs-chip none"><i class="fas fa-circle-xmark" aria-hidden="true"></i> {% translate "Hech qayerda yo'q — kirim kerak" %}</span>{% endfor %}</div>
+        <div class="nzs-miss-act">{% if m.best %}<a class="nzp-btn nzp-btn-primary nzp-btn-sm" href="{% url 'admin:stores_stocktransfer_new' %}?source={{ m.best.pk }}&amp;destination={{ current.pk }}&amp;variant={{ m.info.id }}"><i class="fas fa-right-left" aria-hidden="true"></i> {% translate "Transfer" %}</a>{% else %}<a class="nzp-btn nzp-btn-ghost nzp-btn-sm" href="{% url 'admin:stores_stockreceipt_new' %}"><i class="fas fa-dolly" aria-hidden="true"></i> {% translate "Kirim" %}</a>{% endif %}</div>
+      </div>
+      {% endfor %}
+    </div>
+    {% else %}<div class="nzp-empty"><span class="nzp-empty-icon" style="--c:#10b981"><i class="fas fa-check" aria-hidden="true"></i></span><h3>{% translate "Katalogdagi hamma mahsulot bu yerda bor" %}</h3></div>{% endif %}
+  </section>
+  {% else %}
+  <section class="nzp-card nzp-inbox">
+    {% if rows %}
+    <div class="nzd-table wx-stock-table" role="table">
+      <div class="nzd-tr nzd-th" role="row"><span>{% translate "Product" %}</span><span class="r">{% translate "On hand" %}</span><span class="r">{% translate "Reserved" %}</span><span class="r">{% translate "Available" %}</span><span class="r">{% translate "Value at cost" %}</span><span class="r">{% translate "Last movement" %}</span><span></span></div>
+      {% for r in rows %}
+      <div class="nzd-tr" role="row" style="--i:{{ forloop.counter0 }}">
+        <span class="wx-prod">{% if r.image_url %}<img src="{{ r.image_url }}" alt="" loading="lazy">{% else %}<span class="ph"><i class="fas fa-box" aria-hidden="true"></i></span>{% endif %}<span><a class="nzs-name-link" href="{% url 'admin:nz_wms_stock_product' r.variant_id %}" title="{% translate 'Barcha joylar bo‘yicha qoldiq' %}"><b>{{ r.name }}</b></a><small>{{ r.sku }}{% if r.barcode %} · {{ r.barcode }}{% endif %}{% if r.size %} · {{ r.size }}{% endif %}</small>{% if r.batches %}<span class="wx-batch-tags">{% for b in r.batches %}<span class="nzd-tag" style="--t:{{ b.tone }}" title="{% translate 'Batch' %}">{% if b.batch_number %}LOT {{ b.batch_number }}{% endif %}{% if b.expiry_date %} · {{ b.expiry_date|date:"d.m.Y" }}{% endif %} · {{ b.quantity }}</span>{% endfor %}</span>{% endif %}</span></span>
+        <span class="r"><b class="wx-num">{{ r.quantity }}</b></span>
+        <span class="r">{% if r.reserved %}<b class="wx-qty-res">{{ r.reserved }}</b>{% else %}<small>—</small>{% endif %}</span>
+        <span class="r"><b class="wx-num">{{ r.available }}</b><span class="wx-state {{ r.state }}">{% if r.state == 'ok' %}{% translate "Enough" %}{% elif r.state == 'low' %}{% translate "Low" %}{% else %}{% translate "Out" %}{% endif %}</span>{% if r.min is not None %}<small>{% translate "min" %} {{ r.min }}</small>{% endif %}</span>
+        <span class="r">{% if r.cost_value %}<b>{{ r.cost_value }}</b><small>{{ r.cost }} × {{ r.quantity }}</small>{% else %}<span class="wx-nodata">{% translate "no cost yet" %}</span>{% endif %}</span>
+        <span class="r"><small>{{ r.last }}</small></span>
+        <span class="wx-row-actions">
+          <a href="{% url 'admin:stores_stockmovement_changelist' %}?store__id__exact={{ current.pk }}&amp;q={{ r.sku|urlencode }}" title="{% translate 'History' %}" aria-label="{% translate 'History' %}"><i class="fas fa-clock-rotate-left" aria-hidden="true"></i></a>
+          <a href="{% url 'admin:nz_wms_stock_product' r.variant_id %}" title="{% translate 'Qayerda qancha bor' %}" aria-label="{% translate 'Qayerda qancha bor' %}"><i class="fas fa-map-location-dot" aria-hidden="true"></i></a>
+          {% if r.available > 0 %}<a href="{% url 'admin:stores_stocktransfer_new' %}?source={{ current.pk }}&amp;variant={{ r.variant_id }}" title="{% translate 'Transfer' %}" aria-label="{% translate 'Transfer' %}"><i class="fas fa-right-left" aria-hidden="true"></i></a>{% endif %}
+          {% if r.available > 0 %}<a href="{% url 'admin:stores_writeoff_new' %}?store={{ current.pk }}&amp;variant={{ r.variant_id }}" title="{% translate 'Write off' %}" aria-label="{% translate 'Write off' %}"><i class="fas fa-trash-can-arrow-up" aria-hidden="true"></i></a>{% endif %}
+        </span>
+      </div>
+      {% endfor %}
+    </div>
+    {% else %}
+    <div class="nzp-empty"><span class="nzp-empty-icon" style="--c:#10b981"><i class="fas fa-box-open" aria-hidden="true"></i></span>
+      <h3>{% if q or state %}{% translate "Nothing found" %}{% else %}{% translate "No stock here yet" %}{% endif %}</h3>
+      <p>{% if q or state %}{% translate "Try a different search or filter." %}{% else %}{% translate "Receive goods (Kirim) or transfer them from the warehouse." %}{% endif %}</p>
+    </div>
+    {% endif %}
+  </section>
+  {% endif %}
+  {% else %}
+  <div class="nzp-empty"><h3>{% translate "No warehouse or branch yet" %}</h3><p>{% translate "Create a location of type “Warehouse” in Stores." %}</p></div>
+  {% endif %}
+</div>
+{% endblock %}

@@ -1,0 +1,49 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.eggs/
+.mypy_cache/
+.ruff_cache/
+.pytest_cache/
+htmlcov/
+.coverage
+.coverage.*
+
+# Django
+*.log
+local_settings.py
+staticfiles/
+# Anchored to the repo root: an unanchored "media/*" also matches
+# core/media/* (any dir literally named "media" at any depth) -- a
+# real, closed gap that once caused core/media/'s entire source tree
+# (MediaPipeline and friends) to be silently dropped by a
+# gitignore-aware copy/export, reconstructed from spec afterward.
+/media/*
+!/media/.gitkeep
+
+# Environment / secrets
+.env
+.env.*
+!.env.example
+
+# Virtual environments
+.venv/
+venv/
+env/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+logs/*
+!logs/.gitkeep
+
+# Docker
+docker-compose.override.yml

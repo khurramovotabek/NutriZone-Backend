@@ -1,0 +1,55 @@
+{% extends "admin/change_list.html" %}
+{% load i18n static admin_list %}
+{# Goods receipts (Kirim): month KPIs and the receipt list; a receipt opens as a printable document. #}
+{% block extrastyle %}{{ block.super }}<link rel="stylesheet" href="{% static 'admin/css/nutrizone-platform.css' %}?v=5"><link rel="stylesheet" href="{% static 'admin/css/nutrizone-orderdesk.css' %}?v=5"><link rel="stylesheet" href="{% static 'admin/css/nutrizone-wmsx.css' %}?v=9">{% endblock %}
+{% block content_title %}{% endblock %}
+{% block content %}
+<div class="nzp nzd wx">
+  <header class="nzp-hero">
+    <div class="nzp-hero-main">
+      <span class="nzp-hero-icon" style="--c:#10b981"><i class="fas fa-dolly" aria-hidden="true"></i></span>
+      <div><h2>{% translate "Kirim (qabul)" %}</h2><p>{% translate "Goods arriving from suppliers: scan or import from Excel; units go straight onto the location's stock." %}</p></div>
+    </div>
+    <div class="nzp-hero-actions">
+      <a class="nzp-btn nzp-btn-ghost" href="{% url 'admin:stores_supplier_changelist' %}"><i class="fas fa-truck-field" aria-hidden="true"></i> {% translate "Yetkazib beruvchilar" %}</a>
+      <a class="nzp-btn nzp-btn-ghost" href="{% url 'admin:stores_stockreceipt_template' %}"><i class="fas fa-file-excel" aria-hidden="true"></i> {% translate "Excel template" %}</a>
+      {% if can_create %}<a class="nzp-btn nzp-btn-primary" href="{% url 'admin:stores_stockreceipt_new' %}"><i class="fas fa-plus" aria-hidden="true"></i> {% translate "New receipt" %}</a>{% endif %}
+    </div>
+  </header>
+
+  <div class="nzp-stats">
+    <div class="nzp-stat" style="--c:#10b981"><i class="fas fa-file-invoice" aria-hidden="true"></i><div><b>{{ wms_kpis.n|default:0 }}</b><span>{% translate "Receipts this month" %}</span></div></div>
+    <div class="nzp-stat" style="--c:#3b82f6"><i class="fas fa-cubes" aria-hidden="true"></i><div><b>{{ wms_kpis.units|default:0 }}</b><span>{% translate "Units received this month" %}</span></div></div>
+    <div class="nzp-stat" style="--c:#f59e0b"><i class="fas fa-coins" aria-hidden="true"></i><div><b>{{ wms_kpis.value }}<small> {% translate "so'm" %}</small></b><span>{% translate "Value received this month" %}</span></div></div>
+    <div class="nzp-stat" style="--c:#8b5cf6"><i class="fas fa-truck-field" aria-hidden="true"></i><div><b>{{ wms_kpis.suppliers }}</b><span>{% translate "Suppliers this month" %}</span></div></div>
+  </div>
+
+  <div class="nzp-toolbar">
+    <span></span>
+    <form class="nzd-filters" method="get"><label class="nzp-search"><i class="fas fa-magnifying-glass" aria-hidden="true"></i><input type="search" name="q" value="{{ cl.query }}" placeholder="{% translate 'Number, supplier, invoice or barcode…' %}"></label></form>
+  </div>
+
+  <section class="nzp-card nzp-inbox">
+    {% if cl.result_list %}
+    <div class="nzd-table wx-receipt-table" role="table">
+      <div class="nzd-tr nzd-th" role="row"><span>{% translate "Number" %}</span><span>{% translate "Location" %}</span><span>{% translate "Supplier / invoice" %}</span><span class="r">{% translate "Products" %}</span><span class="r">{% translate "Units" %}</span><span class="r">{% translate "Value" %}</span><span>{% translate "Received by" %}</span></div>
+      {% for r in cl.result_list %}
+      <a class="nzd-tr" role="row" href="{% url 'admin:stores_stockreceipt_change' r.pk %}" style="--i:{{ forloop.counter0 }}">
+        <span><b class="nz-num">{{ r.number }}</b><small>{{ r.nz.created }}</small></span>
+        <span class="wx-loc-cell"><i class="wms-dot" style="background:{{ r.store.color|default:'#94a3b8' }}"></i><span><b>{{ r.store.name }}</b></span></span>
+        <span><b>{{ r.supplier|default:"—" }}</b><small>{% if r.invoice_number %}№ {{ r.invoice_number }}{% endif %}{% if r.due_date and r.total_value %}{% if r.invoice_number %} · {% endif %}{% translate "due" %} {{ r.due_date|date:"d.m.Y" }}{% endif %}</small></span>
+        <span class="r"><b class="wx-num">{{ r.nz.lines }}</b></span>
+        <span class="r"><b class="wx-num wx-plus">+{{ r.total_units }}</b></span>
+        <span class="r">{% if r.nz.value %}<b>{{ r.nz.value }}</b>{% else %}<span class="wx-nodata">{% translate "no cost" %}</span>{% endif %}</span>
+        <span><small>{{ r.created_by }}</small></span>
+      </a>
+      {% endfor %}
+    </div>
+    {% else %}
+    <div class="nzp-empty"><span class="nzp-empty-icon" style="--c:#10b981"><i class="fas fa-dolly" aria-hidden="true"></i></span><h3>{% translate "No receipts yet" %}</h3>
+      {% if can_create %}<a class="nzp-btn nzp-btn-primary" href="{% url 'admin:stores_stockreceipt_new' %}"><i class="fas fa-plus" aria-hidden="true"></i> {% translate "New receipt" %}</a>{% endif %}</div>
+    {% endif %}
+  </section>
+  {% if cl.result_count > cl.list_per_page %}<div class="nzp-pagination">{% pagination cl %}</div>{% endif %}
+</div>
+{% endblock %}

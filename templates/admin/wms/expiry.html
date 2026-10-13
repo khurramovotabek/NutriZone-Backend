@@ -1,0 +1,87 @@
+{% extends "admin/base_site.html" %}
+{% load i18n static %}
+{# Expiry (Yaroqlilik muddati): bucket KPIs, estimated batches on the shelf by expiry, FEFO advice, write-off shortcut, Excel. Built by planning_admin.expiry_view. #}
+{% block extrastyle %}{{ block.super }}<link rel="stylesheet" href="{% static 'admin/css/nutrizone-platform.css' %}?v=5"><link rel="stylesheet" href="{% static 'admin/css/nutrizone-orderdesk.css' %}?v=5"><link rel="stylesheet" href="{% static 'admin/css/nutrizone-wmsx.css' %}?v=9">{% endblock %}
+{% block content_title %}{% endblock %}
+{% block content %}
+<div class="nzp nzd wx">
+  <header class="nzp-hero">
+    <div class="nzp-hero-main">
+      <span class="nzp-hero-icon" style="--c:#f59e0b"><i class="fas fa-calendar-xmark" aria-hidden="true"></i></span>
+      <div><h2>{% translate "Yaroqlilik muddati" %}</h2><p>{% translate "What expires soon and where, which batch to sell first (FEFO), and expired stock to write off. Stock is tracked per batch: sales and transfers take the batch that expires first." %}</p></div>
+    </div>
+    <div class="nzp-hero-actions">
+      <a class="nzp-btn nzp-btn-ghost" href="?{% if current %}location={{ current.pk }}&{% endif %}tab={{ tab }}&q={{ q|urlencode }}&export=xlsx"><i class="fas fa-file-excel" aria-hidden="true"></i> Excel</a>
+      <a class="nzp-btn nzp-btn-ghost" href="{% url 'admin:stores_writeoff_changelist' %}"><i class="fas fa-trash-can-arrow-up" aria-hidden="true"></i> {% translate "Hisobdan chiqarish" %}</a>
+    </div>
+  </header>
+
+  <div class="wx-exp-buckets">
+    {% for st in stats %}
+    <a class="wx-exp-bucket{% if tab == st.key %} on{% endif %}" href="?{% if current %}location={{ current.pk }}&{% endif %}tab={{ st.key }}" style="--c:{{ st.color }}">
+      <i class="fas {{ st.icon }}" aria-hidden="true"></i>
+      <span><small>{{ st.label }}</small><b>{{ st.units }} <em>{% translate "pcs" %}</em></b><small>{{ st.value }} {% translate "so'm" %} · {% blocktranslate count n=st.lines %}{{ n }} batch{% plural %}{{ n }} batches{% endblocktranslate %}</small></span>
+    </a>
+    {% endfor %}
+  </div>
+  {% if unknown_units %}<div class="nzp-note nzp-note-info"><i class="fas fa-circle-info" aria-hidden="true"></i> {% blocktranslate count n=unknown_products with u=unknown_units %}{{ u }} unit(s) of {{ n }} product have no expiry date recorded. Enter batch and expiry on every goods receipt so they show up here.{% plural %}{{ u }} unit(s) of {{ n }} products have no expiry date recorded. Enter batch and expiry on every goods receipt so they show up here.{% endblocktranslate %}</div>{% endif %}
+
+  <form class="nzp-toolbar" method="get">
+    <input type="hidden" name="tab" value="{{ tab }}">
+    <nav class="nzp-tabs" aria-label="{% translate 'Filter' %}">
+      <a class="nzp-tab{% if tab == 'soon' %} on{% endif %}" href="?{% if current %}location={{ current.pk }}&{% endif %}tab=soon" style="--t:#ef4444"><i class="fas fa-bell" aria-hidden="true"></i> {% translate "Expired + next 90 days" %}</a>
+      <a class="nzp-tab{% if tab == 'all' %} on{% endif %}" href="?{% if current %}location={{ current.pk }}&{% endif %}tab=all" style="--t:#64748b"><i class="fas fa-layer-group" aria-hidden="true"></i> {% translate "All batches" %}</a>
+    </nav>
+    <div class="wx-date-filter">
+      <select name="location" class="nzp-select" onchange="this.form.submit()" aria-label="{% translate 'Location' %}"><option value="">{% translate "All locations" %}</option>{% for s in locations %}<option value="{{ s.pk }}"{% if current and current.pk == s.pk %} selected{% endif %}>{{ s.name }}</option>{% endfor %}</select>
+      <label class="nzp-search"><i class="fas fa-magnifying-glass" aria-hidden="true"></i><input type="search" name="q" value="{{ q }}" placeholder="{% translate 'Product, SKU, barcode or batch…' %}" aria-label="{% translate 'Product, SKU, barcode or batch…' %}"></label>
+    </div>
+  </form>
+
+  <div class="wx-card-grid">
+    <section class="nzp-card nzp-inbox">
+      {% if rows %}
+      <div class="nzd-table wx-expiry-table" role="table">
+        <div class="nzd-tr nzd-th" role="row"><span>{% translate "Product" %}</span><span>{% translate "Location" %}</span><span>{% translate "Batch" %}</span><span>{% translate "Expiry" %}</span><span class="r">{% translate "Units (est.)" %}</span><span class="r">{% translate "Value at cost" %}</span><span></span></div>
+        {% for r in rows %}
+        <div class="nzd-tr wx-exp-{{ r.key }}" role="row">
+          <span class="wx-prod">{% if r.info.image_url %}<img src="{{ r.info.image_url }}" alt="">{% else %}<span class="ph"><i class="fas fa-box" aria-hidden="true"></i></span>{% endif %}<span><b>{{ r.info.name }}</b><small>{{ r.info.sku }}{% if r.info.size %} · {{ r.info.size }}{% endif %}</small></span></span>
+          <span class="wx-loc-cell"><i class="wms-dot" style="background:{{ r.store.color|default:'#94a3b8' }}"></i><span><b>{{ r.store.name }}</b></span></span>
+          <span>{% if r.ly.batch %}<b>LOT {{ r.ly.batch }}</b>{% else %}<small>—</small>{% endif %}{% if r.fefo_first %}<span class="nzd-tag" style="--t:#10b981"><i class="fas fa-arrow-up-1-9" aria-hidden="true"></i> {% translate "sell first" %}</span>{% elif r.fefo_later %}<small>{% translate "after the older batch" %}</small>{% endif %}</span>
+          <span><b>{{ r.ly.expiry|date:"d.m.Y" }}</b><span class="wx-days" style="--c:{{ r.color }}">{% if r.days < 0 %}{% blocktranslate count d=r.ago %}expired {{ d }} day ago{% plural %}expired {{ d }} days ago{% endblocktranslate %}{% elif r.days == 0 %}{% translate "expires today" %}{% else %}{% blocktranslate count d=r.days %}{{ d }} day left{% plural %}{{ d }} days left{% endblocktranslate %}{% endif %}</span></span>
+          <span class="r"><b class="wx-num">{{ r.ly.quantity }}</b></span>
+          <span class="r">{% if r.value %}<b>{{ r.value }}</b>{% else %}<span class="wx-nodata">{% translate "no cost" %}</span>{% endif %}</span>
+          <span class="wx-row-actions">{% if r.key == "expired" and can_writeoff %}<a href="{{ r.writeoff }}" title="{% translate 'Write off' %}"><i class="fas fa-trash-can-arrow-up" aria-hidden="true"></i> {% translate "Write off" %}</a>{% elif r.key == "d30" %}<span class="wx-hint" title="{% translate 'Put it on the front shelf or discount it, or move it to the branch that sells it fastest.' %}"><i class="fas fa-tags" aria-hidden="true"></i> {% translate "discount / move" %}</span>{% endif %}</span>
+        </div>
+        {% endfor %}
+      </div>
+      {% if total_rows > 500 %}<p class="wx-muted" style="padding:10px 16px">{% blocktranslate with n=total_rows %}Showing the first 500 of {{ n }} batches -- use the filters or Excel.{% endblocktranslate %}</p>{% endif %}
+      {% else %}
+      <div class="nzp-empty"><span class="nzp-empty-icon" style="--c:#10b981"><i class="fas fa-calendar-check" aria-hidden="true"></i></span><h3>{% translate "Nothing expires soon" %}</h3><p>{% translate "No batch with a recorded expiry date in this filter. Expiry dates come from goods receipts (Kirim) -- enter them for vitamins and supplements." %}</p></div>
+      {% endif %}
+    </section>
+
+    <aside class="wx-card-side">
+      <section class="nzp-card">
+        <header class="nzp-card-head nzp-card-head-sm"><span class="nzp-card-icon" style="--c:#10b981"><i class="fas fa-arrow-up-1-9" aria-hidden="true"></i></span><div><h3>{% translate "Sell first (FEFO)" %}</h3><p class="wx-muted">{% translate "Products with more than one expiry on the shelf: put the older batch in front." %}</p></div></header>
+        {% if fefo %}
+        <ul class="wx-fefo">
+          {% for f in fefo %}
+          <li><b>{{ f.info.name }}</b><small><i class="wms-dot" style="background:{{ f.store.color|default:'#94a3b8' }}"></i> {{ f.store.name }}</small>
+            <ol>{% for ly in f.group %}<li{% if forloop.first %} class="first"{% endif %}>{% if ly.batch %}LOT {{ ly.batch }}{% else %}—{% endif %} · {{ ly.expiry|date:"d.m.Y" }} · {{ ly.quantity }} {% translate "pcs" %}</li>{% endfor %}</ol></li>
+          {% endfor %}
+        </ul>
+        {% else %}<p class="wx-muted">{% translate "No product has two expiry dates on the same shelf right now." %}</p>{% endif %}
+      </section>
+      <section class="nzp-card wx-tips">
+        <header class="nzp-card-head nzp-card-head-sm"><span class="nzp-card-icon" style="--c:#6366f1"><i class="fas fa-lightbulb" aria-hidden="true"></i></span><div><h3>{% translate "What to do" %}</h3></div></header>
+        <ul>
+          <li><b style="color:#b91c1c">{% translate "Expired" %}</b> — {% translate "take it off the shelf and write it off (reason: expired)." %}</li>
+          <li><b style="color:#ef4444">{% translate "≤ 30 days" %}</b> — {% translate "front shelf, a discount or a bundle; move it to the branch that sells it fastest." %}</li>
+          <li><b style="color:#f59e0b">{% translate "31–90 days" %}</b> — {% translate "don't reorder more of it until it sells; send the older batch first in transfers." %}</li>
+        </ul>
+      </section>
+    </aside>
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,18 @@
+/* Buyurtmalar & Savatlar: status tabs, customer avatars, glass rows. */
+.nzo-tabs { display: flex; gap: 8px; overflow-x: auto; padding: 2px 2px 10px; margin: 4px 0 6px; scrollbar-width: thin; }
+.nzo-tab { flex-shrink: 0; display: inline-flex; align-items: center; gap: 8px; padding: 8px 14px; border-radius: 999px; font-size: .82rem; font-weight: 700; white-space: nowrap;
+  color: var(--nz-text-secondary) !important; text-decoration: none !important; border: 1px solid var(--nz-border); background: color-mix(in srgb, var(--nz-surface) 80%, transparent); backdrop-filter: blur(10px); transition: all .15s; }
+.nzo-tab i { color: var(--t); }
+.nzo-tab b { min-width: 22px; padding: 1px 7px; border-radius: 999px; font-size: .72rem; text-align: center; background: color-mix(in srgb, var(--t) 16%, transparent); color: var(--t); }
+.nzo-tab:hover { border-color: color-mix(in srgb, var(--t) 50%, transparent); transform: translateY(-1px); }
+.nzo-tab.on { color: #fff !important; border-color: transparent; background: linear-gradient(135deg, var(--t), color-mix(in srgb, var(--t) 65%, #000)); box-shadow: 0 10px 22px -12px var(--t); }
+.nzo-tab.on i, .nzo-tab.on b { color: #fff; background: rgba(255,255,255,.2); }
+.nzo-who { display: flex; align-items: center; gap: 10px; }
+.nzo-av { flex-shrink: 0; width: 34px; height: 34px; border-radius: 11px; display: grid; place-items: center; font-weight: 800; font-size: .75rem; color: #fff; background: linear-gradient(135deg, #6366f1, #0ea5e9); }
+.nzo-pin { color: #e11d48 !important; margin-left: 4px; }
+.nzo-items { display: flex; align-items: center; }
+.nzo-items img, .nzo-items span.ph { width: 30px; height: 30px; border-radius: 9px; object-fit: contain; background: #fff; border: 2px solid var(--nz-surface); margin-left: -8px; box-shadow: 0 2px 6px rgba(0,0,0,.25); }
+.nzo-items img:first-child, .nzo-items span.ph:first-child { margin-left: 0; }
+.nzo-items span.ph { display: grid; place-items: center; font-size: .7rem; font-weight: 800; color: var(--nz-text-secondary); background: var(--nz-surface-secondary); }
+.app-ordering.change-list #result_list tbody tr:hover, .app-cart.change-list #result_list tbody tr:hover { background: color-mix(in srgb, #6366f1 6%, transparent) !important; }
+.app-ordering.change-list #result_list td, .app-cart.change-list #result_list td { vertical-align: middle; }

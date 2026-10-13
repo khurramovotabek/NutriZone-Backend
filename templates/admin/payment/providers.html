@@ -1,0 +1,66 @@
+{% extends "admin/base_site.html" %}
+{% load i18n static %}
+{# Payment methods overview (PaymentProviderAdmin.changelist_view): KPIs + one card per method. #}
+{% block extrastyle %}{{ block.super }}{% include "admin/payment/_head.html" %}{% endblock %}
+{% block breadcrumbs %}<ol class="breadcrumb"><li class="breadcrumb-item"><a href="{% url 'admin:index' %}">{% translate "Home" %}</a></li><li class="breadcrumb-item active">{% translate "To'lov tizimlari" %}</li></ol>{% endblock %}
+{% block content_title %}{% endblock %}
+{% block content %}
+<div class="nzp nzd wx">
+  <header class="nzp-hero">
+    <div class="nzp-hero-main">
+      <span class="nzp-hero-icon" style="--c:#2563eb"><i class="fas fa-credit-card" aria-hidden="true"></i></span>
+      <div><h2>{% translate "To'lovlar" %}</h2><p>{% translate "Payme, Click, Uzum Bank, Uzcard, Humo va naqd to'lov — kalitlar shu yerda shifrlangan holda saqlanadi. Faol bo'lmagan usullar mijozga «Tez kunda» bo'lib ko'rinadi." %}</p></div>
+    </div>
+    <div class="nzp-hero-actions"><a class="nzp-btn nzp-btn-ghost" href="{% url 'admin:payment_paymentmodel_changelist' %}"><i class="fas fa-list" aria-hidden="true"></i> {% translate "Tranzaksiyalar" %}</a></div>
+  </header>
+
+  {% include "admin/payment/_recon_banner.html" %}
+  <div class="nzp-stats">
+    <div class="nzp-stat" style="--c:#10b981"><i class="fas fa-sack-dollar" aria-hidden="true"></i><div><b>{{ kpi.today }}<small> {% translate "so'm" %}</small></b><span>{% translate "Bugun onlayn to'langan" %}</span></div></div>
+    <div class="nzp-stat" style="--c:#2563eb"><i class="fas fa-chart-line" aria-hidden="true"></i><div><b>{{ kpi.month }}<small> {% translate "so'm" %}</small></b><span>{% blocktranslate with n=kpi.month_count %}30 kunda · {{ n }} ta to'lov{% endblocktranslate %}</span></div></div>
+    <div class="nzp-stat" style="--c:#8b5cf6"><i class="fas fa-bullseye" aria-hidden="true"></i><div><b>{% if kpi.success is not None %}{{ kpi.success }}%{% else %}—{% endif %}</b><span>{% translate "Muvaffaqiyatli to'lovlar (30 kun)" %}</span></div></div>
+    <a class="nzp-stat" href="{% url 'admin:payment_paymentcallbacklog_changelist' %}?errors=1" style="--c:{% if kpi.errors %}#e11d48{% else %}#64748b{% endif %}"><i class="fas fa-satellite-dish" aria-hidden="true"></i><div><b>{{ kpi.active }}<small> / {{ kpi.total }}</small></b><span>{% blocktranslate with e=kpi.errors p=kpi.pending %}Faol usullar · 24 soatda {{ e }} xato · {{ p }} kutilmoqda{% endblocktranslate %}</span></div></a>
+  </div>
+
+  <div class="nzp-toolbar">{% with section="providers" %}{% include "admin/payment/_nav.html" %}{% endwith %}</div>
+
+  <div class="pay-grid">
+    {% for c in cards %}
+    <a class="pay-card{% if c.status.key != 'active' %} is-off{% endif %}" href="{{ c.url }}" style="--c:{{ c.color }};--i:{{ forloop.counter0 }}">
+      <div class="pay-card-top">
+        <img class="pay-logo" src="{{ c.logo }}" alt="">
+        <div><h3>{{ c.name }}</h3><small>{% if not c.online %}{% translate "Oflayn" %}{% elif c.route %}{% blocktranslate with r=c.route %}{{ r }} orqali{% endblocktranslate %}{% elif c.test %}{% translate "Test rejimi" %}{% else %}{% translate "Production" %}{% endif %}</small></div>
+        <span class="nzd-pill" style="--t:{{ c.status.color }}"><i class="fas {{ c.status.icon }}" aria-hidden="true"></i> {{ c.status.label }}</span>
+      </div>
+      <p>{{ c.tagline }}</p>
+      <div class="pay-card-foot">
+        {% if c.status.key == "active" %}
+          {% if c.online %}<span><b>{{ c.volume }}</b> {% translate "so'm" %} · {{ c.count }} {% translate "ta (30 kun)" %}</span>{% else %}<span class="pay-tag" style="--t:#16a34a"><i class="fas fa-check" aria-hidden="true"></i> {% translate "Checkout'da mavjud" %}</span>{% endif %}
+          {% if c.test %}<span class="pay-tag" style="--t:#f59e0b"><i class="fas fa-flask" aria-hidden="true"></i> {% translate "Test" %}</span>{% endif %}
+        {% else %}
+          <span class="pay-soon"><i class="fas fa-clock" aria-hidden="true"></i> {% translate "Mijozga: «Tez kunda»" %}</span>
+          {% if c.missing %}<span class="pay-tag" style="--t:#f59e0b">{% blocktranslate count n=c.missing %}{{ n }} maydon to'ldirilmagan{% plural %}{{ n }} maydon to'ldirilmagan{% endblocktranslate %}</span>{% endif %}
+        {% endif %}
+        <span class="pay-go">{% translate "Sozlash" %} <i class="fas fa-arrow-right" aria-hidden="true"></i></span>
+      </div>
+    </a>
+    {% endfor %}
+  </div>
+
+  <form class="nzp-card" method="post" action="{% url 'admin:payment_paymentproviderconfig_automation' %}">{% csrf_token %}
+    <header class="nzp-card-head nzp-card-head-sm"><span class="nzp-card-icon" style="--c:#f59e0b"><i class="fas fa-robot" aria-hidden="true"></i></span><div><h3>{% translate "Avtomatlashtirish" %}</h3><p>{% blocktranslate with n=awaiting %}Onlayn to'lovni boshlab, to'lamagan buyurtmalar uchun Telegram eslatma va avtomatik bekor qilish. Hozir to'lov kutayotgan buyurtmalar: {{ n }}.{% endblocktranslate %}</p></div></header>
+    <div class="pay-auto">
+      <label class="nzd-check"><input type="checkbox" name="reminder_enabled" {% if auto.reminder_enabled %}checked{% endif %} {% if not can_change %}disabled{% endif %}><span><b>{% translate "To'lov eslatmasi" %}</b><small>{% translate "Telegram'da to'g'ridan-to'g'ri to'lov sahifasiga tugma va «Naqd to'layman»." %}</small></span></label>
+      <label class="nzd-field-label">{% translate "Necha daqiqadan keyin" %}<input class="nzd-input" name="reminder_after_minutes" inputmode="numeric" value="{{ auto.reminder_after_minutes }}" {% if not can_change %}disabled{% endif %}></label>
+      <label class="nzd-check"><input type="checkbox" name="auto_cancel_enabled" {% if auto.auto_cancel_enabled %}checked{% endif %} {% if not can_change %}disabled{% endif %}><span><b>{% translate "Avtomatik bekor qilish" %}</b><small>{% translate "Ombor rezervi bo'shaydi, ishlatilgan coinlar qaytadi, mijozga xabar boradi." %}</small></span></label>
+      <label class="nzd-field-label">{% translate "Necha soatdan keyin" %}<input class="nzd-input" name="auto_cancel_after_hours" inputmode="numeric" value="{{ auto.auto_cancel_after_hours }}" {% if not can_change %}disabled{% endif %}></label>
+      <label class="nzd-check"><input type="checkbox" name="reconcile_enabled" {% if auto.reconcile_enabled %}checked{% endif %} {% if not can_change %}disabled{% endif %}><span><b>{% translate "Kunlik solishtirish" %}</b><small>{% translate "Har kuni 06:00 da to'lovlar, buyurtmalar va provayder holatini solishtiradi." %}</small></span></label>
+      {% if can_change %}<div class="pay-auto-save"><button class="nzp-btn nzp-btn-primary"><i class="fas fa-check" aria-hidden="true"></i> {% translate "Saqlash" %}</button></div>{% endif %}
+    </div>
+  </form>
+
+  <section class="nzp-card">
+    <header class="nzp-card-head nzp-card-head-sm"><span class="nzp-card-icon" style="--c:#0ea5e9"><i class="fas fa-shield-halved" aria-hidden="true"></i></span><div><h3>{% translate "Xavfsizlik" %}</h3><p>{% translate "Kalitlar bazada AES (Fernet) bilan shifrlanadi va hech qachon qayta ko'rsatilmaydi. Har bir so'rov provayder imzosi/Basic-auth bilan tekshiriladi, summa buyurtmaning server tomonidagi narxi bilan solishtiriladi va barcha callback'lar jurnalga yoziladi." %}</p></div></header>
+  </section>
+</div>
+{% endblock %}

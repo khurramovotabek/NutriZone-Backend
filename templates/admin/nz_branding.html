@@ -1,0 +1,3 @@
+{# Site Settings -> dashboard branding: favicon plus a small generated stylesheet (brand colour tokens, uploaded logo). Included by base_site.html and login.html. #}
+{% if site_settings.favicon %}<link rel="icon" href="{{ site_settings.favicon.url }}">{% elif site_settings.logo %}<link rel="icon" href="{{ site_settings.logo.url }}">{% endif %}
+<link rel="stylesheet" href="{% url 'nz_branding_css' %}?v={{ site_settings.updated_at|date:'U' }}">

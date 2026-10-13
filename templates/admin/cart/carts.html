@@ -1,0 +1,75 @@
+{% extends "admin/change_list.html" %}
+{% load i18n static admin_list %}
+{# Carts: KPIs, view tabs (with products / abandoned / ordered / products in carts / empty / all), customer search, rows annotated in CartAdmin.get_changelist_instance. #}
+{% block extrastyle %}{{ block.super }}<link rel="stylesheet" href="{% static 'admin/css/nutrizone-platform.css' %}?v=5"><link rel="stylesheet" href="{% static 'admin/css/nutrizone-orderdesk.css' %}?v=5"><link rel="stylesheet" href="{% static 'admin/css/nutrizone-wmsx.css' %}?v=9">{% endblock %}
+{% block content_title %}{% endblock %}
+{% block content %}
+<div class="nzp nzd wx">
+  <header class="nzp-hero">
+    <div class="nzp-hero-main">
+      <span class="nzp-hero-icon" style="--c:#2563eb"><i class="fas fa-cart-shopping" aria-hidden="true"></i></span>
+      <div><h2>{% translate "Savatlar" %}</h2><p>{% translate "What customers hold in their carts right now, which carts were abandoned and can still be won back, and which became orders. Values at today's prices." %}</p></div>
+    </div>
+    <div class="nzp-hero-actions"><a class="nzp-btn nzp-btn-ghost" href="{% url 'admin:cart_cartauditentrymodel_changelist' %}"><i class="fas fa-clock-rotate-left" aria-hidden="true"></i> {% translate "Savat tarixi" %}</a></div>
+  </header>
+
+  <div class="nzp-stats wx-stats-6">
+    <a class="nzp-stat" href="?view=items" style="--c:#2563eb"><i class="fas fa-cart-shopping" aria-hidden="true"></i><div><b>{{ kpi.carts }}</b><span>{% translate "Carts with products" %}</span></div></a>
+    <div class="nzp-stat" style="--c:#10b981"><i class="fas fa-sack-dollar" aria-hidden="true"></i><div><b>{{ kpi.value }}<small> {% translate "so'm" %}</small></b><span>{% translate "In carts now" %}</span></div></div>
+    <a class="nzp-stat" href="?view=abandoned" style="--c:#e11d48"><i class="fas fa-person-walking-arrow-right" aria-hidden="true"></i><div><b>{{ kpi.abandoned }}</b><span>{% blocktranslate with v=kpi.abandoned_value r=kpi.reachable %}Abandoned · {{ v }} so'm · {{ r }} can be reminded{% endblocktranslate %}</span></div></a>
+    <div class="nzp-stat" style="--c:#8b5cf6"><i class="fas fa-basket-shopping" aria-hidden="true"></i><div><b>{{ kpi.avg }}<small> {% translate "so'm" %}</small></b><span>{% blocktranslate with n=kpi.avg_units %}Average cart · {{ n }} pcs{% endblocktranslate %}</span></div></div>
+    <div class="nzp-stat" style="--c:#0ea5e9"><i class="fas fa-user-check" aria-hidden="true"></i><div><b>{{ kpi.known }}%</b><span>{% translate "Signed-in customers" %}</span></div></div>
+    <a class="nzp-stat" href="?view=ordered" style="--c:#f59e0b"><i class="fas fa-arrow-right-to-bracket" aria-hidden="true"></i><div><b>{{ kpi.conversion }}%</b><span>{% blocktranslate with a=kpi.converted b=kpi.month %}Became an order (30 days) · {{ a }} of {{ b }}{% endblocktranslate %}</span></div></a>
+  </div>
+
+  <div class="nzp-toolbar">
+    <nav class="nzp-tabs" aria-label="{% translate 'Cart' %}">
+      {% for key, label, icon, color, n in tabs %}<a class="nzp-tab{% if view == key %} on{% endif %}" href="?view={{ key }}" style="--t:{{ color }}"><i class="fas {{ icon }}" aria-hidden="true"></i> {{ label }}{% if n is not None %} <b>{{ n }}</b>{% endif %}</a>{% endfor %}
+    </nav>
+    {% if view != "products" %}<form class="nzd-filters" method="get"><input type="hidden" name="view" value="{{ view }}"><label class="nzp-search"><i class="fas fa-magnifying-glass" aria-hidden="true"></i><input type="search" name="q" value="{{ q }}" placeholder="{% translate 'Cart code, customer name or phone…' %}" aria-label="{% translate 'Cart code, customer name or phone…' %}"></label></form>{% endif %}
+  </div>
+
+  {% if view == "empty" %}<div class="nzp-note nzp-note-info"><i class="fas fa-broom" aria-hidden="true"></i> {% blocktranslate with n=purge_soon %}Empty guest carts idle for 30+ days are deleted automatically every Sunday night (signed-in customers' carts are kept). Next cleanup: {{ n }} cart(s).{% endblocktranslate %}</div>{% endif %}
+  {% if view == "products" %}
+  <section class="nzp-card nzp-inbox">
+    {% if products %}
+    <div class="nzd-table wx-demand-table" role="table">
+      <div class="nzd-tr nzd-th" role="row"><span>{% translate "Product" %}</span><span>{% translate "In carts" %}</span><span class="r">{% translate "Carts" %}</span><span class="r">{% translate "Customers" %}</span><span class="r">{% translate "Abandoned" %}</span><span class="r">{% translate "Value" %}</span></div>
+      {% for p in products %}
+      <div class="nzd-tr" role="row" style="--i:{{ forloop.counter0 }}">
+        <span class="wx-prod">{% if p.card.thumb %}<img src="{{ p.card.thumb }}" alt="">{% else %}<span class="ph"><i class="fas fa-box" aria-hidden="true"></i></span>{% endif %}<span><b>{{ p.card.name }}</b><small>{{ p.card.sku }}</small></span></span>
+        <span><b>{{ p.units }} {% translate "pcs" %}</b><span class="wx-progress"><i style="width:{{ p.pct }}%"></i></span></span>
+        <span class="r"><b class="wx-num">{{ p.carts }}</b></span>
+        <span class="r"><b class="wx-num">{{ p.customers }}</b></span>
+        <span class="r">{% if p.abandoned %}<b class="wx-minus">{{ p.abandoned }}</b>{% else %}<small>—</small>{% endif %}</span>
+        <span class="r"><b>{{ p.value }}</b></span>
+      </div>
+      {% endfor %}
+    </div>
+    {% else %}<div class="nzp-empty"><h3>{% translate "No products in carts" %}</h3></div>{% endif %}
+  </section>
+  <div class="nzp-note nzp-note-info"><i class="fas fa-lightbulb" aria-hidden="true"></i> {% translate "Products that sit in many carts but are rarely ordered usually have a price or delivery question -- a coupon or a Telegram post about them works well." %}</div>
+  {% else %}
+  <section class="nzp-card nzp-inbox">
+    {% if cl.result_list %}
+    <div class="nzd-table wx-cart-table" role="table">
+      <div class="nzd-tr nzd-th" role="row"><span>{% translate "Cart" %}</span><span>{% translate "Customer" %}</span><span>{% translate "Products" %}</span><span class="r">{% translate "Value" %}</span><span>{% translate "Status" %}</span><span>{% translate "Last activity" %}</span></div>
+      {% for c in cl.result_list %}
+      <a class="nzd-tr" role="row" href="{% url 'admin:cart_cartmodel_change' c.pk %}" style="--i:{{ forloop.counter0 }}">
+        <span><b class="nz-num">{{ c.code }}</b><small><i class="fas {{ c.nz.source_icon }}" aria-hidden="true"></i> {{ c.nz.source }}</small></span>
+        <span class="wx-prod">{% if c.nz.user %}<span class="ph wx-avatar">{{ c.nz.initials|default:"?" }}</span><span><b>{{ c.nz.user.full_name|default:_("Customer") }}</b><small>{{ c.nz.user.phone_number }}</small></span>{% else %}<span class="ph"><i class="fas fa-user-secret" aria-hidden="true"></i></span><span><b>{% translate "Guest" %}</b><small>{% translate "not signed in" %}</small></span>{% endif %}</span>
+        <span class="wx-cart-items">{% if c.nz.items %}<span class="wx-thumbs">{% for i in c.nz.items %}{% if i.thumb %}<img src="{{ i.thumb }}" alt="" title="{{ i.name }}">{% else %}<span class="ph"><i class="fas fa-box" aria-hidden="true"></i></span>{% endif %}{% endfor %}{% if c.nz.more %}<span class="ph">+{{ c.nz.more }}</span>{% endif %}</span><span><b>{{ c.nz.units }} {% translate "pcs" %}</b><small>{{ c.nz.first|truncatechars:34 }}</small></span>{% else %}<small class="wx-muted">{% translate "empty" %}</small>{% endif %}</span>
+        <span class="r">{% if c.nz.value %}<b>{{ c.nz.value }}</b><small>{% translate "so'm" %}</small>{% else %}<small>—</small>{% endif %}</span>
+        <span><span class="nzd-pill" style="--t:{{ c.nz.tone }}">{{ c.nz.label }}</span>{% if c.nz.orders %}<small>{{ c.nz.orders.0.order_number }}</small>{% endif %}</span>
+        <span><b>{{ c.nz.ago }}</b><small>{{ c.nz.when }}</small></span>
+      </a>
+      {% endfor %}
+    </div>
+    {% else %}
+    <div class="nzp-empty"><span class="nzp-empty-icon" style="--c:#2563eb"><i class="fas fa-cart-shopping" aria-hidden="true"></i></span><h3>{% translate "Nothing here" %}</h3><p>{% translate "Try another tab or search." %}</p></div>
+    {% endif %}
+  </section>
+  {% if cl.result_count > cl.list_per_page %}<div class="nzp-pagination">{% pagination cl %}</div>{% endif %}
+  {% endif %}
+</div>
+{% endblock %}

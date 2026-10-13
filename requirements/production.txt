@@ -1,0 +1,5 @@
+-r base.txt
+
+sentry-sdk==2.19.2
+django-storages[s3]==1.14.4
+whitenoise==6.8.2

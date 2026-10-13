@@ -1,0 +1,92 @@
+{% extends "admin/base_site.html" %}
+{% load i18n static %}
+
+{% block breadcrumbs %}
+<div class="breadcrumbs">
+  <a href="{% url 'admin:index' %}">{% translate "Home" %}</a>
+  &rsaquo; {{ title }}
+</div>
+{% endblock %}
+
+{% block content %}
+<div class="nz-dashboard" data-nz-geo-overview>
+  <div class="nz-dashboard-header">
+    <div>
+      <h2 class="nz-dashboard-title">{% translate "Geo Overview" %}</h2>
+      <p class="nz-dashboard-subtitle">{% translate "The real geographic hierarchy and delivery coverage, in one place, without cross-referencing 11 separate admin grids." %}</p>
+    </div>
+  </div>
+
+  {# --- Summary KPI grid --- #}
+  {% if summary.ok %}
+  {% with s=summary.data %}
+  <div class="nz-kpi-grid">
+    <div class="nz-card nz-kpi-card">
+      <div class="nz-kpi-label">{% translate "Countries" %}</div>
+      <div class="nz-stat-number">{{ s.total_countries }}</div>
+    </div>
+    <div class="nz-card nz-kpi-card">
+      <div class="nz-kpi-label">{% translate "Regions" %}</div>
+      <div class="nz-stat-number">{{ s.total_regions }}</div>
+    </div>
+    <div class="nz-card nz-kpi-card">
+      <div class="nz-kpi-label">{% translate "Cities" %}</div>
+      <div class="nz-stat-number">{{ s.total_cities }}</div>
+    </div>
+    <div class="nz-card nz-kpi-card">
+      <div class="nz-kpi-label">{% translate "Customer Addresses" %}</div>
+      <div class="nz-stat-number">{{ s.total_addresses }}</div>
+    </div>
+  </div>
+  {% endwith %}
+  {% else %}
+    <p class="nz-error-state">&#9888; {% translate "Unable to load summary data" %}</p>
+  {% endif %}
+
+  {# --- Per-country hierarchy cards --- #}
+  <div class="nz-card">
+    <h3>{% translate "Countries" %}</h3>
+    {% if countries.ok %}
+      {% if countries.data %}
+        <div class="nz-roles-grid">
+          {% for country in countries.data %}
+          <div class="nz-card nz-role-card">
+            <div class="nz-role-card-header">
+              <div>
+                <div class="nz-role-name">{{ country.name }}</div>
+                <div class="nz-role-code">{{ country.code }}</div>
+              </div>
+              <span class="nz-badge {% if country.status == 'active' %}nz-badge-success{% else %}nz-badge-neutral{% endif %}">{{ country.status }}</span>
+            </div>
+            <div class="nz-geo-stat-grid">
+              <div class="nz-geo-stat"><span class="nz-stat-number">{{ country.region_count }}</span><span class="nz-kpi-label">{% translate "Regions" %}</span></div>
+              <div class="nz-geo-stat"><span class="nz-stat-number">{{ country.district_count }}</span><span class="nz-kpi-label">{% translate "Districts" %}</span></div>
+              <div class="nz-geo-stat"><span class="nz-stat-number">{{ country.city_count }}</span><span class="nz-kpi-label">{% translate "Cities" %}</span></div>
+              <div class="nz-geo-stat"><span class="nz-stat-number">{{ country.neighborhood_count }}</span><span class="nz-kpi-label">{% translate "Neighborhoods" %}</span></div>
+              <div class="nz-geo-stat"><span class="nz-stat-number">{{ country.address_count }}</span><span class="nz-kpi-label">{% translate "Addresses" %}</span></div>
+            </div>
+          </div>
+          {% endfor %}
+        </div>
+      {% else %}
+        <p class="nz-kpi-trend nz-trend-muted">{% translate "No countries defined yet." %}</p>
+      {% endif %}
+    {% else %}
+      <p class="nz-error-state">&#9888; {% translate "Unable to load country data" %}</p>
+    {% endif %}
+  </div>
+
+  {# --- Cities missing coordinates warning --- #}
+  {% if cities_missing_coordinates.ok and cities_missing_coordinates.data %}
+  <div class="nz-card">
+    <h3>{% translate "Cities Missing Coordinates" %}</h3>
+    <p class="nz-kpi-trend nz-trend-muted">{% translate "These cities have no center latitude/longitude -- any distance or map-based feature will not work for them." %}</p>
+    <div class="nz-permission-list">
+      {% for city in cities_missing_coordinates.data %}
+        <span class="nz-badge nz-badge-warning">{{ city.name }} ({{ city.region_name }})</span>
+      {% endfor %}
+    </div>
+  </div>
+  {% endif %}
+</div>
+{% endblock %}

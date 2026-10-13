@@ -1,0 +1,42 @@
+/*
+ * NutriZone Admin -- dark mode token overrides (Phase 08.1)
+ * Applied when <html data-nz-theme="dark">. Only variable VALUES
+ * change here -- component rules live entirely in
+ * nutrizone-admin.css and are never duplicated.
+ */
+
+html[data-nz-theme="dark"] {
+  --nz-bg: #14181f;
+  --nz-surface: #1b212b;
+  --nz-surface-secondary: #20272f;
+  --nz-border: #2c3540;
+
+  --nz-text-primary: #f2f4f7;
+  --nz-text-secondary: #a9b3bf;
+  --nz-text-muted: #6b7684;
+
+  --nz-primary: #3b82f6;
+  --nz-primary-hover: #60a5fa;
+
+  /* Phase 2: success/warning/danger/info were never re-defined for
+     dark mode, so they silently fell back to their light-mode values
+     (#1f7a4d/#b9770e/#c0392b/#2c6fbb) -- each chosen for contrast
+     against a light surface, not the dark one. Brightened here for
+     genuine dark-surface legibility, matching --nz-primary's own
+     light->dark brightening pattern immediately above. */
+  --nz-success: #34a56f;
+  --nz-warning: #d99a3a;
+  --nz-danger: #e0685c;
+  --nz-info: #5b9bd9;
+
+  --nz-hover: rgba(59, 130, 246, 0.12);
+  --nz-focus-ring: rgba(59, 130, 246, 0.45);
+
+  --nz-shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.35);
+  --nz-shadow-md: 0 4px 14px rgba(0, 0, 0, 0.45);
+
+  --nz-glass-bg: rgba(27, 33, 43, 0.55);
+  --nz-glass-border: rgba(255, 255, 255, 0.08);
+  --nz-glass-shadow: 0 8px 32px rgba(0, 0, 0, 0.45);
+  --nz-glass-highlight: rgba(255, 255, 255, 0.06);
+}

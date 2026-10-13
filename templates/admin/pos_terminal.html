@@ -1,0 +1,1380 @@
+{% extends "admin/base_site.html" %}
+{% load i18n static %}
+
+{% block extrastyle %}
+{{ block.super }}
+<link rel="stylesheet" href="{% static 'admin/css/nutrizone-pos.css' %}?v=2026.09.26.10">
+<link rel="stylesheet" href="{% static 'admin/css/nutrizone-pos-glass.css' %}?v=1">
+{% endblock %}
+
+{% block breadcrumbs %}
+<div class="breadcrumbs">
+  <a href="{% url 'admin:index' %}">{% translate "Home" %}</a>
+  &rsaquo; {{ title }}
+</div>
+{% endblock %}
+
+{% block content %}
+<input type="hidden" id="pos-setup-branch" value="{{ default_branch_id }}">
+<input type="hidden" id="pos-sale-admin-url-base" value="{{ sale_admin_url_base }}">
+{# Prices resolve against the first active price list (no cashier-facing picker). #}
+<input type="hidden" id="pos-setup-price-list" value="{% if price_lists %}{{ price_lists.0.id }}{% endif %}">
+
+<div id="nz-pos-app" data-nz-pos-app>
+  <header class="pos-topbar">
+    <div class="pos-topbar-title">
+      <h1>{% translate "POS Terminal" %}</h1>
+      <p>{% translate "Mahsulotni toping, savatga qo'shing va to'lovni tez yakunlang" %}</p>
+    </div>
+    <div class="pos-topbar-meta">
+      {% if store %}
+      <span class="pos-chip" title="{% translate 'Filial' %}">
+        <i class="fas fa-store" aria-hidden="true"></i>
+        <strong>{{ store.name }}</strong>{% if store.district or store.city %}<span>&middot; {% if store.district %}{{ store.district }}{% endif %}{% if store.district and store.city %}, {% endif %}{% if store.city %}{{ store.city }}{% endif %}</span>{% endif %}
+      </span>
+      {% endif %}
+      <span class="pos-chip"><span class="pos-status-dot" aria-hidden="true"></span>{% translate "Onlayn" %}</span>
+      <span class="pos-chip"><i class="fas fa-user" aria-hidden="true"></i><strong>{{ cashier_name }}</strong></span>
+      <button type="button" id="pos-shortcuts-btn" class="pos-icon-btn" title="{% translate 'Klaviatura tugmalari' %}" aria-label="{% translate 'Klaviatura tugmalari' %}"><i class="fas fa-keyboard" aria-hidden="true"></i></button>
+    </div>
+  </header>
+
+  {% if not price_lists %}
+  <div class="pos-center"><div class="pos-alert pos-alert-error"><i class="fas fa-triangle-exclamation" aria-hidden="true"></i><span>{% translate "No active price list found -- prices cannot be resolved without one." %}</span></div></div>
+  {% endif %}
+
+  <!-- Step 1: browse / scan / build the basket -->
+  <div class="pos-body" id="pos-step-terminal">
+    <section class="pos-center" aria-label="{% translate 'Mahsulotlar' %}">
+      <div class="pos-search">
+        <i class="fas fa-magnifying-glass" aria-hidden="true"></i>
+        <input type="search" id="pos-search-input" placeholder="{% translate 'Mahsulot nomi, SKU yoki shtrix-kod qidiring...' %}" autocomplete="off" spellcheck="false" aria-label="{% translate 'Mahsulot nomi, SKU yoki shtrix-kod qidiring...' %}">
+        <button type="button" class="pos-search-clear" id="pos-search-clear" aria-label="{% translate 'Tozalash' %}" hidden><i class="fas fa-xmark" aria-hidden="true"></i></button>
+        <span class="pos-kbd" style="margin-right:8px">/</span>
+        <button type="button" id="pos-scan-btn" class="pos-search-scan" title="{% translate 'Shtrix-kodni skanerlash uchun qidiruv maydoniga fokus qiling' %}">
+          <i class="fas fa-barcode" aria-hidden="true"></i><span>{% translate "Skanerlash" %}</span>
+        </button>
+      </div>
+
+      <div class="pos-categories" id="pos-categories" role="tablist">
+        <button type="button" class="pos-category-chip pos-active" data-category-id="" role="tab">{% translate "Barcha mahsulotlar" %}<span class="pos-category-count" data-count-for=""></span></button>
+        {% for c in categories %}<button type="button" class="pos-category-chip" data-category-id="{{ c.id }}" role="tab">{{ c.name }}<span class="pos-category-count" data-count-for="{{ c.id }}"></span></button>{% endfor %}
+      </div>
+
+      <div class="pos-results-meta" id="pos-results-meta" aria-live="polite"></div>
+      <div class="pos-product-grid" id="pos-product-grid"></div>
+      <nav class="pos-pagination" id="pos-pagination" aria-label="{% translate 'Sahifalar' %}" hidden></nav>
+    </section>
+
+    <div class="pos-cart-backdrop" id="pos-cart-backdrop"></div>
+    <aside class="pos-cart" id="pos-cart-panel" aria-label="{% translate 'Savdo savatchasi' %}">
+      <div class="pos-cart-header">
+        <h2>{% translate "Savdo savatchasi" %} <span class="pos-count-pill" id="pos-mini-cart-count">0</span></h2>
+        <div>
+          <button type="button" class="pos-text-btn" id="pos-cart-void" disabled><i class="fas fa-trash-can" aria-hidden="true"></i>{% translate "Tozalash" %}</button>
+          <button type="button" class="pos-icon-btn pos-cart-drawer-close" id="pos-cart-close" aria-label="{% translate 'Yopish' %}"><i class="fas fa-xmark" aria-hidden="true"></i></button>
+        </div>
+      </div>
+
+      <div class="pos-cart-items" id="pos-cart-mini-list">
+        <div class="pos-empty"><i class="fas fa-basket-shopping" aria-hidden="true"></i><strong>{% translate "Savatcha bo'sh" %}</strong><span>{% translate "Mahsulot tanlang va savdoni boshlang." %}</span></div>
+      </div>
+
+      <div class="pos-cart-footer">
+        <div>
+          <span class="pos-field-label">{% translate "Kupon kodi" %}</span>
+          <div class="pos-coupon-row" id="pos-promo-row">
+            <input type="text" id="pos-promo-input" class="pos-input" placeholder="{% translate 'Kupon kodini kiriting' %}" autocomplete="off" spellcheck="false">
+            <button id="pos-promo-apply-btn" type="button" class="pos-secondary-btn">{% translate "Qo'llash" %}</button>
+          </div>
+          <div class="pos-coupon-applied" id="pos-promo-applied" hidden>
+            <span><i class="fas fa-ticket" aria-hidden="true"></i> <span id="pos-promo-applied-code"></span></span>
+            <button id="pos-promo-remove-btn" type="button" aria-label="{% translate 'Promo kodni olib tashlash' %}"><i class="fas fa-xmark" aria-hidden="true"></i></button>
+          </div>
+          <div class="pos-field-msg" id="pos-promo-msg" role="status"></div>
+        </div>
+
+        <div class="pos-totals">
+          <div class="pos-summary-row"><span>{% translate "Oraliq summa" %}</span><span data-bind="subtotal">0</span></div>
+          <div class="pos-summary-row pos-discount-row" data-bind-visible="discount" hidden><span>{% translate "Chegirma" %}</span><span data-bind="discount">0</span></div>
+          <div class="pos-summary-row pos-total"><span>{% translate "Jami summa" %}</span><span data-bind="total">0</span></div>
+        </div>
+
+        <div>
+          <span class="pos-field-label">{% translate "Tanlangan to'lov usuli" %}</span>
+          <div class="pos-pay-methods" role="radiogroup" aria-label="{% translate "Tanlangan to'lov usuli" %}" data-pay-group></div>
+        </div>
+
+        <button id="pos-goto-checkout-btn" type="button" class="pos-complete-btn" disabled>{% translate "To'lovga o'tish" %} <i class="fas fa-arrow-right" aria-hidden="true"></i></button>
+      </div>
+    </aside>
+
+    <div class="pos-cart-bar" id="pos-cart-bar">
+      <button type="button" class="pos-icon-btn" id="pos-cart-open" aria-label="{% translate 'Savdo savatchasi' %}"><i class="fas fa-basket-shopping" aria-hidden="true"></i> <span data-bind="count">0</span></button>
+      <div class="pos-cart-bar-info">{% translate "Jami summa" %}<strong data-bind="total">0</strong></div>
+      <button type="button" class="pos-complete-btn" id="pos-cart-bar-checkout" disabled>{% translate "To'lovga o'tish" %} <i class="fas fa-arrow-right" aria-hidden="true"></i></button>
+    </div>
+  </div>
+
+  <!-- Step 2: checkout -->
+  <div class="pos-checkout" id="pos-step-checkout" hidden>
+    <div class="pos-checkout-topbar">
+      <button type="button" id="pos-checkout-back-btn" class="pos-secondary-btn"><i class="fas fa-arrow-left" aria-hidden="true"></i> {% translate "Mahsulotlarga qaytish" %}</button>
+      <div>
+        <h2>{% translate "Checkout" %}</h2>
+        <p>{% translate "Buyurtmani yakunlang va to'lovni qabul qiling" %}</p>
+      </div>
+      <ol class="pos-stepper" aria-label="{% translate 'Bosqichlar' %}" style="list-style:none;padding:0;margin-bottom:0">
+        <li class="pos-step pos-done"><span class="pos-step-num"><i class="fas fa-check" aria-hidden="true"></i></span>{% translate "Savatcha" %}</li>
+        <li class="pos-step-sep" aria-hidden="true"></li>
+        <li class="pos-step pos-current"><span class="pos-step-num">2</span>{% translate "Mijoz" %}</li>
+        <li class="pos-step-sep" aria-hidden="true"></li>
+        <li class="pos-step pos-current"><span class="pos-step-num">3</span>{% translate "To'lov" %}</li>
+      </ol>
+    </div>
+
+    <div class="pos-checkout-body">
+      <section class="pos-panel pos-order-panel">
+        <div class="pos-panel-header">
+          <h3><i class="fas fa-bag-shopping" aria-hidden="true"></i>{% translate "Buyurtma tarkibi" %} <span class="pos-count-pill" data-bind="count">0</span></h3>
+          <button type="button" class="pos-text-btn pos-link-btn" id="pos-edit-cart-btn"><i class="fas fa-pen" aria-hidden="true"></i>{% translate "Savatchani tahrirlash" %}</button>
+        </div>
+        <div class="pos-order-items" id="pos-cart-items"></div>
+        <div class="pos-order-foot">
+          <span>{% translate "Mahsulotlar summasi" %}</span>
+          <strong class="pos-num" data-bind="total">0</strong>
+        </div>
+      </section>
+
+      <div class="pos-checkout-forms">
+        <section class="pos-panel">
+          <div class="pos-panel-header"><h3><i class="fas fa-user" aria-hidden="true"></i>{% translate "Mijoz ma'lumotlari" %}</h3></div>
+          <div class="pos-panel-body" id="pos-customer-new-form">
+            <div class="pos-form-field">
+              <label for="pos-customer-phone">{% translate "Telefon raqami" %} <em>*</em></label>
+              <div class="pos-phone-wrap" id="pos-customer-phone-wrap">
+                <span class="pos-phone-prefix">+998</span>
+                <input type="tel" id="pos-customer-phone" inputmode="numeric" autocomplete="off" placeholder="90 123 45 67" maxlength="12" aria-describedby="pos-customer-phone-msg" required>
+              </div>
+              <div class="pos-field-msg" id="pos-customer-phone-msg" role="status"></div>
+            </div>
+            <div class="pos-form-field">
+              <label for="pos-customer-name">{% translate "Ism familiya" %} <small>({% translate "ixtiyoriy" %})</small></label>
+              <input type="text" id="pos-customer-name" class="pos-input" autocomplete="off" placeholder="{% translate "Noma'lum" %}">
+            </div>
+            <div id="pos-customer-match" aria-live="polite"></div>
+          </div>
+        </section>
+
+        <section class="pos-panel">
+          <div class="pos-panel-header"><h3><i class="fas fa-truck-fast" aria-hidden="true"></i>{% translate "Yetkazib berish" %}</h3></div>
+          <div class="pos-panel-body">
+            <div class="pos-form-field">
+              <label for="pos-delivery-fee">{% translate "Yetkazib berish puli" %} <small>({% translate "ixtiyoriy" %})</small></label>
+              <div class="pos-money-input">
+                <input type="text" inputmode="numeric" id="pos-delivery-fee" autocomplete="off" placeholder="0">
+                <span>{% translate "so'm" %}</span>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section class="pos-panel">
+          <div class="pos-panel-header"><h3><i class="fas fa-wallet" aria-hidden="true"></i>{% translate "To'lov turi" %}</h3></div>
+          <div class="pos-panel-body">
+            <div class="pos-pay-methods pos-pay-methods-lg" role="radiogroup" aria-label="{% translate "To'lov turi" %}" data-pay-group></div>
+            <div class="pos-pay-hint" style="margin-top:-6px" id="pos-pay-hint">{% translate "Naqd pul: olingan summa va qaytim hisoblanadi." %}</div>
+          </div>
+        </section>
+      </div>
+
+      <section class="pos-panel pos-checkout-summary-col">
+        <div class="pos-panel-header"><h3><i class="fas fa-receipt" aria-hidden="true"></i>{% translate "Buyurtma xulosasi" %}</h3><span data-bind="count-label"></span></div>
+        <div class="pos-panel-body">
+          <div class="pos-amount-hero">
+            <small>{% translate "To'lanadigan summa" %}</small>
+            <strong class="pos-num" data-bind="grand">0</strong>
+          </div>
+          <div class="pos-totals">
+            <div class="pos-summary-row"><span>{% translate "Mahsulotlar" %} (<span data-bind="count">0</span>)</span><span data-bind="subtotal">0</span></div>
+            <div class="pos-summary-row pos-discount-row" data-bind-visible="discount" hidden><span>{% translate "Chegirma" %}</span><span data-bind="discount">0</span></div>
+            <div class="pos-summary-row"><span>{% translate "Yetkazib berish" %}</span><span data-bind="delivery">0</span></div>
+            <div class="pos-summary-row"><span>{% translate "To'lov turi" %}</span><span data-bind="pay-method"></span></div>
+          </div>
+
+          <div class="pos-collect" id="pos-cash-panel">
+            <div class="pos-collect-head">
+              <label for="pos-cash-received">{% translate "Mijozdan olinadigan summa" %}</label>
+              <button type="button" class="pos-text-btn pos-link-btn" id="pos-collect-reset" hidden><i class="fas fa-rotate-left" aria-hidden="true"></i>{% translate "Jami summaga qaytarish" %}</button>
+            </div>
+            <div class="pos-money-input pos-money-input-lg">
+              <input type="text" inputmode="numeric" id="pos-cash-received" autocomplete="off" placeholder="0">
+              <span>{% translate "so'm" %}</span>
+            </div>
+            <div class="pos-quick-amounts" id="pos-quick-amounts"></div>
+            <div class="pos-change-row" id="pos-change-row"><span id="pos-change-label">{% translate "QAYTIM" %}</span><span class="pos-change-amount" id="pos-change-amount">0</span></div>
+          </div>
+
+          <div class="pos-summary-block">
+            <small>{% translate "Mijoz" %}</small>
+            <div id="pos-summary-customer-name">{% translate "Noma'lum" %}</div>
+            <span id="pos-summary-customer-phone">&mdash;</span>
+          </div>
+          {% if store %}
+          <div class="pos-summary-block">
+            <small>{% translate "Filial" %}</small>
+            <div>{{ store.name }}</div>
+            {% if store.district or store.city %}<span>{% if store.district %}{{ store.district }}{% endif %}{% if store.district and store.city %}, {% endif %}{% if store.city %}{{ store.city }}{% endif %}</span>{% endif %}
+          </div>
+          {% endif %}
+          <div id="pos-checkout-error" role="alert"></div>
+          <button id="pos-complete-btn" type="button" class="pos-complete-btn" disabled>{% translate "Buyurtmani yakunlash" %} <span class="pos-kbd">F2</span></button>
+          <button id="pos-void-btn-secondary" type="button" class="pos-text-btn" style="align-self:center">{% translate "Savdoni bekor qilish" %}</button>
+        </div>
+      </section>
+    </div>
+  </div>
+</div>
+
+<div class="pos-overlay-root">
+  <div id="pos-success-overlay" class="pos-success-overlay" hidden role="dialog" aria-modal="true" aria-labelledby="pos-success-title">
+    <div class="pos-success-card">
+      <div class="pos-success-icon"><i class="fas fa-check" aria-hidden="true"></i></div>
+      <div class="pos-success-title" id="pos-success-title">{% translate "To'lov muvaffaqiyatli yakunlandi!" %}</div>
+      <div class="pos-success-sub">{% translate "Xaridingiz uchun rahmat. Yaxshi kun tilaymiz!" %}</div>
+      <div class="pos-receipt-summary" id="pos-success-summary"></div>
+      <div class="pos-receipt-actions">
+        <a id="pos-view-order-btn" class="pos-secondary-btn" href="#" target="_blank" rel="noopener"><i class="fas fa-receipt" aria-hidden="true"></i> {% translate "Buyurtmani ko'rish" %}</a>
+        <button id="pos-print-receipt-btn" type="button" class="pos-secondary-btn"><i class="fas fa-print" aria-hidden="true"></i> {% translate "Chekni chop etish" %}</button>
+      </div>
+      <button class="pos-complete-btn" id="pos-new-sale-btn" type="button">{% translate "Yangi savdoni boshlash" %} <span class="pos-kbd">F9</span></button>
+    </div>
+  </div>
+
+  <div id="pos-shortcuts-overlay" class="pos-modal-overlay" hidden role="dialog" aria-modal="true" aria-labelledby="pos-shortcuts-title">
+    <div class="pos-modal-card">
+      <div class="pos-modal-header">
+        <h3 id="pos-shortcuts-title">{% translate "Klaviatura tugmalari" %}</h3>
+        <button id="pos-shortcuts-close-btn" type="button" aria-label="{% translate 'Yopish' %}">&times;</button>
+      </div>
+      <div class="pos-shortcut-row"><span>{% translate "Qidiruvga o'tish" %}</span><span><span class="pos-kbd">/</span> <span class="pos-kbd">Ctrl+K</span></span></div>
+      <div class="pos-shortcut-row"><span>{% translate "Topilgan mahsulotni savatga qo'shish" %}</span><span class="pos-kbd">Enter</span></div>
+      <div class="pos-shortcut-row"><span>{% translate "Oxirgi mahsulot sonini oshirish / kamaytirish" %}</span><span><span class="pos-kbd">+</span> <span class="pos-kbd">&minus;</span></span></div>
+      <div class="pos-shortcut-row"><span>{% translate "To'lovga o'tish / buyurtmani yakunlash" %}</span><span class="pos-kbd">F2</span></div>
+      <div class="pos-shortcut-row"><span>{% translate "Naqd summaga o'tish" %}</span><span class="pos-kbd">F4</span></div>
+      <div class="pos-shortcut-row"><span>{% translate "Yangi savdo (natija ekranida)" %}</span><span class="pos-kbd">F9</span></div>
+      <div class="pos-shortcut-row"><span>{% translate "Oynani yopish / qidiruvni tozalash" %}</span><span class="pos-kbd">Esc</span></div>
+      <div class="pos-shortcut-row"><span>{% translate "Ushbu ro'yxatni ochish" %}</span><span class="pos-kbd">?</span></div>
+    </div>
+  </div>
+
+  <div id="pos-confirm-overlay" class="pos-modal-overlay" hidden role="alertdialog" aria-modal="true">
+    <div class="pos-modal-card pos-confirm-card">
+      <p id="pos-confirm-message"></p>
+      <div class="pos-confirm-actions">
+        <button id="pos-confirm-cancel-btn" type="button" class="pos-secondary-btn">{% translate "Bekor qilish" %}</button>
+        <button id="pos-confirm-ok-btn" type="button" class="pos-confirm-danger-btn">{% translate "Ha, bekor qilaman" %}</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="nz-pos-toast" class="pos-toast" role="status" aria-live="polite"></div>
+</div>
+{% endblock %}
+
+{% block extrahead %}
+{{ block.super }}
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+  "use strict";
+
+  const API = "/django-admin/pos/terminal/api";
+  const T = {
+    som: "{% filter escapejs %}{% translate "so'm" %}{% endfilter %}",
+    unknown: "{% filter escapejs %}{% translate "Noma'lum" %}{% endfilter %}",
+    added: "{% filter escapejs %}{% translate "Savatchaga qo'shildi" %}{% endfilter %}",
+    addFailed: "{% filter escapejs %}{% translate "Mahsulotni savatga qo'shib bo'lmadi. Qayta urinib ko'ring." %}{% endfilter %}",
+    updateFailed: "{% filter escapejs %}{% translate "Savatchani yangilab bo'lmadi. Qayta urinib ko'ring." %}{% endfilter %}",
+    noVariant: "{% filter escapejs %}{% translate "Bu mahsulotda variant mavjud emas" %}{% endfilter %}",
+    outOfStock: "{% filter escapejs %}{% translate "Mahsulot tugagan" %}{% endfilter %}",
+    notEnoughStock: "{% filter escapejs %}{% translate "Omborda yetarli mahsulot yo'q" %}{% endfilter %}",
+    inStock: "{% filter escapejs %}{% translate "dona mavjud" %}{% endfilter %}",
+    pcs: "{% filter escapejs %}{% translate "dona" %}{% endfilter %}",
+    addToCart: "{% filter escapejs %}{% translate "Savatga qo'shish" %}{% endfilter %}",
+    inCart: "{% filter escapejs %}{% translate "Savatda" %}{% endfilter %}",
+    exactMatch: "{% filter escapejs %}{% translate "Aniq moslik" %}{% endfilter %}",
+    cartEmpty: "{% filter escapejs %}{% translate "Savatcha bo'sh" %}{% endfilter %}",
+    cartEmptyHint: "{% filter escapejs %}{% translate "Mahsulot tanlang va savdoni boshlang." %}{% endfilter %}",
+    noProducts: "{% filter escapejs %}{% translate "Hech qanday mahsulot topilmadi" %}{% endfilter %}",
+    noProductsHint: "{% filter escapejs %}{% translate "Qidiruv yoki filtrlarni o'zgartirib ko'ring." %}{% endfilter %}",
+    loadFailed: "{% filter escapejs %}{% translate "Mahsulotlarni yuklab bo'lmadi. Sahifani yangilang." %}{% endfilter %}",
+    productsCount: "{% filter escapejs %}{% translate "ta mahsulot" %}{% endfilter %}",
+    searching: "{% filter escapejs %}{% translate "Qidirilmoqda..." %}{% endfilter %}",
+    foundByBarcode: "{% filter escapejs %}{% translate "Shtrix-kod bo'yicha topildi" %}{% endfilter %}",
+    foundBySku: "{% filter escapejs %}{% translate "SKU bo'yicha topildi" %}{% endfilter %}",
+    enterToAdd: "{% filter escapejs %}{% translate "Enter — savatga qo'shish" %}{% endfilter %}",
+    scanReady: "{% filter escapejs %}{% translate "Skanerga tayyor — shtrix-kodni skanerlang" %}{% endfilter %}",
+    couponApplied: "{% filter escapejs %}{% translate "Kupon qo'llandi" %}{% endfilter %}",
+    couponInvalid: "{% filter escapejs %}{% translate "Kupon yaroqsiz yoki bu mahsulotlarga amal qilmaydi" %}{% endfilter %}",
+    couponNeedsCart: "{% filter escapejs %}{% translate "Avval savatga mahsulot tanlang" %}{% endfilter %}",
+    couponFailed: "{% filter escapejs %}{% translate "Kuponni tekshirib bo'lmadi. Qayta urinib ko'ring." %}{% endfilter %}",
+    couponRemoved: "{% filter escapejs %}{% translate "Kupon olib tashlandi" %}{% endfilter %}",
+    cash: "{% filter escapejs %}{% translate "Naqd" %}{% endfilter %}",
+    card: "{% filter escapejs %}{% translate "Karta" %}{% endfilter %}",
+    cashHint: "{% filter escapejs %}{% translate "Naqd pul: olingan summa va qaytim hisoblanadi." %}{% endfilter %}",
+    cardHint: "{% filter escapejs %}{% translate "Bank terminalida %s to'lanadi — qaytim yo'q." %}{% endfilter %}",
+    soon: "{% filter escapejs %}{% translate "Tez orada" %}{% endfilter %}",
+    phoneRequired: "{% filter escapejs %}{% translate "Telefon raqami majburiy" %}{% endfilter %}",
+    phoneInvalid: "{% filter escapejs %}{% translate "Telefon raqami noto'g'ri. Masalan: 90 123 45 67" %}{% endfilter %}",
+    existingCustomer: "{% filter escapejs %}{% translate "Mavjud mijoz" %}{% endfilter %}",
+    newCustomer: "{% filter escapejs %}{% translate "Yangi mijoz sifatida saqlanadi" %}{% endfilter %}",
+    cashInsufficient: "{% filter escapejs %}{% translate "Olingan summa yetarli emas" %}{% endfilter %}",
+    orderFailed: "{% filter escapejs %}{% translate "Buyurtma yakunlanmadi. Savatcha saqlab qolindi — qayta urinib ko'ring." %}{% endfilter %}",
+    voidConfirm: "{% filter escapejs %}{% translate "Joriy savdoni bekor qilasizmi? Bu amalni ortga qaytarib bo'lmaydi." %}{% endfilter %}",
+    voidFailed: "{% filter escapejs %}{% translate "Savdoni bekor qilib bo'lmadi. Qayta urinib ko'ring." %}{% endfilter %}",
+    order: "{% filter escapejs %}{% translate "Buyurtma" %}{% endfilter %}",
+    date: "{% filter escapejs %}{% translate "Sana" %}{% endfilter %}",
+    cashier: "{% filter escapejs %}{% translate "Kassir" %}{% endfilter %}",
+    customer: "{% filter escapejs %}{% translate "Mijoz" %}{% endfilter %}",
+    coupon: "{% filter escapejs %}{% translate "Promo kod" %}{% endfilter %}",
+    subtotal: "{% filter escapejs %}{% translate "Oraliq summa" %}{% endfilter %}",
+    discount: "{% filter escapejs %}{% translate "Chegirma" %}{% endfilter %}",
+    payment: "{% filter escapejs %}{% translate "To'lov turi" %}{% endfilter %}",
+    received: "{% filter escapejs %}{% translate "Mijozdan olindi" %}{% endfilter %}",
+    delivery: "{% filter escapejs %}{% translate "Yetkazib berish" %}{% endfilter %}",
+    free: "{% filter escapejs %}{% translate "Yo'q" %}{% endfilter %}",
+    changeLabel: "{% filter escapejs %}{% translate "QAYTIM" %}{% endfilter %}",
+    shortfall: "{% filter escapejs %}{% translate "Yetishmayapti" %}{% endfilter %}",
+    change: "{% filter escapejs %}{% translate "Qaytim" %}{% endfilter %}",
+    grandTotal: "{% filter escapejs %}{% translate "Yakuniy summa" %}{% endfilter %}",
+    cashierName: "{{ cashier_name|escapejs }}",
+  };
+  const PAY_METHODS = [
+    { id: "cash", label: T.cash, icon: "fa-money-bill-wave", enabled: true },
+    { id: "uzcard", label: "Uzcard", icon: "fa-credit-card", enabled: true },
+    { id: "humo", label: "Humo", icon: "fa-credit-card", enabled: true },
+    { id: "click", label: "Click", icon: "fa-mobile-screen", enabled: false },
+  ];
+
+  const $ = (id) => document.getElementById(id);
+  const state = {
+    sale: null,             // the real, server-side Sale payload -- the only source of truth for lines/totals
+    salePromise: null,
+    meta: {},               // product_id -> display info + base (non-coupon) unit price
+    catalog: [],
+    catalogLoaded: false,
+    categoryId: "",
+    searchSeq: 0,
+    lastResults: [],
+    lastExact: null,
+    page: 1,
+    pending: new Set(),     // product ids with an add/qty request in flight
+    coupon: null,
+    payMethod: "cash",
+    lastTouched: null,
+    customerMatch: null,
+    submitting: false,
+    collectEdited: false,
+  };
+
+  // ---------- helpers ----------
+
+  function esc(value) {
+    return String(value ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+  }
+  function formatMoney(amount) {
+    const n = Math.round(Number(amount || 0));
+    return n.toLocaleString("ru-RU").replace(/ /g, " ");
+  }
+  function money(amount) { return `${formatMoney(amount)} ${T.som}`; }
+  function formatWeight(value, unit) {
+    if (!value) return "";
+    const v = Number(value);
+    if (unit === "g" && v >= 1000) return `${+(v / 1000).toFixed(2)} kg`;
+    return `${+v.toFixed(2)} ${unit || ""}`.trim();
+  }
+  function normalize(text) {
+    return String(text || "").toLowerCase().normalize("NFKD").replace(/[̀-ͯ]/g, "").replace(/[ʻʼ'`’‘]/g, "").replace(/\s+/g, " ").trim();
+  }
+  function csrfToken() { return window.NZ_CSRF_TOKEN || ""; }
+
+  let toastTimer;
+  function toast(message, kind) {
+    const el = $("nz-pos-toast");
+    const isSuccess = kind === "success";
+    el.className = "pos-toast pos-toast-show " + (isSuccess ? "pos-toast-success" : "pos-toast-error");
+    el.innerHTML = `<i class="fas ${isSuccess ? "fa-circle-check" : "fa-circle-exclamation"}" aria-hidden="true"></i><span>${esc(message)}</span>`;
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => { el.className = "pos-toast"; }, isSuccess ? 1400 : 3200);
+  }
+
+  // Every request goes through these two; a failed call throws an Error whose
+  // `.detail` carries the raw server message for the console only -- the
+  // cashier always sees a friendly, translated message instead.
+  async function request(url, options) {
+    let res, data;
+    try {
+      res = await fetch(url, options);
+      data = await res.json();
+    } catch (networkError) {
+      const err = new Error("network");
+      err.detail = String(networkError);
+      throw err;
+    }
+    if (!res.ok || !data.success) {
+      const err = new Error("api");
+      err.status = res.status;
+      err.detail = (data && data.error && data.error.message) || res.statusText;
+      console.error("[NutriZone POS]", url, res.status, err.detail);
+      throw err;
+    }
+    return data.data;
+  }
+  const apiGet = (url) => request(url);
+  const apiPost = (url, body) => request(url, { method: "POST", headers: { "Content-Type": "application/json", "X-CSRFToken": csrfToken() }, body: JSON.stringify(body || {}) });
+
+  function priceListId() { return $("pos-setup-price-list").value; }
+  function lines() { return state.sale ? state.sale.line_items : []; }
+  function lineFor(productId) { return lines().find((li) => li.product_id === productId) || null; }
+  function itemCount() { return lines().reduce((sum, li) => sum + li.quantity, 0); }
+  function total() { return state.sale ? Number(state.sale.total_amount) : 0; }
+  function subtotal() {
+    return lines().reduce((sum, li) => {
+      const base = state.meta[li.product_id] && state.meta[li.product_id].basePrice;
+      return sum + Number(base ?? li.unit_price_amount) * li.quantity;
+    }, 0);
+  }
+  function stockOf(productId) {
+    const m = state.meta[productId];
+    return m && m.stock !== null && m.stock !== undefined ? Number(m.stock) : null;
+  }
+
+  // ---------- catalog / search ----------
+
+  function isSellable(p) { return Boolean((p.id || p.product_id) && p.variant_id && p.name); }
+  function toProduct(p) {
+    const id = String(p.id || p.product_id);
+    const weight = formatWeight(p.weight_value, p.weight_unit);
+    return {
+      id,
+      variantId: p.variant_id,
+      name: p.name,
+      brand: p.brand_name || "",
+      weight,
+      image: p.primary_image_path || "",
+      price: p.price ?? p.display_price ?? null,
+      stock: p.available_quantity ?? null,
+      categoryId: p.category_id || "",
+      hay: normalize([p.name, p.brand_name, weight, p.slug].join(" ")),
+    };
+  }
+  function remember(product) {
+    const prev = state.meta[product.id] || {};
+    state.meta[product.id] = { ...prev, ...product, basePrice: prev.basePrice };
+  }
+
+  async function loadCatalog() {
+    renderSkeletons(8);
+    try {
+      const all = [];
+      let page = 1;
+      let totalCount = Infinity;
+      while (all.length < totalCount && page <= 20) {
+        const data = await apiGet(`${API}/browse?page=${page}`);
+        const rows = data.results || [];
+        totalCount = data.total_count ?? rows.length;
+        all.push(...rows);
+        if (!rows.length) break;
+        page += 1;
+      }
+      state.catalog = all.filter(isSellable).map(toProduct);
+      state.catalog.forEach(remember);
+      state.catalogLoaded = true;
+      renderCategoryCounts();
+      runSearch();
+    } catch (e) {
+      $("pos-product-grid").innerHTML = emptyState("fa-plug-circle-exclamation", T.loadFailed, "");
+    }
+  }
+
+  function renderCategoryCounts() {
+    const counts = {};
+    state.catalog.forEach((p) => { counts[p.categoryId] = (counts[p.categoryId] || 0) + 1; });
+    document.querySelectorAll("[data-count-for]").forEach((el) => {
+      const id = el.dataset.countFor;
+      const n = id ? (counts[id] || 0) : state.catalog.length;
+      el.textContent = n;
+      if (id) el.closest(".pos-category-chip").hidden = n === 0;
+    });
+  }
+
+  function localMatches(query) {
+    const tokens = normalize(query).split(" ").filter(Boolean);
+    return state.catalog.filter((p) => (!state.categoryId || p.categoryId === state.categoryId) && tokens.every((t) => p.hay.includes(t)));
+  }
+
+  let searchTimer;
+  const searchInput = $("pos-search-input");
+
+  // Two-layer search: instant substring matching over the already-loaded
+  // real catalog (partial words, brand, weight), then the server's own
+  // search (exact barcode / SKU, full-text) merged in on top.
+  function runSearch(immediate) {
+    const q = searchInput.value.trim();
+    $("pos-search-clear").hidden = !q;
+    clearTimeout(searchTimer);
+    const seq = ++state.searchSeq;
+    state.lastExact = null;
+    state.page = 1;
+
+    if (!q) {
+      state.lastResults = state.catalog.filter((p) => !state.categoryId || p.categoryId === state.categoryId);
+      renderProducts(state.lastResults);
+      setMeta(state.lastResults.length);
+      return Promise.resolve();
+    }
+
+    const local = localMatches(q);
+    state.lastResults = local;
+    renderProducts(local);
+    setMeta(local.length, T.searching);
+
+    const looksLikeCode = /^[0-9]{6,}$/.test(q) || /^[a-z0-9]+-[a-z0-9-]+$/i.test(q);
+    return new Promise((resolve) => {
+      searchTimer = setTimeout(async () => {
+        try {
+          const result = await apiGet(`${API}/search?q=${encodeURIComponent(q)}`);
+          if (seq !== state.searchSeq) return resolve();
+          const merged = [];
+          const seen = new Set();
+          let exact = null;
+          if (result.exact_match && isSellable({ ...result.exact_match, variant_id: result.exact_match.variant_id })) {
+            exact = toProduct(result.exact_match);
+          } else if (result.exact_match && result.exact_match.product_id) {
+            const fromCatalog = state.catalog.find((p) => p.id === String(result.exact_match.product_id));
+            if (fromCatalog) exact = fromCatalog;
+          }
+          if (exact) {
+            const fromCatalog = state.catalog.find((p) => p.id === exact.id);
+            exact = fromCatalog ? { ...fromCatalog } : exact;
+            exact.exact = result.mode;
+            remember(exact);
+            merged.push(exact);
+            seen.add(exact.id);
+          }
+          (result.results || []).filter(isSellable).map(toProduct).forEach((p) => {
+            if (seen.has(p.id)) return;
+            if (state.categoryId && p.categoryId && p.categoryId !== state.categoryId) return;
+            remember(p); merged.push(p); seen.add(p.id);
+          });
+          local.forEach((p) => { if (!seen.has(p.id)) { merged.push(p); seen.add(p.id); } });
+          state.lastExact = exact;
+          state.lastResults = merged;
+          renderProducts(merged);
+          const note = exact ? (exact.exact === "barcode" ? T.foundByBarcode : T.foundBySku) + " · " + T.enterToAdd : (merged.length === 1 ? T.enterToAdd : "");
+          setMeta(merged.length, note);
+        } catch (e) {
+          if (seq === state.searchSeq) setMeta(local.length);
+        }
+        resolve();
+      }, immediate || looksLikeCode ? 0 : 220);
+    });
+  }
+
+  function setMeta(count, note) {
+    $("pos-results-meta").innerHTML = `<span><strong>${count}</strong> ${esc(T.productsCount)}</span>${note ? `<span>${esc(note)}</span>` : ""}`;
+  }
+
+  searchInput.addEventListener("input", () => runSearch(false));
+  searchInput.addEventListener("keydown", async (e) => {
+    if (e.key === "Enter") {
+      e.preventDefault();
+      await runSearch(true);
+      const pick = state.lastExact || (state.lastResults.length === 1 ? state.lastResults[0] : null);
+      if (pick) {
+        const ok = await addProduct(pick.id);
+        if (ok && state.lastExact) { searchInput.value = ""; runSearch(); }
+      }
+    } else if (e.key === "Escape" && searchInput.value) {
+      e.stopPropagation();
+      searchInput.value = "";
+      runSearch();
+    }
+  });
+  $("pos-search-clear").addEventListener("click", () => { searchInput.value = ""; runSearch(); searchInput.focus(); });
+  $("pos-scan-btn").addEventListener("click", () => {
+    const btn = $("pos-scan-btn");
+    searchInput.value = "";
+    runSearch();
+    searchInput.focus();
+    btn.classList.add("pos-armed");
+    setMeta(state.lastResults.length, T.scanReady);
+  });
+  searchInput.addEventListener("blur", () => $("pos-scan-btn").classList.remove("pos-armed"));
+
+  document.querySelectorAll(".pos-category-chip").forEach((chip) => {
+    chip.addEventListener("click", () => {
+      document.querySelectorAll(".pos-category-chip").forEach((c) => c.classList.toggle("pos-active", c === chip));
+      state.categoryId = chip.dataset.categoryId;
+      runSearch(true);
+    });
+  });
+
+  // ---------- rendering: products ----------
+
+  function emptyState(icon, title, hint) {
+    return `<div class="pos-empty"><i class="fas ${icon}" aria-hidden="true"></i><strong>${esc(title)}</strong>${hint ? `<span>${esc(hint)}</span>` : ""}</div>`;
+  }
+
+  function renderSkeletons(count) {
+    let html = "";
+    for (let i = 0; i < count; i++) {
+      html += '<div class="pos-skeleton" aria-hidden="true"><div class="pos-skeleton-img pos-skeleton-block"></div><div class="pos-skeleton-line pos-skeleton-block" style="width:40%"></div><div class="pos-skeleton-line pos-skeleton-block" style="width:80%"></div><div class="pos-skeleton-line pos-skeleton-block" style="width:55%"></div></div>';
+    }
+    $("pos-product-grid").innerHTML = html;
+  }
+
+  function stockBadge(stock) {
+    if (stock === null || stock === undefined) return "";
+    const n = Number(stock);
+    const cls = n <= 0 ? "pos-stock-out" : n <= 5 ? "pos-stock-low" : "";
+    const label = n <= 0 ? T.outOfStock : `${n} ${T.inStock}`;
+    return `<span class="pos-product-stock ${cls}"><span class="pos-stock-dot"></span>${esc(label)}</span>`;
+  }
+
+  const PAGE_SIZE = 12;
+
+  function renderPagination(totalItems) {
+    const nav = $("pos-pagination");
+    const pages = Math.ceil(totalItems / PAGE_SIZE);
+    if (pages <= 1) { nav.hidden = true; nav.innerHTML = ""; return; }
+    const cur = state.page;
+    // First, last, and a window of two around the current page.
+    const nums = [];
+    for (let i = 1; i <= pages; i++) {
+      if (i === 1 || i === pages || Math.abs(i - cur) <= 2) nums.push(i);
+      else if (nums[nums.length - 1] !== "…") nums.push("…");
+    }
+    const from = (cur - 1) * PAGE_SIZE + 1;
+    const to = Math.min(cur * PAGE_SIZE, totalItems);
+    nav.hidden = false;
+    nav.innerHTML = `
+      <span class="pos-pagination-info pos-num">${from}–${to} / ${totalItems}</span>
+      <div class="pos-pagination-pages">
+        <button type="button" class="pos-page-btn" data-page="${cur - 1}" ${cur === 1 ? "disabled" : ""} aria-label="‹"><i class="fas fa-chevron-left" aria-hidden="true"></i></button>
+        ${nums.map((n) => n === "…" ? '<span class="pos-page-gap">…</span>' : `<button type="button" class="pos-page-btn ${n === cur ? "pos-active" : ""}" data-page="${n}" ${n === cur ? 'aria-current="page"' : ""}>${n}</button>`).join("")}
+        <button type="button" class="pos-page-btn" data-page="${cur + 1}" ${cur === pages ? "disabled" : ""} aria-label="›"><i class="fas fa-chevron-right" aria-hidden="true"></i></button>
+      </div>`;
+  }
+
+  $("pos-pagination").addEventListener("click", (e) => {
+    const btn = e.target.closest("[data-page]");
+    if (!btn || btn.disabled) return;
+    state.page = Number(btn.dataset.page);
+    renderProducts(state.lastResults);
+    const scroller = $("pos-product-grid").closest(".pos-center");
+    if (scroller) scroller.scrollTo({ top: 0, behavior: "smooth" });
+  });
+
+  function renderProducts(items) {
+    const grid = $("pos-product-grid");
+    if (!state.catalogLoaded && !items.length) return;
+    if (!items.length) { grid.innerHTML = emptyState("fa-box-open", T.noProducts, T.noProductsHint); renderPagination(0); return; }
+    const pages = Math.ceil(items.length / PAGE_SIZE);
+    state.page = Math.min(Math.max(1, state.page), pages);
+    renderPagination(items.length);
+    const pageItems = items.slice((state.page - 1) * PAGE_SIZE, state.page * PAGE_SIZE);
+    grid.innerHTML = pageItems.map((p) => {
+      const line = lineFor(p.id);
+      const out = p.stock !== null && p.stock !== undefined && Number(p.stock) <= 0;
+      return `
+      <article class="pos-product-card ${line ? "pos-in-cart" : ""} ${p.exact ? "pos-exact" : ""}" data-product-id="${esc(p.id)}">
+        <div class="pos-product-image-wrap">
+          ${p.image ? `<img src="${esc(p.image)}" alt="" loading="lazy" decoding="async">` : '<i class="fas fa-box pos-product-image-empty" aria-hidden="true"></i>'}
+          <div class="pos-product-badges">
+            ${p.exact ? `<span class="pos-badge pos-badge-exact"><i class="fas fa-barcode" aria-hidden="true"></i>${esc(T.exactMatch)}</span>` : "<span></span>"}
+            ${line ? `<span class="pos-badge pos-badge-cart">${esc(T.inCart)}: ${line.quantity}</span>` : ""}
+          </div>
+        </div>
+        <div class="pos-product-body">
+          ${p.brand ? `<div class="pos-product-brand">${esc(p.brand)}</div>` : ""}
+          <div class="pos-product-name" title="${esc(p.name)}">${esc(p.name)}</div>
+          <div class="pos-product-meta">${p.weight ? `<span>${esc(p.weight)}</span>` : ""}${stockBadge(p.stock)}</div>
+          <div class="pos-product-price pos-num">${p.price !== null ? `${formatMoney(p.price)}<small>${esc(T.som)}</small>` : "&mdash;"}</div>
+          <button type="button" class="pos-add-btn ${state.pending.has(p.id) ? "pos-busy" : ""}" data-add="${esc(p.id)}" ${out ? "disabled" : ""}>
+            ${out ? esc(T.outOfStock) : `<i class="fas fa-plus" aria-hidden="true"></i>${esc(T.addToCart)}`}
+          </button>
+        </div>
+      </article>`;
+    }).join("");
+  }
+
+  $("pos-product-grid").addEventListener("click", (e) => {
+    const btn = e.target.closest("[data-add]");
+    if (btn && !btn.disabled) addProduct(btn.dataset.add);
+  });
+
+  // ---------- sale / cart operations (all real API calls) ----------
+
+  function ensureSale() {
+    if (state.sale) return Promise.resolve(state.sale);
+    if (!state.salePromise) {
+      state.salePromise = apiPost(`${API}/open-sale`, { branch_id: $("pos-setup-branch").value })
+        .then((sale) => { state.sale = sale; return sale; })
+        .finally(() => { state.salePromise = null; });
+    }
+    return state.salePromise;
+  }
+
+  async function resolvePrice(variantId, couponCode) {
+    const coupon = couponCode ? `&coupon_code=${encodeURIComponent(couponCode)}` : "";
+    return apiGet(`${API}/price?price_list_id=${priceListId()}&variant_id=${variantId}&quantity=1${coupon}`);
+  }
+
+  async function addProduct(productId) {
+    const product = state.meta[productId];
+    if (!product) return false;
+    if (!product.variantId) { toast(T.noVariant); return false; }
+    if (state.pending.has(productId)) return false;
+    const existing = lineFor(productId);
+    const stock = stockOf(productId);
+    if (stock !== null && (existing ? existing.quantity : 0) + 1 > stock) { toast(stock <= 0 ? T.outOfStock : T.notEnoughStock); return false; }
+
+    state.pending.add(productId);
+    renderAll();
+    try {
+      await ensureSale();
+      if (existing) {
+        state.sale = await apiPost(`${API}/sales/${state.sale.id}/line-items/${existing.id}/quantity`, { quantity: existing.quantity + 1 });
+      } else {
+        const base = await resolvePrice(product.variantId);
+        const charged = state.coupon ? await resolvePrice(product.variantId, state.coupon) : base;
+        state.meta[productId].basePrice = base.amount;
+        state.sale = await apiPost(`${API}/sales/${state.sale.id}/line-items`, {
+          product_id: productId, quantity: 1, unit_price_amount: charged.amount, unit_price_currency: charged.currency,
+        });
+      }
+      state.lastTouched = productId;
+      toast(T.added, "success");
+      return true;
+    } catch (e) {
+      toast(T.addFailed);
+      return false;
+    } finally {
+      state.pending.delete(productId);
+      renderAll(productId);
+    }
+  }
+
+  async function changeQuantity(productId, delta) {
+    const line = lineFor(productId);
+    if (!line || state.pending.has(productId)) return;
+    const next = line.quantity + delta;
+    if (next < 1) return removeLine(productId);
+    const stock = stockOf(productId);
+    if (delta > 0 && stock !== null && next > stock) { toast(T.notEnoughStock); return; }
+    state.pending.add(productId);
+    renderAll();
+    try {
+      state.sale = await apiPost(`${API}/sales/${state.sale.id}/line-items/${line.id}/quantity`, { quantity: next });
+      state.lastTouched = productId;
+    } catch (e) {
+      toast(T.updateFailed);
+    } finally {
+      state.pending.delete(productId);
+      renderAll();
+    }
+  }
+
+  async function removeLine(productId) {
+    const line = lineFor(productId);
+    if (!line || state.pending.has(productId)) return;
+    state.pending.add(productId);
+    renderAll();
+    try {
+      state.sale = await apiPost(`${API}/sales/${state.sale.id}/line-items/${line.id}/remove`, {});
+      if (state.lastTouched === productId) state.lastTouched = null;
+      if (!lines().length && state.coupon) clearCouponState();
+    } catch (e) {
+      toast(T.updateFailed);
+    } finally {
+      state.pending.delete(productId);
+      renderAll();
+    }
+  }
+
+  // The backend has no "reprice a line" operation, only remove + add --
+  // so re-pricing (coupon on/off) swaps each affected line for one at the
+  // server-resolved price. The server stays the only source of the amount.
+  async function repriceLines(couponCode) {
+    for (const li of lines().slice()) {
+      const m = state.meta[li.product_id];
+      if (!m || !m.variantId) continue;
+      const priced = await resolvePrice(m.variantId, couponCode);
+      if (Number(priced.amount) === Number(li.unit_price_amount)) continue;
+      state.sale = await apiPost(`${API}/sales/${state.sale.id}/line-items/${li.id}/remove`, {});
+      state.sale = await apiPost(`${API}/sales/${state.sale.id}/line-items`, {
+        product_id: li.product_id, quantity: li.quantity, unit_price_amount: priced.amount, unit_price_currency: priced.currency,
+      });
+    }
+  }
+
+  function setPromoMessage(text, kind) {
+    const el = $("pos-promo-msg");
+    el.textContent = text || "";
+    el.className = "pos-field-msg " + (kind ? "pos-msg-" + kind : "");
+  }
+
+  async function applyCoupon() {
+    const input = $("pos-promo-input");
+    const code = input.value.trim();
+    if (!code) return;
+    if (!lines().length) { setPromoMessage(T.couponNeedsCart, "error"); return; }
+    const btn = $("pos-promo-apply-btn");
+    btn.disabled = true;
+    input.classList.remove("pos-invalid");
+    try {
+      // Check first, mutate second: an unknown/expired coupon resolves to
+      // the regular price, so a coupon only counts as applied when it
+      // really lowers at least one line.
+      const quotes = await Promise.all(lines().map((li) => resolvePrice(state.meta[li.product_id].variantId, code).then((p) => [li, p])));
+      const lowers = quotes.some(([li, p]) => Number(p.amount) < Number(state.meta[li.product_id].basePrice ?? li.unit_price_amount));
+      if (!lowers) {
+        input.classList.add("pos-invalid");
+        setPromoMessage(T.couponInvalid, "error");
+        return;
+      }
+      await repriceLines(code);
+      state.coupon = code;
+      input.value = "";
+      setPromoMessage(T.couponApplied, "success");
+    } catch (e) {
+      setPromoMessage(T.couponFailed, "error");
+    } finally {
+      btn.disabled = false;
+      renderAll();
+    }
+  }
+
+  function clearCouponState() {
+    state.coupon = null;
+    setPromoMessage("");
+  }
+
+  async function removeCoupon() {
+    try {
+      await repriceLines(null);
+      clearCouponState();
+      setPromoMessage(T.couponRemoved, "muted");
+    } catch (e) {
+      setPromoMessage(T.couponFailed, "error");
+    } finally {
+      renderAll();
+    }
+  }
+
+  $("pos-promo-apply-btn").addEventListener("click", applyCoupon);
+  $("pos-promo-input").addEventListener("keydown", (e) => { if (e.key === "Enter") { e.preventDefault(); applyCoupon(); } });
+  $("pos-promo-input").addEventListener("input", () => { $("pos-promo-input").classList.remove("pos-invalid"); setPromoMessage(""); });
+  $("pos-promo-remove-btn").addEventListener("click", removeCoupon);
+
+  // ---------- rendering: cart, totals, payment ----------
+
+  function cartLineHtml(li, editable) {
+    const m = state.meta[li.product_id] || {};
+    const sub = [m.weight, m.brand].filter(Boolean).map(esc).join(" · ");
+    const image = m.image ? `<img src="${esc(m.image)}" alt="" loading="lazy">` : '<i class="fas fa-box" aria-hidden="true"></i>';
+    const name = esc(m.name || li.product_id.slice(0, 8));
+    const lineTotal = Number(li.unit_price_amount) * li.quantity;
+    if (!editable) {
+      return `
+      <div class="pos-order-item">
+        <div class="pos-cart-item-image">${image}</div>
+        <div class="pos-cart-item-info">
+          <div class="pos-cart-item-name" title="${name}">${name}</div>
+          ${sub ? `<div class="pos-cart-item-sub">${sub}</div>` : ""}
+          <div class="pos-order-item-qty pos-num">${li.quantity} × ${formatMoney(li.unit_price_amount)}</div>
+        </div>
+        <div class="pos-order-item-total pos-num">${money(lineTotal)}</div>
+      </div>`;
+    }
+    const stock = stockOf(li.product_id);
+    const atMax = stock !== null && li.quantity >= stock;
+    return `
+      <div class="pos-cart-item ${state.pending.has(li.product_id) ? "pos-pending" : ""}" data-line="${esc(li.product_id)}">
+        <div class="pos-cart-item-image">${image}</div>
+        <div class="pos-cart-item-info">
+          <div class="pos-cart-item-name" title="${name}">${name}</div>
+          ${sub ? `<div class="pos-cart-item-sub">${sub}</div>` : ""}
+          <div class="pos-cart-item-controls">
+            <div class="pos-qty-group">
+              <button type="button" class="pos-qty-btn pos-qty-dec" data-qty="-1" data-id="${esc(li.product_id)}" aria-label="−">&minus;</button>
+              <span class="pos-qty-val pos-num">${li.quantity}</span>
+              <button type="button" class="pos-qty-btn pos-qty-inc" data-qty="1" data-id="${esc(li.product_id)}" aria-label="+" ${atMax ? "disabled" : ""}>&plus;</button>
+            </div>
+          </div>
+        </div>
+        <div class="pos-cart-item-right">
+          <span class="pos-cart-item-price pos-num">${formatMoney(lineTotal)}</span>
+          <button type="button" class="pos-remove-item" data-remove="${esc(li.product_id)}" aria-label="×"><i class="fas fa-trash-can" aria-hidden="true"></i></button>
+        </div>
+      </div>`;
+  }
+
+  function renderCart(flashProductId) {
+    const list = $("pos-cart-mini-list");
+    const items = lines();
+    if (!items.length) {
+      list.innerHTML = emptyState("fa-basket-shopping", T.cartEmpty, T.cartEmptyHint);
+    } else {
+      list.innerHTML = items.map((li) => cartLineHtml(li, true)).join("");
+      if (flashProductId) {
+        const el = list.querySelector(`[data-line="${CSS.escape(flashProductId)}"]`);
+        if (el) { el.classList.add("pos-flash"); el.scrollIntoView({ block: "nearest" }); }
+      }
+    }
+    $("pos-cart-items").innerHTML = items.map((li) => cartLineHtml(li, false)).join("") || emptyState("fa-basket-shopping", T.cartEmpty, "");
+  }
+
+  $("pos-cart-mini-list").addEventListener("click", (e) => {
+    const qty = e.target.closest("[data-qty]");
+    if (qty && !qty.disabled) { changeQuantity(qty.dataset.id, Number(qty.dataset.qty)); return; }
+    const rm = e.target.closest("[data-remove]");
+    if (rm) removeLine(rm.dataset.remove);
+  });
+
+  function bind(name, value) { document.querySelectorAll(`[data-bind="${name}"]`).forEach((el) => { el.textContent = value; }); }
+
+  function renderTotals() {
+    const count = itemCount();
+    const sub = subtotal();
+    const tot = total();
+    const discount = Math.max(0, sub - tot);
+    bind("subtotal", money(sub));
+    bind("total", money(tot));
+    bind("grand", money(tot + deliveryFee()));
+    bind("delivery", deliveryFee() ? money(deliveryFee()) : T.free);
+    bind("discount", "−" + money(discount));
+    bind("count", count);
+    bind("count-label", `${count} ${T.pcs}`);
+    bind("pay-method", PAY_METHODS.find((m) => m.id === state.payMethod).label);
+    document.querySelectorAll('[data-bind-visible="discount"]').forEach((el) => { el.hidden = discount <= 0; });
+    $("pos-mini-cart-count").textContent = count;
+    const empty = !lines().length;
+    const busy = state.pending.size > 0;
+    $("pos-goto-checkout-btn").disabled = empty || busy;
+    $("pos-cart-bar-checkout").disabled = empty || busy;
+    $("pos-cart-void").disabled = empty;
+    $("pos-promo-row").hidden = Boolean(state.coupon);
+    $("pos-promo-applied").hidden = !state.coupon;
+    $("pos-promo-applied-code").textContent = state.coupon ? state.coupon.toUpperCase() : "";
+    syncCollect();
+  }
+
+  function renderPayMethods() {
+    document.querySelectorAll("[data-pay-group]").forEach((group) => {
+      group.innerHTML = PAY_METHODS.map((m) => `
+        <button type="button" class="pos-pay-option" role="radio" data-pay="${m.id}" aria-checked="${m.id === state.payMethod}" ${m.enabled ? "" : "disabled"}>
+          <i class="fas ${m.icon}" aria-hidden="true"></i><span>${esc(m.label)}</span>
+          ${m.enabled ? "" : `<span class="pos-pay-option-note">${esc(T.soon)}</span>`}
+        </button>`).join("");
+    });
+  }
+  document.addEventListener("click", (e) => {
+    const opt = e.target.closest("[data-pay]");
+    if (!opt || opt.disabled) return;
+    state.payMethod = opt.dataset.pay;
+    renderPayMethods();
+    renderTotals();
+    applyPayMethod();
+  });
+
+  function renderAll(flashProductId) {
+    renderCart(flashProductId);
+    renderTotals();
+    if (state.catalogLoaded) renderProducts(state.lastResults);
+  }
+
+  // ---------- step navigation ----------
+
+  function onCheckout() { return !$("pos-step-checkout").hidden; }
+  function goToCheckout() {
+    if (!lines().length || state.pending.size) return;
+    closeCartDrawer();
+    $("pos-step-terminal").hidden = true;
+    $("pos-step-checkout").hidden = false;
+    $("pos-checkout-error").innerHTML = "";
+    renderAll();
+    window.scrollTo({ top: 0 });
+    setTimeout(() => $("pos-customer-phone").focus(), 30);
+  }
+  function backToTerminal() {
+    $("pos-step-checkout").hidden = true;
+    $("pos-step-terminal").hidden = false;
+    renderAll();
+    fitWorkspace();
+    searchInput.focus();
+  }
+  $("pos-goto-checkout-btn").addEventListener("click", goToCheckout);
+  $("pos-cart-bar-checkout").addEventListener("click", goToCheckout);
+  $("pos-checkout-back-btn").addEventListener("click", backToTerminal);
+  $("pos-edit-cart-btn").addEventListener("click", backToTerminal);
+
+  function openCartDrawer() { $("pos-cart-panel").classList.add("pos-open"); $("pos-cart-backdrop").classList.add("pos-open"); }
+  function closeCartDrawer() { $("pos-cart-panel").classList.remove("pos-open"); $("pos-cart-backdrop").classList.remove("pos-open"); }
+  $("pos-cart-open").addEventListener("click", openCartDrawer);
+  $("pos-cart-close").addEventListener("click", closeCartDrawer);
+  $("pos-cart-backdrop").addEventListener("click", closeCartDrawer);
+
+  // ---------- checkout: customer + cash ----------
+
+  const phoneInput = $("pos-customer-phone");
+  const nameInput = $("pos-customer-name");
+
+  function phoneDigits() {
+    let d = phoneInput.value.replace(/\D/g, "");
+    if (d.length === 12 && d.startsWith("998")) d = d.slice(3);
+    return d;
+  }
+  function e164() { return "+998" + phoneDigits(); }
+  function phoneValid() { return /^[0-9]{9}$/.test(phoneDigits()); }
+  function formatPhoneInput() {
+    const d = phoneDigits().slice(0, 9);
+    const parts = [d.slice(0, 2), d.slice(2, 5), d.slice(5, 7), d.slice(7, 9)].filter(Boolean);
+    phoneInput.value = parts.join(" ");
+  }
+  function prettyPhone() { return phoneValid() ? "+998 " + phoneInput.value : "—"; }
+
+  let customerTimer;
+  let customerSeq = 0;
+  phoneInput.addEventListener("input", () => {
+    formatPhoneInput();
+    $("pos-customer-phone-wrap").classList.remove("pos-invalid");
+    $("pos-customer-phone-msg").textContent = "";
+    state.customerMatch = null;
+    $("pos-customer-match").innerHTML = "";
+    clearTimeout(customerTimer);
+    validateCheckout();
+    if (!phoneValid()) return;
+    const seq = ++customerSeq;
+    customerTimer = setTimeout(async () => {
+      try {
+        const data = await apiGet(`${API}/customer-search?q=${encodeURIComponent(phoneDigits())}`);
+        if (seq !== customerSeq) return;
+        const match = (data.results || []).find((c) => (c.phone_number || "").replace(/\D/g, "").endsWith(phoneDigits()));
+        state.customerMatch = match || null;
+        $("pos-customer-match").innerHTML = match
+          ? `<div class="pos-customer-match"><i class="fas fa-user-check" aria-hidden="true"></i><span>${esc(T.existingCustomer)}: <strong>${esc(match.full_name || T.unknown)}</strong></span></div>`
+          : `<div class="pos-customer-match pos-new"><i class="fas fa-user-plus" aria-hidden="true"></i><span>${esc(T.newCustomer)}</span></div>`;
+        if (match && match.full_name && !nameInput.value.trim()) nameInput.placeholder = match.full_name;
+      } catch (e) { /* lookup is a convenience; completing the order still resolves the customer */ }
+      validateCheckout();
+    }, 250);
+  });
+  phoneInput.addEventListener("blur", () => {
+    if (phoneInput.value && !phoneValid()) {
+      $("pos-customer-phone-wrap").classList.add("pos-invalid");
+      setFieldMsg("pos-customer-phone-msg", T.phoneInvalid, "error");
+    }
+  });
+  nameInput.addEventListener("input", validateCheckout);
+
+  function setFieldMsg(id, text, kind) {
+    const el = $(id);
+    el.textContent = text;
+    el.className = "pos-field-msg pos-msg-" + kind;
+  }
+
+  function customerDisplayName() {
+    if (state.customerMatch) return state.customerMatch.full_name || T.unknown;
+    return nameInput.value.trim() || T.unknown;
+  }
+
+  // Delivery fee is a checkout-only amount: it is added to what the
+  // customer pays, shown on the receipt, and not part of the Sale's own
+  // product lines.
+  const deliveryInput = $("pos-delivery-fee");
+  const collectInput = $("pos-cash-received");
+  function moneyValue(input) { return Number((input.value || "").replace(/\D/g, "")); }
+  function deliveryFee() { return moneyValue(deliveryInput); }
+  function grandTotal() { return total() + deliveryFee(); }
+  // Card (Uzcard/Humo): the bank terminal charges exactly the amount due -- no "received"/change to count.
+  function isCash() { return state.payMethod === "cash"; }
+  function collectAmount() { return isCash() ? moneyValue(collectInput) : grandTotal(); }
+  function applyPayMethod() {
+    $("pos-cash-panel").hidden = !isCash();
+    const hint = $("pos-pay-hint");
+    if (hint) hint.textContent = isCash() ? T.cashHint : T.cardHint.replace("%s", money(grandTotal()));
+  }
+  function formatMoneyInput(input) {
+    const digits = input.value.replace(/\D/g, "").replace(/^0+(?=\d)/, "");
+    input.value = digits ? formatMoney(digits) : "";
+  }
+
+  // "Amount to collect" follows products + delivery until the cashier
+  // types their own amount; "reset" hands it back to the automatic total.
+  function syncCollect() {
+    if (!state.collectEdited) collectInput.value = grandTotal() ? formatMoney(grandTotal()) : "";
+    $("pos-collect-reset").hidden = !state.collectEdited || collectAmount() === grandTotal();
+    updateChange();
+  }
+
+  function validateCheckout() {
+    $("pos-summary-customer-name").textContent = customerDisplayName();
+    $("pos-summary-customer-phone").textContent = prettyPhone();
+    const method = PAY_METHODS.find((m) => m.id === state.payMethod);
+    const ok = lines().length > 0 && phoneValid() && !!(method && method.enabled) && collectAmount() > 0 && !state.submitting && state.pending.size === 0;
+    $("pos-complete-btn").disabled = !ok;
+  }
+
+  function renderQuickAmounts() {
+    const tot = grandTotal();
+    const el = $("pos-quick-amounts");
+    if (!tot) { el.innerHTML = ""; return; }
+    const amounts = [...new Set([tot, Math.ceil(tot / 10000) * 10000, Math.ceil(tot / 50000) * 50000, Math.ceil(tot / 100000) * 100000])].slice(0, 4);
+    el.innerHTML = amounts.map((a) => `<button type="button" class="pos-quick-amount-btn ${a === collectAmount() ? "pos-active" : ""}" data-amount="${a}">${formatMoney(a)}</button>`).join("");
+  }
+  $("pos-quick-amounts").addEventListener("click", (e) => {
+    const btn = e.target.closest("[data-amount]");
+    if (!btn) return;
+    collectInput.value = formatMoney(btn.dataset.amount);
+    state.collectEdited = Number(btn.dataset.amount) !== grandTotal();
+    syncCollect();
+  });
+  function updateChange() {
+    const collect = collectAmount();
+    const diff = collect - grandTotal();
+    const row = $("pos-change-row");
+    const el = $("pos-change-amount");
+    $("pos-change-label").textContent = diff < 0 ? T.shortfall : T.changeLabel;
+    el.textContent = collect ? money(Math.abs(diff)) : "—";
+    row.classList.toggle("pos-change-short", collect > 0 && diff < 0);
+    renderQuickAmounts();
+    validateCheckout();
+  }
+  collectInput.addEventListener("input", () => {
+    formatMoneyInput(collectInput);
+    state.collectEdited = true;
+    syncCollect();
+  });
+  deliveryInput.addEventListener("input", () => {
+    formatMoneyInput(deliveryInput);
+    renderTotals();
+  });
+  $("pos-collect-reset").addEventListener("click", () => { state.collectEdited = false; syncCollect(); collectInput.focus(); });
+
+  // ---------- complete order ----------
+
+  async function completeOrder() {
+    if (state.submitting) return;
+    if (!phoneValid()) {
+      $("pos-customer-phone-wrap").classList.add("pos-invalid");
+      setFieldMsg("pos-customer-phone-msg", phoneDigits() ? T.phoneInvalid : T.phoneRequired, "error");
+      phoneInput.focus();
+      return;
+    }
+    if (!lines().length || collectAmount() <= 0) return;
+
+    const btn = $("pos-complete-btn");
+    const label = btn.innerHTML;
+    state.submitting = true;
+    btn.disabled = true;
+    btn.innerHTML = '<span class="pos-spinner" aria-hidden="true"></span>';
+    $("pos-checkout-error").innerHTML = "";
+    try {
+      // Resolve the real buyer (find-or-create by phone -- an existing
+      // customer's stored name is never overwritten), attach it, then
+      // complete. The cart is only reset after `complete` succeeds.
+      let customer = state.customerMatch;
+      if (!customer) {
+        customer = await apiPost(`${API}/customer-create`, { phone_number: e164(), full_name: nameInput.value.trim() || T.unknown });
+      }
+      if (state.sale.customer_id !== customer.id) {
+        state.sale = await apiPost(`${API}/sales/${state.sale.id}/customer`, { customer_id: customer.id });
+      }
+      const completed = await apiPost(`${API}/sales/${state.sale.id}/complete`, { delivery_fee: deliveryFee(), payment_method: state.payMethod });
+      showSuccess(completed, customer, { delivery: deliveryFee(), collect: collectAmount() });
+    } catch (e) {
+      $("pos-checkout-error").innerHTML = `<div class="pos-alert pos-alert-error"><i class="fas fa-circle-exclamation" aria-hidden="true"></i><span>${esc(T.orderFailed)}</span></div>`;
+    } finally {
+      state.submitting = false;
+      btn.innerHTML = label;
+      validateCheckout();
+    }
+  }
+  $("pos-complete-btn").addEventListener("click", completeOrder);
+
+  function showSuccess(sale, customer, cash) {
+    const saleLines = sale.line_items;
+    const sub = saleLines.reduce((s, li) => s + Number((state.meta[li.product_id] || {}).basePrice ?? li.unit_price_amount) * li.quantity, 0);
+    const tot = Number(sale.total_amount);
+    const discount = Math.max(0, sub - tot);
+    const grand = tot + cash.delivery;
+    const received = cash.collect;
+    const row = (k, v, cls) => `<div class="pos-receipt-row ${cls || ""}"><span>${esc(k)}</span><span>${esc(v)}</span></div>`;
+    const itemsHtml = saleLines.map((li) => {
+      const m = state.meta[li.product_id] || {};
+      return `<div class="pos-receipt-item-row">
+        <div class="pos-receipt-item-name">${esc(m.name || li.product_id.slice(0, 8))}</div>
+        <div class="pos-receipt-item-qty">${li.quantity} × ${formatMoney(li.unit_price_amount)}</div>
+        <div class="pos-receipt-item-total">${formatMoney(Number(li.unit_price_amount) * li.quantity)}</div>
+      </div>`;
+    }).join("");
+    $("pos-success-summary").innerHTML =
+      row(T.order, sale.receipt_number || "#" + sale.id.slice(0, 8).toUpperCase()) +
+      row(T.date, new Date(sale.completed_at || Date.now()).toLocaleString("ru-RU")) +
+      row(T.cashier, T.cashierName) +
+      row(T.customer, `${customer.full_name || T.unknown} · ${customer.phone_number || ""}`) +
+      '<div class="pos-receipt-divider"></div>' + itemsHtml + '<div class="pos-receipt-divider"></div>' +
+      row(T.subtotal, money(sub)) +
+      (discount > 0 ? row(T.discount + (state.coupon ? ` (${state.coupon.toUpperCase()})` : ""), "−" + money(discount)) : "") +
+      (cash.delivery > 0 ? row(T.delivery, money(cash.delivery)) : "") +
+      row(T.grandTotal, money(grand), "pos-receipt-total") +
+      '<div class="pos-receipt-divider"></div>' +
+      row(T.payment, PAY_METHODS.find((m) => m.id === state.payMethod).label) +
+      row(T.received, money(received)) +
+      (received >= grand ? row(T.change, money(received - grand)) : row(T.shortfall, money(grand - received)));
+    $("pos-view-order-btn").href = $("pos-sale-admin-url-base").value + sale.id + "/change/";
+    // The e-receipt page doubles as the thermal slip (?print=80) with the QR code + link printed under it.
+    state.receiptUrl = sale.receipt_url || null;
+    $("pos-success-overlay").hidden = false;
+    $("pos-new-sale-btn").focus();
+  }
+
+  function resetForNewSale() {
+    state.sale = null;
+    state.coupon = null;
+    state.lastTouched = null;
+    state.customerMatch = null;
+    state.payMethod = "cash";
+    applyPayMethod();
+    phoneInput.value = "";
+    nameInput.value = "";
+    nameInput.placeholder = T.unknown;
+    collectInput.value = "";
+    deliveryInput.value = "";
+    state.collectEdited = false;
+    $("pos-customer-match").innerHTML = "";
+    $("pos-customer-phone-msg").textContent = "";
+    $("pos-checkout-error").innerHTML = "";
+    setPromoMessage("");
+    searchInput.value = "";
+    renderPayMethods();
+    backToTerminal();
+    loadCatalog(); // stock just changed -- refresh from the server
+  }
+
+  $("pos-new-sale-btn").addEventListener("click", () => { $("pos-success-overlay").hidden = true; resetForNewSale(); });
+  $("pos-print-receipt-btn").addEventListener("click", () => {
+    if (!state.receiptUrl) return window.print();
+    const slip = window.open(state.receiptUrl + "?print=80&autoprint=1", "nz-receipt", "width=420,height=720");
+    if (!slip) window.print(); // pop-up blocked: fall back to printing this screen
+  });
+
+  // ---------- void / clear ----------
+
+  function askConfirm(message, onConfirm) {
+    $("pos-confirm-message").textContent = message;
+    $("pos-confirm-overlay").hidden = false;
+    const ok = $("pos-confirm-ok-btn");
+    const cancel = $("pos-confirm-cancel-btn");
+    cancel.focus();
+    function cleanup() {
+      $("pos-confirm-overlay").hidden = true;
+      ok.removeEventListener("click", handleOk);
+      cancel.removeEventListener("click", cleanup);
+    }
+    function handleOk() { cleanup(); onConfirm(); }
+    ok.addEventListener("click", handleOk);
+    cancel.addEventListener("click", cleanup);
+  }
+
+  function voidCurrentSale() {
+    if (!state.sale || !lines().length) return;
+    askConfirm(T.voidConfirm, async () => {
+      try {
+        await apiPost(`${API}/sales/${state.sale.id}/void`, {});
+        resetForNewSale();
+      } catch (e) { toast(T.voidFailed); }
+    });
+  }
+  $("pos-cart-void").addEventListener("click", voidCurrentSale);
+  $("pos-void-btn-secondary").addEventListener("click", voidCurrentSale);
+
+  // ---------- keyboard ----------
+
+  function isTyping(e) {
+    const tag = (e.target.tagName || "").toLowerCase();
+    return tag === "input" || tag === "textarea" || tag === "select" || e.target.isContentEditable;
+  }
+  function overlayOpen(id) { return !$(id).hidden; }
+  function openShortcuts() { $("pos-shortcuts-overlay").hidden = false; $("pos-shortcuts-close-btn").focus(); }
+  function closeShortcuts() { $("pos-shortcuts-overlay").hidden = true; }
+  $("pos-shortcuts-btn").addEventListener("click", openShortcuts);
+  $("pos-shortcuts-close-btn").addEventListener("click", closeShortcuts);
+  $("pos-shortcuts-overlay").addEventListener("click", (e) => { if (e.target.id === "pos-shortcuts-overlay") closeShortcuts(); });
+
+  document.addEventListener("keydown", (e) => {
+    const successOpen = overlayOpen("pos-success-overlay");
+    if (e.key === "Escape") {
+      if (overlayOpen("pos-shortcuts-overlay")) { closeShortcuts(); return; }
+      if (overlayOpen("pos-confirm-overlay")) { $("pos-confirm-cancel-btn").click(); return; }
+      if ($("pos-cart-panel").classList.contains("pos-open")) { closeCartDrawer(); return; }
+      return;
+    }
+    if (successOpen) {
+      if (e.key === "F9" || e.key === "Enter") { e.preventDefault(); $("pos-new-sale-btn").click(); }
+      return;
+    }
+    if (overlayOpen("pos-confirm-overlay") || overlayOpen("pos-shortcuts-overlay")) return;
+
+    if (((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "k") || (e.key === "/" && !isTyping(e))) {
+      if (onCheckout()) return;
+      e.preventDefault();
+      searchInput.focus();
+      searchInput.select();
+      return;
+    }
+    if (e.key === "F2" || e.key === "F8") {
+      e.preventDefault();
+      if (onCheckout()) { if (!$("pos-complete-btn").disabled) completeOrder(); else if (!phoneValid()) phoneInput.focus(); }
+      else goToCheckout();
+      return;
+    }
+    if (e.key === "F4" && onCheckout()) { e.preventDefault(); $("pos-cash-received").focus(); return; }
+    if (!isTyping(e) && !onCheckout() && state.lastTouched && (e.key === "+" || e.key === "=" || e.key === "-" || e.key === "_")) {
+      e.preventDefault();
+      changeQuantity(state.lastTouched, e.key === "+" || e.key === "=" ? 1 : -1);
+      return;
+    }
+    if (e.key === "?" && !isTyping(e)) { e.preventDefault(); openShortcuts(); }
+  });
+
+  // Fit the terminal workspace to the viewport on desktop so the cart's
+  // primary action never falls below the fold.
+  function fitWorkspace() {
+    const body = $("pos-step-terminal");
+    if (window.innerWidth <= 1100 || body.hidden) { body.style.removeProperty("--pos-body-h"); return; }
+    const top = body.getBoundingClientRect().top + window.scrollY;
+    body.style.setProperty("--pos-body-h", Math.max(480, window.innerHeight - top - 12) + "px");
+  }
+  window.addEventListener("resize", fitWorkspace);
+
+  // There is no "load an open sale" endpoint, so a cart can't survive a
+  // reload -- void the still-open sale when the page goes away instead of
+  // leaving an orphaned open Sale behind.
+  window.addEventListener("pagehide", () => {
+    if (!state.sale || state.submitting || !$("pos-success-overlay").hidden) return;
+    fetch(`${API}/sales/${state.sale.id}/void`, { method: "POST", keepalive: true, headers: { "Content-Type": "application/json", "X-CSRFToken": csrfToken() }, body: "{}" });
+  });
+
+  // ---------- boot ----------
+
+  renderPayMethods();
+  renderAll();
+  fitWorkspace();
+  loadCatalog();
+  searchInput.focus();
+});
+</script>
+{% endblock %}

@@ -1,0 +1,57 @@
+/*
+ * NutriZone Admin -- responsive rules (Phase 08.1)
+ * Breakpoints match this phase's own stated targets.
+ */
+
+/* Mobile: sidebar becomes an off-canvas drawer (Jazzmin/AdminLTE's
+   own sidebar-collapse mechanism drives the show/hide; these rules
+   only adjust sizing/overlay so it behaves like a drawer rather than
+   a squeezed column). */
+@media (max-width: 767.98px) {
+  .content-wrapper,
+  .main-footer {
+    margin-left: 0 !important;
+  }
+
+  .main-sidebar {
+    box-shadow: var(--nz-shadow-md);
+  }
+
+  .nz-stat-number {
+    font-size: 1.375rem;
+  }
+
+  /* Wide tables scroll horizontally within their own card rather
+     than forcing the whole page to overflow. */
+  .table-responsive {
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .btn,
+  .nav-link {
+    min-height: 44px; /* touch target minimum */
+  }
+
+  .nz-address-map,
+  .nz-geo-map {
+    min-height: 180px;
+  }
+}
+
+/* Tablet: compact sidebar, no drawer needed. */
+@media (min-width: 768px) and (max-width: 1023.98px) {
+  .main-sidebar {
+    width: 4.6rem;
+  }
+  .main-sidebar .nav-link p,
+  .brand-text {
+    display: none;
+  }
+}
+
+/* Desktop and up: full sidebar, unconstrained content width. */
+@media (min-width: 1024px) {
+  .main-sidebar {
+    width: 250px;
+  }
+}

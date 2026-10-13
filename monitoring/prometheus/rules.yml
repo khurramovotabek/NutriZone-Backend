@@ -1,0 +1,18 @@
+# Placeholder Prometheus alerting rules.
+#
+# The actual /health/live and /health/ready endpoints are implemented in
+# core/health/views.py. This file is the "monitoring as code" location
+# for alert rules once a metrics exporter (e.g. django-prometheus) is
+# added -- deferred, since this is foundation-phase infrastructure and
+# no business-metric alerting exists yet.
+groups:
+  - name: nutrizone-foundation
+    rules:
+      - alert: DjangoInstanceDown
+        expr: up{job="nutrizone-web"} == 0
+        for: 2m
+        labels:
+          severity: critical
+        annotations:
+          summary: "A NutriZone web instance is down"
+          description: "Prometheus has not been able to scrape {{ $labels.instance }} for 2 minutes."

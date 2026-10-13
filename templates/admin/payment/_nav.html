@@ -1,0 +1,6 @@
+{% load i18n %}<nav class="nzp-tabs" aria-label="{% translate "To'lovlar" %}">
+  <a class="nzp-tab{% if section == 'providers' %} on{% endif %}" href="{% url 'admin:payment_paymentproviderconfig_changelist' %}" style="--t:#2563eb"><i class="fas fa-building-columns" aria-hidden="true"></i> {% translate "To'lov tizimlari" %}</a>
+  <a class="nzp-tab{% if section == 'txns' %} on{% endif %}" href="{% url 'admin:payment_paymentmodel_changelist' %}" style="--t:#10b981"><i class="fas fa-money-bill-transfer" aria-hidden="true"></i> {% translate "Tranzaksiyalar" %}</a>
+  <a class="nzp-tab{% if section == 'recon' %} on{% endif %}" href="{% url 'admin:payment_paymentreconciliationissue_changelist' %}" style="--t:#e11d48"><i class="fas fa-scale-balanced" aria-hidden="true"></i> {% translate "Solishtirish" %}{% if recon.total %} <b>{{ recon.total }}</b>{% endif %}</a>
+  <a class="nzp-tab{% if section == 'log' %} on{% endif %}" href="{% url 'admin:payment_paymentcallbacklog_changelist' %}" style="--t:#8b5cf6"><i class="fas fa-satellite-dish" aria-hidden="true"></i> {% translate "Callback jurnali" %}</a>
+</nav>

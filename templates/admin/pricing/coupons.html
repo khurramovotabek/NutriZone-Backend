@@ -1,0 +1,56 @@
+{% extends "admin/change_list.html" %}
+{% load i18n static admin_list %}
+{# Coupons: KPIs from the orders that used them, status tabs, rows with discount / rules / usage bar / results (CouponAdmin.get_changelist_instance). #}
+{% block extrastyle %}{{ block.super }}<link rel="stylesheet" href="{% static 'admin/css/nutrizone-platform.css' %}?v=5"><link rel="stylesheet" href="{% static 'admin/css/nutrizone-orderdesk.css' %}?v=5"><link rel="stylesheet" href="{% static 'admin/css/nutrizone-wmsx.css' %}?v=11">{% endblock %}
+{% block content_title %}{% endblock %}
+{% block content %}
+<div class="nzp nzd wx">
+  <header class="nzp-hero">
+    <div class="nzp-hero-main">
+      <span class="nzp-hero-icon" style="--c:#f59e0b"><i class="fas fa-ticket" aria-hidden="true"></i></span>
+      <div><h2>{% translate "Kuponlar" %}</h2><p>{% translate "Discount codes customers type at checkout -- with limits, minimum order and dates. Results come from the real orders that used each code." %}</p></div>
+    </div>
+    <div class="nzp-hero-actions">
+      <a class="nzp-btn nzp-btn-ghost" href="{% url 'admin:nz_price_list' %}"><i class="fas fa-tags" aria-hidden="true"></i> {% translate "Narxlar ro'yxati" %}</a>
+      {% if can_add %}<a class="nzp-btn nzp-btn-primary" href="{% url 'admin:pricing_couponmodel_add' %}"><i class="fas fa-plus" aria-hidden="true"></i> {% translate "New coupon" %}</a>{% endif %}
+    </div>
+  </header>
+
+  <div class="nzp-stats">
+    <a class="nzp-stat" href="?state=active" style="--c:#10b981"><i class="fas fa-ticket" aria-hidden="true"></i><div><b>{{ kpi.active }}</b><span>{% if kpi.expiring %}{% blocktranslate with n=kpi.expiring %}Active · {{ n }} end within 7 days{% endblocktranslate %}{% else %}{% translate "Active coupons" %}{% endif %}</span></div></a>
+    <div class="nzp-stat" style="--c:#2563eb"><i class="fas fa-bag-shopping" aria-hidden="true"></i><div><b>{{ kpi.orders }}</b><span>{% blocktranslate with n=kpi.month_orders c=kpi.customers %}Orders with a coupon · {{ n }} in 30 days · {{ c }} customers{% endblocktranslate %}</span></div></div>
+    <div class="nzp-stat" style="--c:#8b5cf6"><i class="fas fa-sack-dollar" aria-hidden="true"></i><div><b>{{ kpi.revenue }}<small> {% translate "so'm" %}</small></b><span>{% translate "Revenue from those orders" %}</span></div></div>
+    <div class="nzp-stat" style="--c:#e11d48"><i class="fas fa-percent" aria-hidden="true"></i><div><b>{{ kpi.discount }}<small> {% translate "so'm" %}</small></b><span>{% translate "Discount given" %}</span></div></div>
+  </div>
+
+  <div class="nzp-toolbar">
+    <nav class="nzp-tabs" aria-label="{% translate 'Status' %}">
+      {% for key, label, color, icon, n in tabs %}<a class="nzp-tab{% if current == key %} on{% endif %}" href="?{% if key %}state={{ key }}{% endif %}" style="--t:{{ color }}"><i class="fas {{ icon }}" aria-hidden="true"></i> {{ label }} <b>{{ n }}</b></a>{% endfor %}
+    </nav>
+    <form class="nzd-filters" method="get">{% if current %}<input type="hidden" name="state" value="{{ current }}">{% endif %}<label class="nzp-search"><i class="fas fa-magnifying-glass" aria-hidden="true"></i><input type="search" name="q" value="{{ q }}" placeholder="{% translate 'Code or name…' %}" aria-label="{% translate 'Code or name…' %}"></label></form>
+  </div>
+
+  <section class="nzp-card nzp-inbox">
+    {% if cl.result_list %}
+    <div class="nzd-table wx-coupon-table" role="table">
+      <div class="nzd-tr nzd-th" role="row"><span>{% translate "Code" %}</span><span>{% translate "Discount" %}</span><span>{% translate "Rules" %}</span><span>{% translate "Used" %}</span><span class="r">{% translate "Revenue" %}</span><span>{% translate "Status" %}</span></div>
+      {% for c in cl.result_list %}
+      <a class="nzd-tr" role="row" href="{% url 'admin:pricing_couponmodel_change' c.pk %}" style="--i:{{ forloop.counter0 }}">
+        <span><b class="wx-code">{{ c.code }}</b><small>{{ c.title|default:"" }}</small></span>
+        <span><b class="wx-discount">{{ c.nz.discount }}</b></span>
+        <span class="wx-tags">{% if c.min_order_amount %}<span class="nzd-tag" style="--t:#0ea5e9">{% translate "from" %} {{ c.min_order_amount|floatformat:0 }}</span>{% endif %}{% if c.max_per_customer %}<span class="nzd-tag" style="--t:#6366f1">{{ c.max_per_customer }}× {% translate "per customer" %}</span>{% endif %}{% if c.nz.ends %}<span class="nzd-tag" style="--t:{% if c.nz.soon %}#e11d48{% else %}#64748b{% endif %}">{% blocktranslate with d=c.nz.ends %}until {{ d }}{% endblocktranslate %}</span>{% endif %}{% if not c.min_order_amount and not c.max_per_customer and not c.nz.ends %}<small class="wx-muted">{% translate "no limits" %}</small>{% endif %}</span>
+        <span>{% if c.nz.limit %}<b>{{ c.nz.uses }} / {{ c.nz.limit }}</b><span class="wx-progress"><i style="width:{{ c.nz.pct }}%"></i></span>{% else %}<b>{{ c.nz.uses }}</b><small>{% translate "no limit" %}</small>{% endif %}</span>
+        <span class="r">{% if c.nz.revenue %}<b>{{ c.nz.revenue }}</b><small>{{ c.nz.customers }} {% translate "customers" %}</small>{% else %}<small>—</small>{% endif %}</span>
+        <span><span class="nzd-pill" style="--t:{{ c.nz.color }}"><i class="fas {{ c.nz.icon }}" aria-hidden="true"></i> {{ c.nz.label }}</span></span>
+      </a>
+      {% endfor %}
+    </div>
+    {% else %}
+    <div class="nzp-empty"><span class="nzp-empty-icon" style="--c:#f59e0b"><i class="fas fa-ticket" aria-hidden="true"></i></span><h3>{% translate "No coupons here" %}</h3>
+      <p>{% translate "Create a code for a Telegram post, a new customer or a holiday -- with a limit and an end date it can't be abused." %}</p>
+      {% if can_add %}<a class="nzp-btn nzp-btn-primary" href="{% url 'admin:pricing_couponmodel_add' %}"><i class="fas fa-plus" aria-hidden="true"></i> {% translate "New coupon" %}</a>{% endif %}</div>
+    {% endif %}
+  </section>
+  {% if cl.result_count > cl.list_per_page %}<div class="nzp-pagination">{% pagination cl %}</div>{% endif %}
+</div>
+{% endblock %}
