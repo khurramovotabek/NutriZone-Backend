@@ -85,3 +85,11 @@ def test_only_queued_posts_are_sent(settings_bot):
 def test_composer_pages_render(admin_client):
     assert admin_client.get("/django-admin/telegram_bot/telegrampost/add/").status_code == 200
     assert admin_client.get("/django-admin/telegram_bot/telegrampost/").status_code == 200
+
+
+def test_new_post_defaults_to_the_site_channel():
+    from apps.platform.infrastructure.models import SiteSettings
+    from apps.telegram_bot.infrastructure.admin import TelegramPostForm
+
+    SiteSettings.objects.update_or_create(pk=1, defaults={"telegram_channel_url": "https://t.me/nutrizone_uz"})
+    assert TelegramPostForm().initial["channel"] == "@nutrizone_uz"

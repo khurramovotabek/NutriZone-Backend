@@ -27,7 +27,8 @@ def _default_channel() -> str:
     try:
         from apps.platform.infrastructure.models import SiteSettings
 
-        url = (SiteSettings.load().telegram_channel_url or "").strip().rstrip("/")
+        row = SiteSettings.objects.filter(pk=1).only("telegram_channel_url").first()
+        url = ((row.telegram_channel_url if row else "") or "").strip().rstrip("/")
     except Exception:  # noqa: BLE001
         return ""
     name = url.rsplit("/", 1)[-1] if "t.me/" in url else ""
@@ -55,7 +56,7 @@ class TelegramPostForm(forms.ModelForm):
         for i, b in enumerate((self.instance.buttons or [])[:3], start=1):
             self.fields[f"button{i}_text"].initial = b.get("text", "")
             self.fields[f"button{i}_url"].initial = b.get("url", "")
-        if not self.instance.pk and not self.initial.get("channel"):
+        if self.instance._state.adding and not self.initial.get("channel"):  # UUID pk is set even on a new post
             self.initial["channel"] = _default_channel()
 
     def clean(self):

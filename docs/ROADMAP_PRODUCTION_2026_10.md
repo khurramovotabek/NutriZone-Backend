@@ -44,9 +44,9 @@ dashboardning 190 ta sahifasi server ichidan, mahsulot qo'shish formasi Chrome'd
 | 3. Dashboard tuzilmasi (Y3, Y5, O5) | ✅ Analitika va Telegram bo'limlari; Excel export 21 ta yangi ro'yxatda (jami 30); bosh sahifa "issiq" holatda 0.38 s |
 | 4. Telegram premium (O1, Y4) | ✅ RichText muharriri, Telegram postlar, Mijozlarga xabar formatlangan; analytics bot webhook ishlayapti |
 | 5. Storefront va Mini App | 🟡 12 sahifa 390px'da toshmaydi; hero savdoga yo'naltirildi; Mini App tilni va rangni Telegramdan oladi |
-| 6. Production ishonchliligi | ⏳ offsite backup, Sentry, SSH parolni o'chirish — foydalanuvchi qarori kerak |
+| 6. Production ishonchliligi | ✅ SSH faqat kalit bilan; media arxivi + rclone offsite timer (remote kaliti kutilmoqda); Sentry/AI kod tayyor — DSN/kalit kutilmoqda |
 
-Keyingi texnik qarzlar: ruscha dashboard katalogida ~540 satr tarjimasiz; parallel (xdist) test rejimida 1–2 ta tasodifiy yiqilish (umumiy Redis); `products/infrastructure/composition.py` da 3 ta aniqlanmagan nom (wishlist servislari).
+2026-10-16 (2-qism): ruscha katalog to'liq (482 satr), parallel testlar barqaror (3×4555 yashil), blog ru/en tarjimalari + 5 ta qoralama maqola, Mini App ulashish, lint toza.
 
 ## Bosqichlar
 
