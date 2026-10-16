@@ -33,6 +33,7 @@
 <link rel="stylesheet" href="{% static 'admin/css/nutrizone-responsive.css' %}">
 <link rel="stylesheet" href="{% static 'admin/css/nutrizone-palette.css' %}?v=1">
 <link rel="stylesheet" href="{% static 'admin/css/nutrizone-sidebar.css' %}?v=3">
+<link rel="stylesheet" href="{% static 'admin/css/nutrizone-forms.css' %}?v=3">
 {% include "admin/nz_branding.html" %}
 {% endblock %}
 
@@ -73,6 +74,7 @@
 <script src="{% static 'admin/js/nutrizone-search.js' %}"></script>
 {% if request.user.is_authenticated %}<script>window.NZ_USER = { name: "{{ request.user.get_full_name|default:request.user.get_username|escapejs }}", isSuperuser: {{ request.user.is_superuser|yesno:"true,false" }} };</script>{% endif %}
 <script src="{% static 'admin/js/nutrizone-sidebar.js' %}?v=2"></script>
+<script src="{% static 'admin/js/nutrizone-forms.js' %}?v=1" defer></script>
 <script>
   // Site Settings' own site name replaces Jazzmin's static brand text.
   document.querySelectorAll(".brand-link .brand-text").forEach(function (el) { el.textContent = "{{ site_settings.site_name|default:'NutriZone'|escapejs }}"; });

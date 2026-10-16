@@ -35,6 +35,11 @@ class PlatformConfig(AppConfig):
         install_inventory_sidebar_entry()
         _translate_third_party_model_names()
 
+        from apps.platform.infrastructure.admin_labels import install as install_admin_labels
+
+        install_admin_labels()
+        _localize_admin_descriptions_on_first_request()
+
         from apps.platform.infrastructure.health import (
             check_composition_integrity,
             check_feature_flag_repository,
@@ -60,3 +65,16 @@ def _translate_third_party_model_names() -> None:
     for model in apps.get_app_config("token_blacklist").get_models():
         if model.__name__ in names:
             model._meta.verbose_name, model._meta.verbose_name_plural = names[model.__name__]
+
+
+def _localize_admin_descriptions_on_first_request() -> None:
+    """Admin classes register after every AppConfig.ready() (autodiscover), so their column/action names are localized on the first request."""
+    from django.core.signals import request_started
+
+    def handler(**_kwargs):
+        request_started.disconnect(dispatch_uid="nz_admin_descriptions")
+        from apps.platform.infrastructure.admin_labels import install_admin_descriptions
+
+        install_admin_descriptions()
+
+    request_started.connect(handler, dispatch_uid="nz_admin_descriptions", weak=False)

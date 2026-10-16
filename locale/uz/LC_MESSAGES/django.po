@@ -1663,8 +1663,7 @@ msgid "Total"
 msgstr "Jami"
 
 #: templates/admin/pos_terminal.html:18
-#, fuzzy
-#| msgid "Start New Sale"
+#
 msgid "Start a New Sale"
 msgstr "Yangi savdoni boshlash"
 
@@ -1677,10 +1676,9 @@ msgid "No active price list found -- prices cannot be resolved without one."
 msgstr "Faol narx ro'yxati topilmadi -- narxlarni aniqlash uchun kerak."
 
 #: templates/admin/pos_terminal.html:26
-#, fuzzy
-#| msgid "Start New Sale"
+#
 msgid "Start Sale"
-msgstr "Yangi savdoni boshlash"
+msgstr "Savdoni boshlash"
 
 #: templates/admin/pos_terminal.html:36
 msgid "Shtrix-kodni skanerlash uchun qidiruv maydoniga fokus qiling"
@@ -1791,8 +1789,7 @@ msgid "Chekni chop etish"
 msgstr ""
 
 #: templates/admin/pos_terminal.html:123
-#, fuzzy
-#| msgid "Yangi savdo boshlash"
+#
 msgid "Yangi savdoni boshlash"
 msgstr "Yangi savdoni boshlash"
 
@@ -2170,16 +2167,14 @@ msgid "Short Name"
 msgstr ""
 
 #: templates/admin/settings_overview.html:42
-#, fuzzy
-#| msgid "Language"
+#
 msgid "Default Language"
-msgstr "Til"
+msgstr "Asosiy til"
 
 #: templates/admin/settings_overview.html:49
-#, fuzzy
-#| msgid "Brand"
+#
 msgid "Branding"
-msgstr "Brend"
+msgstr "Brending"
 
 #: templates/admin/settings_overview.html:56
 msgid "Favicon"
@@ -2202,10 +2197,9 @@ msgid "Support Phone"
 msgstr ""
 
 #: templates/admin/settings_overview.html:84
-#, fuzzy
-#| msgid "Telegram Bot"
+#
 msgid "Telegram Username"
-msgstr "Telegram bot"
+msgstr "Telegram username"
 
 #: templates/admin/settings_overview.html:88
 msgid "Telegram Channel URL"
@@ -2216,10 +2210,9 @@ msgid "Instagram URL"
 msgstr ""
 
 #: templates/admin/settings_overview.html:98
-#, fuzzy
-#| msgid "Site Settings"
+#
 msgid "Save Settings"
-msgstr "Sayt sozlamalari"
+msgstr "Sozlamalarni saqlash"
 
 #: templates/admin/settings_overview.html:104
 msgid ""
@@ -2249,22 +2242,19 @@ msgid "No feature flags defined yet."
 msgstr ""
 
 #: templates/admin/settings_overview.html:123
-#, fuzzy
-#| msgid "Unable to load sales data"
+#
 msgid "Unable to load feature flags"
-msgstr "Savdo ma'lumotlarini yuklab bo'lmadi"
+msgstr "Funksiya sozlamalarini yuklab bo'lmadi"
 
 #: templates/admin/settings_overview.html:129
-#, fuzzy
-#| msgid "Telegram Integration Status"
+#
 msgid "Integration Status"
-msgstr "Telegram integratsiyasi holati"
+msgstr "Integratsiya holati"
 
 #: templates/admin/settings_overview.html:134
-#, fuzzy
-#| msgid "Telegram Bot"
+#
 msgid "Telegram Bot Token"
-msgstr "Telegram bot"
+msgstr "Telegram bot tokeni"
 
 #: templates/admin/settings_overview.html:135
 #: templates/admin/settings_overview.html:139
@@ -2281,16 +2271,14 @@ msgid "Not Configured"
 msgstr "Sozlanmagan"
 
 #: templates/admin/settings_overview.html:138
-#, fuzzy
-#| msgid "Telegram Bot"
+#
 msgid "Telegram Bot Username"
-msgstr "Telegram bot"
+msgstr "Telegram bot username"
 
 #: templates/admin/settings_overview.html:142
-#, fuzzy
-#| msgid "Telegram Bot"
+#
 msgid "Telegram Webhook Secret"
-msgstr "Telegram bot"
+msgstr "Telegram webhook maxfiy kaliti"
 
 #: templates/admin/settings_overview.html:146
 msgid "SMS Login"
@@ -7655,3 +7643,173 @@ msgstr "Sovg'a xaridi"
 msgid "Source"
 msgstr "Manba"
 
+msgid "Loyalty & Wallet"
+msgstr "Loyalty va hamyon"
+
+msgid "Store not found."
+msgstr "Filial topilmadi."
+
+msgid "Back with the main warehouse."
+msgstr "Asosiy omborga qaytarildi."
+
+msgid "Amenities"
+msgstr "Qulayliklar"
+
+msgid "Codes from STORE_AMENITIES (card payment, parking, consultant, ...)."
+msgstr "Qulayliklar kodlari (karta orqali to'lov, avtoturargoh, maslahatchi, ...)."
+
+msgid "Landmark"
+msgstr "Mo'ljal"
+
+msgid "Pickup orders"
+msgstr "Olib ketish buyurtmalari"
+
+msgid "Customers can choose this branch at checkout to pick their order up."
+msgstr "Mijozlar buyurtma berishda shu filialdan olib ketishni tanlay oladi."
+
+msgid "Pickup note"
+msgstr "Olib ketish izohi"
+
+msgid "Paid at"
+msgstr "To'langan vaqt"
+
+msgid "Paid by"
+msgstr "To'lagan"
+
+msgid "Opening stock"
+msgstr "Boshlang'ich qoldiq"
+
+msgid "Parked at"
+msgstr "Kechiktirilgan vaqt"
+
+msgid "Parked label"
+msgstr "Kechiktirilgan savat nomi"
+
+msgid "Test mode"
+msgstr "Test rejimi"
+
+msgid "Provider state"
+msgstr "Provayder holati"
+
+msgid "Cancelled at"
+msgstr "Bekor qilingan vaqt"
+
+msgid "Provider"
+msgstr "Provayder"
+
+msgid "Minimum amount"
+msgstr "Minimal summa"
+
+msgid "Maximum amount"
+msgstr "Maksimal summa"
+
+msgid "Payme state 1/2/-1/-2, Click/Uzum mapped the same way."
+msgstr "Payme holati 1/2/-1/-2; Click/Uzum ham shu tarzda."
+
+msgid "Payme create_time (ms)."
+msgstr "Payme yaratilgan vaqti (ms)."
+
+msgid "Payme perform_time (ms)."
+msgstr "Payme bajarilgan vaqti (ms)."
+
+msgid "Payme cancel_time (ms)."
+msgstr "Payme bekor qilingan vaqti (ms)."
+
+msgid "Click merchant_prepare_id."
+msgstr "Click merchant_prepare_id."
+
+msgid "Shown to customers at checkout only when enabled AND fully configured."
+msgstr "Faqat yoqilgan VA to'liq sozlangan bo'lsa, mijozga to'lov sahifasida ko'rinadi."
+
+msgid "Non-secret settings (merchant / service ids, account field, route)."
+msgstr "Maxfiy bo'lmagan sozlamalar (merchant / service ID, hisob maydoni, marshrut)."
+
+msgid "Uzum Bank Merchant API: check / create / confirm / reverse / status (Basic Auth)."
+msgstr "Uzum Bank Merchant API: tekshirish / yaratish / tasdiqlash / qaytarish / holat (Basic Auth)."
+
+msgid "Kassa ID (merchant_id)"
+msgstr "Kassa ID (merchant_id)"
+
+msgid "Service ID"
+msgstr "Service ID"
+
+msgid "Merchant ID"
+msgstr "Merchant ID"
+
+msgid "Merchant User ID"
+msgstr "Merchant User ID"
+
+msgid "Secret key"
+msgstr "Maxfiy kalit"
+
+msgid "Prepare URL"
+msgstr "Prepare URL"
+
+msgid "Complete URL"
+msgstr "Complete URL"
+
+msgid "Base URL"
+msgstr "Asosiy URL"
+
+msgid "Link"
+msgstr "Havola"
+
+msgid "All customers"
+msgstr "Barcha mijozlar"
+
+msgid "Active customers"
+msgstr "Faol mijozlar"
+
+msgid "Telegram linked customers"
+msgstr "Telegram ulangan mijozlar"
+
+msgid "Customers with purchases"
+msgstr "Xarid qilgan mijozlar"
+
+msgid "New customers (last 30 days)"
+msgstr "Yangi mijozlar (30 kun)"
+
+msgid "Customer segment"
+msgstr "Mijozlar segmenti"
+
+msgid "One customer (by phone)"
+msgstr "Bitta mijoz (telefon bo'yicha)"
+
+msgid "Queued"
+msgstr "Navbatda"
+
+msgid "Sending"
+msgstr "Yuborilmoqda"
+
+msgid "Audience"
+msgstr "Auditoriya"
+
+msgid "In-app"
+msgstr "Ilova ichida"
+
+msgid "Recipients"
+msgstr "Qabul qiluvchilar"
+
+msgid "Checkout"
+msgstr "To'lov"
+
+msgid "Cashback (coin)"
+msgstr "Keshbek (coin)"
+
+msgid "Production"
+msgstr "Ishchi rejim"
+
+msgid "Cashier payout"
+msgstr "Kassirga to'lov"
+
+msgid "Cashier payouts"
+msgstr "Kassirlarga to'lovlar"
+
+msgid "Tagline"
+msgstr "Shior"
+
+msgid "Entrance (podyezd)"
+msgstr "Podyezd"
+
+msgid "Units already on hand: posted to the main warehouse as a goods receipt (Kirim) at the cost price above. Later changes go through Ombor documents only."
+msgstr "Hozir qo'lda bor dona: yuqoridagi tannarx bo'yicha asosiy omborga kirim (qabul) sifatida yoziladi. Keyingi o'zgarishlar faqat Ombor hujjatlari orqali."

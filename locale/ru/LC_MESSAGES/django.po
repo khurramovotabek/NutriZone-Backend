@@ -1171,10 +1171,9 @@ msgid "URL-friendly identifier. Auto-generated from the name if left blank."
 msgstr "Идентификатор для URL. Если оставить пустым, создаётся из названия."
 
 #: apps/stores/infrastructure/models.py:43
-#, fuzzy
-#| msgid "Reservation"
+#
 msgid "Description"
-msgstr "Резервирование"
+msgstr "Описание"
 
 #: apps/stores/infrastructure/models.py:55
 msgid "List of phone numbers, e.g. [\"+998901234567\", \"+998907654321\"]."
@@ -1662,8 +1661,7 @@ msgid "Total"
 msgstr "Итого"
 
 #: templates/admin/pos_terminal.html:18
-#, fuzzy
-#| msgid "Start New Sale"
+#
 msgid "Start a New Sale"
 msgstr "Начать новую продажу"
 
@@ -1677,10 +1675,9 @@ msgstr "Активный прайс-лист не найден -- без нег�
 "Активный прайс-лист не найден -- без него цены не могут быть определены."
 
 #: templates/admin/pos_terminal.html:26
-#, fuzzy
-#| msgid "Start New Sale"
+#
 msgid "Start Sale"
-msgstr "Начать новую продажу"
+msgstr "Начать продажу"
 
 #: templates/admin/pos_terminal.html:36
 msgid "Shtrix-kodni skanerlash uchun qidiruv maydoniga fokus qiling"
@@ -1836,10 +1833,9 @@ msgid "Qidiruv yoki filtrlarni o'zgartirib ko'ring."
 msgstr "Попробуйте изменить поиск или фильтры."
 
 #: templates/admin/pos_terminal.html:254
-#, fuzzy
-#| msgid "Address"
+#
 msgid "Add"
-msgstr "Адрес"
+msgstr "Добавить"
 
 #: templates/admin/pos_terminal.html:262
 msgid "dona mavjud"
@@ -1923,10 +1919,9 @@ msgid "Filter"
 msgstr "Фильтр"
 
 #: templates/admin/price_list.html:38 templates/admin/price_list.html:40
-#, fuzzy
-#| msgid "Filter"
+#
 msgid "Filters"
-msgstr "Фильтр"
+msgstr "Фильтры"
 
 #: templates/admin/price_list.html:41
 msgid "Close"
@@ -2177,16 +2172,14 @@ msgid "Short Name"
 msgstr ""
 
 #: templates/admin/settings_overview.html:42
-#, fuzzy
-#| msgid "Language"
+#
 msgid "Default Language"
-msgstr "Язык"
+msgstr "Язык по умолчанию"
 
 #: templates/admin/settings_overview.html:49
-#, fuzzy
-#| msgid "Brand"
+#
 msgid "Branding"
-msgstr "Бренд"
+msgstr "Брендинг"
 
 #: templates/admin/settings_overview.html:56
 msgid "Favicon"
@@ -2209,10 +2202,9 @@ msgid "Support Phone"
 msgstr ""
 
 #: templates/admin/settings_overview.html:84
-#, fuzzy
-#| msgid "Telegram Bot"
+#
 msgid "Telegram Username"
-msgstr "Telegram-бот"
+msgstr "Имя пользователя Telegram"
 
 #: templates/admin/settings_overview.html:88
 msgid "Telegram Channel URL"
@@ -2223,10 +2215,9 @@ msgid "Instagram URL"
 msgstr ""
 
 #: templates/admin/settings_overview.html:98
-#, fuzzy
-#| msgid "Site Settings"
+#
 msgid "Save Settings"
-msgstr "Настройки сайта"
+msgstr "Сохранить настройки"
 
 #: templates/admin/settings_overview.html:104
 msgid ""
@@ -2256,22 +2247,19 @@ msgid "No feature flags defined yet."
 msgstr ""
 
 #: templates/admin/settings_overview.html:123
-#, fuzzy
-#| msgid "Unable to load sales data"
+#
 msgid "Unable to load feature flags"
-msgstr "Не удалось загрузить данные о продажах"
+msgstr "Не удалось загрузить настройки функций"
 
 #: templates/admin/settings_overview.html:129
-#, fuzzy
-#| msgid "Telegram Integration Status"
+#
 msgid "Integration Status"
-msgstr "Статус интеграции Telegram"
+msgstr "Статус интеграции"
 
 #: templates/admin/settings_overview.html:134
-#, fuzzy
-#| msgid "Telegram Bot"
+#
 msgid "Telegram Bot Token"
-msgstr "Telegram-бот"
+msgstr "Токен Telegram-бота"
 
 #: templates/admin/settings_overview.html:135
 #: templates/admin/settings_overview.html:139
@@ -2288,16 +2276,14 @@ msgid "Not Configured"
 msgstr "Не настроено"
 
 #: templates/admin/settings_overview.html:138
-#, fuzzy
-#| msgid "Telegram Bot"
+#
 msgid "Telegram Bot Username"
-msgstr "Telegram-бот"
+msgstr "Имя Telegram-бота"
 
 #: templates/admin/settings_overview.html:142
-#, fuzzy
-#| msgid "Telegram Bot"
+#
 msgid "Telegram Webhook Secret"
-msgstr "Telegram-бот"
+msgstr "Секрет вебхука Telegram"
 
 #: templates/admin/settings_overview.html:146
 msgid "SMS Login"
@@ -8127,3 +8113,167 @@ msgstr "Покупка с подарком"
 msgid "Source"
 msgstr "Источник"
 
+msgid "Loyalty & Wallet"
+msgstr "Лояльность и кошелёк"
+
+msgid "Store not found."
+msgstr "Филиал не найден."
+
+msgid "Back with the main warehouse."
+msgstr "Возвращено на основной склад."
+
+msgid "Amenities"
+msgstr "Удобства"
+
+msgid "Codes from STORE_AMENITIES (card payment, parking, consultant, ...)."
+msgstr "Коды удобств (оплата картой, парковка, консультант, ...)."
+
+msgid "Landmark"
+msgstr "Ориентир"
+
+msgid "Pickup orders"
+msgstr "Заказы на самовывоз"
+
+msgid "Customers can choose this branch at checkout to pick their order up."
+msgstr "Покупатели смогут выбрать этот филиал для самовывоза при оформлении."
+
+msgid "Pickup note"
+msgstr "Комментарий к самовывозу"
+
+msgid "Paid at"
+msgstr "Оплачено"
+
+msgid "Paid by"
+msgstr "Оплатил"
+
+msgid "Opening stock"
+msgstr "Начальный остаток"
+
+msgid "Parked at"
+msgstr "Отложено"
+
+msgid "Parked label"
+msgstr "Метка отложенной корзины"
+
+msgid "Test mode"
+msgstr "Тестовый режим"
+
+msgid "Provider state"
+msgstr "Статус у провайдера"
+
+msgid "Cancelled at"
+msgstr "Отменено"
+
+msgid "Provider"
+msgstr "Провайдер"
+
+msgid "Minimum amount"
+msgstr "Минимальная сумма"
+
+msgid "Maximum amount"
+msgstr "Максимальная сумма"
+
+msgid "Payme state 1/2/-1/-2, Click/Uzum mapped the same way."
+msgstr "Статус Payme 1/2/-1/-2; Click/Uzum — аналогично."
+
+msgid "Payme create_time (ms)."
+msgstr "Время создания в Payme (мс)."
+
+msgid "Payme perform_time (ms)."
+msgstr "Время проведения в Payme (мс)."
+
+msgid "Payme cancel_time (ms)."
+msgstr "Время отмены в Payme (мс)."
+
+msgid "Click merchant_prepare_id."
+msgstr "Click merchant_prepare_id."
+
+msgid "Shown to customers at checkout only when enabled AND fully configured."
+msgstr "Показывается покупателю при оформлении, только если включено И полностью настроено."
+
+msgid "Non-secret settings (merchant / service ids, account field, route)."
+msgstr "Несекретные настройки (merchant / service ID, поле счёта, маршрут)."
+
+msgid "Uzum Bank Merchant API: check / create / confirm / reverse / status (Basic Auth)."
+msgstr "Uzum Bank Merchant API: проверка / создание / подтверждение / отмена / статус (Basic Auth)."
+
+msgid "Kassa ID (merchant_id)"
+msgstr "ID кассы (merchant_id)"
+
+msgid "Service ID"
+msgstr "Service ID"
+
+msgid "Merchant ID"
+msgstr "Merchant ID"
+
+msgid "Merchant User ID"
+msgstr "Merchant User ID"
+
+msgid "Secret key"
+msgstr "Секретный ключ"
+
+msgid "Prepare URL"
+msgstr "Prepare URL"
+
+msgid "Complete URL"
+msgstr "Complete URL"
+
+msgid "Base URL"
+msgstr "Базовый URL"
+
+msgid "Link"
+msgstr "Ссылка"
+
+msgid "All customers"
+msgstr "Все клиенты"
+
+msgid "Active customers"
+msgstr "Активные клиенты"
+
+msgid "Telegram linked customers"
+msgstr "Клиенты с Telegram"
+
+msgid "Customers with purchases"
+msgstr "Клиенты с покупками"
+
+msgid "New customers (last 30 days)"
+msgstr "Новые клиенты (30 дней)"
+
+msgid "Customer segment"
+msgstr "Сегмент клиентов"
+
+msgid "One customer (by phone)"
+msgstr "Один клиент (по телефону)"
+
+msgid "Queued"
+msgstr "В очереди"
+
+msgid "Sending"
+msgstr "Отправляется"
+
+msgid "Audience"
+msgstr "Аудитория"
+
+msgid "In-app"
+msgstr "В приложении"
+
+msgid "Recipients"
+msgstr "Получатели"
+
+msgid "Production"
+msgstr "Рабочий режим"
+
+msgid "Cashier payout"
+msgstr "Выплата кассиру"
+
+msgid "Cashier payouts"
+msgstr "Выплаты кассирам"
+
+msgid "Tagline"
+msgstr "Слоган"
+
+msgid "Entrance (podyezd)"
+msgstr "Подъезд"
+
+msgid "Units already on hand: posted to the main warehouse as a goods receipt (Kirim) at the cost price above. Later changes go through Ombor documents only."
+msgstr "Единицы в наличии: оприходуются на основной склад как приход по указанной себестоимости. Дальнейшие изменения — только через складские документы."

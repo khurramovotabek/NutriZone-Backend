@@ -140,7 +140,7 @@ class TestOrdersWebhookManagerAction:
         with patch("requests.post") as mock_post:
             r = _post(Client(), callback)
         assert r.status_code == 200
-        assert mock_post.called
-        called_url = mock_post.call_args.args[0]
-        assert "222:orders-bot-token" in called_url
-        assert "111:customer-bot-token" not in called_url
+        # Other notifications may post in the same window -- check the answerCallbackQuery call itself, not the last call.
+        answers = [c.args[0] for c in mock_post.call_args_list if c.args and "answerCallbackQuery" in str(c.args[0])]
+        assert answers
+        assert all("222:orders-bot-token" in url and "111:customer-bot-token" not in url for url in answers)

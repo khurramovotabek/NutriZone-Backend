@@ -51,7 +51,7 @@ class SiteSettingsAdmin(admin.ModelAdmin):
             return "—"
         return format_html('<span style="display:inline-block;width:24px;height:24px;border-radius:4px;border:1px solid var(--nz-border);background:{};vertical-align:middle;"></span> {}', obj.primary_color, obj.primary_color)
 
-    primary_color_swatch.short_description = "Preview"
+    primary_color_swatch.short_description = "Ko'rinishi"
 
     def has_add_permission(self, request) -> bool:
         return not orm.SiteSettings.objects.exists()
@@ -77,7 +77,7 @@ class SiteSettingsAdmin(admin.ModelAdmin):
             return format_html('<img src="{}" style="max-height: 60px;" alt="Logo preview">', obj.logo.url)
         return "(no logo uploaded)"
 
-    logo_preview.short_description = "Preview"
+    logo_preview.short_description = "Ko'rinishi"
 
     def favicon_preview(self, obj):
         from django.utils.html import format_html
@@ -86,18 +86,18 @@ class SiteSettingsAdmin(admin.ModelAdmin):
             return format_html('<img src="{}" style="max-height: 32px;" alt="Favicon preview">', obj.favicon.url)
         return "(no favicon uploaded)"
 
-    favicon_preview.short_description = "Preview"
+    favicon_preview.short_description = "Ko'rinishi"
 
 
 class BannerAdminForm(forms.ModelForm):
-    image_upload = forms.ImageField(required=False, label="Upload image", help_text="JPEG, PNG, or WebP. Runs through the real media pipeline.")
+    image_upload = forms.ImageField(required=False, label="Rasm yuklash", help_text="JPEG, PNG yoki WebP. Saqlanganda avtomatik optimallashtiriladi (WebP + kichik nusxalar).")
     # Explicit field (not left to the model's own required=True) so a form
     # submission that omits it -- e.g. an older client/test -- still saves
     # the model's own default instead of failing validation.
     duration_seconds = forms.IntegerField(
         required=False, min_value=3, max_value=300, initial=45,
-        label="Display duration",
-        help_text="How long this banner stays on screen in the homepage slider before advancing, in seconds (3-300).",
+        label="Ko'rsatish davomiyligi (soniya)",
+        help_text="Bosh sahifa slayderida banner keyingisiga o'tguncha necha soniya turadi (3–300).",
     )
 
     class Meta:

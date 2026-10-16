@@ -496,7 +496,7 @@ class ProductPricingInline(admin.TabularInline):
 
 
 class ProductMediaInlineForm(forms.ModelForm):
-    file_upload = forms.FileField(required=False, label="Upload file", help_text="Image (JPEG/PNG/WebP) or video (MP4/MOV/WebM). Runs through the real media pipeline.")
+    file_upload = forms.FileField(required=False, label="Fayl yuklash", help_text="Rasm (JPEG/PNG/WebP) yoki video (MP4/MOV/WebM). Saqlanganda avtomatik optimallashtiriladi.")
 
     class Meta:
         model = orm.ProductMedia
@@ -521,7 +521,7 @@ class ProductMediaInline(admin.TabularInline):
             return format_html('<i class="fas fa-film" aria-hidden="true"></i> {} ({}s)', obj.storage_path.rsplit("/", 1)[-1], obj.duration_seconds or "?")
         return format_html('<i class="fas fa-file" aria-hidden="true"></i> {}', obj.storage_path.rsplit("/", 1)[-1])
 
-    preview.short_description = "Preview"
+    preview.short_description = "Ko'rinishi"
 
 
 def _direct_thumbnail_html(storage_path: str, thumbnail_paths: dict) -> str:
@@ -876,7 +876,7 @@ class ProductAdmin(ExcelExportMixin, CatalogFormMixin, CatalogAnalyticsMixin, ad
         rows = "".join(format_html("<tr><td>{}</td><td>{}</td></tr>", spec.get("key", ""), spec.get("value", "")) for spec in specs)
         return format_html('<table class="nz-settings-table"><thead><tr><th>Key</th><th>Value</th></tr></thead><tbody>{}</tbody></table>', mark_safe(rows))
 
-    specifications_table.short_description = "Specifications"
+    specifications_table.short_description = "Spetsifikatsiya"
 
     def nutrition_table(self, obj: orm.Product) -> str:
         """Real, closed gap: `nutrition_nutrients` is a raw JSON dict -- same rationale as specifications_table above."""
@@ -886,7 +886,7 @@ class ProductAdmin(ExcelExportMixin, CatalogFormMixin, CatalogAnalyticsMixin, ad
         rows = "".join(format_html("<tr><td>{}</td><td>{}</td></tr>", key, value) for key, value in nutrients.items())
         return format_html('<table class="nz-settings-table"><thead><tr><th>Nutrient</th><th>Amount</th></tr></thead><tbody>{}</tbody></table>', mark_safe(rows))
 
-    nutrition_table.short_description = "Nutrition Facts"
+    nutrition_table.short_description = "Ozuqaviy qiymat"
 
     def get_queryset(self, request):
         from apps.pricing.infrastructure.models import PriceListEntryModel
@@ -1100,7 +1100,7 @@ class ProductAdmin(ExcelExportMixin, CatalogFormMixin, CatalogAnalyticsMixin, ad
             except Exception:  # noqa: BLE001 - a bulk action reports failures via the admin messages framework, not by crashing the whole batch
                 self.message_user(request, f"Could not publish {product.id}: publish validation failed.", level="error")
 
-    @admin.action(description="Hide selected products")
+    @admin.action(description="Tanlanganlarni yashirish")
     def hide_selected(self, request, queryset):
         service = HideProduct(DjangoProductRepository(), _admin_ctx(request))
         for product in queryset:
@@ -1118,7 +1118,7 @@ class ProductAdmin(ExcelExportMixin, CatalogFormMixin, CatalogAnalyticsMixin, ad
             except Exception:  # noqa: BLE001
                 pass
 
-    @admin.action(description="Restore selected products")
+    @admin.action(description="Tanlanganlarni tiklash")
     def restore_selected(self, request, queryset):
         service = RestoreProduct(DjangoProductRepository(), _admin_ctx(request))
         for product in queryset:
