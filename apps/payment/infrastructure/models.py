@@ -192,3 +192,27 @@ class PaymentReconciliationIssue(models.Model):
         verbose_name = _("Solishtirish")
         verbose_name_plural = _("Solishtirish")
         ordering = ["status", "-created_at"]
+
+
+class PaymentEvent(models.Model):
+    """
+    Append-only history of one payment: every status change (created → pending → paid / cancelled / refunded), the
+    provider's own state at that moment and the amount. Written automatically on PaymentModel saves (history.py) --
+    nothing is ever edited or deleted, so the full money trail of an order survives disputes and audits.
+    """
+
+    id = models.BigAutoField(primary_key=True)
+    payment = models.ForeignKey(PaymentModel, on_delete=models.PROTECT, related_name="events")
+    from_status = models.CharField(max_length=16, blank=True, default="")
+    to_status = models.CharField(max_length=16)
+    provider = models.CharField(max_length=32, blank=True, default="")
+    provider_state = models.IntegerField(null=True, blank=True)
+    amount = models.DecimalField(max_digits=14, decimal_places=2)
+    note = models.CharField(max_length=255, blank=True, default="")
+    at = models.DateTimeField(auto_now_add=True, db_index=True)
+
+    class Meta:
+        db_table = "payment_events"
+        ordering = ("at", "id")
+        verbose_name = _("Payment event")
+        verbose_name_plural = _("Payment events")

@@ -37,6 +37,11 @@
         <header class="nzp-card-head nzp-card-head-sm"><span class="nzp-card-icon" style="--c:#2563eb"><i class="fas fa-circle-info" aria-hidden="true"></i></span><div><h3>{% translate "Tafsilotlar" %}</h3></div></header>
         <dl class="pay-facts">{% for k, v in facts %}<div><dt>{{ k }}</dt><dd>{{ v }}</dd></div>{% endfor %}</dl>
       </section>
+      <section class="nzp-card">
+        <header class="nzp-card-head nzp-card-head-sm"><span class="nzp-card-icon" style="--c:#0d9488"><i class="fas fa-clock-rotate-left" aria-hidden="true"></i></span><div><h3>{% translate "Holatlar tarixi" %}</h3><p>{% translate "O'zgarmas yozuvlar: har bir holat o'zgarishi va o'sha paytdagi summa." %}</p></div></header>
+        {% if events %}<ul class="pay-timeline">{% for e in events %}<li><span class="pay-dot" style="--d:{{ e.color }}"></span><div><b>{{ e.label }}</b><small> · {{ e.when }}</small>{% if e.note %}<div class="wx-muted">{{ e.note }}</div>{% endif %}</div></li>{% endfor %}</ul>
+        {% else %}<p class="wx-muted">{% translate "Tarix yozuvlari bu funksiya qo'shilgandan keyingi to'lovlar uchun ko'rinadi." %}</p>{% endif %}
+      </section>
     </aside>
   </div>
 </div>

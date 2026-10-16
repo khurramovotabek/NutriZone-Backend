@@ -140,9 +140,14 @@ def start_payment(customer_id, order_number: str, method: str, lang: str = "uz",
 
     with transaction.atomic():
         # Another method's untouched attempt is dropped so only one provider can take the money.
-        PaymentModel.objects.select_for_update().filter(order_id=order.id, status=PaymentStatusChoices.CREATED, provider_reference__isnull=True).exclude(provider=acquirer).update(
-            status=PaymentStatusChoices.CANCELLED, cancelled_at=timezone.now(), failure_reason="switched method"
-        )
+        stale = PaymentModel.objects.select_for_update().filter(order_id=order.id, status=PaymentStatusChoices.CREATED, provider_reference__isnull=True).exclude(provider=acquirer)
+        switched = list(stale)
+        stale.update(status=PaymentStatusChoices.CANCELLED, cancelled_at=timezone.now(), failure_reason="switched method")
+        from apps.payment.infrastructure.history import record
+
+        for old_row in switched:  # bulk update skips signals -- keep the history complete
+            old_row.provider_state = None
+            record(old_row, PaymentStatusChoices.CREATED, PaymentStatusChoices.CANCELLED, "mijoz boshqa to'lov usulini tanladi")
         payment = PaymentModel.objects.filter(order_id=order.id, provider=acquirer, status__in=OPEN_PAYMENT_STATUSES, amount=amount).order_by("-created_at").first()
         if payment is None:
             payment = PaymentModel.objects.create(

@@ -444,7 +444,12 @@ class PaymentTransactionAdmin(ExcelExportMixin, admin.ModelAdmin):
             "l": lg, "ok": not lg.error_code, "when": timezone.localtime(lg.created_at).strftime("%d.%m.%Y %H:%M:%S"),
             "req": json.dumps(lg.request, ensure_ascii=False, indent=2)[:4000], "res": json.dumps(lg.response, ensure_ascii=False, indent=2)[:4000],
         } for lg in logs]
+        status_label = dict(PaymentStatusChoices.choices)
+        events = [{"label": (f"{status_label.get(e.from_status, e.from_status)} → " if e.from_status else "") + str(status_label.get(e.to_status, e.to_status)),
+                   "when": timezone.localtime(e.at).strftime("%d.%m.%Y %H:%M:%S"), "note": e.note + (f" · provayder holati {e.provider_state}" if e.provider_state is not None else ""),
+                   "color": _style(e.to_status)["color"]} for e in p.events.all()]
         return render(request, "admin/payment/transaction_detail.html", {
+            "events": events,
             **self.admin_site.each_context(request), "opts": self.model._meta, "title": p.order_number or str(p.pk), "p": p, "order": order, "customer": user,
             "style": _style(p.status), "logo": _logo(key if key in registry.SPECS else "cash"), "amount": _money(p.amount), "facts": facts, "timeline": timeline,
             "can_cancel": p.status == PaymentStatusChoices.CREATED and not p.provider_reference and self.has_change_permission(request, p),
