@@ -92,6 +92,33 @@ class TestLocate:
         assert APIClient().get("/api/v1/geo/locations/locate", {"lat": 120, "lng": 1}).status_code == 422
 
 
+def _region(country, name: str):
+    region = orm.Region.objects.create(country=country, code=f"R{uuid.uuid4().hex[:5].upper()}")
+    orm.RegionTranslation.objects.create(region=region, locale_code="uz", name=name, slug=f"r-{uuid.uuid4().hex[:8]}")
+    return region
+
+
+class TestRegionFromMapBoundaries:
+    """The nearest city centre alone sent Andijan points to Tashkent while Andijan had no city on file."""
+
+    def test_osm_state_wins_over_a_nearer_city_of_another_region(self):
+        country, tashkent_region, _city, _district = _place()
+        andijan = _region(country, "Andijon viloyati")
+        osm = {"display_name": "Andijon", "address": {"city": "Andijon shahri", "state": "Andijon viloyati", "country_code": "uz"}}
+        with mock.patch.object(geocoder, "_get", return_value=osm):
+            data = geocoder.locate(40.7821, 72.3442)
+        assert data["region"]["id"] == str(andijan.id) and data["city"] is None
+        assert data["region"]["id"] != str(tashkent_region.id)
+
+    def test_viloyat_is_not_confused_with_the_capital(self):
+        country, capital, _city, _district = _place()
+        viloyat = _region(country, "Toshkent viloyati")
+        osm = {"display_name": "G'azalkent", "address": {"town": "G'azalkent", "state": "Toshkent viloyati", "country_code": "uz"}}
+        with mock.patch.object(geocoder, "_get", return_value=osm):
+            data = geocoder.locate(41.55, 69.9)
+        assert data["region"]["id"] == str(viloyat.id) != str(capital.id)
+
+
 class TestGeocodeAndLinks:
     def test_search_returns_places_closest_first(self):
         rows = [{"lat": "41.40", "lon": "69.30", "name": "Uzoq", "display_name": "Uzoq, Toshkent"}, {"lat": "41.311", "lon": "69.28", "name": "Yaqin", "display_name": "Yaqin, Toshkent"}]

@@ -34,6 +34,9 @@ COUNTRIES = [
 
 # Region code (ISO 3166-2 where possible) -> (uz, ru, en, [(city code, uz, ru, en, lat, lon), ...]).
 # "TGCITYR"/"TGCITY1" are kept for Tashkent city: the Telegram checkout looks them up by these codes.
+LEGACY_REGION_CODES = {"TC": "TGCITYR", "TA": "UZ-TO", "AN": "UZ-AN", "BU": "UZ-BU", "FA": "UZ-FA", "JI": "UZ-JI", "NA": "UZ-NG", "NV": "UZ-NW",
+                       "KA": "UZ-QA", "KP": "UZ-QR", "SA": "UZ-SA", "SY": "UZ-SI", "SU": "UZ-SU", "KH": "UZ-XO"}
+
 UZ_REGIONS = {
     "TGCITYR": ("Toshkent shahri", "город Ташкент", "Tashkent City", [
         ("TGCITY1", "Toshkent", "Ташкент", "Tashkent", 41.2995, 69.2401),
@@ -212,6 +215,13 @@ def _cleanup_legacy_uz_test_rows(uz_country) -> list[str]:
     from apps.geo.infrastructure import models as geo
 
     notes = []
+    # Regions first created with short codes (AN, TC, KA...) become the ISO / seed codes, so seeding never duplicates them.
+    for short, target in LEGACY_REGION_CODES.items():
+        old = geo.Region.all_objects.filter(code=short, country=uz_country).first()
+        if old is not None and not geo.Region.all_objects.filter(code=target).exists():
+            old.code = target
+            old.save(update_fields=["code", "updated_at"])
+            notes.append(f"region {short} -> {target}")
     legacy = geo.Region.objects.filter(code="75", country=uz_country).first()
     if legacy is not None and not geo.Region.objects.filter(code="UZ-SU").exists():
         legacy.code = "UZ-SU"
@@ -231,6 +241,57 @@ def _cleanup_legacy_uz_test_rows(uz_country) -> list[str]:
             geo.District.objects.filter(pk=d.pk)._raw_delete(geo.District.objects.db)
             notes.append("test district 12 removed")
     return notes
+
+
+def _fix_district_cities() -> list[str]:
+    """A Tashkent district saved as a "city" (e.g. MB = Mirobod) → its addresses move to Tashkent with that district set."""
+    from apps.geo.infrastructure import models as geo
+
+    notes = []
+    tashkent = geo.City.objects.filter(code="TGCITY1").first()
+    if tashkent is None:
+        return notes
+    for city in geo.City.objects.exclude(code="TGCITY1").filter(region__code__in=("TGCITYR", "UZ-TO")).prefetch_related("translations"):
+        names = {t.name.lower() for t in city.translations.all()}
+        district = None
+        for d in geo.District.objects.filter(region=tashkent.region).prefetch_related("translations"):
+            if any(t.name.lower().replace(" tumani", "").replace(" district", "") in names for t in d.translations.all()):
+                district = d
+                break
+        if district is None:
+            continue
+        moved = geo.Address.all_objects.filter(city=city).update(city=tashkent, region=tashkent.region, district=district)
+        city.status = "inactive"
+        city.save(update_fields=["status", "updated_at"])
+        notes.append(f"city {city.code} is the {district.code} district of Tashkent ({moved} address(es) moved)")
+    return notes
+
+
+def seed_districts() -> int:
+    """The tumanlar of every region (the list in migration 0009) for regions that have none yet."""
+    import importlib
+    import re
+    import uuid
+
+    from apps.geo.infrastructure import models as geo
+
+    districts = importlib.import_module("apps.geo.infrastructure.migrations.0009_region_districts").DISTRICTS
+    made = 0
+    for region_code, names in districts.items():
+        region = geo.Region.objects.filter(code=region_code).first()
+        if region is None or geo.District.objects.filter(region=region).exists():
+            continue
+        prefix = region_code.split("-")[1]
+        for i, name in enumerate(names, 1):
+            code = f"{prefix}-{re.sub(r'[^A-Z]', '', name.replace(chr(39), '').upper())[:5]}{i:02d}"[:10]
+            if geo.District.all_objects.filter(code=code).exists():
+                continue
+            d = geo.District.objects.create(id=uuid.uuid4(), region=region, code=code, status="active")
+            latin = name.replace("'", "")
+            _set_translations(geo.DistrictTranslation, "district", d, {"uz": f"{name} tumani", "en": f"{latin} District"},
+                              slugs={"uz": f"{slugify_uz(name)}-tumani-{prefix.lower()}", "en": f"{slugify_uz(latin)}-district-{prefix.lower()}"})
+            made += 1
+    return made
 
 
 def seed_uzbekistan(stdout=None) -> dict:
@@ -255,6 +316,10 @@ def seed_uzbekistan(stdout=None) -> dict:
             c_slug = slugify_uz(c_en)
             _set_translations(geo.CityTranslation, "city", city, {"uz": c_uz, "ru": c_ru, "en": c_en}, slugs={"uz": slugify_uz(c_uz), "ru": c_slug, "en": c_slug})
             cities += 1
+    notes += _fix_district_cities()
+    districts = seed_districts()
+    if districts:
+        notes.append(f"{districts} district(s) added")
     return {"regions": regions, "cities": cities, "notes": notes}
 
 

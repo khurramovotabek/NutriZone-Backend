@@ -158,11 +158,13 @@ def _norm(text: str) -> str:
     return text.replace("x", "h").replace("ay", "oy") if re.match(r"[a-z]", text) else text
 
 
-def nearest_city(lat: float, lng: float, lang: str = "uz"):
+def nearest_city(lat: float, lng: float, lang: str = "uz", region_id=None):
     from apps.geo.infrastructure import models as orm
 
     cities = orm.City.objects.filter(status="active", center_latitude__isnull=False).select_related("region__country").prefetch_related(
         "translations", "region__translations", "region__country__translations")
+    if region_id is not None:
+        cities = cities.filter(region_id=region_id)
     best = min(((haversine_km(lat, lng, c.center_latitude, c.center_longitude), c) for c in cities), default=None, key=lambda x: x[0])
     return best
 
@@ -183,13 +185,50 @@ def _match_district(region_id, osm_names: list[str]):
     return None
 
 
+def _match_region(state: str):
+    """OSM's state ("Andijon viloyati", "Андижанская область", "Tashkent") → our Region (any of its translations)."""
+    from apps.geo.infrastructure import models as orm
+
+    def stem(text: str) -> str:
+        text = re.sub(r"(?i)\b(viloyati|viloyat|region|province|oblast|respublikasi|republic|shahri|city|область|республика|город)\b", "", text or "")
+        return _norm(text).replace("skaya", "").replace("skiy", "")
+
+    city_rx = re.compile(r"(?i)\b(shahri|city|город)\b")
+    wanted, wanted_city = stem(state), bool(city_rx.search(state or ""))
+    if not wanted:
+        return None
+    regions = list(orm.Region.objects.filter(status="active").prefetch_related("translations"))
+    for region in regions:  # the exact name first ("Toshkent viloyati" must not land on "Toshkent shahri")
+        if any(_norm(t.name) == _norm(state) for t in region.translations.all()):
+            return region
+    for region in regions:
+        for t in region.translations.all():
+            have = stem(t.name)
+            if have and bool(city_rx.search(t.name)) == wanted_city and (have == wanted or SequenceMatcher(None, have, wanted).ratio() >= 0.82):
+                return region
+    return None
+
+
 def locate(lat: float, lng: float, lang: str = "uz", with_street: bool = True) -> dict:
-    """A point → what the address form fills in: city / region / country (ids from our data), district, street, house."""
+    """A point → what the address form fills in: city / region / country (ids from our data), district, street, house.
+    The region comes from the map provider's own boundaries (OSM state) when it names one of ours -- the nearest city
+    centre alone put Andijan points into Tashkent while a region had no city in our data."""
     lang = lang if lang in LANGS else "uz"
-    found = nearest_city(lat, lng, lang)
     street = reverse(lat, lng, lang) if with_street else None
+    region_hit = _match_region(street.get("region", "")) if street else None
+    if region_hit is not None and street and _norm(street.get("city", "")) in {_norm("Toshkent"), _norm("Tashkent"), _norm("Ташкент")}:
+        from apps.geo.infrastructure import models as orm
+
+        region_hit = orm.Region.objects.filter(code="TGCITYR").first() or region_hit  # OSM puts the capital's districts under "Tashkent"
+    found = nearest_city(lat, lng, lang, region_hit.id if region_hit else None) or (None if region_hit else nearest_city(lat, lng, lang))
     out: dict = {"latitude": round(lat, 6), "longitude": round(lng, 6), "in_uzbekistan": in_uzbekistan(lat, lng), "city": None, "region": None, "country": None,
                  "district": None, "distance_km": None, "in_service_area": False, "street": "", "house": "", "label": "", "postcode": ""}
+    if not found and region_hit is not None:  # a region we know but with no city on file: still fill region / country
+        out.update({"region": {"id": str(region_hit.id), "name": _name(region_hit.translations.all(), lang, region_hit.code)},
+                    "country": {"id": str(region_hit.country_id), "name": _name(region_hit.country.translations.all(), lang, region_hit.country.code), "code": region_hit.country.code}})
+        district = _match_district(region_hit.id, [street.get("district") or street.get("neighbourhood")] if street else [])
+        if district:
+            out["district"] = {"id": str(district.id), "name": _name(district.translations.all(), lang, district.code)}
     if found:
         km, city = found
         region, country = city.region, city.region.country
