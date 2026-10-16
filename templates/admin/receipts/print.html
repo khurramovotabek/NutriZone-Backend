@@ -1,4 +1,4 @@
-<!doctype html>
+{% load receipt_tags %}<!doctype html>
 <html lang="uz"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Chek {{ r.number }}</title>
 <style>
@@ -25,7 +25,7 @@
     <div class="r"><div class="b" style="font-size:18px">{% if r.kind == "refund" %}QAYTARISH CHEKI{% else %}SAVDO CHEKI{% endif %} № {{ r.number }}</div><div>{{ r.issued_at|date:"d.m.Y H:i" }}</div>{% if r.order_number %}<div>Buyurtma: {{ r.order_number }}</div>{% endif %}</div></div>
   {% if d.customer %}<p>Xaridor: <b>{{ d.customer.name }}</b> {{ d.customer.phone }}</p>{% endif %}
   <table class="items"><thead><tr><th>#</th><th>Mahsulot</th><th>MXIK</th><th class="r">Soni</th><th class="r">Narxi</th><th class="r">Summa</th></tr></thead><tbody>
-  {% for i in d.items %}<tr><td>{{ forloop.counter }}</td><td>{{ i.name }}{% if i.variant_label %}<div class="sm">{{ i.variant_label }}</div>{% endif %}</td><td class="sm">{{ i.mxik|default:"—" }}</td><td class="r">{{ i.quantity }}</td><td class="r">{{ i.unit_price|floatformat:"0g" }}</td><td class="r">{{ i.line_total|floatformat:"0g" }}</td></tr>{% endfor %}
+  {% for i in d.items %}<tr><td>{{ forloop.counter }}</td><td>{{ i.name }}{% if i.variant_label %}<div class="sm">{{ i.variant_label }}</div>{% endif %}</td><td class="sm">{{ i.mxik|default:"—" }}</td><td class="r">{{ i.quantity }}</td><td class="r">{{ i.unit_price|som }}</td><td class="r">{{ i.line_total|som }}</td></tr>{% endfor %}
   </tbody></table>
   {% else %}
   <div class="c b" style="font-size:1.15em">{{ d.requisites.legal_name|default:d.seller.name }}</div>
@@ -38,17 +38,17 @@
   {% if r.order_number %}<div class="c sm">Buyurtma: {{ r.order_number }}</div>{% endif %}
   <hr>
   <table>{% for i in d.items %}<tr><td colspan="2">{{ i.name }}{% if i.variant_label %} · {{ i.variant_label }}{% endif %}</td></tr>
-    <tr><td class="sm">{{ i.quantity }} × {{ i.unit_price|floatformat:"0g" }}{% if i.mxik %}<br>MXIK {{ i.mxik }}{% endif %}</td><td class="r">{{ i.line_total|floatformat:"0g" }}</td></tr>{% endfor %}</table>
+    <tr><td class="sm">{{ i.quantity }} × {{ i.unit_price|som }}{% if i.mxik %}<br>MXIK {{ i.mxik }}{% endif %}</td><td class="r">{{ i.line_total|som }}</td></tr>{% endfor %}</table>
   {% endif %}
   <hr>
   <table>
-    {% if d.discount and d.discount != "0" and d.discount != "0.00" %}<tr><td>Chegirma</td><td class="r">−{{ d.discount|floatformat:"0g" }}</td></tr>{% endif %}
-    {% if d.coins and d.coins != "0" and d.coins != "0.00" %}<tr><td>Coin bilan</td><td class="r">−{{ d.coins|floatformat:"0g" }}</td></tr>{% endif %}
-    {% if d.delivery and d.delivery != "0" and d.delivery != "0.00" %}<tr><td>Yetkazib berish</td><td class="r">{{ d.delivery|floatformat:"0g" }}</td></tr>{% endif %}
-    <tr class="total"><td>JAMI</td><td class="r">{{ d.total|floatformat:"0g" }} so'm</td></tr>
-    {% if d.vat.payer %}<tr><td class="sm">shu jumladan QQS {{ d.vat.rate|floatformat:"0" }}%</td><td class="r sm">{{ d.vat.amount|floatformat:"0g" }}</td></tr>{% endif %}
-    {% for p in d.payments %}<tr><td class="sm">{% with m=p.method %}{% for k, v in pay_label.items %}{% if k == m %}{{ v }}{% endif %}{% endfor %}{% endwith %}</td><td class="r sm">{{ p.amount|floatformat:"0g" }}</td></tr>{% endfor %}
-    {% if d.change %}<tr><td class="sm">Qaytim</td><td class="r sm">{{ d.change|floatformat:"0g" }}</td></tr>{% endif %}
+    {% if d.discount and d.discount != "0" and d.discount != "0.00" %}<tr><td>Chegirma</td><td class="r">−{{ d.discount|som }}</td></tr>{% endif %}
+    {% if d.coins and d.coins != "0" and d.coins != "0.00" %}<tr><td>Coin bilan</td><td class="r">−{{ d.coins|som }}</td></tr>{% endif %}
+    {% if d.delivery and d.delivery != "0" and d.delivery != "0.00" %}<tr><td>Yetkazib berish</td><td class="r">{{ d.delivery|som }}</td></tr>{% endif %}
+    <tr class="total"><td>JAMI</td><td class="r">{{ d.total|som }} so'm</td></tr>
+    {% if d.vat.payer %}<tr><td class="sm">shu jumladan QQS {{ d.vat.rate|floatformat:"0" }}%</td><td class="r sm">{{ d.vat.amount|som }}</td></tr>{% endif %}
+    {% for p in d.payments %}<tr><td class="sm">{% with m=p.method %}{% for k, v in pay_label.items %}{% if k == m %}{{ v }}{% endif %}{% endfor %}{% endwith %}</td><td class="r sm">{{ p.amount|som }}</td></tr>{% endfor %}
+    {% if d.change %}<tr><td class="sm">Qaytim</td><td class="r sm">{{ d.change|som }}</td></tr>{% endif %}
   </table>
   {% if r.status == "fiscalized" %}<hr><div class="sm">FISKAL CHEK<br>Terminal: {{ r.fiscal_terminal_id }}<br>Fiskal raqam: {{ r.fiscal_number }}<br>Fiskal belgi: {{ r.fiscal_sign }}</div>{% endif %}
   {% if qr %}<div class="qr" id="qr" data-url="{{ qr }}"></div><div class="c sm">{% if r.status == "fiscalized" %}Soliq tizimida tekshirish{% else %}Elektron chek{% endif %}</div>{% endif %}

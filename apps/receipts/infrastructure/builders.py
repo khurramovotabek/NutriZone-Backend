@@ -125,8 +125,12 @@ def from_order(order) -> Receipt | None:
         return existing
     data = order_data(order)
     data["seller"]["name"] = brand_name()
+    from apps.ordering.infrastructure.models import OrderStatusHistoryEntryModel
+
+    done = OrderStatusHistoryEntryModel.objects.filter(order_id=order.id, to_status__in=("delivered", "completed")).order_by("changed_at").values_list("changed_at", flat=True).first()
+    issued = done or order.updated_at or timezone.now()  # the moment the order was handed over (backfills keep their real date)
     number, token = _next(ONLINE_SEQ, "NZO"), secrets.token_urlsafe(12)
-    data.update(number=number, token=token, issued_at=timezone.now().isoformat())
+    data.update(number=number, token=token, issued_at=issued.isoformat())
     lines = list(OrderLineItemModel.objects.filter(order_id=order.id, status="active"))
     codes = _tax_codes([li.product_variant_id for li in lines])
     data = _decorate(data, ReceiptSettings.get(), [codes.get(li.product_variant_id) for li in lines])
@@ -134,7 +138,7 @@ def from_order(order) -> Receipt | None:
         with transaction.atomic():
             return _store(data, number=number, token=token, source=ReceiptSource.ONLINE, order_id=order.id, order_number=order.order_number,
                           store_id=order.fulfilment_store_id, customer_name=data["customer"]["name"] or "", customer_phone=data["customer"]["phone"] or "",
-                          payment_method=data["payment_method"], issued_at=timezone.now())
+                          payment_method=data["payment_method"], issued_at=issued)
     except IntegrityError:
         return Receipt.objects.filter(order_id=order.id).first()
 
