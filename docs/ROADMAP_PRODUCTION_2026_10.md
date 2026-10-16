@@ -35,6 +35,19 @@ dashboardning 190 ta sahifasi server ichidan, mahsulot qo'shish formasi Chrome'd
 | O5 | Excel export barcha ro'yxat sahifalarida bir xil emas |
 | O6 | Next.js logida "Server Reference ID" botlar so'rovlari (zararsiz, lekin log shovqini) |
 
+## Holat (2026-10-16 kechqurun)
+
+| Bosqich | Holat |
+|---|---|
+| 1. Til va vaqt (K1–K6, Y6) | ✅ production'da |
+| 2. Dashboard formalari (Y1, Y2) | ✅ production'da — label'lar o'zbekcha, variantlar kartochka, bir xil kengliklar |
+| 3. Dashboard tuzilmasi (Y3, Y5, O5) | ✅ Analitika va Telegram bo'limlari; Excel export 21 ta yangi ro'yxatda (jami 30); bosh sahifa "issiq" holatda 0.38 s |
+| 4. Telegram premium (O1, Y4) | ✅ RichText muharriri, Telegram postlar, Mijozlarga xabar formatlangan; analytics bot webhook ishlayapti |
+| 5. Storefront va Mini App | 🟡 12 sahifa 390px'da toshmaydi; hero savdoga yo'naltirildi; Mini App tilni va rangni Telegramdan oladi |
+| 6. Production ishonchliligi | ⏳ offsite backup, Sentry, SSH parolni o'chirish — foydalanuvchi qarori kerak |
+
+Keyingi texnik qarzlar: ruscha dashboard katalogida ~540 satr tarjimasiz; parallel (xdist) test rejimida 1–2 ta tasodifiy yiqilish (umumiy Redis); `products/infrastructure/composition.py` da 3 ta aniqlanmagan nom (wishlist servislari).
+
 ## Bosqichlar
 
 ### 1-bosqich — Til va vaqt (K1–K6, Y6) ← hozir
