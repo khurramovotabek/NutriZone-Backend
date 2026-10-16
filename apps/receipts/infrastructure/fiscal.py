@@ -5,11 +5,12 @@ Providers are adapters behind one interface. "none" keeps internal receipts only
 for a virtual-kassa / OFD gateway: it POSTs the receipt in a neutral structure (requisites, terminal, items with MXIK
 and package codes, VAT, payments) and reads {fiscal_number, fiscal_sign, qr_url} back -- the provider-specific field
 mapping lives in `_payload` / `_parse`, so a concrete integration (e.g. a soliq.uz virtual kassa) is a small change.
-The API token comes from the environment (FISCAL_API_TOKEN), never the database.
+The API token / password is entered on the dashboard and stored encrypted (Fernet, same key as payment secrets);
+the server's FISCAL_API_TOKEN is the fallback. It is never shown back, logged or put into a receipt.
 """
 from __future__ import annotations
 
-import os
+import base64
 from decimal import Decimal
 
 import requests
@@ -54,6 +55,64 @@ def _parse(body: dict) -> dict:
     return {"number": str(number), "sign": str(sign), "url": data.get("qr_url") or data.get("qrCodeUrl") or data.get("url") or ""}
 
 
+def auth_headers(s: ReceiptSettings) -> dict:
+    secret = s.fiscal_secret
+    if not secret:
+        return {}
+    if s.fiscal_auth == "basic":
+        return {"Authorization": "Basic " + base64.b64encode(f"{s.fiscal_login}:{secret}".encode()).decode()}
+    if s.fiscal_auth == "header":
+        return {(s.fiscal_auth_header or "X-API-Key").strip(): secret}
+    return {"Authorization": f"Bearer {secret}"}
+
+
+def readiness(s: ReceiptSettings | None = None) -> list[tuple[str, bool, str]]:
+    """(label, ok, hint) for each thing fiscalization needs -- shown on the settings page."""
+    from apps.products.infrastructure.models import Product
+
+    s = s or ReceiptSettings.get()
+    no_mxik = Product.objects.filter(status="published").filter(models_q_empty("mxik_code")).count()
+    checks = [
+        ("Provayder tanlangan", s.fiscal_provider != "none", "«Fiskal provayder» → Virtual kassa / OFD"),
+        ("STIR (INN)", bool(s.tin), "Sotuvchi rekvizitlarida"),
+        ("Yuridik nom", bool(s.legal_name), "Sotuvchi rekvizitlarida"),
+        ("API manzili", bool(s.fiscal_endpoint), "Provayder bergan URL"),
+        ("Terminal (kassa) ID", bool(s.fiscal_terminal_id), "Provayder / soliq bergan ID"),
+        ("API kaliti / parol", bool(s.fiscal_secret), "Provayder bergan token yoki parol"),
+        ("Mahsulotlarda MXIK kodi", no_mxik == 0, f"{no_mxik} ta sotuvdagi mahsulotda MXIK yo'q" if no_mxik else "Hammasida bor"),
+    ]
+    if s.fiscal_auth == "basic":
+        checks.insert(6, ("Login", bool(s.fiscal_login), "«Login + parol» turi uchun"))
+    return checks
+
+
+def models_q_empty(field: str):
+    from django.db.models import Q
+
+    return Q(**{f"{field}__isnull": True}) | Q(**{field: ""})
+
+
+def check_connection(s: ReceiptSettings | None = None) -> tuple[bool, str]:
+    """Reach the provider without sending a receipt: is the URL up and is the key accepted? Saves the result."""
+    s = s or ReceiptSettings.get()
+    if not s.fiscal_endpoint:
+        ok, text = False, "API manzili kiritilmagan."
+    else:
+        try:
+            resp = requests.get(s.fiscal_endpoint, headers=auth_headers(s), timeout=min(s.fiscal_timeout or 20, 15), allow_redirects=False)
+            code = resp.status_code
+            if code in (401, 403):
+                ok, text = False, f"Server javob berdi ({code}), lekin kalit qabul qilinmadi — token / login / parolni tekshiring."
+            elif code >= 500:
+                ok, text = False, f"Provayder serverida xato ({code}). Keyinroq qayta tekshiring."
+            else:
+                ok, text = True, f"Ulanish bor (HTTP {code}). Kalit rad etilmadi."
+        except requests.RequestException as exc:
+            ok, text = False, f"Serverga ulanib bo'lmadi: {type(exc).__name__}"
+    ReceiptSettings.objects.filter(pk=s.pk).update(fiscal_checked_at=timezone.now(), fiscal_check_result=("✓ " if ok else "✗ ") + text[:250])
+    return ok, text
+
+
 def fiscalize(receipt: Receipt) -> Receipt:
     s = ReceiptSettings.get()
     if receipt.status == ReceiptStatus.FISCALIZED:
@@ -62,13 +121,14 @@ def fiscalize(receipt: Receipt) -> Receipt:
         raise FiscalError("Fiskal provayder ulanmagan (Chek sozlamalari).")
     if not (s.fiscal_endpoint and s.fiscal_terminal_id and s.tin):
         raise FiscalError("Chek sozlamalarida API manzili, terminal ID va STIR to'ldirilishi kerak.")
+    if not s.fiscal_secret:
+        raise FiscalError("Chek sozlamalarida provayder API kaliti (token / parol) kiritilmagan.")
     missing = [i["name"] for i in receipt.data.get("items", []) if not i.get("mxik")]
     if missing:
         raise FiscalError("MXIK kodi yo'q: " + ", ".join(missing[:5]) + " (mahsulot kartasida to'ldiring).")
     Receipt.objects.filter(pk=receipt.pk).update(fiscal_attempts=receipt.fiscal_attempts + 1, status=ReceiptStatus.FISCAL_PENDING)
     try:
-        resp = requests.post(s.fiscal_endpoint, json=_payload(receipt, s), timeout=20,
-                             headers={"Authorization": f"Bearer {os.environ.get('FISCAL_API_TOKEN', '')}"})
+        resp = requests.post(s.fiscal_endpoint, json=_payload(receipt, s), timeout=s.fiscal_timeout or 20, headers=auth_headers(s))
         body = resp.json()
         if resp.status_code >= 400:
             raise FiscalError(str(body.get("error") or body.get("message") or resp.status_code))

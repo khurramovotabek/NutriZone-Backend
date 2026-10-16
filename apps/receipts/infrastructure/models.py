@@ -87,6 +87,15 @@ class ReceiptSettings(models.Model):
     fiscal_endpoint = models.URLField("API manzili", blank=True, default="", help_text="Provayder (OFD / virtual kassa) chek qabul qiladigan URL.")
     fiscal_terminal_id = models.CharField("Terminal (kassa) ID", max_length=64, blank=True, default="")
     fiscal_auto = models.BooleanField("Avtomatik fiskallashtirish", default=False, help_text="Har bir yangi chek darhol provayderga yuboriladi.")
+    fiscal_auth = models.CharField("Avtorizatsiya turi", max_length=12, default="bearer", choices=[
+        ("bearer", "Bearer token (Authorization: Bearer …)"), ("header", "Token alohida sarlavhada"), ("basic", "Login + parol (Basic)")])
+    fiscal_auth_header = models.CharField("Sarlavha nomi", max_length=64, blank=True, default="Authorization",
+                                          help_text="«Token alohida sarlavhada» uchun, masalan X-API-Key.")
+    fiscal_login = models.CharField("Login", max_length=128, blank=True, default="", help_text="Faqat «Login + parol» turida.")
+    fiscal_secret_encrypted = models.TextField(blank=True, default="")  # the token / password, Fernet-encrypted (never shown back)
+    fiscal_timeout = models.PositiveSmallIntegerField("Kutish vaqti (soniya)", default=20)
+    fiscal_checked_at = models.DateTimeField(null=True, blank=True)
+    fiscal_check_result = models.CharField(max_length=255, blank=True, default="")
     updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:
@@ -96,6 +105,20 @@ class ReceiptSettings(models.Model):
 
     def __str__(self) -> str:
         return "Chek sozlamalari"
+
+    @property
+    def fiscal_secret(self) -> str:
+        """The provider token / password: the one saved on the dashboard, else the server's FISCAL_API_TOKEN."""
+        import os
+
+        from apps.payment.infrastructure.crypto import decrypt_secrets
+
+        return decrypt_secrets(self.fiscal_secret_encrypted).get("secret", "") or os.environ.get("FISCAL_API_TOKEN", "")
+
+    def set_fiscal_secret(self, value: str) -> None:
+        from apps.payment.infrastructure.crypto import encrypt_secrets
+
+        self.fiscal_secret_encrypted = encrypt_secrets({"secret": value.strip()}) if value and value.strip() else ""
 
     @classmethod
     def get(cls) -> "ReceiptSettings":

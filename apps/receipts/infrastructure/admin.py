@@ -43,6 +43,7 @@ class ReceiptAdmin(ExcelExportMixin, PremiumListMixin, PremiumFormMixin, admin.M
     readonly_fields = ("receipt_panel", "fiscal_panel")
     fieldsets = (("Chek", {"classes": ("nzi-panel",), "fields": ("receipt_panel",)}), ("Fiskal ma'lumot", {"classes": ("nzi-panel",), "fields": ("fiscal_panel",)}))
     excel_title = "Cheklar"
+    actions = ["fiscalize_selected"]
     excel_columns = [Col("Raqam", "number", 14), Col("Sana", "issued_at", 17), Col("Manba", lambda r: r.get_source_display(), 14), Col("Holat", lambda r: r.get_status_display(), 16),
                      Col("Buyurtma", "order_number", 14), Col("Mijoz", "customer_name", 20), Col("Telefon", "customer_phone", 15),
                      Col("To'lov", lambda r: PAY_LABEL.get(r.payment_method, r.payment_method), 10), Col("Summa", "total", 14, money=True), Col("QQS", "vat_amount", 12, money=True),
@@ -158,6 +159,22 @@ class ReceiptAdmin(ExcelExportMixin, PremiumListMixin, PremiumFormMixin, admin.M
         return render(request, "admin/receipts/print.html", {"r": r, "d": r.data, "width": width if width in ("58", "80", "a4") else "80",
                                                              "qr": r.fiscal_url or public_url(r.token) or "", "pay_label": PAY_LABEL})
 
+    @admin.action(description="Tanlanganlarni fiskallashtirish (soliqqa yuborish)")
+    def fiscalize_selected(self, request, queryset):
+        ok, failed = 0, []
+        for r in queryset.exclude(status__in=(ReceiptStatus.FISCALIZED, ReceiptStatus.CANCELLED))[:100]:
+            try:
+                fiscal.fiscalize(r)
+                ok += 1
+            except fiscal.FiscalError as exc:
+                failed.append(f"{r.number}: {exc}")
+                if "sozlama" in str(exc).lower() or "kalit" in str(exc).lower():
+                    break  # a settings problem fails every receipt the same way -- stop at the first one
+        if ok:
+            messages.success(request, f"{ok} ta chek fiskallashtirildi.")
+        if failed:
+            messages.error(request, "Fiskallashtirilmadi — " + "; ".join(failed[:3]) + (f" (+{len(failed) - 3})" if len(failed) > 3 else ""))
+
     def fiscalize_view(self, request, pk):
         r = get_object_or_404(Receipt, pk=pk)
         if request.method == "POST":
@@ -205,19 +222,60 @@ class ReceiptAdmin(ExcelExportMixin, PremiumListMixin, PremiumFormMixin, admin.M
 
 
 class ReceiptSettingsForm(forms.ModelForm):
+    """The provider key is write-only: typed once, stored encrypted, shown back only as ••••1234."""
+
+    fiscal_secret = forms.CharField(label="API kaliti / parol", required=False, strip=True,
+                                    widget=forms.PasswordInput(render_value=False, attrs={"class": "vTextField form-control", "style": "max-width:620px;width:100%", "autocomplete": "new-password", "placeholder": "Yangi kalit (o'zgartirmaslik uchun bo'sh qoldiring)"}))
+    fiscal_secret_clear = forms.BooleanField(label="Saqlangan kalitni o'chirish", required=False)
+
     class Meta:
         model = ReceiptSettings
-        fields = "__all__"
+        exclude = ("fiscal_secret_encrypted", "fiscal_checked_at", "fiscal_check_result")
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        from apps.payment.infrastructure.crypto import decrypt_secrets, mask
+
+        stored = decrypt_secrets(self.instance.fiscal_secret_encrypted).get("secret", "") if self.instance.pk else ""
+        self.fields["fiscal_secret"].help_text = (f"Saqlangan: {mask(stored)} (shifrlangan)." if stored else
+                                                  "Kalit kiritilmagan" + (" — serverdagi FISCAL_API_TOKEN ishlatiladi." if self.instance.fiscal_secret else "."))
+
+    def clean(self):
+        data = super().clean()
+        if data.get("fiscal_provider") == "http":
+            endpoint = data.get("fiscal_endpoint") or ""
+            if endpoint and not endpoint.startswith("https://"):
+                self.add_error("fiscal_endpoint", "Faqat https:// manzil — kalit ochiq kanal orqali yuborilmasin.")
+            if data.get("fiscal_auth") == "basic" and not data.get("fiscal_login"):
+                self.add_error("fiscal_login", "«Login + parol» turi uchun login kerak.")
+            if data.get("fiscal_auth") == "header" and not (data.get("fiscal_auth_header") or "").strip():
+                self.add_error("fiscal_auth_header", "Sarlavha nomini kiriting (masalan X-API-Key).")
+        if data.get("fiscal_timeout") is not None and not 3 <= data["fiscal_timeout"] <= 60:
+            self.add_error("fiscal_timeout", "3–60 soniya.")
+        return data
+
+    def save(self, commit=True):
+        obj = super().save(commit=False)
+        if self.cleaned_data.get("fiscal_secret_clear"):
+            obj.set_fiscal_secret("")
+        elif self.cleaned_data.get("fiscal_secret"):
+            obj.set_fiscal_secret(self.cleaned_data["fiscal_secret"])
+        if commit:
+            obj.save()
+        return obj
 
 
 @admin.register(ReceiptSettings)
 class ReceiptSettingsAdmin(PremiumFormMixin, admin.ModelAdmin):
     form = ReceiptSettingsForm
+    readonly_fields = ("fiscal_readiness",)
     fieldsets = (
+        ("Fiskal tayyorlik", {"classes": ("nzi-panel",), "fields": ("fiscal_readiness",)}),
         ("Sotuvchi rekvizitlari (chekda ko'rinadi)", {"fields": ("legal_name", "tin", "address", "phone", "footer")}),
         ("QQS", {"fields": ("vat_payer", "vat_rate")}),
-        ("Fiskal integratsiya (OFD / virtual kassa)", {"fields": ("fiscal_provider", "fiscal_endpoint", "fiscal_terminal_id", "fiscal_auto"),
-                                                       "description": "API tokeni serverda FISCAL_API_TOKEN muhit o'zgaruvchisida saqlanadi. Mahsulotlarda MXIK kodi to'ldirilgan bo'lishi shart."}),
+        ("Fiskal integratsiya (OFD / virtual kassa)", {
+            "fields": ("fiscal_provider", "fiscal_endpoint", "fiscal_terminal_id", "fiscal_auth", "fiscal_auth_header", "fiscal_login",
+                       "fiscal_secret", "fiscal_secret_clear", "fiscal_timeout", "fiscal_auto")}),
     )
     hero_icon, hero_tone, hero_noun = "fa-gear", "#0d9488", "sozlama"
 
@@ -233,3 +291,26 @@ class ReceiptSettingsAdmin(PremiumFormMixin, admin.ModelAdmin):
 
     def form_hero(self, request, obj):
         return {"title": "Chek sozlamalari", "subtitle": "Rekvizitlar, QQS va fiskal provayder", "icon": "fa-gear", "tone": "#0d9488"}
+
+    @admin.display(description="Holat")
+    def fiscal_readiness(self, obj):
+        checks = fiscal.readiness(obj)
+        done = sum(1 for _l, ok, _h in checks if ok)
+        rows = format_html_join("", '<li style="display:flex;gap:8px;align-items:baseline;padding:3px 0"><span style="color:{};font-weight:700">{}</span>'
+                                    '<b>{}</b><small style="opacity:.7">{}</small></li>',
+                                (("#16a34a" if ok else "#dc2626", "✓" if ok else "✗", label, hint) for label, ok, hint in checks))
+        last = format_html('<p style="margin-top:10px"><b>Oxirgi tekshiruv:</b> {} <small style="opacity:.7">{}</small></p>',
+                           obj.fiscal_check_result, ui.local(obj.fiscal_checked_at, "%d.%m.%Y %H:%M")) if obj.fiscal_checked_at else ""
+        return format_html('<div class="nzi-panel-body"><p style="opacity:.8">Provayder (OFD / virtual kassa) bergan ma\'lumotlarni «Fiskal integratsiya» '
+                           'bo\'limiga kiriting. API kaliti shifrlangan holda saqlanadi va qayta ko\'rsatilmaydi.</p><p><b>{}/{}</b> tayyor{}</p><ul style="list-style:none;margin:8px 0 0;padding:0">{}</ul>{}'
+                           '<p style="margin-top:12px"><button type="submit" name="_fiscal_check" value="1" class="button" '
+                           'style="padding:8px 14px;border-radius:10px"><i class="fas fa-plug" aria-hidden="true"></i> Saqlash va ulanishni tekshirish</button> '
+                           '<small style="opacity:.7">Chek yuborilmaydi — faqat server va kalit tekshiriladi.</small></p></div>',
+                           done, len(checks), " — fiskallashtirish mumkin" if done == len(checks) else "", rows, last)
+
+    def response_change(self, request, obj):
+        if "_fiscal_check" in request.POST:
+            ok, text = fiscal.check_connection(ReceiptSettings.get())
+            (messages.success if ok else messages.error)(request, text)
+            return HttpResponseRedirect(request.path)
+        return super().response_change(request, obj)

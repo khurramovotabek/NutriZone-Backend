@@ -45,6 +45,10 @@ def test_fiscalize_needs_provider_settings_and_mxik_then_stores_sign():
     s = ReceiptSettings.get()
     s.fiscal_provider, s.fiscal_endpoint, s.fiscal_terminal_id, s.tin = "http", "https://ofd.example/api/receipts", "EP000000001", "123456789"
     s.save()
+    with pytest.raises(fiscal.FiscalError, match="kaliti"):
+        fiscal.fiscalize(r)
+    s.set_fiscal_secret("tok-123456")
+    s.save()
     with pytest.raises(fiscal.FiscalError, match="MXIK"):
         fiscal.fiscalize(r)
     ok = builders.manual(lines=[{"variant_id": str(_variant().id), "name": "Whey", "quantity": 1, "unit_price": "1000"}])
@@ -53,6 +57,7 @@ def test_fiscalize_needs_provider_settings_and_mxik_then_stores_sign():
     with patch("apps.receipts.infrastructure.fiscal.requests.post", return_value=resp) as post:
         ok = fiscal.fiscalize(ok)
     payload = post.call_args.kwargs["json"]
+    assert post.call_args.kwargs["headers"] == {"Authorization": "Bearer tok-123456"}
     assert payload["terminal_id"] == "EP000000001" and payload["items"][0]["price"] == 100000 and payload["items"][0]["mxik"]  # tiyin
     assert ok.status == "fiscalized" and ok.fiscal_sign == "FS-998877" and ok.fiscal_url.startswith("https://ofd.soliq.uz")
 
@@ -91,3 +96,36 @@ def test_my_receipts_lists_only_the_customers_own(monkeypatch):
     client.credentials(HTTP_AUTHORIZATION="Bearer fake")
     data = client.get("/api/v1/receipts/mine").json()["data"]
     assert [r["number"] for r in data] == [mine.number] and data[0]["token"] == mine.token and data[0]["items"] == 1
+
+
+def test_fiscal_key_is_saved_encrypted_from_the_dashboard_and_never_shown(admin_client):
+    url = f"/django-admin/receipts/receiptsettings/{ReceiptSettings.get().pk}/change/"
+    page = admin_client.get(url)
+    assert page.status_code == 200 and "Fiskal tayyorlik" in page.content.decode()
+    form = {"legal_name": "NUTRIZONE MChJ", "tin": "123456789", "address": "", "phone": "", "footer": "Rahmat", "vat_rate": "12", "fiscal_provider": "http",
+            "fiscal_endpoint": "https://ofd.example/api", "fiscal_terminal_id": "EP1", "fiscal_auth": "basic", "fiscal_auth_header": "Authorization",
+            "fiscal_login": "nutri", "fiscal_secret": "super-secret-9876", "fiscal_timeout": "20"}
+    assert admin_client.post(url, form).status_code == 302
+    s = ReceiptSettings.get()
+    assert s.fiscal_secret == "super-secret-9876" and "super-secret" not in s.fiscal_secret_encrypted
+    assert fiscal.auth_headers(s)["Authorization"].startswith("Basic ")
+    html = admin_client.get(url).content.decode()
+    assert "super-secret-9876" not in html and "9876" in html  # only the masked hint
+    form["fiscal_secret"] = ""  # empty keeps the stored key
+    admin_client.post(url, form)
+    assert ReceiptSettings.get().fiscal_secret == "super-secret-9876"
+    form["fiscal_endpoint"] = "http://ofd.example/api"
+    assert "Faqat https" in admin_client.post(url, form).content.decode()
+
+
+def test_connection_check_reports_a_rejected_key(admin_client):
+    s = ReceiptSettings.get()
+    s.fiscal_provider, s.fiscal_endpoint, s.fiscal_auth, s.fiscal_auth_header = "http", "https://ofd.example/api", "header", "X-API-Key"
+    s.set_fiscal_secret("k-1")
+    s.save()
+    with patch("apps.receipts.infrastructure.fiscal.requests.get", return_value=MagicMock(status_code=401)) as get:
+        ok, text = fiscal.check_connection()
+    assert not ok and "kalit" in text and get.call_args.kwargs["headers"] == {"X-API-Key": "k-1"}
+    with patch("apps.receipts.infrastructure.fiscal.requests.get", return_value=MagicMock(status_code=405)):
+        assert fiscal.check_connection()[0] is True
+    assert ReceiptSettings.get().fiscal_check_result.startswith("✓")
