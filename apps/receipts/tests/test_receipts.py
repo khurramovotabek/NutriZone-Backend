@@ -72,3 +72,22 @@ def test_dashboard_pages(admin_client):
     v = _variant()
     resp = admin_client.post("/django-admin/receipts/receipt/new/", {"lines": json.dumps([{"variant_id": str(v.id), "name": "W", "quantity": 1, "unit_price": 5000}]), "payment_method": "card", "kind": "sale"})
     assert resp.status_code == 302 and Receipt.objects.filter(payment_method="card").exists()
+
+
+def test_my_receipts_lists_only_the_customers_own(monkeypatch):
+    from types import SimpleNamespace
+
+    from rest_framework.test import APIClient
+
+    from apps.identity.infrastructure.models import User
+
+    user = User.objects.create(id=uuid.uuid4(), phone_number="+998901112233", status="active")
+    mine = builders.manual(lines=[{"name": "Whey", "quantity": 1, "unit_price": "1000"}], customer_phone="+998901112233")
+    builders.manual(lines=[{"name": "Other", "quantity": 1, "unit_price": "1000"}], customer_phone="+998909999999")
+    assert APIClient().get("/api/v1/receipts/mine").status_code in (401, 403)
+    fake = SimpleNamespace(id=user.id, is_authenticated=True, store_ids=set(), permissions=frozenset())
+    monkeypatch.setattr("apps.identity.infrastructure.authentication.JWTIdentityAuthentication.authenticate", lambda self, request: (fake, None))
+    client = APIClient()
+    client.credentials(HTTP_AUTHORIZATION="Bearer fake")
+    data = client.get("/api/v1/receipts/mine").json()["data"]
+    assert [r["number"] for r in data] == [mine.number] and data[0]["token"] == mine.token and data[0]["items"] == 1

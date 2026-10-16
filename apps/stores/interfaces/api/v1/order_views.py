@@ -104,3 +104,43 @@ class MyStoreReportView(APIView):
             raise err
         days = request.query_params.get("days")
         return success_response(data=my_branch_report(store, int(days) if days in ("7", "30", "90") else 30))
+
+
+class MyStoreReceiptsView(APIView):
+    """`GET /api/v1/my-store/receipts?days=1|7|30&q=` -- the branch's receipts (kassa sales, refunds, online orders it
+    handed out) with today's totals; each opens / reprints the QR e-receipt. Customer phones are masked."""
+
+    permission_classes = [IsAuthenticatedIdentityUser]
+
+    @extend_schema(tags=["Stores"], summary="My branch's receipts")
+    def get(self, request):
+        from django.db.models import Count, Q, Sum
+        from django.utils import timezone
+
+        from apps.receipts.infrastructure.models import Receipt
+
+        store, _role = _my_store(request)
+        days = request.query_params.get("days")
+        days = int(days) if days in ("1", "7", "30") else 7
+        since = timezone.localtime().replace(hour=0, minute=0, second=0, microsecond=0) - timezone.timedelta(days=days - 1)
+        rows = Receipt.objects.filter(store_id=store.id, issued_at__gte=since)
+        q = (request.query_params.get("q") or "").strip()[:40]
+        if q:
+            match = Q(number__icontains=q) | Q(order_number__icontains=q) | Q(customer_name__icontains=q)
+            rows = rows.filter(match | Q(customer_phone__endswith=q) if q.isdigit() else match)
+        today = Receipt.objects.filter(store_id=store.id, issued_at__gte=timezone.localtime().replace(hour=0, minute=0, second=0, microsecond=0)).exclude(status="cancelled")
+        agg = {k: today.filter(kind=k).aggregate(n=Count("id"), total=Sum("total")) for k in ("sale", "refund")}
+
+        def mask(phone: str) -> str:
+            return f"{phone[:6]}***{phone[-2:]}" if len(phone) > 8 else phone
+
+        return success_response(data={
+            "days": days,
+            "today": {"sales": agg["sale"]["n"], "revenue": str(agg["sale"]["total"] or 0), "refunds": agg["refund"]["n"], "refunded": str(agg["refund"]["total"] or 0)},
+            "receipts": [{
+                "number": r.number, "token": r.token, "source": r.source, "kind": r.kind, "status": r.status, "total": str(r.total),
+                "payment_method": r.payment_method, "issued_at": r.issued_at.isoformat(), "order_number": r.order_number,
+                "customer": r.customer_name, "phone": mask(r.customer_phone), "cashier": (r.data or {}).get("cashier") or r.created_by,
+                "items": (r.data or {}).get("item_count") or len((r.data or {}).get("items") or []), "fiscal": bool(r.fiscal_number),
+            } for r in rows.order_by("-issued_at")[:200]],
+        })

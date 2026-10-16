@@ -19,6 +19,7 @@ urlpatterns = [
     path("my-store/transfers/<str:transfer_id>/document.xlsx", transfer_views.MyStoreTransferDocumentView.as_view(), name="my-store-transfer-document"),
     path("my-store/orders", order_views.MyStoreOrdersView.as_view(), name="my-store-orders"),
     path("my-store/report", order_views.MyStoreReportView.as_view(), name="my-store-report"),
+    path("my-store/receipts", order_views.MyStoreReceiptsView.as_view(), name="my-store-receipts"),
     path("my-store/orders/<str:number>/action", order_views.MyStoreOrderActionView.as_view(), name="my-store-order-action"),
     path("my-store/logo", views.MyStoreLogoUploadView.as_view(), name="my-store-logo"),
     path("my-store/cover-image", views.MyStoreCoverUploadView.as_view(), name="my-store-cover"),

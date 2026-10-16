@@ -12,7 +12,7 @@ from __future__ import annotations
 
 from django.urls import include, path
 
-from apps.pos.interfaces.api.v1.receipt_views import PublicReceiptView
+from apps.pos.interfaces.api.v1.receipt_views import MyReceiptsView, PublicReceiptView
 
 app_name = "v1"
 
@@ -33,6 +33,7 @@ urlpatterns: list = [
     path("loyalty/", include("apps.loyalty.interfaces.api.v1.urls")),
     path("", include("apps.stores.interfaces.api.v1.urls")),
     path("pos/", include("apps.pos.interfaces.api.v1.urls")),
+    path("receipts/mine", MyReceiptsView.as_view(), name="my-receipts"),
     path("receipts/<str:token>", PublicReceiptView.as_view(), name="public-receipt"),
     path("", include("apps.platform.interfaces.api.v1.urls")),
     path("", include("apps.audit.interfaces.api.v1.urls")),

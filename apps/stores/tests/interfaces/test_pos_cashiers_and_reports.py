@@ -206,3 +206,16 @@ def test_kassalar_page_sets_pins_and_links_cashiers(staff, kassa, django_capture
     staff.post(f"/django-admin/stores/storecashier/unlink/{link.id}/")
     assert not StoreCashier.objects.filter(user=new).exists() and pos_cashiers.store_for_user(new.id) == (None, None)
     assert staff.get(f"/django-admin/stores/storecashier/unlink/{kassa['aziza'].cashier_link.id}/").status_code == 403  # POST only
+
+
+def test_branch_receipts_list_with_today_totals_and_masked_phones(monkeypatch, kassa):
+    from apps.receipts.infrastructure import builders
+
+    mine = builders.manual(lines=[{"name": "Whey", "quantity": 2, "unit_price": "1000"}], customer_name="Aziz", customer_phone="+998901234567")
+    mine.store_id = kassa["store"].id
+    mine.save(update_fields=["store_id"])
+    builders.manual(lines=[{"name": "Elsewhere", "quantity": 1, "unit_price": "5000"}])  # another branch / no branch
+    data = _as(monkeypatch, kassa["aziza"]).get("/api/v1/my-store/receipts?days=1").json()["data"]  # cashiers see them too
+    assert [r["number"] for r in data["receipts"]] == [mine.number]
+    assert data["receipts"][0]["phone"] == "+99890***67" and data["today"]["sales"] == 1 and data["today"]["revenue"] == "2000.00"
+    assert _as(monkeypatch, kassa["owner"]).get("/api/v1/my-store/receipts?q=4567").json()["data"]["receipts"][0]["number"] == mine.number
