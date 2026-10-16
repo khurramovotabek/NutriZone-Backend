@@ -38,7 +38,8 @@ deploy_frontend() {
   cp -al "$ROOT/frontend/node_modules" "$BUILD/node_modules"
   cd "$BUILD"
   FRESH_DEPS=0
-  if ! cmp -s package-lock.json "$ROOT/frontend/node_modules/.package-lock.json" 2>/dev/null; then
+  LOCK_SHA=$(sha256sum package-lock.json | cut -d' ' -f1)
+  if [ "$LOCK_SHA" != "$(cat "$ROOT/frontend/.deps-lock-sha" 2>/dev/null)" ]; then
     log "Frontend: npm ci (lockfile changed)"
     rm -rf node_modules && npm ci --no-audit --no-fund
     FRESH_DEPS=1
@@ -50,6 +51,7 @@ deploy_frontend() {
     rm -rf "$ROOT/frontend/node_modules.old"
     mv "$ROOT/frontend/node_modules" "$ROOT/frontend/node_modules.old"
     mv node_modules "$ROOT/frontend/node_modules"
+    echo "$LOCK_SHA" > "$ROOT/frontend/.deps-lock-sha"
   fi
   rm -rf "$ROOT/frontend/.next.old"
   [ -d "$ROOT/frontend/.next" ] && mv "$ROOT/frontend/.next" "$ROOT/frontend/.next.old"
