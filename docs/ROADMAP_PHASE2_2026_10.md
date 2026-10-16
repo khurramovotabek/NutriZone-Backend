@@ -18,3 +18,20 @@ pullik Claude API'ga bog'langan; bot kanalda admin (post/edit huquqi bor).
 | R10 | Mijoz va do'kon profillari, mobil audit | Profil sahifalari upgrade, 390 px'da barcha sahifalar |
 
 Har bir ish: test → commit → GitHub → production deploy → brauzerda tekshiruv.
+
+## Holat (2026-10-16) — hammasi bajarildi va production'da
+
+| # | Holat |
+|---|-------|
+| R1 | ✅ Kanal avtopostlari **yoqildi** (@nutrizonepit, har 15 daqiqada ko'pi bilan 2 ta, jim rejim 22:00–09:00) |
+| R2 | ✅ Bosh sahifada "Aksiyalar" qatori |
+| R3 | ✅ Bepul maslahatchi (sayt + Telegram, ovoz); kirgan mijozning profilidagi bo'y/vazn/yosh/maqsadni o'zi oladi |
+| R4 | ✅ Support CRM: Kanban, avtomatik akkaunt, bot orqali tasdiqlash |
+| R5 | ✅ DataMatrix (2D) skan, takroriy skan himoyasi, "hal qilinmagan" farq sababi |
+| R6 | ✅ Cheklar registri, 80/58/A4 + QR, fiskal adapter (FISCAL_API_TOKEN kerak); onlayn cheklar vaqti = yetkazilgan vaqt (prod ma'lumot tuzatildi) |
+| R7 | ✅ To'lov hodisalari tarixi (PaymentEvent) va tranzaksiya sahifasida timeline |
+| R8 | ✅ POS: tarjimalar, skaner matnlari |
+| R9 | ✅ Viloyat OSM chegarasidan, barcha tumanlar, eski kodlar tozalandi (prod seed + zaxira `/root/geo_backup_20261016.sql`) |
+| R10 | ✅ "Cheklarim" (`/account/receipts`), "Shaxsiy kunlik reja" kartasi, filial "Cheklar" (`/profile/store/receipts`), 390 px tekshiruvi |
+
+Foydalanuvchidan kutilmoqda: rclone offsite kalitlari, SENTRY_DSN, fiskal provayder (OFD) ma'lumotlari, sizib chiqqan GitHub token/parolni almashtirish.
