@@ -105,7 +105,7 @@
     function saveRange() { var s = window.getSelection(); if (s.rangeCount && editor.contains(s.anchorNode)) savedRange = s.getRangeAt(0).cloneRange(); }
     function restoreRange() { if (!savedRange) return; var s = window.getSelection(); s.removeAllRanges(); s.addRange(savedRange); }
 
-    function sync() {
+    function sync(initial) {
       var html = editor.innerHTML;
       if (editor.textContent.trim() === "" && !/<img/i.test(html)) html = "";
       textarea.value = html;
@@ -114,7 +114,7 @@
       counter.classList.toggle("is-over", n > limit);
       counter.classList.toggle("is-near", n > limit * 0.9 && n <= limit);
       if (preview) preview.querySelector(".nztg-bubble-text").innerHTML = html || '<span class="nztg-empty">Matn hali yozilmagan</span>';
-      textarea.dispatchEvent(new Event("input", { bubbles: true }));
+      if (initial !== true) textarea.dispatchEvent(new Event("input", { bubbles: true }));  // not on load: the page isn't "dirty" yet
     }
 
     bar.addEventListener("mousedown", function (e) { if (e.target.closest(".nztg-btn")) e.preventDefault(); });
@@ -150,7 +150,7 @@
     linkBox.querySelector(".nztg-cancel").addEventListener("click", function () { linkBox.hidden = true; });
     linkBox.querySelector("input").addEventListener("keydown", function (e) { if (e.key === "Enter") { e.preventDefault(); applyLink(); } });
 
-    editor.addEventListener("input", sync);
+    editor.addEventListener("input", function () { sync(); });
     editor.addEventListener("keyup", saveRange);
     editor.addEventListener("mouseup", saveRange);
     editor.addEventListener("paste", function (e) {
@@ -160,7 +160,7 @@
       e.preventDefault();
       document.execCommand("insertText", false, text);
     });
-    sync();
+    sync(true);
   }
 
   function init(root) { (root || document).querySelectorAll("textarea[data-nztg]").forEach(build); }

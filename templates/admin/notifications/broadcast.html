@@ -1,6 +1,6 @@
 {% extends "admin/base_site.html" %}
 {% load i18n static %}
-{% block extrastyle %}{{ block.super }}<link rel="stylesheet" href="{% static 'admin/css/nutrizone-notify.css' %}?v=1"><link rel="stylesheet" href="{% static 'admin/css/nutrizone-tg-editor.css' %}?v=1">{% endblock %}
+{% block extrastyle %}{{ block.super }}<link rel="stylesheet" href="{% static 'admin/css/nutrizone-notify.css' %}?v=1"><link rel="stylesheet" href="{% static 'admin/css/nutrizone-tg-editor.css' %}?v=2">{% endblock %}
 {% block breadcrumbs %}<div class="breadcrumbs"><a href="{% url 'admin:index' %}">{% translate "Home" %}</a> &rsaquo; <a href="{% url 'admin:notifications_notificationmodel_changelist' %}">{% translate "Bildirishnomalar" %}</a> &rsaquo; {% translate "Xabar yuborish" %}</div>{% endblock %}
 {% block content_title %}{% translate "Xabar yuborish" %}{% endblock %}
 {% block content %}
@@ -111,7 +111,7 @@
     </div>
   </aside>
 </form>
-<script src="{% static 'admin/js/nutrizone-tg-editor.js' %}?v=1"></script>
+<script src="{% static 'admin/js/nutrizone-tg-editor.js' %}?v=2"></script>
 <script>
 (function () {
   "use strict";

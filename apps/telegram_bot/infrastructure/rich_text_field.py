@@ -19,8 +19,8 @@ class TelegramRichTextWidget(forms.Textarea):
     template_name = "django/forms/widgets/textarea.html"
 
     class Media:
-        css = {"all": ("admin/css/nutrizone-tg-editor.css",)}
-        js = ("admin/js/nutrizone-tg-editor.js",)
+        css = {"all": ("/static/admin/css/nutrizone-tg-editor.css?v=2",)}  # absolute + ?v: browsers cache static files hard
+        js = ("/static/admin/js/nutrizone-tg-editor.js?v=2",)
 
     def __init__(self, attrs=None, limit: int = TEXT_LIMIT, placeholder: str = "", preview: bool = True):
         self.limit = limit
