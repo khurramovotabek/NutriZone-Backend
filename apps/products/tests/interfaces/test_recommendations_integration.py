@@ -188,6 +188,11 @@ class TestNoNPlusOne:
         category_id = _real_category()
         repo = DjangoProductRepository()
 
+        # warm the process-wide caches (co-purchase matrix, search index) with an unrelated product first, so both
+        # measured requests see the same cache state and row count is the only variable
+        repo.save(_published_product("nplus1-warmup", category_id=category_id))
+        api_client.get("/api/v1/products/nplus1-warmup/recommendations")
+
         repo.save(_published_product("nplus1-small-main", category_id=category_id))
         for i in range(3):
             repo.save(_published_product(f"nplus1-small-sib-{i}", category_id=category_id))
