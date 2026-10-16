@@ -281,7 +281,7 @@ class BrandSelector:
         """`locale` optional, defaults to this method's exact prior behavior (`_DEFAULT_LOCALE`) -- added only for `apps.telegram_bot`'s own locale-aware brand listing; the public `GET /brands` REST view still calls this with no locale, unaffected."""
         from django.conf import settings
 
-        rows = orm.Brand.objects.filter(is_active=True, is_manufacturer=False).prefetch_related("translations").annotate(
+        rows = orm.Brand.objects.filter(is_active=True, is_manufacturer=False).select_related("country").prefetch_related("translations", "country__translations").annotate(
             published_count=Count("products", filter=Q(products__status=ProductStatus.PUBLISHED.value, products__deleted_at__isnull=True), distinct=True)
         )
         result = []
@@ -294,9 +294,16 @@ class BrandSelector:
             result.append({
                 "id": str(r.id), "name": _translated_name(r, locale=locale), "logo_url": logo_url,
                 "description": _translated_description(r, description_locale or locale),
-                "product_count": r.published_count,
+                "product_count": r.published_count, "country": _brand_country(r.country, description_locale or locale),
             })
         return result
+
+
+def _brand_country(country, locale: str | None) -> dict | None:
+    if country is None:
+        return None
+    names = {t.locale_code: t.name for t in country.translations.all()}
+    return {"code": country.code, "flag": country.icon or "", "name": names.get(locale or _DEFAULT_LOCALE) or names.get("uz") or country.code}
 
 
 class FlavourSelector:

@@ -44,6 +44,7 @@ COUNTRIES = [
     ("BY", "Belarus", "Беларусь", "Belarus", "Europe/Minsk"),
     ("BR", "Braziliya", "Бразилия", "Brazil", "America/Sao_Paulo"),
     ("AE", "BAA", "ОАЭ", "United Arab Emirates", "Asia/Dubai"),
+    ("ZA", "Janubiy Afrika", "ЮАР", "South Africa", "Africa/Johannesburg"),
     # Uzbekistan's neighbours
     ("KZ", "Qozog'iston", "Казахстан", "Kazakhstan", "Asia/Almaty"),
     ("KG", "Qirg'iziston", "Кыргызстан", "Kyrgyzstan", "Asia/Bishkek"),

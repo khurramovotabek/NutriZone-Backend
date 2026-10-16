@@ -103,6 +103,7 @@ class Brand(SoftDeleteModel):
 
     is_active = models.BooleanField(default=True)
     is_manufacturer = models.BooleanField(default=False, db_index=True)
+    country = models.ForeignKey("geo.Country", on_delete=models.SET_NULL, null=True, blank=True, related_name="brands", verbose_name=_("Country of origin"))
     # Media Asset architecture removed per explicit product decision --
     # direct file storage fields, populated by core.media.MediaPipeline
     # (validation/thumbnail generation kept; only the shared

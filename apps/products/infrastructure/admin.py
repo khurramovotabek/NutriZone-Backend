@@ -675,6 +675,11 @@ class ProductAdmin(ExcelExportMixin, CatalogFormMixin, CatalogAnalyticsMixin, ad
         """On the add page prices are entered in the variant rows themselves (see ProductVariantInline.get_fields)."""
         return [i for i in super().get_inline_instances(request, obj) if not (obj is None and isinstance(i, ProductPricingInline))]
 
+    def save_model(self, request, obj, form, change):
+        if not obj.manufacturer_country_id and obj.brand_id:  # the brand's home country unless the product says otherwise
+            obj.manufacturer_country_id = orm.Brand.objects.filter(pk=obj.brand_id).values_list("country_id", flat=True).first()
+        super().save_model(request, obj, form, change)
+
     def save_related(self, request, form, formsets, change):
         super().save_related(request, form, formsets, change)
         from django.contrib import messages
@@ -1389,6 +1394,9 @@ class BrandTranslationInline(TranslationInlineMixin, admin.StackedInline):
 
 
 class BrandAdminForm(forms.ModelForm):
+    # geo.Country isn't loaded yet when this module is imported -- the queryset is attached in __init__
+    country = forms.ModelChoiceField(queryset=None, required=False, label="Brend davlati",
+                                     help_text="Brendning vatani — saytda bayroq bilan ko'rinadi. Yangi mahsulotga ishlab chiqarilgan davlat bo'sh bo'lsa shu qo'yiladi.")
     logo_upload = forms.ImageField(required=False, label="Logotip", help_text="Oq yoki shaffof fonli kvadrat logo eng chiroyli chiqadi. Saqlanganda media pipeline orqali kichik o'lchamlari ham yaratiladi.")
 
     class Meta:
@@ -1397,16 +1405,29 @@ class BrandAdminForm(forms.ModelForm):
         labels = {"is_active": "Faol", "is_manufacturer": "Ishlab chiqaruvchi"}
         help_texts = {"is_active": "O'chirilsa brend saytdagi brendlar ro'yxatida ko'rinmaydi.", "is_manufacturer": "Brend o'zi zavod / ishlab chiqaruvchi bo'lsa yoqing."}
 
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        from apps.geo.infrastructure.models import Country
+
+        self.fields["country"].queryset = Country.objects.filter(status="active").prefetch_related("translations")
+        self.fields["country"].label_from_instance = lambda c: f"{c.icon or ''} {next((t.name for t in c.translations.all() if t.locale_code == 'uz'), c.code)}".strip()
+        if self.instance.pk:
+            self.initial["country"] = self.instance.country_id
+
+    def save(self, commit=True):
+        self.instance.country = self.cleaned_data.get("country")
+        return super().save(commit=commit)
+
 
 @admin.register(orm.Brand)
 class BrandAdmin(ExcelExportMixin, CatalogFormMixin, CatalogAnalyticsMixin, admin.ModelAdmin):
     excel_title = "Brendlar"
-    excel_columns = [Col("Nomi", lambda b: str(b), 26), Col("Faol", "is_active", 7), Col("Ishlab chiqaruvchi", "is_manufacturer", 12), Col("Yaratilgan", "created_at", 17)]
+    excel_columns = [Col("Nomi", lambda b: str(b), 26), Col("Davlat", lambda b: str(b.country.code) if b.country_id else "", 8), Col("Faol", "is_active", 7), Col("Ishlab chiqaruvchi", "is_manufacturer", 12), Col("Yaratilgan", "created_at", 17)]
 
     form = BrandAdminForm
     hero_icon, hero_tone, hero_noun = "fa-tags", "#6366f1", "brend"
     fieldsets = (
-        ("Holat", {"fields": ("is_active", "is_manufacturer")}),
+        ("Holat", {"fields": ("is_active", "is_manufacturer", "country")}),
         ("Logotip", {"fields": ("logo_upload",)}),
         ("Tizim ma'lumotlari", {"classes": ("nzp-fold",), "fields": ("id", "created_at", "updated_at")}),
     )
