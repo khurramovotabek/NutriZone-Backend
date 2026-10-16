@@ -12,6 +12,7 @@ name/lookup at call time.
 from __future__ import annotations
 
 import uuid
+from typing import TYPE_CHECKING
 
 from apps.products.application.selectors import ProductSelector
 from apps.products.application.services._shared import ProductServiceContext
@@ -74,6 +75,9 @@ from apps.products.infrastructure.selectors import DjangoProductSearchBackend, P
 from core.media import MediaPipeline, NoOpVirusScanner, PillowImageOptimizer
 from core.outbox import stage_event
 from core.storage import get_storage_backend
+
+if TYPE_CHECKING:  # services are imported lazily inside the builders (no import cycle); names here are for annotations only
+    from apps.products.application.services.wishlist import AddToWishlist, ListWishlist, RemoveFromWishlist
 
 
 def stage_products_events(events: list[tuple[str, dict]]) -> None:

@@ -22,7 +22,7 @@ def _bot(settings):
     settings.TELEGRAM_WEBHOOK_SECRET = "test-webhook-secret"
     settings.TELEGRAM_BOT_USERNAME = "nutrizone_test_bot"
     settings.FRONTEND_URL = "https://shop.example"
-    get_redis_client().flushall()
+    get_redis_client().flushdb()  # own database only (testing.py gives each xdist worker one); flushall wiped the other workers
 
 
 def _inline(query: str, offset: str = "", tg_id: int = 555, language_code: str = "ru") -> dict:

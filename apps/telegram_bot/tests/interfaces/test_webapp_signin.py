@@ -32,7 +32,7 @@ def _bot(settings):
     from core.caching.redis_client import get_redis_client
 
     settings.TELEGRAM_BOT_TOKEN = TOKEN
-    get_redis_client().flushall()
+    get_redis_client().flushdb()  # own database only (testing.py gives each xdist worker one); flushall wiped the other workers
 
 
 def test_signature_age_and_tampering_are_checked():

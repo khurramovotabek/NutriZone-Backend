@@ -20,7 +20,7 @@ def _bot(settings):
 
     settings.TELEGRAM_BOT_TOKEN = "123456:TEST-TOKEN"
     settings.TELEGRAM_WEBHOOK_SECRET = "test-webhook-secret"
-    get_redis_client().flushall()
+    get_redis_client().flushdb()  # own database only (testing.py gives each xdist worker one); flushall wiped the other workers
 
 
 def _text(client, tg_user_id, text, chat_type="private", chat_id=None):

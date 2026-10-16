@@ -25,7 +25,7 @@ pytestmark = pytest.mark.django_db
 def _clear_rate_limit_state():
     from core.caching.redis_client import get_redis_client
 
-    get_redis_client().flushall()
+    get_redis_client().flushdb()  # own database only (testing.py gives each xdist worker one); flushall wiped the other workers
     yield
 
 

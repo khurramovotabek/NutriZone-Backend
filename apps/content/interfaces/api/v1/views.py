@@ -14,6 +14,7 @@ from rest_framework.views import APIView
 from apps.content.infrastructure.models import BlogCategory, BlogPost, BlogPostStatus
 from common.exceptions import ResourceNotFound
 from common.responses import paginated_response, success_response
+from common.utils.localization import resolve_locale
 
 
 def _image_url(storage_path: str, thumbnail_paths: dict) -> str | None:
@@ -24,17 +25,35 @@ def _image_url(storage_path: str, thumbnail_paths: dict) -> str | None:
     return path if path.startswith(("http://", "https://")) else f"{base}{settings.MEDIA_URL}{path}"
 
 
-def _post_card(post: BlogPost) -> dict:
+def _locale(request) -> str:
+    """`?locale=` > Accept-Language > uz -- same rule as the catalog API."""
+    return resolve_locale(request, explicit=request.query_params.get("locale"))
+
+
+def _excerpt(post: BlogPost, locale: str, body: str) -> str:
+    """The translation's own excerpt; else (Uzbek, or a translation without one) the written Uzbek excerpt only when the
+    body is Uzbek too; else the start of the shown body."""
+    translated = (post.i18n or {}).get(locale) or {}
+    if translated.get("excerpt"):
+        return translated["excerpt"]
+    if not translated.get("body") and post.excerpt:
+        return post.excerpt
+    return auto_excerpt(body)
+
+
+def _post_card(post: BlogPost, locale: str = "uz") -> dict:
+    body = post.localized("body", locale)
     return {
         "id": str(post.id),
-        "title": post.title,
+        "title": post.localized("title", locale),
         "slug": post.slug,
-        "excerpt": post.excerpt or auto_excerpt(post.body),
-        "category": post.category.name if post.category else None,
+        "excerpt": _excerpt(post, locale, body),
+        "category": post.category.localized_name(locale) if post.category else None,
+        "locale": locale if locale in post.translated_locales() else "uz",
         "cover_image_url": _image_url(post.cover_image_storage_path, post.cover_image_thumbnail_paths),
         "published_at": post.published_at.isoformat() if post.published_at else None,
         "view_count": post.view_count,
-        "reading_minutes": reading_minutes(post.body),
+        "reading_minutes": reading_minutes(body),
     }
 
 
@@ -68,7 +87,8 @@ class BlogCategoryListView(APIView):
         categories = (
             BlogCategory.objects.filter(posts__status=BlogPostStatus.PUBLISHED).distinct().order_by("sort_order", "name")
         )
-        return success_response(data=[{"id": str(c.id), "name": c.name, "slug": c.slug} for c in categories])
+        locale = _locale(request)
+        return success_response(data=[{"id": str(c.id), "name": c.localized_name(locale), "slug": c.slug} for c in categories])
 
 
 class BlogPostListView(APIView):
@@ -88,7 +108,8 @@ class BlogPostListView(APIView):
         start = (page - 1) * page_size
         rows = list(qs[start : start + page_size])
         total_pages = (total + page_size - 1) // page_size if page_size else 0
-        return paginated_response(data=[_post_card(p) for p in rows], pagination={"strategy": "page", "page": page, "page_size": page_size, "total_pages": total_pages, "total_count": total})
+        locale = _locale(request)
+        return paginated_response(data=[_post_card(p, locale) for p in rows], pagination={"strategy": "page", "page": page, "page_size": page_size, "total_pages": total_pages, "total_count": total})
 
 
 class BlogPostDetailView(APIView):
@@ -102,4 +123,5 @@ class BlogPostDetailView(APIView):
         if post is None:
             raise ResourceNotFound("Blog post not found.")
         BlogPost.objects.filter(id=post.id).update(view_count=post.view_count + 1)
-        return success_response(data={**_post_card(post), "body": post.body})
+        locale = _locale(request)
+        return success_response(data={**_post_card(post, locale), "body": post.localized("body", locale)})

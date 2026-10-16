@@ -97,3 +97,26 @@ NUTRIZONE_SMS_LOGIN_ENABLED = True
 
 # The suite asserts Django/admin chrome in English; production serves the dashboard in Uzbek (base.LANGUAGE_CODE).
 LANGUAGE_CODE = "en"
+
+# Every pytest-xdist worker has its own PostgreSQL test database, so it gets its own Redis database too: with one
+# shared Redis, a worker read objects another worker had cached from *its* database (DoesNotExist / stale rows) and
+# conftest's rate-limit reset deleted keys under other workers' running tests -- 1-2 random failures per full run.
+# Also keeps tests out of the dev server's DB 0 (cache / Celery) and DB 1 (channels). gw0..gw7 -> 8..15, no xdist -> 7.
+def _isolated_redis_url(url: str) -> str:
+    import re as _re
+
+    worker = os.environ.get("PYTEST_XDIST_WORKER", "")  # noqa: F405
+    db = 8 + int(worker[2:]) % 8 if worker.startswith("gw") and worker[2:].isdigit() else 7
+    return _re.sub(r"/\d+$", "", url.rstrip("/")) + f"/{db}"
+
+
+REDIS_URL = _isolated_redis_url(REDIS_URL)  # noqa: F405
+CACHES["default"]["LOCATION"] = REDIS_URL  # noqa: F405
+
+# Tests never talk to the real Telegram API (the dev container's env says "live"): a test that needs the live gateway
+# sets it itself and patches the HTTP layer. Real calls with fake tokens made the bot flows slow and order-dependent.
+NUTRIZONE_TELEGRAM_GATEWAY = "disabled"
+# Bot flows that call the Bot API directly (callback_router._send, answerCallbackQuery, rich messages) hit a closed
+# local port: refused instantly instead of a slow 401 round trip to Telegram that, with parallel workers, timed out
+# mid-flow and broke the conversation (lost checkout / chat / filter state, missing orders) at random.
+TELEGRAM_API_BASE_URL = "http://127.0.0.1:9"

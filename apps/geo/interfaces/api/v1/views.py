@@ -257,8 +257,6 @@ class ReverseGeocodeView(APIView):
 
 
 def _point(params) -> tuple[float, float]:
-    from common.exceptions import ValidationFailed
-
     try:
         lat, lng = float(params.get("lat")), float(params.get("lng"))
     except (TypeError, ValueError):
@@ -310,7 +308,6 @@ class ParseMapLinkView(APIView):
     @extend_schema(tags=["Geo"], summary="Read coordinates from a map link", responses={200: OpenApiResponse(description="Point"), **_responses(422, 429)})
     def post(self, request):
         from apps.geo.infrastructure.gateways import geocoder
-        from common.exceptions import ValidationFailed
 
         point = geocoder.parse_map_link(str(request.data.get("text") or ""))
         if point is None:

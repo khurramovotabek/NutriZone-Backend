@@ -32,7 +32,7 @@ def _clear_rate_limit_state():
     """Real test-isolation fix: Redis-backed rate-limit state (ScopedRateLimitThrottle/RateLimiter) is not bound to Django's per-test database transaction rollback, so OTP-request-throttle counters from one test in this file could otherwise leak into and spuriously fail the next."""
     from core.caching.redis_client import get_redis_client
 
-    get_redis_client().flushall()
+    get_redis_client().flushdb()  # own database only (testing.py gives each xdist worker one); flushall wiped the other workers
     yield
 
 
@@ -483,6 +483,7 @@ class TestTelegramSetWebhookCommand:
         return mock_response
 
     def test_successful_registration_calls_real_telegram_api_shape(self, settings):
+        settings.TELEGRAM_API_BASE_URL = "https://api.telegram.org"  # the real shape (testing.py points the suite at a dead local port)
         settings.TELEGRAM_BOT_TOKEN = "123456:TEST-TOKEN"
         settings.TELEGRAM_WEBHOOK_SECRET = "test-secret"
         settings.PUBLIC_BASE_URL = "https://api.nutrizone.uz"

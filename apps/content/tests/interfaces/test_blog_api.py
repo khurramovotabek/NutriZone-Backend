@@ -94,3 +94,35 @@ class TestBlogPostAdminRealUpload:
         assert post is not None
         assert post.cover_image_storage_path
         assert post.published_at is not None
+
+
+class TestBlogTranslations:
+    def _translated(self):
+        category = BlogCategory.objects.create(id=uuid.uuid4(), name="Qo'llanmalar", slug=f"cat-{uuid.uuid4().hex[:8]}", i18n={"ru": {"name": "Руководства"}})
+        post = _published_post("Kreatin qo'llanmasi", category)
+        post.i18n = {"ru": {"title": "Гид по креатину", "excerpt": "Коротко", "body": "Текст на русском"}}
+        post.save()
+        return post
+
+    def test_russian_translation_is_served_with_locale(self):
+        post = self._translated()
+        card = next(p for p in Client().get("/api/v1/content/posts?locale=ru").json()["data"] if p["id"] == str(post.id))
+        assert (card["title"], card["excerpt"], card["category"], card["locale"]) == ("Гид по креатину", "Коротко", "Руководства", "ru")
+        detail = Client().get(f"/api/v1/content/posts/{post.slug}", HTTP_ACCEPT_LANGUAGE="ru").json()["data"]
+        assert detail["body"] == "Текст на русском"
+
+    def test_missing_translation_falls_back_to_uzbek(self):
+        post = self._translated()
+        card = next(p for p in Client().get("/api/v1/content/posts?locale=en").json()["data"] if p["id"] == str(post.id))
+        assert (card["title"], card["excerpt"], card["category"], card["locale"]) == ("Kreatin qo'llanmasi", "Excerpt", "Qo'llanmalar", "uz")
+
+    def test_admin_form_stores_translations(self, admin_client):
+        from apps.content.infrastructure.admin import BlogPostAdminForm
+
+        form = BlogPostAdminForm(data={"title": "Sarlavha", "slug": f"s-{uuid.uuid4().hex[:6]}", "body": "Matn", "status": "draft",
+                                       "title_en": "Title", "body_en": "Text", "title_ru": "", "body_ru": ""})
+        assert form.is_valid(), form.errors
+        post = form.save()
+        assert post.i18n == {"en": {"title": "Title", "body": "Text"}}
+        assert BlogPostAdminForm(data={"title": "S", "slug": "s-x", "body": "M", "status": "draft", "body_ru": "Текст"}).is_valid() is False
+        assert admin_client.get(f"/django-admin/content/blogpost/{post.pk}/change/").status_code == 200

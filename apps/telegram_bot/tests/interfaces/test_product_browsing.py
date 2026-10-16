@@ -35,7 +35,7 @@ _WEBHOOK_AUTH = {"HTTP_X_TELEGRAM_BOT_API_SECRET_TOKEN": "test-webhook-secret"}
 def _clear_rate_limit_state():
     from core.caching.redis_client import get_redis_client
 
-    get_redis_client().flushall()
+    get_redis_client().flushdb()  # own database only (testing.py gives each xdist worker one); flushall wiped the other workers
     yield
 
 

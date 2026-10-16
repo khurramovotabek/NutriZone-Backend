@@ -12,7 +12,7 @@ from django.contrib import admin
 from django.db.models import Count, Q, Sum
 from django.urls import reverse
 from django.utils import timezone as django_timezone
-from django.utils.html import format_html
+from django.utils.html import format_html, format_html_join
 from django.utils.safestring import mark_safe
 
 from apps.content.infrastructure import models as orm
@@ -46,14 +46,41 @@ def _status_pill(status: str) -> str:
     return format_html('<span class="nzi-pill" style="--t:{}">{}</span>', STATUS_COLOR.get(status, "#94a3b8"), STATUS_LABEL.get(status, status))
 
 
+class BlogCategoryAdminForm(forms.ModelForm):
+    name_ru = forms.CharField(label="Nomi (ruscha)", required=False, max_length=100)
+    name_en = forms.CharField(label="Nomi (inglizcha)", required=False, max_length=100)
+
+    class Meta:
+        model = orm.BlogCategory
+        fields = ["name", "slug", "sort_order"]
+        labels = {"name": "Nomi (o'zbekcha)", "slug": "Slug (URL manzil)", "sort_order": "Tartib raqami"}
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        for code in ("ru", "en"):
+            self.fields[f"name_{code}"].initial = ((self.instance.i18n or {}).get(code) or {}).get("name", "")
+
+    def save(self, commit=True):
+        obj = super().save(commit=False)
+        i18n = dict(obj.i18n or {})
+        for code in ("ru", "en"):
+            value = (self.cleaned_data.get(f"name_{code}") or "").strip()
+            i18n[code] = {**(i18n.get(code) or {}), "name": value} if value else {k: v for k, v in (i18n.get(code) or {}).items() if k != "name"}
+        obj.i18n = {k: v for k, v in i18n.items() if v}
+        if commit:
+            obj.save()
+        return obj
+
+
 @admin.register(orm.BlogCategory)
 class BlogCategoryAdmin(PremiumListMixin, PremiumFormMixin, admin.ModelAdmin):
+    form = BlogCategoryAdminForm
     list_display = ("name", "sort_order")
     search_fields = ("name", "slug")
     prepopulated_fields = {"slug": ("name",)}
     ordering = ("sort_order", "name")
     list_per_page = 25
-    fields = ("name", "slug", "sort_order")
+    fields = ("name", "name_ru", "name_en", "slug", "sort_order")
 
     nz_icon, nz_tone, nz_title = "fa-folder-tree", "#0891b2", "Blog bo'limlari"
     nz_subtitle = "Maqolalarni mavzular bo'yicha guruhlang. Tartib raqami saytdagi ketma-ketlikni belgilaydi."
@@ -88,8 +115,18 @@ class BlogCategoryAdmin(PremiumListMixin, PremiumFormMixin, admin.ModelAdmin):
                           hero_stat("Ko'rishlar", posts["views"] or 0, "#4f46e5", "jami", "fa-eye")]}
 
 
+TRANSLATED = ("title", "excerpt", "body")
+
+
 class BlogPostAdminForm(forms.ModelForm):
     cover_image_upload = forms.ImageField(required=False, label="Muqova rasmi", help_text="JPEG, PNG yoki WebP. Kichik o'lchamlar avtomatik tayyorlanadi.")
+    # Russian / English versions (stored in BlogPost.i18n). Empty = the Uzbek text is shown in that language.
+    title_ru = forms.CharField(label="Заголовок", required=False, max_length=200, widget=forms.TextInput(attrs={"class": "vTextField", "placeholder": "Например: Как принимать креатин?"}))
+    excerpt_ru = forms.CharField(label="Краткое описание", required=False, max_length=300, widget=forms.Textarea(attrs={"rows": 2}))
+    body_ru = forms.CharField(label="Текст статьи", required=False, widget=forms.Textarea(attrs={"rows": 14, "spellcheck": "true"}))
+    title_en = forms.CharField(label="Title", required=False, max_length=200, widget=forms.TextInput(attrs={"class": "vTextField", "placeholder": "e.g. How to take creatine?"}))
+    excerpt_en = forms.CharField(label="Short summary", required=False, max_length=300, widget=forms.Textarea(attrs={"rows": 2}))
+    body_en = forms.CharField(label="Article text", required=False, widget=forms.Textarea(attrs={"rows": 14, "spellcheck": "true"}))
 
     class Meta:
         model = orm.BlogPost
@@ -100,6 +137,33 @@ class BlogPostAdminForm(forms.ModelForm):
         widgets = {"title": forms.TextInput(attrs={"class": "vTextField", "placeholder": "Masalan: Kreatin qanday ichiladi?", "autocomplete": "off"}),
                    "excerpt": forms.Textarea(attrs={"rows": 2, "placeholder": "Maqolaning qisqacha mazmuni…"}),
                    "body": forms.Textarea(attrs={"rows": 18, "placeholder": "Maqola matni…", "spellcheck": "true"})}
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        for code in ("ru", "en"):
+            saved = (self.instance.i18n or {}).get(code) or {}
+            for f in TRANSLATED:
+                self.fields[f"{f}_{code}"].initial = saved.get(f, "")
+
+    def clean(self):
+        data = super().clean()
+        for code in ("ru", "en"):
+            if (data.get(f"body_{code}") or "").strip() and not (data.get(f"title_{code}") or "").strip():
+                self.add_error(f"title_{code}", "Tarjima uchun sarlavha ham kerak.")
+        return data
+
+    def save(self, commit=True):
+        obj = super().save(commit=False)
+        i18n = {}
+        for code in ("ru", "en"):
+            values = {f: (self.cleaned_data.get(f"{f}_{code}") or "").strip() for f in TRANSLATED}
+            values = {k: v for k, v in values.items() if v}
+            if values:
+                i18n[code] = values
+        obj.i18n = i18n
+        if commit:
+            obj.save()
+        return obj
 
 
 @admin.register(orm.BlogPost)
@@ -118,7 +182,9 @@ class BlogPostAdmin(ExcelExportMixin, PremiumListMixin, PremiumFormMixin, admin.
     list_per_page = 25
     readonly_fields = ("published_at", "view_count", "created_at", "updated_at")
     fieldsets = (
-        ("Maqola", {"fields": ("title", "slug", "category", "excerpt", "body")}),
+        ("Maqola (o'zbekcha)", {"fields": ("title", "slug", "category", "excerpt", "body")}),
+        ("Ruscha tarjima", {"fields": ("title_ru", "excerpt_ru", "body_ru"), "description": "Bo'sh qolsa — rus tilidagi saytda o'zbekcha matn ko'rinadi."}),
+        ("Inglizcha tarjima", {"fields": ("title_en", "excerpt_en", "body_en"), "description": "Bo'sh qolsa — ingliz tilidagi saytda o'zbekcha matn ko'rinadi."}),
         ("Muqova va holat", {"fields": ("cover_image_upload", "status")}),
         ("Statistika", {"fields": ("published_at", "view_count", "created_at", "updated_at")}),
     )
@@ -160,7 +226,8 @@ class BlogPostAdmin(ExcelExportMixin, PremiumListMixin, PremiumFormMixin, admin.
 
     def nz_row(self, p):
         excerpt = p.excerpt if len(p.excerpt) <= 110 else p.excerpt[:107].rstrip() + "…"
-        return [format_html('<span class="nzi-user">{}<span><b>{}</b><small>{}</small></span></span>', _cover(p), p.title, excerpt or f"/{p.slug}"),
+        langs = format_html_join("", '<span class="nzi-chip" style="--t:{}">{}</span> ', ((("#16a34a" if code in p.translated_locales() else "#94a3b8"), code.upper()) for code in ("uz", "ru", "en")))
+        return [format_html('<span class="nzi-user">{}<span><b>{}</b><small>{}</small><small>{}</small></span></span>', _cover(p), p.title, excerpt or f"/{p.slug}", langs),
                 ui.chip(p.category.name, "#0891b2", "fa-folder") if p.category else ui.muted(),
                 _status_pill(p.status),
                 format_html("<small>{}</small>", ui.local(p.published_at, "%d.%m.%Y")) if p.published_at else ui.muted(),
