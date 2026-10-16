@@ -83,10 +83,14 @@ class ReceiptSettings(models.Model):
     vat_rate = models.DecimalField("QQS stavkasi (%)", max_digits=5, decimal_places=2, default=12)
     footer = models.CharField("Pastki matn", max_length=255, blank=True, default="Xaridingiz uchun rahmat! NutriZone — original sport ozuqalari.")
     fiscal_provider = models.CharField("Fiskal provayder", max_length=24, default="none", choices=[
-        ("none", "O'chirilgan (ichki chek)"), ("http", "Virtual kassa / OFD (HTTP API)")])
+        ("none", "O'chirilgan (ichki chek)"), ("epos", "E-POS (api.epos.uz)"), ("http", "Boshqa virtual kassa / OFD (HTTP API)")])
     fiscal_endpoint = models.URLField("API manzili", blank=True, default="", help_text="Provayder (OFD / virtual kassa) chek qabul qiladigan URL.")
     fiscal_terminal_id = models.CharField("Terminal (kassa) ID", max_length=64, blank=True, default="")
     fiscal_auto = models.BooleanField("Avtomatik fiskallashtirish", default=False, help_text="Har bir yangi chek darhol provayderga yuboriladi.")
+    fiscal_cashier_id = models.CharField("Kassir ID (E-POS)", max_length=64, blank=True, default="", help_text="E-POS kabinetidagi kassir identifikatori, masalan CSH-007.")
+    payme_fiscal = models.BooleanField("Payme orqali fiskal chek", default=False, help_text=(
+        "Payme bilan to'langan buyurtmalar uchun soliq cheki Payme virtual kassasi orqali chiqadi (QR kod bilan). "
+        "Payme Business kabinetida fiskalizatsiya yoqilgan bo'lishi kerak."))
     fiscal_auth = models.CharField("Avtorizatsiya turi", max_length=12, default="bearer", choices=[
         ("bearer", "Bearer token (Authorization: Bearer …)"), ("header", "Token alohida sarlavhada"), ("basic", "Login + parol (Basic)")])
     fiscal_auth_header = models.CharField("Sarlavha nomi", max_length=64, blank=True, default="Authorization",

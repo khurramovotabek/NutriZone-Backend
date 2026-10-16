@@ -221,6 +221,9 @@ class ReceiptAdmin(ExcelExportMixin, PremiumListMixin, PremiumFormMixin, admin.M
                                           "price": str(infos[i].price or 0)} for i in ids if i in infos]})
 
 
+EPOS_ENDPOINT = "https://api.epos.uz/v1/receipts"
+
+
 class ReceiptSettingsForm(forms.ModelForm):
     """The provider key is write-only: typed once, stored encrypted, shown back only as ••••1234."""
 
@@ -242,7 +245,9 @@ class ReceiptSettingsForm(forms.ModelForm):
 
     def clean(self):
         data = super().clean()
-        if data.get("fiscal_provider") == "http":
+        if data.get("fiscal_provider") == "epos" and not data.get("fiscal_endpoint"):
+            data["fiscal_endpoint"] = EPOS_ENDPOINT
+        if data.get("fiscal_provider") in ("http", "epos"):
             endpoint = data.get("fiscal_endpoint") or ""
             if endpoint and not endpoint.startswith("https://"):
                 self.add_error("fiscal_endpoint", "Faqat https:// manzil — kalit ochiq kanal orqali yuborilmasin.")
@@ -273,8 +278,9 @@ class ReceiptSettingsAdmin(PremiumFormMixin, admin.ModelAdmin):
         ("Fiskal tayyorlik", {"classes": ("nzi-panel",), "fields": ("fiscal_readiness",)}),
         ("Sotuvchi rekvizitlari (chekda ko'rinadi)", {"fields": ("legal_name", "tin", "address", "phone", "footer")}),
         ("QQS", {"fields": ("vat_payer", "vat_rate")}),
-        ("Fiskal integratsiya (OFD / virtual kassa)", {
-            "fields": ("fiscal_provider", "fiscal_endpoint", "fiscal_terminal_id", "fiscal_auth", "fiscal_auth_header", "fiscal_login",
+        ("Payme virtual kassasi", {"fields": ("payme_fiscal",)}),
+        ("Kassa / OFD provayderi (E-POS va boshqalar)", {
+            "fields": ("fiscal_provider", "fiscal_endpoint", "fiscal_terminal_id", "fiscal_cashier_id", "fiscal_auth", "fiscal_auth_header", "fiscal_login",
                        "fiscal_secret", "fiscal_secret_clear", "fiscal_timeout", "fiscal_auto")}),
     )
     hero_icon, hero_tone, hero_noun = "fa-gear", "#0d9488", "sozlama"
@@ -301,8 +307,9 @@ class ReceiptSettingsAdmin(PremiumFormMixin, admin.ModelAdmin):
                                 (("#16a34a" if ok else "#dc2626", "✓" if ok else "✗", label, hint) for label, ok, hint in checks))
         last = format_html('<p style="margin-top:10px"><b>Oxirgi tekshiruv:</b> {} <small style="opacity:.7">{}</small></p>',
                            obj.fiscal_check_result, ui.local(obj.fiscal_checked_at, "%d.%m.%Y %H:%M")) if obj.fiscal_checked_at else ""
-        return format_html('<div class="nzi-panel-body"><p style="opacity:.8">Provayder (OFD / virtual kassa) bergan ma\'lumotlarni «Fiskal integratsiya» '
-                           'bo\'limiga kiriting. API kaliti shifrlangan holda saqlanadi va qayta ko\'rsatilmaydi.</p><p><b>{}/{}</b> tayyor{}</p><ul style="list-style:none;margin:8px 0 0;padding:0">{}</ul>{}'
+        return format_html('<div class="nzi-panel-body"><p style="opacity:.8">Ikki yo\'l: <b>Payme virtual kassasi</b> — Payme bilan to\'langan buyurtmalarga soliq cheki va QR kodni '
+                           'Payme o\'zi chiqaradi (Payme Business\'da fiskalizatsiyani yoqing, kalitlar To\'lov tizimlari sahifasida); '
+                           '<b>E-POS yoki boshqa OFD</b> — kassa va qolgan cheklar uchun. Kalitlar shifrlangan holda saqlanadi.</p><p><b>{}/{}</b> tayyor{}</p><ul style="list-style:none;margin:8px 0 0;padding:0">{}</ul>{}'
                            '<p style="margin-top:12px"><button type="submit" name="_fiscal_check" value="1" class="button" '
                            'style="padding:8px 14px;border-radius:10px"><i class="fas fa-plug" aria-hidden="true"></i> Saqlash va ulanishni tekshirish</button> '
                            '<small style="opacity:.7">Chek yuborilmaydi — faqat server va kalit tekshiriladi.</small></p></div>',

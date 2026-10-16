@@ -49,7 +49,8 @@ def _store(data: dict, **fields) -> Receipt:
     s = ReceiptSettings.get()
     total = Decimal(data.get("total") or 0)
     receipt = Receipt.objects.create(data=data, total=total, vat_amount=vat_of(total, s), **fields)
-    if s.fiscal_auto and s.fiscal_provider != "none":
+    paid_by_payme_kassa = s.payme_fiscal and fields.get("payment_method") == "payme"  # Payme's virtual kassa fiscalizes it -- never twice
+    if s.fiscal_auto and s.fiscal_provider != "none" and not paid_by_payme_kassa:
         from apps.receipts.infrastructure.tasks import fiscalize_receipt
 
         Receipt.objects.filter(pk=receipt.pk).update(status=ReceiptStatus.FISCAL_PENDING)
@@ -87,7 +88,7 @@ def order_data(order) -> dict:
     from apps.pos.infrastructure.receipts import _names, _variant_label
     from apps.products.infrastructure.models import ProductVariant
 
-    lines = list(OrderLineItemModel.objects.filter(order_id=order.id, status="active"))
+    lines = list(OrderLineItemModel.objects.filter(order_id=order.id, status="active").order_by("id"))
     variants = {v.id: v for v in ProductVariant.all_objects.filter(id__in=[li.product_variant_id for li in lines]).select_related("package")}
     names = _names([v.product_id for v in variants.values()], "uz")
     items, subtotal, discount = [], Decimal(0), Decimal(0)
@@ -131,14 +132,20 @@ def from_order(order) -> Receipt | None:
     issued = done or order.updated_at or timezone.now()  # the moment the order was handed over (backfills keep their real date)
     number, token = _next(ONLINE_SEQ, "NZO"), secrets.token_urlsafe(12)
     data.update(number=number, token=token, issued_at=issued.isoformat())
-    lines = list(OrderLineItemModel.objects.filter(order_id=order.id, status="active"))
+    lines = list(OrderLineItemModel.objects.filter(order_id=order.id, status="active").order_by("id"))
     codes = _tax_codes([li.product_variant_id for li in lines])
     data = _decorate(data, ReceiptSettings.get(), [codes.get(li.product_variant_id) for li in lines])
     try:
         with transaction.atomic():
-            return _store(data, number=number, token=token, source=ReceiptSource.ONLINE, order_id=order.id, order_number=order.order_number,
-                          store_id=order.fulfilment_store_id, customer_name=data["customer"]["name"] or "", customer_phone=data["customer"]["phone"] or "",
-                          payment_method=data["payment_method"], issued_at=issued)
+            receipt = _store(data, number=number, token=token, source=ReceiptSource.ONLINE, order_id=order.id, order_number=order.order_number,
+                             store_id=order.fulfilment_store_id, customer_name=data["customer"]["name"] or "", customer_phone=data["customer"]["phone"] or "",
+                             payment_method=data["payment_method"], issued_at=issued)
+        if data["payment_method"] == "payme":  # Payme already registered it with the tax office at payment time (SetFiscalData)
+            from apps.receipts.infrastructure.payme_fiscal import apply_to_receipt
+
+            if apply_to_receipt(order.id):
+                receipt.refresh_from_db()
+        return receipt
     except IntegrityError:
         return Receipt.objects.filter(order_id=order.id).first()
 

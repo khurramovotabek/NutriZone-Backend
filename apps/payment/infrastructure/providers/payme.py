@@ -3,7 +3,8 @@ Payme Merchant API (JSON-RPC 2.0) -- https://developer.help.paycom.uz
 
 Payme calls ONE endpoint (POST /api/v1/payments/payme) with Basic auth "Paycom:<key>" and a method:
 CheckPerformTransaction, CreateTransaction, PerformTransaction, CancelTransaction, CheckTransaction,
-GetStatement. Amounts are tiyin (1 so'm = 100). Transaction states: 1 created, 2 performed,
+GetStatement, SetFiscalData. With "Payme orqali fiskal chek" on (Chek sozlamalari) CheckPerformTransaction also returns
+the fiscal `detail` (MXIK, package code, VAT per line) and SetFiscalData stores the tax receipt (apps/receipts/payme_fiscal). Amounts are tiyin (1 so'm = 100). Transaction states: 1 created, 2 performed,
 -1 cancelled before perform, -2 cancelled after perform (refund). A created transaction expires
 after 12 hours (cancel reason 4).
 
@@ -38,6 +39,8 @@ ERR_CANT_PERFORM = -31008
 ERR_ORDER = -31050  # -31050..-31099: problems with the account (order)
 ERR_ORDER_PAID = -31051
 ERR_ORDER_BUSY = -31052
+ERR_RECEIPT_NOT_FOUND = -32001  # SetFiscalData: no transaction with this id
+ERR_PARAMS = -32602
 
 MESSAGES = {
     ERR_AUTH: ("Недостаточно привилегий", "Ruxsat yo'q", "Insufficient privileges"),
@@ -51,6 +54,8 @@ MESSAGES = {
     ERR_CANT_PERFORM: ("Невозможно выполнить операцию", "Amalni bajarib bo'lmaydi", "Unable to perform operation"),
     ERR_ORDER: ("Заказ не найден", "Buyurtma topilmadi", "Order not found"),
     ERR_ORDER_PAID: ("Заказ уже оплачен или не может быть оплачен", "Buyurtma to'langan yoki to'lab bo'lmaydi", "Order already paid or not payable"),
+    ERR_RECEIPT_NOT_FOUND: ("Чек не найден", "Chek topilmadi", "Receipt not found"),
+    ERR_PARAMS: ("Неверные параметры", "Noto'g'ri parametrlar", "Invalid parameters"),
     ERR_ORDER_BUSY: ("Заказ ожидает оплаты по другой транзакции", "Buyurtma boshqa tranzaksiya bilan to'lanmoqda", "Order is being paid by another transaction"),
 }
 
@@ -169,8 +174,31 @@ def _expire(p: PaymentModel) -> None:
 
 
 def check_perform(state: ProviderState, params: dict, ctx: dict) -> dict:
-    _validate(state, params, ctx)
+    order, amount = _validate(state, params, ctx)
+    from apps.receipts.infrastructure import payme_fiscal
+
+    if payme_fiscal.enabled():
+        detail = payme_fiscal.detail(order, amount)
+        if detail:
+            return {"allow": True, "detail": detail}
     return {"allow": True}
+
+
+def set_fiscal_data(state: ProviderState, params: dict, ctx: dict) -> dict:
+    """Payme reports the tax receipt its virtual kassa registered for a payment (PERFORM) or its refund (CANCEL)."""
+    kind, data = params.get("type"), params.get("fiscal_data")
+    if kind not in ("PERFORM", "CANCEL"):
+        raise PaymeError(ERR_PARAMS, "type")
+    if not isinstance(data, dict):
+        raise PaymeError(ERR_PARAMS, "fiscal_data")
+    try:
+        payment = _by_txn(params, ctx)
+    except PaymeError:
+        raise PaymeError(ERR_RECEIPT_NOT_FOUND, "id") from None
+    from apps.receipts.infrastructure import payme_fiscal
+
+    payme_fiscal.save_fiscal_data(payment, kind, data)
+    return {"success": True}
 
 
 def _expire_if_stale(p: PaymentModel) -> bool:
@@ -287,4 +315,5 @@ HANDLERS = {
     "CancelTransaction": cancel_transaction,
     "CheckTransaction": check_transaction,
     "GetStatement": get_statement,
+    "SetFiscalData": set_fiscal_data,
 }

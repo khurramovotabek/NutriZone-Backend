@@ -46,13 +46,38 @@ def _payload(r: Receipt, s: ReceiptSettings) -> dict:
     }
 
 
+EPOS_METHOD = {"cash": "cash", "card": "card", "uzcard": "card", "humo": "card", "payme": "qr", "click": "qr", "uzum": "qr", "mixed": "mixed"}
+
+
+def _payload_epos(r: Receipt, s: ReceiptSettings) -> dict:
+    """E-POS (api.epos.uz/v1/receipts): items in so'm with MXIK (IKPU), package code and VAT; payment + cashier.
+    Shape from E-POS's public API page; check field names against docs.epos.uz once the integrator access is issued."""
+    d = r.data
+    rate = float(s.vat_rate) if s.vat_payer else 0
+    pays = d.get("payments") or [{"method": r.payment_method or "cash", "amount": str(r.total)}]
+    out = {
+        "external_id": r.number, "type": "refund" if r.kind == "refund" else "sale", "cashier_id": s.fiscal_cashier_id or None,
+        "terminal_id": s.fiscal_terminal_id or None, "tin": s.tin,
+        "items": [{"name": i["name"][:128], "price": float(Decimal(i["unit_price"])), "qty": i["quantity"], "ikpu": i.get("mxik") or "",
+                   "package_code": i.get("package_code") or "", "vat_percent": rate, "barcode": i.get("sku") or ""} for i in d.get("items", [])],
+        "payment": {"method": EPOS_METHOD.get(pays[0]["method"], "cash"), "provider": pays[0]["method"] if EPOS_METHOD.get(pays[0]["method"]) == "qr" else None,
+                    "amount": float(Decimal(str(r.total)))},
+        "payments": [{"method": EPOS_METHOD.get(p["method"], "cash"), "amount": float(Decimal(str(p["amount"])))} for p in pays],
+        "customer_phone": r.customer_phone or None,
+    }
+    if r.kind == "refund" and d.get("original_receipt"):
+        out["original_receipt_id"] = d["original_receipt"]
+    return out
+
+
 def _parse(body: dict) -> dict:
-    data = body.get("data") or body.get("result") or body
-    number = data.get("fiscal_number") or data.get("receipt_seq") or data.get("number")
-    sign = data.get("fiscal_sign") or data.get("fiscalSign") or data.get("sign")
+    data = body.get("data") or body.get("result") or body.get("receipt") or body
+    number = data.get("fiscal_number") or data.get("receipt_seq") or data.get("receipt_id") or data.get("number") or data.get("id")
+    sign = data.get("fiscal_sign") or data.get("fiscalSign") or data.get("fiscal_mark") or data.get("sign")
     if not (number and sign):
         raise FiscalError(body.get("error") or body.get("message") or "Provayder fiskal belgini qaytarmadi")
-    return {"number": str(number), "sign": str(sign), "url": data.get("qr_url") or data.get("qrCodeUrl") or data.get("url") or ""}
+    url = data.get("qr_url") or data.get("qr_code_url") or data.get("qrCodeUrl") or data.get("verification_url") or data.get("check_url") or data.get("url") or ""
+    return {"number": str(number), "sign": str(sign), "url": url}
 
 
 def auth_headers(s: ReceiptSettings) -> dict:
@@ -71,18 +96,32 @@ def readiness(s: ReceiptSettings | None = None) -> list[tuple[str, bool, str]]:
     from apps.products.infrastructure.models import Product
 
     s = s or ReceiptSettings.get()
-    no_mxik = Product.objects.filter(status="published").filter(models_q_empty("mxik_code")).count()
+    published = Product.objects.filter(status="published")
+    no_mxik = published.filter(models_q_empty("mxik_code")).count()
+    no_package = published.filter(models_q_empty("package_code")).count()
     checks = [
-        ("Provayder tanlangan", s.fiscal_provider != "none", "«Fiskal provayder» → Virtual kassa / OFD"),
-        ("STIR (INN)", bool(s.tin), "Sotuvchi rekvizitlarida"),
+        ("STIR (INN) / JShShIR", bool(s.tin), "Sotuvchi rekvizitlarida (YaTT yoki MChJ)"),
         ("Yuridik nom", bool(s.legal_name), "Sotuvchi rekvizitlarida"),
-        ("API manzili", bool(s.fiscal_endpoint), "Provayder bergan URL"),
-        ("Terminal (kassa) ID", bool(s.fiscal_terminal_id), "Provayder / soliq bergan ID"),
-        ("API kaliti / parol", bool(s.fiscal_secret), "Provayder bergan token yoki parol"),
         ("Mahsulotlarda MXIK kodi", no_mxik == 0, f"{no_mxik} ta sotuvdagi mahsulotda MXIK yo'q" if no_mxik else "Hammasida bor"),
+        ("Mahsulotlarda qadoq kodi", no_package == 0, f"{no_package} ta sotuvdagi mahsulotda qadoq kodi yo'q" if no_package else "Hammasida bor"),
     ]
-    if s.fiscal_auth == "basic":
-        checks.insert(6, ("Login", bool(s.fiscal_login), "«Login + parol» turi uchun"))
+    if s.payme_fiscal:
+        from apps.payment.infrastructure.providers.registry import load
+
+        payme = load("payme")
+        checks.append(("Payme ulangan", payme.enabled and payme.configured, "To'lovlar → To'lov tizimlari → Payme (kalitlar)"))
+    if s.fiscal_provider != "none":
+        checks += [
+            ("API manzili", bool(s.fiscal_endpoint), "Provayder bergan URL"),
+            ("API kaliti / parol", bool(s.fiscal_secret), "Provayder bergan token yoki parol"),
+            ("Terminal (kassa) ID", bool(s.fiscal_terminal_id), "Provayder / soliq bergan ID"),
+        ]
+        if s.fiscal_provider == "epos":
+            checks.append(("Kassir ID", bool(s.fiscal_cashier_id), "E-POS kabinetidan"))
+        if s.fiscal_auth == "basic":
+            checks.append(("Login", bool(s.fiscal_login), "«Login + parol» turi uchun"))
+    if not s.payme_fiscal and s.fiscal_provider == "none":
+        checks.insert(0, ("Fiskal usul tanlangan", False, "«Payme orqali fiskal chek»ni yoqing yoki provayder tanlang"))
     return checks
 
 
@@ -117,6 +156,13 @@ def fiscalize(receipt: Receipt) -> Receipt:
     s = ReceiptSettings.get()
     if receipt.status == ReceiptStatus.FISCALIZED:
         return receipt
+    if receipt.source == "online" and receipt.payment_method == "payme" and s.payme_fiscal:
+        from apps.receipts.infrastructure.payme_fiscal import apply_to_receipt
+
+        if apply_to_receipt(receipt.order_id):
+            receipt.refresh_from_db()
+            return receipt
+        raise FiscalError("Bu buyurtma Payme orqali to'langan: soliq chekini Payme virtual kassasi chiqaradi (SetFiscalData hali kelmagan).")
     if s.fiscal_provider == "none":
         raise FiscalError("Fiskal provayder ulanmagan (Chek sozlamalari).")
     if not (s.fiscal_endpoint and s.fiscal_terminal_id and s.tin):
@@ -128,7 +174,8 @@ def fiscalize(receipt: Receipt) -> Receipt:
         raise FiscalError("MXIK kodi yo'q: " + ", ".join(missing[:5]) + " (mahsulot kartasida to'ldiring).")
     Receipt.objects.filter(pk=receipt.pk).update(fiscal_attempts=receipt.fiscal_attempts + 1, status=ReceiptStatus.FISCAL_PENDING)
     try:
-        resp = requests.post(s.fiscal_endpoint, json=_payload(receipt, s), timeout=s.fiscal_timeout or 20, headers=auth_headers(s))
+        body_out = _payload_epos(receipt, s) if s.fiscal_provider == "epos" else _payload(receipt, s)
+        resp = requests.post(s.fiscal_endpoint, json=body_out, timeout=s.fiscal_timeout or 20, headers=auth_headers(s))
         body = resp.json()
         if resp.status_code >= 400:
             raise FiscalError(str(body.get("error") or body.get("message") or resp.status_code))
