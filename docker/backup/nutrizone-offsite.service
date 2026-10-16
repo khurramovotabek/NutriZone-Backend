@@ -1,0 +1,10 @@
+[Unit]
+Description=NutriZone media archive + offsite backup copy
+After=docker.service network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+ExecStart=/opt/nutrizone/backend/docker/backup/offsite.sh
+Nice=10
+IOSchedulingClass=idle

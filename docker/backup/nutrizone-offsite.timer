@@ -1,0 +1,10 @@
+[Unit]
+Description=Daily NutriZone offsite backup (after the 10:31 UTC pg_dump of the previous day is in place)
+
+[Timer]
+OnCalendar=*-*-* 00:30:00 UTC
+Persistent=true
+RandomizedDelaySec=300
+
+[Install]
+WantedBy=timers.target
