@@ -31,7 +31,7 @@ INTENTS: dict[str, tuple[str, ...]] = {
 
 GOALS: dict[str, tuple[str, ...]] = {
     "muscle": ("massa", "mushak", "muskul", "kuch", "bulk", "muscle", "mass", "gain", "набор", "масс", "мышц", "сила", "рельеф мышц", "kattalash"),
-    "weight_loss": ("ozish", "ozdir", "ozg'in", "vazn tashla", "vazn yo'qot", "yog' yoq", "quriti", "sushka", "похуд", "сброс", "сушк", "жиросжиг", "lose weight", "weight loss", "fat loss", "cut", "slim", "lean"),
+    "weight_loss": ("ozish", "ozmoq", "ozay", "ozdir", "ozg'in", "vazn tashla", "vazn yo'qot", "yog' yoq", "quriti", "sushka", "похуд", "сброс", "сушк", "жиросжиг", "lose weight", "weight loss", "fat loss", "cut", "slim", "lean"),
     "endurance": ("chidam", "energiya", "yugur", "marafon", "velosiped", "futbol", "boks", "выносл", "энерги", "бег", "марафон", "endurance", "stamina", "running", "cardio", "energy"),
     "health": ("salomat", "sog'l", "immunitet", "vitamin", "здоров", "иммун", "витамин", "health", "immunity", "wellness"),
 }

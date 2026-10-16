@@ -80,6 +80,40 @@ class TestAnswers:
         assert s < 0
 
 
+@pytest.mark.django_db
+class TestAccountProfile:
+    """A signed-in customer's profile answers the advisor's questions; what they tell the chat fills empty fields."""
+
+    def _user(self, **fields):
+        from apps.identity.infrastructure.models import User
+
+        return User.objects.create(id=uuid.uuid4(), phone_number=f"+99890{uuid.uuid4().int % 10**7:07d}", status="active", **fields)
+
+    def test_profile_prefills_and_is_not_overwritten(self):
+        import datetime
+
+        from apps.assistant.infrastructure.advisor.engine import _turn_sync
+        from apps.assistant.infrastructure.models import AssistantConversation
+
+        user = self._user(height_cm=180, weight_kg=80, goal="muscle_gain", birthday=datetime.date(2000, 1, 1))
+        conv = AssistantConversation.objects.create(customer_id=user.id, locale="uz")
+        reply = _turn_sync(conv.id, "menga tavsiya bering")["reply"]
+        assert "bo'yingiz" not in reply and "Kunlik ehtiyoj" in reply and "180 sm" in reply
+        _turn_sync(conv.id, "vaznim 90 kg")
+        user.refresh_from_db()
+        assert user.weight_kg == 80  # the customer's own value stays
+
+    def test_chat_facts_fill_empty_profile(self):
+        from apps.assistant.infrastructure.advisor.engine import _turn_sync
+        from apps.assistant.infrastructure.models import AssistantConversation
+
+        user = self._user()
+        conv = AssistantConversation.objects.create(customer_id=user.id, locale="uz")
+        _turn_sync(conv.id, "178 sm 75 kg 24 yosh, ozmoqchiman")
+        user.refresh_from_db()
+        assert user.height_cm == 178 and user.weight_kg == 75 and user.goal == "fat_loss"
+
+
 def test_status_is_enabled_without_a_key(client, settings):
     settings.ANTHROPIC_API_KEY = ""
     assert client.get("/api/v1/assistant/status").json()["data"]["enabled"] is True

@@ -162,6 +162,50 @@ def answer(conv_meta: dict, text: str, loc: str) -> tuple[str, list[str], list[s
     return "\n".join(lines), [x["id"] for x in found], CHIPS["after_reco"][loc], meta
 
 
+GOAL_FROM_ACCOUNT = {"muscle_gain": "muscle", "fat_loss": "weight_loss", "healthy_lifestyle": "health"}
+GOAL_TO_ACCOUNT = {v: k for k, v in GOAL_FROM_ACCOUNT.items()}
+
+
+def account_facts(customer_id) -> dict:
+    """What a signed-in customer already told us in their profile (height, weight, age, goal) -- never asked again."""
+    from apps.identity.infrastructure.models import User
+
+    user = User.objects.filter(pk=customer_id).only("height_cm", "weight_kg", "goal", "birthday").first() if customer_id else None
+    if user is None:
+        return {}
+    facts: dict = {}
+    if user.height_cm:
+        facts["height"] = int(round(user.height_cm))
+    if user.weight_kg:
+        facts["weight"] = float(user.weight_kg)
+    if user.birthday:
+        today = timezone.localdate()
+        age = today.year - user.birthday.year - ((today.month, today.day) < (user.birthday.month, user.birthday.day))
+        if 10 <= age <= 100:
+            facts["age"] = age
+    if user.goal in GOAL_FROM_ACCOUNT:
+        facts["goal"] = GOAL_FROM_ACCOUNT[user.goal]
+    return facts
+
+
+def save_account_facts(customer_id, profile: dict) -> None:
+    """Facts told in the chat fill the customer's empty profile fields (what they set themselves is never overwritten)."""
+    from apps.identity.infrastructure.models import User
+
+    user = User.objects.filter(pk=customer_id).only("height_cm", "weight_kg", "goal").first() if customer_id else None
+    if user is None:
+        return
+    changes = {}
+    if not user.height_cm and profile.get("height") and 30 <= float(profile["height"]) <= 300:
+        changes["height_cm"] = float(profile["height"])
+    if not user.weight_kg and profile.get("weight") and 10 <= float(profile["weight"]) <= 500:
+        changes["weight_kg"] = float(profile["weight"])
+    if not user.goal and profile.get("goal") in GOAL_TO_ACCOUNT:
+        changes["goal"] = GOAL_TO_ACCOUNT[profile["goal"]]
+    if changes:
+        User.objects.filter(pk=user.pk).update(**changes)
+
+
 def _turn_sync(conversation_id, user_text: str) -> dict:
     from django.db import transaction
     from django.db.models import F
@@ -170,7 +214,12 @@ def _turn_sync(conversation_id, user_text: str) -> dict:
 
     conv = AssistantConversation.objects.get(pk=conversation_id)
     loc = conv.locale if conv.locale in LOCALES else "uz"
-    reply, ids, chips, meta = answer(conv.meta, user_text, loc)
+    start = dict(conv.meta or {})
+    if conv.customer_id:
+        start["profile"] = {**account_facts(conv.customer_id), **(start.get("profile") or {})}
+    reply, ids, chips, meta = answer(start, user_text, loc)
+    if conv.customer_id:
+        save_account_facts(conv.customer_id, meta.get("profile") or {})
     cards = tools.cards([tools._uuid(i) for i in ids], loc) if ids else []
     if cards:
         reco.record_shown([c["id"] for c in cards])
