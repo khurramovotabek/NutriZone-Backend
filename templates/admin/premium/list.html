@@ -17,7 +17,7 @@
       <div><h2>{{ nz.title }}</h2>{% if nz.subtitle %}<p>{{ nz.subtitle }}</p>{% endif %}</div>
     </div>
     <div class="nzp-hero-actions">
-      {% for a in nz.hero_actions %}<a class="nzp-btn {% if a.primary %}nzp-btn-primary{% else %}nzp-btn-ghost{% endif %}" href="{{ a.url }}"><i class="fas {{ a.icon }}" aria-hidden="true"></i> {{ a.label }}</a>{% endfor %}
+      {% include "admin/includes/excel_button.html" with cls="nzp-btn nzp-btn-ghost" %}{% for a in nz.hero_actions %}<a class="nzp-btn {% if a.primary %}nzp-btn-primary{% else %}nzp-btn-ghost{% endif %}" href="{{ a.url }}"><i class="fas {{ a.icon }}" aria-hidden="true"></i> {{ a.label }}</a>{% endfor %}
     </div>
   </header>
 

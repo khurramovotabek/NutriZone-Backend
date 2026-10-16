@@ -10,7 +10,7 @@
       <span class="nzp-hero-icon" style="--c:#e11d48"><i class="fas fa-scale-balanced" aria-hidden="true"></i></span>
       <div><h2>{% translate "Solishtirish" %}</h2><p>{% translate "Har kuni to'lovlar, buyurtmalar va provayder holati solishtiriladi. Nomuvofiqlik topilsa shu yerda chiqadi; muammo bartaraf etilgach keyingi tekshiruvda o'zi yopiladi." %}</p></div>
     </div>
-    {% if can_change %}<div class="nzp-hero-actions"><form method="post" action="{% url 'admin:payment_paymentreconciliationissue_run' %}">{% csrf_token %}<button class="nzp-btn nzp-btn-primary"><i class="fas fa-rotate" aria-hidden="true"></i> {% translate "Hozir tekshirish" %}</button></form></div>{% endif %}
+    <div class="nzp-hero-actions">{% include "admin/includes/excel_button.html" with cls="nzp-btn nzp-btn-ghost" %}{% if can_change %}<form method="post" action="{% url 'admin:payment_paymentreconciliationissue_run' %}">{% csrf_token %}<button class="nzp-btn nzp-btn-primary"><i class="fas fa-rotate" aria-hidden="true"></i> {% translate "Hozir tekshirish" %}</button></form>{% endif %}</div>
   </header>
 
   <div class="nzp-stats">

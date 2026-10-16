@@ -7,7 +7,6 @@ for them -- they stay governed via the API).
 """
 from __future__ import annotations
 
-
 from django import forms
 from django.conf import settings
 from django.contrib import admin
@@ -15,7 +14,9 @@ from django.utils.html import format_html, mark_safe
 from django.utils.translation import gettext_lazy as _
 from django.utils.translation import ngettext
 
+from apps.platform.infrastructure import excel_export as xl
 from apps.platform.infrastructure import models as orm
+from apps.platform.infrastructure.excel_export import Col, ExcelExportMixin
 
 
 def _direct_thumbnail_html(storage_path: str, thumbnail_paths: dict) -> str:
@@ -254,10 +255,13 @@ def _initials(name: str) -> str:
 
 
 @admin.register(orm.ContactMessage)
-class ContactMessageAdmin(admin.ModelAdmin):
+class ContactMessageAdmin(ExcelExportMixin, admin.ModelAdmin):
     """Real, product-required capability: lets a store manager review and triage public Contact page submissions. Name/email/subject/message are the customer's own words -- never editable by an admin; only status is.
 
     Presented as an inbox (templates/admin/platform/contactmessage/): status tabs, bulk triage actions, and a reading view that marks a new message as read when it is opened."""
+    excel_title = "Murojaat xabarlari"
+    excel_columns = [Col("Sana", "created_at", 17), Col("Ism", "name", 20), Col("Email", "email", 22), Col("Mavzu", "subject", 24), Col("Xabar", "message", 50), Col("Holat", "status", 12)]
+
 
     list_display = ("name", "email", "subject", "status", "created_at")
     list_filter = ("status",)
@@ -355,14 +359,13 @@ _connect_branding_invalidation()
 
 def _profile_first_auth_user_admin() -> None:
     """Opening your own staff account goes to the Profil page (?full=1 keeps Django's full permission form)."""
-    from django.contrib.auth import get_user_model
-    from django.contrib.auth.admin import UserAdmin as DjangoUserAdmin
-    from django.http import HttpResponseRedirect
-    from django.urls import reverse
-
     from datetime import timedelta
 
+    from django.contrib.auth import get_user_model
+    from django.contrib.auth.admin import UserAdmin as DjangoUserAdmin
     from django.db.models import Count, Q
+    from django.http import HttpResponseRedirect
+    from django.urls import reverse
     from django.utils import timezone
     from django.utils.html import format_html
 

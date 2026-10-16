@@ -10,7 +10,7 @@
       <span class="nzp-hero-icon" style="--c:#ef4444"><i class="fas fa-trash-can-arrow-up" aria-hidden="true"></i></span>
       <div><h2>{% translate "Hisobdan chiqarish" %}</h2><p>{% translate "Damaged, expired, defective or lost goods leave stock with a reason and a manager's approval -- every unit is traceable in the ledger." %}</p></div>
     </div>
-    <div class="nzp-hero-actions">
+    <div class="nzp-hero-actions">{% include "admin/includes/excel_button.html" with cls="nzp-btn nzp-btn-ghost" %}
       <a class="nzp-btn nzp-btn-ghost" href="{% url 'admin:nz_wms_expiry' %}"><i class="fas fa-calendar-xmark" aria-hidden="true"></i> {% translate "Yaroqlilik muddati" %}</a>
       {% if can_create %}<a class="nzp-btn nzp-btn-primary" href="{% url 'admin:stores_writeoff_new' %}"><i class="fas fa-plus" aria-hidden="true"></i> {% translate "New write-off" %}</a>{% endif %}
     </div>

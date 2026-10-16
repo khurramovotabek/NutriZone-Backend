@@ -10,7 +10,7 @@
       <span class="nzp-hero-icon" style="--c:#8b5cf6"><i class="fas fa-truck-field" aria-hidden="true"></i></span>
       <div><h2>{% translate "Yetkazib beruvchilar" %}</h2><p>{% translate "Who we buy from, what we bought and what we still owe. Every goods receipt at cost is a purchase; payments settle the oldest receipts first." %}</p></div>
     </div>
-    <div class="nzp-hero-actions">
+    <div class="nzp-hero-actions">{% include "admin/includes/excel_button.html" with cls="nzp-btn nzp-btn-ghost" %}
       <a class="nzp-btn nzp-btn-ghost" href="{% url 'admin:stores_stockreceipt_changelist' %}"><i class="fas fa-dolly" aria-hidden="true"></i> {% translate "Kirim (qabul)" %}</a>
       {% if can_add %}<a class="nzp-btn nzp-btn-primary" href="{% url 'admin:stores_supplier_add' %}"><i class="fas fa-plus" aria-hidden="true"></i> {% translate "New supplier" %}</a>{% endif %}
     </div>

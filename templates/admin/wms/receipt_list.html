@@ -10,7 +10,7 @@
       <span class="nzp-hero-icon" style="--c:#10b981"><i class="fas fa-dolly" aria-hidden="true"></i></span>
       <div><h2>{% translate "Kirim (qabul)" %}</h2><p>{% translate "Goods arriving from suppliers: scan or import from Excel; units go straight onto the location's stock." %}</p></div>
     </div>
-    <div class="nzp-hero-actions">
+    <div class="nzp-hero-actions">{% include "admin/includes/excel_button.html" with cls="nzp-btn nzp-btn-ghost" %}
       <a class="nzp-btn nzp-btn-ghost" href="{% url 'admin:stores_supplier_changelist' %}"><i class="fas fa-truck-field" aria-hidden="true"></i> {% translate "Yetkazib beruvchilar" %}</a>
       <a class="nzp-btn nzp-btn-ghost" href="{% url 'admin:stores_stockreceipt_template' %}"><i class="fas fa-file-excel" aria-hidden="true"></i> {% translate "Excel template" %}</a>
       {% if can_create %}<a class="nzp-btn nzp-btn-primary" href="{% url 'admin:stores_stockreceipt_new' %}"><i class="fas fa-plus" aria-hidden="true"></i> {% translate "New receipt" %}</a>{% endif %}

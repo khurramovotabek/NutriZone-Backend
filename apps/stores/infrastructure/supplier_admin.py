@@ -22,6 +22,8 @@ from django.utils.text import slugify
 from django.utils.translation import gettext as _t
 from django.utils.translation import gettext_lazy as _
 
+from apps.platform.infrastructure import excel_export as xl
+from apps.platform.infrastructure.excel_export import Col, ExcelExportMixin
 from apps.stores.infrastructure import stock_service, supplier_service
 from apps.stores.infrastructure.models import PaymentMethod, StockReceipt, Supplier, SupplierPayment
 from apps.stores.infrastructure.warehouse_admin import _actor, _local, _slug, _som, excel_response
@@ -49,7 +51,14 @@ class DebtFilter(admin.SimpleListFilter):
 
 
 @admin.register(Supplier)
-class SupplierAdmin(admin.ModelAdmin):
+class SupplierAdmin(ExcelExportMixin, admin.ModelAdmin):
+    excel_title = "Yetkazib beruvchilar"
+    excel_columns = [
+        Col("Nomi", "name", 26), Col("Yuridik nomi", "legal_name", 26), Col("STIR", "tin", 12), Col("Mas'ul shaxs", "contact_person", 20),
+        Col("Telefon", "phone", 15), Col("Email", "email", 20), Col("Manzil", "address", 30), Col("To'lov muddati (kun)", "payment_terms_days", 12, number=True),
+        Col("Faol", "is_active", 7), Col("Izoh", "note", 26),
+    ]
+
     list_display = ("name", "contact_person", "phone", "is_active")
     list_filter = (DebtFilter, "is_active")
     search_fields = ("name", "legal_name", "tin", "contact_person", "phone")

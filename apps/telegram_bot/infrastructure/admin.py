@@ -10,7 +10,9 @@ from django.db.models import Count, Q, Sum
 from django.http import HttpResponseRedirect
 from django.utils.html import format_html
 
+from apps.platform.infrastructure import excel_export as xl
 from apps.platform.infrastructure import premium_admin as ui
+from apps.platform.infrastructure.excel_export import Col, ExcelExportMixin
 from apps.platform.infrastructure.premium_admin import PremiumFormMixin, PremiumListMixin, hero_stat
 from apps.telegram_bot.infrastructure import posts
 from apps.telegram_bot.infrastructure.models import TelegramPost, TelegramPostStatus
@@ -77,7 +79,12 @@ class TelegramPostForm(forms.ModelForm):
 
 
 @admin.register(TelegramPost)
-class TelegramPostAdmin(PremiumListMixin, PremiumFormMixin, admin.ModelAdmin):
+class TelegramPostAdmin(ExcelExportMixin, PremiumListMixin, PremiumFormMixin, admin.ModelAdmin):
+    excel_title = "Telegram postlar"
+    excel_columns = [Col("Nom", "title", 30), Col("Holat", "status", 12), Col("Kanal", "channel", 18), Col("Obunachilar", "to_subscribers", 11), Col("Mijozlar", "to_customers", 10),
+                     Col("Qabul qiluvchilar", "recipients", 12, number=True), Col("Yetkazildi", "sent_count", 11, number=True), Col("Xato", "failed_count", 8, number=True),
+                     Col("Yuborilgan", "sent_at", 17), Col("Kim", "created_by", 18), Col("Matn", lambda p: to_plain(p.body), 60)]
+
     form = TelegramPostForm
     change_form_template = "admin/telegram_bot/telegrampost/change_form.html"
     list_display = ("title", "created_at")

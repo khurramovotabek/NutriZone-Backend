@@ -1206,7 +1206,7 @@ class ProductVariantPageForm(ProductVariantAdminForm):
 
 
 @admin.register(orm.ProductVariant)
-class ProductVariantAdmin(CatalogFormMixin, CatalogAnalyticsMixin, admin.ModelAdmin):
+class ProductVariantAdmin(ExcelExportMixin, CatalogFormMixin, CatalogAnalyticsMixin, admin.ModelAdmin):
     """
     Phase 08.3: standalone "Variants Workspace" -- previously only
     available as an inline on ProductAdmin, not as its own list view.
@@ -1218,6 +1218,26 @@ class ProductVariantAdmin(CatalogFormMixin, CatalogAnalyticsMixin, admin.ModelAd
     it here would mean either fabricating a field or reaching across
     a bounded-context boundary this phase wasn't scoped to cross.
     """
+    excel_title = "Mahsulot variantlari"
+    excel_select_related = ("product", "package")
+    excel_columns = [
+        Col("SKU", "sku", 16), Col("Shtrix-kod", "barcode", 16), Col("Mahsulot", lambda v: str(v.product) if v.product else "", 36), Col("Holat", "status", 10),
+        Col("Vazn / hajm", "weight_value", 11), Col("Birlik", "weight_unit", 10), Col("Qadoq", lambda v: str(v.package) if v.package else "", 14), Col("Asosiy", "is_default", 8),
+        Col("Narx (so'm)", lambda v: v.x_price, 14, money=True), Col("Qoldiq (dona)", lambda v: v.x_stock, 12, number=True),
+    ]
+
+    def excel_prepare(self, objs):
+        from apps.pricing.infrastructure.models import PriceListEntryModel
+        from apps.stores.infrastructure.availability import sellable
+
+        ids = [v.id for v in objs]
+        prices = {}
+        for e in PriceListEntryModel.objects.filter(product_variant_id__in=ids).order_by("product_variant_id"):
+            prices.setdefault(e.product_variant_id, e.base_price_amount)
+        stock = sellable(ids)
+        for v in objs:
+            v.x_price, v.x_stock = prices.get(v.id), stock.get(v.id)
+
 
     list_display = ("variant_col", "product_col", "status_col", "size_col", "stock_col", "sales_col")
     list_display_links = ("variant_col",)
@@ -1378,7 +1398,10 @@ class BrandAdminForm(forms.ModelForm):
 
 
 @admin.register(orm.Brand)
-class BrandAdmin(CatalogFormMixin, CatalogAnalyticsMixin, admin.ModelAdmin):
+class BrandAdmin(ExcelExportMixin, CatalogFormMixin, CatalogAnalyticsMixin, admin.ModelAdmin):
+    excel_title = "Brendlar"
+    excel_columns = [Col("Nomi", lambda b: str(b), 26), Col("Faol", "is_active", 7), Col("Ishlab chiqaruvchi", "is_manufacturer", 12), Col("Yaratilgan", "created_at", 17)]
+
     form = BrandAdminForm
     hero_icon, hero_tone, hero_noun = "fa-tags", "#6366f1", "brend"
     fieldsets = (
@@ -1529,7 +1552,12 @@ class CategoryAdminForm(forms.ModelForm):
 
 
 @admin.register(orm.Category)
-class CategoryAdmin(CatalogFormMixin, CatalogAnalyticsMixin, admin.ModelAdmin):
+class CategoryAdmin(ExcelExportMixin, CatalogFormMixin, CatalogAnalyticsMixin, admin.ModelAdmin):
+    excel_title = "Kategoriyalar"
+    excel_select_related = ("parent",)
+    excel_columns = [Col("Nomi", lambda c: str(c), 26), Col("Ota kategoriya", lambda c: str(c.parent) if c.parent else "", 22), Col("Tartib", "sort_order", 8, number=True),
+                     Col("Faol", "is_active", 7), Col("Yaratilgan", "created_at", 17)]
+
     form = CategoryAdminForm
     hero_icon, hero_tone, hero_noun = "fa-sitemap", "#0ea5e9", "kategoriya"
     fieldsets = (

@@ -15,7 +15,9 @@ from django.utils.html import format_html
 from django.utils.safestring import mark_safe
 
 from apps.chat.infrastructure import models as orm
+from apps.platform.infrastructure import excel_export as xl
 from apps.platform.infrastructure import premium_admin as ui
+from apps.platform.infrastructure.excel_export import Col, ExcelExportMixin
 from apps.platform.infrastructure.premium_admin import PremiumListMixin
 from common.exceptions import DomainException
 
@@ -50,8 +52,17 @@ class WaitingFilter(admin.SimpleListFilter):
 
 
 @admin.register(orm.ConversationModel)
-class ConversationAdmin(PremiumListMixin, admin.ModelAdmin):
+class ConversationAdmin(ExcelExportMixin, PremiumListMixin, admin.ModelAdmin):
     """Suhbatlar: every chat -- customer, type, last message, unread, who handles it; opens in the Chat markazi."""
+    excel_title = "Suhbatlar"
+    excel_columns = [Col("Turi", "conversation_type", 16), Col("Holat", "status", 12), Col("Operator", lambda c: c.x_operator[0], 20),
+                     Col("Oxirgi faollik", "last_activity_at", 17), Col("Yaratilgan", "created_at", 17)]
+
+    def excel_prepare(self, objs):
+        who = xl.people(c.assigned_operator_id for c in objs)
+        for c in objs:
+            c.x_operator = who.get(c.assigned_operator_id, ("", ""))
+
 
     list_display = ("last_activity_at", "created_at")
     list_filter = (WaitingFilter, ("conversation_type", _titled(admin.ChoicesFieldListFilter, "Turi")), ("last_activity_at", _titled(admin.DateFieldListFilter, "Oxirgi faollik")))
@@ -473,8 +484,17 @@ class ChatQuickReplyAdmin(PremiumListMixin, PremiumFormMixin, admin.ModelAdmin):
 
 
 @admin.register(orm.ConversationRating)
-class ConversationRatingAdmin(PremiumListMixin, admin.ModelAdmin):
+class ConversationRatingAdmin(ExcelExportMixin, PremiumListMixin, admin.ModelAdmin):
     """Suhbat baholari: customers' 1–5 ★ scores for closed support chats -- CSAT trend, low scores to follow up."""
+    excel_title = "Suhbat baholari"
+    excel_columns = [Col("Sana", "created_at", 17), Col("Mijoz", lambda r: r.x_people.get(r.customer_id, ("", ""))[0], 22), Col("Operator", lambda r: r.x_people.get(r.operator_id, ("", ""))[0], 20),
+                     Col("Baho", "score", 7, number=True), Col("Izoh", "comment", 36), Col("Nazorat holati", "review_status", 14), Col("Menejer izohi", "review_note", 28)]
+
+    def excel_prepare(self, objs):
+        who = xl.people([r.customer_id for r in objs] + [r.operator_id for r in objs])
+        for r in objs:
+            r.x_people = who
+
 
     list_display = ("score", "created_at")
     list_filter = (("created_at", _titled(admin.DateFieldListFilter, "Sana")),)

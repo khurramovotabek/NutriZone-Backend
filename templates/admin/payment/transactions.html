@@ -10,7 +10,7 @@
       <span class="nzp-hero-icon" style="--c:#10b981"><i class="fas fa-money-bill-transfer" aria-hidden="true"></i></span>
       <div><h2>{% translate "Tranzaksiyalar" %}</h2><p>{% translate "Payme, Click va Uzum orqali har bir to'lov urinishi — holati, summasi va provayder bilan to'liq yozishmasi." %}</p></div>
     </div>
-    <div class="nzp-hero-actions"><a class="nzp-btn nzp-btn-ghost" href="{% url 'admin:payment_paymentproviderconfig_changelist' %}"><i class="fas fa-building-columns" aria-hidden="true"></i> {% translate "To'lov tizimlari" %}</a></div>
+    <div class="nzp-hero-actions">{% include "admin/includes/excel_button.html" with cls="nzp-btn nzp-btn-ghost" %}<a class="nzp-btn nzp-btn-ghost" href="{% url 'admin:payment_paymentproviderconfig_changelist' %}"><i class="fas fa-building-columns" aria-hidden="true"></i> {% translate "To'lov tizimlari" %}</a></div>
   </header>
 
   {% include "admin/payment/_recon_banner.html" %}

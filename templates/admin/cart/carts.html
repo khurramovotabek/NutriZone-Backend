@@ -10,7 +10,7 @@
       <span class="nzp-hero-icon" style="--c:#2563eb"><i class="fas fa-cart-shopping" aria-hidden="true"></i></span>
       <div><h2>{% translate "Savatlar" %}</h2><p>{% translate "What customers hold in their carts right now, which carts were abandoned and can still be won back, and which became orders. Values at today's prices." %}</p></div>
     </div>
-    <div class="nzp-hero-actions"><a class="nzp-btn nzp-btn-ghost" href="{% url 'admin:cart_cartauditentrymodel_changelist' %}"><i class="fas fa-clock-rotate-left" aria-hidden="true"></i> {% translate "Savat tarixi" %}</a></div>
+    <div class="nzp-hero-actions">{% include "admin/includes/excel_button.html" with cls="nzp-btn nzp-btn-ghost" %}<a class="nzp-btn nzp-btn-ghost" href="{% url 'admin:cart_cartauditentrymodel_changelist' %}"><i class="fas fa-clock-rotate-left" aria-hidden="true"></i> {% translate "Savat tarixi" %}</a></div>
   </header>
 
   <div class="nzp-stats wx-stats-6">

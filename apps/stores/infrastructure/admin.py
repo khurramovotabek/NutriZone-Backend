@@ -333,7 +333,15 @@ StoreAdminForm.__init__ = _store_admin_form_init
 
 
 @admin.register(orm.Store)
-class StoreAdmin(admin.ModelAdmin):
+class StoreAdmin(ExcelExportMixin, admin.ModelAdmin):
+    excel_title = "Do'konlar va omborlar"
+    excel_columns = [
+        Col("Nomi", "name", 24), Col("Turi", "kind", 10), Col("Holat", "status", 10), Col("Shahar", "city", 14), Col("Tuman", "district", 14),
+        Col("Manzil", "address", 30), Col("Telefon", lambda s: ", ".join(s.phone_numbers or []), 22), Col("Telegram", "telegram_username", 16),
+        Col("Olib ketish", "pickup_enabled", 10), Col("Mahsulot turi", lambda s: getattr(s, "_product_count", None), 12, number=True),
+        Col("Jami dona", lambda s: getattr(s, "_units", None), 11, number=True), Col("Reyting", lambda s: round(s._rating, 1) if getattr(s, "_rating", None) else None, 9),
+    ]
+
     form = StoreAdminForm
     inlines = [StoreMediaInline, StoreProductStockInline]
     list_display = ("store_col", "location_col", "rating_col", "sales_col", "stock_col", "open_col", "status_col")
@@ -637,8 +645,15 @@ class ReviewStateFilter(admin.SimpleListFilter):
 
 
 @admin.register(orm.StoreRating)
-class StoreRatingAdmin(admin.ModelAdmin):
+class StoreRatingAdmin(ExcelExportMixin, admin.ModelAdmin):
     """Read-mostly moderation view -- a rating is customer-submitted from the storefront, never created here; staff can still inspect/remove an abusive one."""
+    excel_title = "Filial baholari"
+    excel_select_related = ("store", "customer")
+    excel_columns = [
+        Col("Sana", "created_at", 17), Col("Filial", lambda r: r.store.name if r.store else "", 20), Col("Mijoz", lambda r: r.customer.full_name if r.customer else "", 22),
+        Col("Telefon", lambda r: r.customer.phone_number if r.customer else "", 15), Col("Baho", "rating", 7, number=True), Col("Izoh", "comment", 40),
+    ]
+
 
     list_display = ("store_col", "stars_col", "review_col", "customer_col", "when_col")
     readonly_fields = ("store_col", "stars_col", "customer_col", "review_full", "when_col")

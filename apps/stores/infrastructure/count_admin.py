@@ -20,9 +20,26 @@ from django.utils import timezone
 from django.utils.translation import gettext as _t
 from django.utils.translation import gettext_lazy as _
 
+from apps.platform.infrastructure import excel_export as xl
+from apps.platform.infrastructure.excel_export import Col, ExcelExportMixin
 from apps.stores.infrastructure import count_service, stock_service, transfer_service
-from apps.stores.infrastructure.models import CountReason, StockCount, StockCountScope, StockCountStatus, Store, StoreKind
-from apps.stores.infrastructure.warehouse_admin import _actor, _body, _error, _local, _location_payload, _som, excel_response
+from apps.stores.infrastructure.models import (
+    CountReason,
+    StockCount,
+    StockCountScope,
+    StockCountStatus,
+    Store,
+    StoreKind,
+)
+from apps.stores.infrastructure.warehouse_admin import (
+    _actor,
+    _body,
+    _error,
+    _local,
+    _location_payload,
+    _som,
+    excel_response,
+)
 from common.exceptions import DomainException
 
 STATUS_STYLE = {
@@ -32,7 +49,16 @@ STATUS_STYLE = {
 
 
 @admin.register(StockCount)
-class StockCountAdmin(admin.ModelAdmin):
+class StockCountAdmin(ExcelExportMixin, admin.ModelAdmin):
+    excel_title = "Inventarizatsiya"
+    excel_select_related = ("store",)
+    excel_columns = [
+        Col("Raqam", "number", 14), Col("Sana", "created_at", 17), Col("Joy", lambda c: c.store.name if c.store else "", 20), Col("Holat", "status", 12),
+        Col("Qatorlar", "lines_total", 9, number=True), Col("Mos kelgan", "lines_matched", 10, number=True), Col("Kamomad (dona)", "shortage_units", 12, number=True),
+        Col("Ortiqcha (dona)", "excess_units", 12, number=True), Col("Kamomad (so'm)", "shortage_value", 14, money=True), Col("Ortiqcha (so'm)", "excess_value", 14, money=True),
+        Col("Yakunlangan", "posted_at", 17), Col("Kim", "created_by", 18),
+    ]
+
     list_display = ("number", "store", "status", "created_at")
     list_filter = ("status", "store")
     search_fields = ("number", "note", "created_by")

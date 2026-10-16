@@ -26,6 +26,8 @@ from django.utils.html import format_html
 from django.utils.translation import gettext as _t
 from django.utils.translation import gettext_lazy as _
 
+from apps.platform.infrastructure import excel_export as xl
+from apps.platform.infrastructure.excel_export import Col, ExcelExportMixin
 from apps.stores.infrastructure import stock_service, transfer_service
 from apps.stores.infrastructure.models import (
     DiscrepancyReason,
@@ -35,9 +37,9 @@ from apps.stores.infrastructure.models import (
     StockReceiptItem,
     StockTransfer,
     Store,
-    Supplier,
     StoreKind,
     StoreProductStock,
+    Supplier,
     TransferStatus,
 )
 from common.exceptions import DomainException
@@ -617,7 +619,16 @@ class StockTransferAdmin(admin.ModelAdmin):
 
 
 @admin.register(StockReceipt)
-class StockReceiptAdmin(admin.ModelAdmin):
+class StockReceiptAdmin(ExcelExportMixin, admin.ModelAdmin):
+    excel_title = "Kirim (qabul)"
+    excel_select_related = ("store", "supplier_ref")
+    excel_columns = [
+        Col("Raqam", "number", 14), Col("Sana", "created_at", 17), Col("Ombor / filial", lambda r: r.store.name if r.store else "", 20),
+        Col("Yetkazib beruvchi", lambda r: r.supplier_ref.name if r.supplier_ref else r.supplier, 24), Col("Hisob-faktura", "invoice_number", 16),
+        Col("To'lov muddati", "due_date", 13), Col("Dona", "total_units", 9, number=True), Col("Summa (so'm)", "total_value", 15, money=True),
+        Col("Kim", "created_by", 18), Col("Izoh", "note", 28),
+    ]
+
     class Media:
         css = {"all": ("admin/css/nutrizone-wms.css",)}
 

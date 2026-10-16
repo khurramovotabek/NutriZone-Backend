@@ -534,7 +534,11 @@ def reconciliation_banner() -> dict:
 
 
 @admin.register(PaymentReconciliationIssue)
-class ReconciliationAdmin(admin.ModelAdmin):
+class ReconciliationAdmin(ExcelExportMixin, admin.ModelAdmin):
+    excel_title = "To'lovlarni solishtirish"
+    excel_columns = [Col("Topilgan", "created_at", 17), Col("Turi", "kind", 18), Col("Darajasi", "severity", 10), Col("Holat", "status", 12), Col("Provayder", "provider", 12),
+                     Col("Buyurtma", "order_number", 16), Col("Summa", "amount", 14, money=True), Col("Hal qilingan", "resolved_at", 17), Col("Yechim izohi", "resolution_note", 30)]
+
     list_display = ("kind", "severity", "status", "order_number", "created_at")
     list_filter = ("status", "severity", "provider")
     search_fields = ("order_number", "kind")

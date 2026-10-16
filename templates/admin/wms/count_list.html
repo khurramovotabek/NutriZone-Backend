@@ -10,7 +10,7 @@
       <span class="nzp-hero-icon" style="--c:#0ea5e9"><i class="fas fa-clipboard-check" aria-hidden="true"></i></span>
       <div><h2>{% translate "Inventarizatsiya" %}</h2><p>{% translate "Count what is on the shelf, compare it with the system and correct the difference with a reason." %}</p></div>
     </div>
-    <div class="nzp-hero-actions">
+    <div class="nzp-hero-actions">{% include "admin/includes/excel_button.html" with cls="nzp-btn nzp-btn-ghost" %}
       <a class="nzp-btn nzp-btn-ghost" href="{% url 'admin:nz_wms_stock' %}"><i class="fas fa-cubes" aria-hidden="true"></i> {% translate "Qoldiqlar" %}</a>
       {% if can_create %}<a class="nzp-btn nzp-btn-primary" href="{% url 'admin:stores_stockcount_new' %}"><i class="fas fa-plus" aria-hidden="true"></i> {% translate "New count" %}</a>{% endif %}
     </div>

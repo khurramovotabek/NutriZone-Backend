@@ -912,7 +912,19 @@ class ReturnLineItemInline(admin.TabularInline):
 
 
 @admin.register(orm.OrderReturnModel)
-class OrderReturnAdmin(_WorkflowAdmin):
+class OrderReturnAdmin(ExcelExportMixin, _WorkflowAdmin):
+    excel_title = "Buyurtma qaytarishlar"
+    excel_columns = [
+        Col("Qaytarish", "return_number", 16), Col("Buyurtma", lambda r: r.x_order, 18), Col("Holat", "status", 12), Col("Sabab", "reason", 18),
+        Col("So'ralgan", "requested_at", 17), Col("Tasdiqlangan", "approved_at", 17), Col("Qabul qilingan", "received_at", 17), Col("Pul qaytarilgan", "refunded_at", 17),
+        Col("Qaytarilgan summa", "refund_amount", 15, money=True), Col("Izoh", "note", 28), Col("Rad etish sababi", "rejection_reason", 24),
+    ]
+
+    def excel_prepare(self, objs):
+        numbers = dict(orm.OrderModel.objects.filter(id__in=[r.order_id for r in objs]).values_list("id", "order_number"))
+        for r in objs:
+            r.x_order = numbers.get(r.order_id, "")
+
     kind = "return"
     list_display = ("return_number", "order_id", "status_badge", "reason", "refund_amount")
     search_fields = ("return_number",)
@@ -1021,7 +1033,19 @@ class CancellationLineItemInline(admin.TabularInline):
 
 
 @admin.register(orm.OrderCancellationModel)
-class OrderCancellationAdmin(_WorkflowAdmin):
+class OrderCancellationAdmin(ExcelExportMixin, _WorkflowAdmin):
+    excel_title = "Buyurtmalarni bekor qilishlar"
+    excel_columns = [
+        Col("Buyurtma", lambda r: r.x_order, 18), Col("Holat", "status", 12), Col("Sabab", "reason", 18), Col("So'ralgan", "requested_at", 17),
+        Col("Tasdiqlangan", "approved_at", 17), Col("Yakunlangan", "completed_at", 17), Col("Qaytarilgan summa", "refund_amount", 15, money=True),
+        Col("Izoh", "note", 28), Col("Rad etish sababi", "rejection_reason", 24),
+    ]
+
+    def excel_prepare(self, objs):
+        numbers = dict(orm.OrderModel.objects.filter(id__in=[r.order_id for r in objs]).values_list("id", "order_number"))
+        for r in objs:
+            r.x_order = numbers.get(r.order_id, "")
+
     kind = "cancel"
     list_display = ("id", "order_id", "status_badge", "reason", "refund_amount")
     search_fields = ("order_id",)

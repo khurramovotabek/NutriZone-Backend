@@ -10,7 +10,7 @@
       <span class="nzp-hero-icon" style="--c:#f59e0b"><i class="fas fa-ticket" aria-hidden="true"></i></span>
       <div><h2>{% translate "Kuponlar" %}</h2><p>{% translate "Discount codes customers type at checkout -- with limits, minimum order and dates. Results come from the real orders that used each code." %}</p></div>
     </div>
-    <div class="nzp-hero-actions">
+    <div class="nzp-hero-actions">{% include "admin/includes/excel_button.html" with cls="nzp-btn nzp-btn-ghost" %}
       <a class="nzp-btn nzp-btn-ghost" href="{% url 'admin:nz_price_list' %}"><i class="fas fa-tags" aria-hidden="true"></i> {% translate "Narxlar ro'yxati" %}</a>
       {% if can_add %}<a class="nzp-btn nzp-btn-primary" href="{% url 'admin:pricing_couponmodel_add' %}"><i class="fas fa-plus" aria-hidden="true"></i> {% translate "New coupon" %}</a>{% endif %}
     </div>

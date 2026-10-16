@@ -9,7 +9,7 @@
         <p>{% if nz_kind == "return" %}{% translate "Goods coming back after delivery: approve, receive, refund." %}{% else %}{% translate "Orders (or items) cancelled before delivery: approve and complete." %}{% endif %}</p>
       </div>
     </div>
-    <div class="nzp-hero-actions">
+    <div class="nzp-hero-actions">{% include "admin/includes/excel_button.html" with cls="nzp-btn nzp-btn-ghost" %}
       {% if has_add_permission %}
       <a class="nzp-btn nzp-btn-primary" href="{% url opts|admin_urlname:'add' %}"><i class="fas fa-plus" aria-hidden="true"></i> {% if nz_kind == "return" %}{% translate "New return" %}{% else %}{% translate "New cancellation" %}{% endif %}</a>
       {% endif %}

@@ -22,8 +22,14 @@ from django.utils.translation import gettext_lazy as _
 from apps.geo.application.services._shared import GeoServiceContext
 from apps.geo.application.services.hierarchy import DeleteCity, DeleteCountry, DeleteRegion
 from apps.geo.infrastructure import models as orm
-from apps.geo.infrastructure.repositories import DjangoCityRepository, DjangoCountryRepository, DjangoRegionRepository
+from apps.geo.infrastructure.repositories import (
+    DjangoCityRepository,
+    DjangoCountryRepository,
+    DjangoRegionRepository,
+)
+from apps.platform.infrastructure import excel_export as xl
 from apps.platform.infrastructure import premium_admin as ui
+from apps.platform.infrastructure.excel_export import Col, ExcelExportMixin
 from apps.platform.infrastructure.premium_admin import PremiumFormMixin, PremiumListMixin, hero_stat
 from apps.products.infrastructure.catalog_form_ui import TranslationInlineMixin
 from core.outbox import stage_event
@@ -632,7 +638,15 @@ class SourceFilter(admin.SimpleListFilter):
 
 
 @admin.register(orm.Address)
-class AddressAdmin(GeoMapMedia, PremiumListMixin, PremiumFormMixin, admin.ModelAdmin):
+class AddressAdmin(ExcelExportMixin, GeoMapMedia, PremiumListMixin, PremiumFormMixin, admin.ModelAdmin):
+    excel_title = "Manzillar"
+    excel_select_related = ("region", "district", "city")
+    excel_columns = [
+        Col("Qabul qiluvchi", "recipient_name", 22), Col("Telefon", "recipient_phone", 15), Col("Viloyat", lambda a: str(a.region) if a.region else "", 16),
+        Col("Tuman", lambda a: str(a.district) if a.district else "", 16), Col("Manzil", "formatted_single_line", 44), Col("Kenglik", "coordinate_latitude", 11),
+        Col("Uzunlik", "coordinate_longitude", 11), Col("Asosiy", "is_default", 8), Col("Yaratilgan", "created_at", 17),
+    ]
+
     form = AddressAdminForm
     list_filter = (SourceFilter, ("address_type", _titled(admin.ChoicesFieldListFilter, "Turi")), ("region", _titled(admin.RelatedFieldListFilter, "Viloyat")),
                    ("is_default", _titled(admin.BooleanFieldListFilter, "Asosiy")))

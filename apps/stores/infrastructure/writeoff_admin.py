@@ -19,8 +19,17 @@ from django.urls import path, reverse
 from django.utils import timezone
 from django.utils.translation import gettext as _t
 
+from apps.platform.infrastructure import excel_export as xl
+from apps.platform.infrastructure.excel_export import Col, ExcelExportMixin
 from apps.stores.infrastructure import stock_service, transfer_service, writeoff_service
-from apps.stores.infrastructure.models import StoreKind, StoreProductStock, WriteOff, WriteOffItem, WriteOffReason, WriteOffStatus
+from apps.stores.infrastructure.models import (
+    StoreKind,
+    StoreProductStock,
+    WriteOff,
+    WriteOffItem,
+    WriteOffReason,
+    WriteOffStatus,
+)
 from apps.stores.infrastructure.warehouse_admin import _actor, _body, _error, _local, _location_payload, _som
 from common.exceptions import DomainException
 
@@ -39,7 +48,15 @@ def reasons_payload() -> list[dict]:
 
 
 @admin.register(WriteOff)
-class WriteOffAdmin(admin.ModelAdmin):
+class WriteOffAdmin(ExcelExportMixin, admin.ModelAdmin):
+    excel_title = "Hisobdan chiqarish"
+    excel_select_related = ("store",)
+    excel_columns = [
+        Col("Raqam", "number", 14), Col("Sana", "created_at", 17), Col("Joy", lambda w: w.store.name if w.store else "", 20), Col("Holat", "status", 12),
+        Col("Dona", "total_units", 9, number=True), Col("Summa (so'm)", "total_value", 15, money=True), Col("Kim yaratdi", "created_by", 18),
+        Col("Kim hal qildi", "decided_by", 18), Col("Qaror vaqti", "decided_at", 17), Col("Izoh", "note", 26), Col("Qaror izohi", "decision_note", 26),
+    ]
+
     list_display = ("number", "store", "status", "created_at")
     list_filter = ("status", "store")
     search_fields = ("number", "note", "created_by", "items__name", "items__sku", "items__barcode")

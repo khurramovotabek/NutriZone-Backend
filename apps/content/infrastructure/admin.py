@@ -16,7 +16,9 @@ from django.utils.html import format_html
 from django.utils.safestring import mark_safe
 
 from apps.content.infrastructure import models as orm
+from apps.platform.infrastructure import excel_export as xl
 from apps.platform.infrastructure import premium_admin as ui
+from apps.platform.infrastructure.excel_export import Col, ExcelExportMixin
 from apps.platform.infrastructure.premium_admin import PremiumFormMixin, PremiumListMixin, hero_stat
 from apps.products.infrastructure.catalog_form_ui import media_url, storefront_url
 
@@ -101,7 +103,12 @@ class BlogPostAdminForm(forms.ModelForm):
 
 
 @admin.register(orm.BlogPost)
-class BlogPostAdmin(PremiumListMixin, PremiumFormMixin, admin.ModelAdmin):
+class BlogPostAdmin(ExcelExportMixin, PremiumListMixin, PremiumFormMixin, admin.ModelAdmin):
+    excel_title = "Blog maqolalari"
+    excel_select_related = ("category",)
+    excel_columns = [Col("Sarlavha", "title", 40), Col("Kategoriya", lambda p: str(p.category) if p.category else "", 18), Col("Holat", "status", 12),
+                     Col("Chop etilgan", "published_at", 17), Col("Ko'rishlar", "view_count", 11, number=True), Col("Slug", "slug", 30)]
+
     form = BlogPostAdminForm
     list_display = ("title", "published_at", "view_count")
     list_filter = (("category", _titled(admin.RelatedFieldListFilter, "Bo'lim")), ("published_at", _titled(admin.DateFieldListFilter, "Chop etilgan sana")))

@@ -39,7 +39,9 @@ from apps.loyalty.infrastructure.models import (
     WalletTransaction,
     WalletTransactionKind,
 )
+from apps.platform.infrastructure import excel_export as xl
 from apps.platform.infrastructure import premium_admin as ui
+from apps.platform.infrastructure.excel_export import Col, ExcelExportMixin
 from apps.platform.infrastructure.premium_admin import PremiumFormMixin, PremiumListMixin, hero_stat
 
 CSS = ("admin/css/nutrizone-loyalty.css",)
@@ -271,11 +273,19 @@ class CoinsFilter(admin.SimpleListFilter):
 
 
 @admin.register(Wallet)
-class WalletAdmin(PremiumListMixin, PremiumFormMixin, admin.ModelAdmin):
+class WalletAdmin(ExcelExportMixin, PremiumListMixin, PremiumFormMixin, admin.ModelAdmin):
     """
     Mijozlar va coinlar: every customer with their tier and coin balance. Only a superadmin can change a tier or a
     balance -- always with a reason, always recorded (tier history + coin ledger with the staff member's name).
     """
+    excel_title = "Mijozlar va coinlar"
+    excel_select_related = ("user", "tier_override")
+    excel_columns = [
+        Col("Mijoz", lambda w: w.user.full_name if w.user else "", 24), Col("Telefon", lambda w: w.user.phone_number if w.user else "", 15),
+        Col("Balans (coin)", "balance", 13, number=True), Col("Jami olingan", "lifetime_earned", 13, number=True), Col("Jami sarflangan", "lifetime_spent", 14, number=True),
+        Col("Qo'lda daraja", lambda w: w.tier_override.name if w.tier_override else "", 16), Col("Yaratilgan", "created_at", 17),
+    ]
+
 
     form = WalletAdminForm
     list_display = ("user", "balance", "updated_at")
@@ -481,8 +491,17 @@ class OpenLotFilter(admin.SimpleListFilter):
 
 
 @admin.register(WalletTransaction)
-class WalletTransactionAdmin(PremiumListMixin, admin.ModelAdmin):
+class WalletTransactionAdmin(ExcelExportMixin, PremiumListMixin, admin.ModelAdmin):
     """Coin harakatlari: the append-only ledger (view-only) with an Excel export of exactly what is filtered."""
+    excel_title = "Coin harakatlari"
+    excel_select_related = ("wallet__user",)
+    excel_columns = [
+        Col("Vaqt", "created_at", 17), Col("Mijoz", lambda t: t.wallet.user.full_name if t.wallet and t.wallet.user else "", 24),
+        Col("Telefon", lambda t: t.wallet.user.phone_number if t.wallet and t.wallet.user else "", 15), Col("Turi", "kind", 16),
+        Col("Coin", "amount", 10, number=True), Col("Keyingi balans", "balance_after", 13), Col("Buyurtma", "order_number", 16),
+        Col("Buyurtma summasi", "order_amount", 15, money=True), Col("Daraja", "tier_name", 14), Col("Muddati", "expires_at", 17), Col("Izoh", "note", 28),
+    ]
+
 
     list_display = ("created_at", "amount")
     list_filter = (DirectionFilter, OpenLotFilter, ("created_at", _titled(admin.DateFieldListFilter, "Sana")))
@@ -768,8 +787,16 @@ class ChannelFilter(admin.SimpleListFilter):
 
 
 @admin.register(Referral)
-class ReferralAdmin(PremiumListMixin, PremiumFormMixin, admin.ModelAdmin):
+class ReferralAdmin(ExcelExportMixin, PremiumListMixin, PremiumFormMixin, admin.ModelAdmin):
     """Referallar: who invited whom, through which channel, and whether the friend's first delivered order paid both sides."""
+    excel_title = "Referallar"
+    excel_select_related = ("referrer", "referee")
+    excel_columns = [
+        Col("Sana", "created_at", 17), Col("Taklif qilgan", lambda r: r.referrer.full_name if r.referrer else "", 22), Col("Telefon", lambda r: r.referrer.phone_number if r.referrer else "", 15),
+        Col("Taklif qilingan", lambda r: r.referee.full_name if r.referee else "", 22), Col("Telefoni", lambda r: r.referee.phone_number if r.referee else "", 15),
+        Col("Kod", "code", 12), Col("Kanal", "channel", 10), Col("Holat", "status", 12), Col("Mukofotlangan", "rewarded_at", 17),
+    ]
+
 
     list_display = ("created_at", "rewarded_at")
     list_filter = (ChannelFilter, ("created_at", _titled(admin.DateFieldListFilter, "Sana")))
