@@ -5,7 +5,7 @@ and product package types -- each in uz / ru / en. Loaded (idempotently, by code
 """
 from __future__ import annotations
 
-# (ISO code, uz, ru, en, IANA timezone) -- the countries sports-nutrition brands actually manufacture in
+# (ISO code, uz, ru, en, IANA timezone) -- the countries sports-nutrition / vitamin brands manufacture in, plus Uzbekistan's neighbours
 COUNTRIES = [
     ("UZ", "O'zbekiston", "Узбекистан", "Uzbekistan", "Asia/Tashkent"),
     ("US", "AQSH", "США", "United States", "America/New_York"),
@@ -30,6 +30,26 @@ COUNTRIES = [
     ("IN", "Hindiston", "Индия", "India", "Asia/Kolkata"),
     ("TR", "Turkiya", "Турция", "Türkiye", "Europe/Istanbul"),
     ("RU", "Rossiya", "Россия", "Russia", "Europe/Moscow"),
+    # more sports-nutrition / vitamin makers (BioTechUSA & Scitec -- Hungary, Max Titanium -- Brazil, ...)
+    ("HU", "Vengriya", "Венгрия", "Hungary", "Europe/Budapest"),
+    ("LT", "Litva", "Литва", "Lithuania", "Europe/Vilnius"),
+    ("LV", "Latviya", "Латвия", "Latvia", "Europe/Riga"),
+    ("CZ", "Chexiya", "Чехия", "Czechia", "Europe/Prague"),
+    ("AT", "Avstriya", "Австрия", "Austria", "Europe/Vienna"),
+    ("PT", "Portugaliya", "Португалия", "Portugal", "Europe/Lisbon"),
+    ("GR", "Gretsiya", "Греция", "Greece", "Europe/Athens"),
+    ("FI", "Finlandiya", "Финляндия", "Finland", "Europe/Helsinki"),
+    ("NO", "Norvegiya", "Норвегия", "Norway", "Europe/Oslo"),
+    ("UA", "Ukraina", "Украина", "Ukraine", "Europe/Kyiv"),
+    ("BY", "Belarus", "Беларусь", "Belarus", "Europe/Minsk"),
+    ("BR", "Braziliya", "Бразилия", "Brazil", "America/Sao_Paulo"),
+    ("AE", "BAA", "ОАЭ", "United Arab Emirates", "Asia/Dubai"),
+    # Uzbekistan's neighbours
+    ("KZ", "Qozog'iston", "Казахстан", "Kazakhstan", "Asia/Almaty"),
+    ("KG", "Qirg'iziston", "Кыргызстан", "Kyrgyzstan", "Asia/Bishkek"),
+    ("TJ", "Tojikiston", "Таджикистан", "Tajikistan", "Asia/Dushanbe"),
+    ("TM", "Turkmaniston", "Туркменистан", "Turkmenistan", "Asia/Ashgabat"),
+    ("AF", "Afg'oniston", "Афганистан", "Afghanistan", "Asia/Kabul"),
 ]
 
 # Region code (ISO 3166-2 where possible) -> (uz, ru, en, [(city code, uz, ru, en, lat, lon), ...]).
