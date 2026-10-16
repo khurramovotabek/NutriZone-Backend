@@ -164,3 +164,52 @@ class TelegramStorePost(models.Model):
     class Meta:
         db_table = "telegram_bot_store_posts"
         constraints = [models.UniqueConstraint(fields=["bot", "key", "chat_id"], name="uniq_store_post")]
+
+
+class TelegramPostStatus(models.TextChoices):
+    DRAFT = "draft", "Qoralama"
+    QUEUED = "queued", "Navbatda"
+    SENDING = "sending", "Yuborilmoqda"
+    SENT = "sent", "Yuborildi"
+    FAILED = "failed", "Xato"
+
+
+class TelegramPost(models.Model):
+    """
+    A rich post composed in Dashboard → Telegram → Postlar and sent by @<customer bot> to the shop's channel,
+    news subscribers and/or every Telegram-linked customer: formatted text (RichText editor), a photo (uploaded
+    or the attached product's), URL buttons. Sending runs on Celery (posts.send) and is recorded here.
+    """
+
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    title = models.CharField("Ichki nom", max_length=120, help_text="Faqat dashboardda ko'rinadi (mijozga yuborilmaydi).")
+    body = models.TextField("Post matni", blank=True, default="")
+    image = models.ImageField("Rasm", upload_to="telegram/posts/%Y/%m/", blank=True, null=True)
+    product = models.ForeignKey("products.Product", on_delete=models.SET_NULL, null=True, blank=True, related_name="+", verbose_name="Mahsulot",
+                                help_text="Tanlansa: rasm bo'lmasa mahsulot rasmi qo'yiladi va «Sotib olish» tugmasi qo'shiladi.")
+    buttons = models.JSONField("Tugmalar", default=list, blank=True)  # [{"text": ..., "url": ...}]
+    to_channel = models.BooleanField("Kanalga", default=False)
+    channel = models.CharField("Kanal", max_length=100, blank=True, default="", help_text="@username yoki -100… ID. Bot kanalda admin bo'lishi kerak.")
+    to_subscribers = models.BooleanField("Yangilik obunachilariga", default=False)
+    to_customers = models.BooleanField("Barcha Telegram mijozlarga", default=False)
+    silent = models.BooleanField("Ovozsiz yuborish", default=False)
+    pin = models.BooleanField("Kanalda qadab qo'yish", default=False)
+    status = models.CharField("Holat", max_length=12, choices=TelegramPostStatus.choices, default=TelegramPostStatus.DRAFT, db_index=True)
+    recipients = models.PositiveIntegerField("Qabul qiluvchilar", default=0)
+    sent_count = models.PositiveIntegerField("Yetkazildi", default=0)
+    failed_count = models.PositiveIntegerField("Xato", default=0)
+    channel_message_id = models.BigIntegerField(null=True, blank=True)
+    last_error = models.TextField(blank=True, default="")
+    sent_at = models.DateTimeField("Yuborilgan vaqt", null=True, blank=True)
+    created_by = models.CharField(max_length=150, blank=True, default="")
+    created_at = models.DateTimeField(auto_now_add=True, db_index=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        db_table = "telegram_posts"
+        ordering = ("-created_at",)
+        verbose_name = "Telegram post"
+        verbose_name_plural = "Telegram postlar"
+
+    def __str__(self) -> str:
+        return self.title

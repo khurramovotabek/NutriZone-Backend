@@ -152,7 +152,7 @@ JAZZMIN_SETTINGS = {
     # The WMS models live in the stores app but are reached from the Ombor group (custom_links["inventory"]).
     "hide_models": ["chat.chatsettings", "stores.stocktransfer", "stores.stockreceipt", "stores.stockmovement", "stores.stockcount",
                     "stores.writeoff", "stores.supplier", "stores.supplierpayment", "stores.reorderrule", "stores.storecashier",
-                    "search.searchterm"],  # reached from the Catalog group (custom_links["products"])
+                    "search.searchterm", "telegram_bot.telegrampost"],  # reached from the Catalog group (custom_links["products"])
     "usermenu_links": [{"name": _("Mening profilim"), "url": "admin:nz_profile", "icon": "fas fa-user-circle"}],
     "custom_links": {
         # Biznes analitikasi (apps/platform/infrastructure/analytics_view.py) -- the same numbers NutriZoneAnalyticsBot sends.
@@ -173,7 +173,8 @@ JAZZMIN_SETTINGS = {
         # Telegram -- bots, channel posts and broadcasts (same mechanism).
         "Telegram": [
             {"name": _("Botlar markazi"), "url": "admin:nz_telegram_status", "icon": "fas fa-robot"},
-            {"name": _("Xabar yuborish"), "url": "admin:nz_notify_send", "icon": "fas fa-paper-plane", "permissions": ["notifications.add_notificationbroadcast"]},
+            {"name": _("Postlar"), "url": "admin:telegram_bot_telegrampost_changelist", "icon": "fas fa-paper-plane", "permissions": ["telegram_bot.view_telegrampost"]},
+            {"name": _("Mijozlarga xabar"), "url": "admin:nz_notify_send", "icon": "fas fa-bullhorn", "permissions": ["notifications.add_notificationbroadcast"]},
         ],
         # Dispatcher board (apps/ordering/infrastructure/admin_board.py): live Kanban of online orders.
         "ordering": [

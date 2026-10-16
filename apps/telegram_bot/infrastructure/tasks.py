@@ -18,3 +18,11 @@ def store_posts() -> dict:
     from apps.telegram_bot.infrastructure.store_posts import run
 
     return run()
+
+
+@shared_task(queue="default", name="telegram_bot.send_post")
+def send_post(post_id: str) -> dict:
+    """Dashboard → Telegram → Postlar: one rich post to the channel / subscribers / customers."""
+    from apps.telegram_bot.infrastructure.posts import send
+
+    return send(post_id)

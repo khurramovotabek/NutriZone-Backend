@@ -14,7 +14,7 @@ class TelegramBotConfig(AppConfig):
         from apps.telegram_bot import (
             checks,  # noqa: F401 -- registers the Django System Check Framework hooks below
         )
-        from apps.telegram_bot.infrastructure import models  # noqa: F401
+        from apps.telegram_bot.infrastructure import admin, models  # noqa: F401 -- admin.py registers Telegram postlar
 
         self._maybe_auto_register_webhook()
 

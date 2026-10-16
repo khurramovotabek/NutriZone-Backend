@@ -1,6 +1,6 @@
 {% extends "admin/base_site.html" %}
 {% load i18n static %}
-{% block extrastyle %}{{ block.super }}<link rel="stylesheet" href="{% static 'admin/css/nutrizone-notify.css' %}?v=1">{% endblock %}
+{% block extrastyle %}{{ block.super }}<link rel="stylesheet" href="{% static 'admin/css/nutrizone-notify.css' %}?v=1"><link rel="stylesheet" href="{% static 'admin/css/nutrizone-tg-editor.css' %}?v=1">{% endblock %}
 {% block breadcrumbs %}<div class="breadcrumbs"><a href="{% url 'admin:index' %}">{% translate "Home" %}</a> &rsaquo; <a href="{% url 'admin:notifications_notificationmodel_changelist' %}">{% translate "Bildirishnomalar" %}</a> &rsaquo; {% translate "Xabar yuborish" %}</div>{% endblock %}
 {% block content_title %}{% translate "Xabar yuborish" %}{% endblock %}
 {% block content %}
@@ -51,20 +51,20 @@
         <input type="text" name="title_uz" id="id_title_uz" maxlength="150" value="{{ form.title_uz.value|default:'' }}" class="ntf-input" placeholder="Masalan: Yangi filial ochildi! 🎉" data-count="150">
         {% if form.title_uz.errors %}<small class="ntf-err">{{ form.title_uz.errors|join:" " }}</small>{% endif %}
         <label for="id_body_uz">{% translate "Matn" %} <em>*</em></label>
-        <textarea name="body_uz" id="id_body_uz" rows="4" maxlength="1000" class="ntf-input" placeholder="Chilonzordagi yangi do'konimizda birinchi hafta barcha mahsulotlarga 10% chegirma." data-count="1000">{{ form.body_uz.value|default:'' }}</textarea>
+        <textarea name="body_uz" id="id_body_uz" rows="4" class="ntf-input" placeholder="Chilonzordagi yangi do'konimizda birinchi hafta barcha mahsulotlarga 10% chegirma." data-nztg="1" data-limit="4096" data-no-preview="1">{{ form.body_uz.value|default:'' }}</textarea>
         {% if form.body_uz.errors %}<small class="ntf-err">{{ form.body_uz.errors|join:" " }}</small>{% endif %}
       </div>
       <div class="ntf-lang" data-lang="ru" hidden>
         <label for="id_title_ru">Заголовок</label>
         <input type="text" name="title_ru" id="id_title_ru" maxlength="150" value="{{ form.title_ru.value|default:'' }}" class="ntf-input" placeholder="Необязательно">
         <label for="id_body_ru">Текст</label>
-        <textarea name="body_ru" id="id_body_ru" rows="4" maxlength="1000" class="ntf-input" placeholder="Необязательно">{{ form.body_ru.value|default:'' }}</textarea>
+        <textarea name="body_ru" id="id_body_ru" rows="4" class="ntf-input" placeholder="Необязательно" data-nztg="1" data-limit="4096" data-no-preview="1">{{ form.body_ru.value|default:'' }}</textarea>
       </div>
       <div class="ntf-lang" data-lang="en" hidden>
         <label for="id_title_en">Title</label>
         <input type="text" name="title_en" id="id_title_en" maxlength="150" value="{{ form.title_en.value|default:'' }}" class="ntf-input" placeholder="Optional">
         <label for="id_body_en">Message</label>
-        <textarea name="body_en" id="id_body_en" rows="4" maxlength="1000" class="ntf-input" placeholder="Optional">{{ form.body_en.value|default:'' }}</textarea>
+        <textarea name="body_en" id="id_body_en" rows="4" class="ntf-input" placeholder="Optional" data-nztg="1" data-limit="4096" data-no-preview="1">{{ form.body_en.value|default:'' }}</textarea>
       </div>
       <label for="ntf-link-select">{% translate "Bosilganda ochiladigan sahifa" %}</label>
       <div class="ntf-link">
@@ -111,6 +111,7 @@
     </div>
   </aside>
 </form>
+<script src="{% static 'admin/js/nutrizone-tg-editor.js' %}?v=1"></script>
 <script>
 (function () {
   "use strict";
@@ -161,9 +162,12 @@
     $(".ntf-preview").style.display = inApp || !tg ? "" : "none";
   }
   function preview() {
-    var t = $("#id_title_uz").value.trim() || "Sarlavha shu yerda", b = $("#id_body_uz").value.trim() || "Xabar matni shu yerda ko'rinadi.";
+    var t = $("#id_title_uz").value.trim() || "Sarlavha shu yerda", raw = $("#id_body_uz").value.trim();
+    var tmp = document.createElement("div"); tmp.innerHTML = raw.replace(/<br\s*\/?>/gi, "\n").replace(/<\/(div|p|li)>/gi, "\n");
+    var plain = (tmp.textContent || "").trim() || "Xabar matni shu yerda ko'rinadi.";
     $$("[data-pv-title]").forEach(function (el) { el.textContent = t; });
-    $$("[data-pv-body]").forEach(function (el) { el.textContent = b; });
+    $$(".ntf-preview [data-pv-body]").forEach(function (el) { el.textContent = plain; });  // inbox: plain text
+    $$(".ntf-tg [data-pv-body]").forEach(function (el) { el.innerHTML = raw || plain; el.style.whiteSpace = "pre-wrap"; });  // Telegram: formatted
     var link = $("#id_link").value, pl = $("[data-pv-link]");
     pl.hidden = !link; pl.querySelector("span").textContent = link;
     $(".ntf-preview").classList.toggle("is-high", ($('input[name="priority"]:checked') || {}).value === "high");

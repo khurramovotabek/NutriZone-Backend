@@ -321,7 +321,8 @@ def telegram_text(row, lang: str) -> str:
     from django.utils.html import escape
 
     t = (row.i18n or {}).get(lang) or {"title": row.title, "body": row.body}
-    return f"<b>{escape(t['title'])}</b>\n\n{escape(t['body'])}".strip()
+    body = t.get("html") or escape(t["body"])  # `html` is already Telegram-sanitized (dashboard RichText editor)
+    return f"<b>{escape(t['title'])}</b>\n\n{body}".strip()
 
 
 def telegram_keyboard(row, lang: str) -> list:

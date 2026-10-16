@@ -1,0 +1,48 @@
+/* Telegram RichText editor -- admin/js/nutrizone-tg-editor.js */
+.nztg-wrap { display: grid; grid-template-columns: minmax(0, 1fr) minmax(260px, 340px); gap: 16px; align-items: start; width: 100%; }
+.nztg-main { border: 1px solid rgb(44, 53, 64); border-radius: 14px; background: rgba(32, 39, 47, .55); overflow: hidden; min-width: 0; }
+html[data-bs-theme="light"] .nztg-main { background: #fff; border-color: #d0d7de; }
+.nztg-bar { display: flex; flex-wrap: wrap; align-items: center; gap: 2px; padding: 6px 8px; border-bottom: 1px solid rgba(148, 163, 184, .18); background: rgba(148, 163, 184, .06); }
+.nztg-btn { width: 32px; height: 32px; border: 0; border-radius: 8px; background: transparent; color: inherit; opacity: .8; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; }
+.nztg-btn:hover { background: rgba(148, 163, 184, .16); opacity: 1; }
+.nztg-sep { width: 1px; height: 20px; background: rgba(148, 163, 184, .25); margin: 0 4px; }
+.nztg-editor { min-height: 180px; max-height: 460px; overflow-y: auto; padding: 14px 16px; outline: none; line-height: 1.55; font-size: .95rem; white-space: pre-wrap; word-break: break-word; }
+.nztg-editor:empty::before { content: attr(data-placeholder); color: rgba(148, 163, 184, .75); }
+.nztg-editor blockquote, .nztg-bubble blockquote { margin: 6px 0; padding: 4px 10px; border-left: 3px solid #3b82f6; background: rgba(59, 130, 246, .1); border-radius: 4px; }
+.nztg-editor code, .nztg-bubble code { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: .88em; padding: 1px 5px; border-radius: 5px; background: rgba(148, 163, 184, .18); }
+.nztg-editor .tg-spoiler, .nztg-editor tg-spoiler { background: rgba(148, 163, 184, .35); border-radius: 4px; padding: 0 2px; }
+.nztg-editor a, .nztg-bubble a { color: #60a5fa; text-decoration: underline; }
+.nztg-editor ul, .nztg-editor ol { margin: 4px 0; padding-left: 22px; }
+.nztg-foot { display: flex; justify-content: space-between; gap: 10px; padding: 6px 12px; font-size: .74rem; color: rgba(148, 163, 184, .9); border-top: 1px solid rgba(148, 163, 184, .14); }
+.nztg-count { font-variant-numeric: tabular-nums; font-weight: 600; }
+.nztg-count.is-near { color: #f59e0b; }
+.nztg-count.is-over { color: #ef4444; }
+.nztg-emoji { display: grid; grid-template-columns: repeat(auto-fill, minmax(34px, 1fr)); gap: 2px; padding: 8px; border-bottom: 1px solid rgba(148, 163, 184, .14); }
+.nztg-emoji button { border: 0; background: transparent; font-size: 1.2rem; border-radius: 8px; height: 34px; cursor: pointer; }
+.nztg-emoji button:hover { background: rgba(148, 163, 184, .16); }
+.nztg-linkbox { display: flex; gap: 6px; padding: 8px; border-bottom: 1px solid rgba(148, 163, 184, .14); }
+.nztg-linkbox input { flex: 1; min-width: 0; height: 34px; border-radius: 8px; border: 1px solid rgba(148, 163, 184, .3); background: transparent; color: inherit; padding: 0 10px; }
+.nztg-linkbox button { height: 34px; border-radius: 8px; border: 0; padding: 0 12px; cursor: pointer; }
+.nztg-linkbox .nztg-ok { background: #10b981; color: #fff; }
+.nztg-linkbox .nztg-cancel { background: rgba(148, 163, 184, .18); color: inherit; }
+
+/* Telegram-like preview */
+.nztg-preview { position: sticky; top: 90px; border-radius: 14px; overflow: hidden; border: 1px solid rgba(148, 163, 184, .2); }
+.nztg-preview-head { padding: 8px 12px; font-size: .75rem; font-weight: 600; color: rgba(148, 163, 184, .95); background: rgba(148, 163, 184, .08); }
+.nztg-chat { padding: 16px 12px; min-height: 160px; background: #0e1621 linear-gradient(135deg, rgba(46, 166, 255, .06), rgba(16, 185, 129, .05)); }
+html[data-bs-theme="light"] .nztg-chat { background: #d6e5c7; }
+.nztg-bubble { position: relative; max-width: 100%; padding: 8px 12px 18px; border-radius: 14px 14px 14px 4px; background: #182533; color: #e9eef3; font-size: .88rem; line-height: 1.45; white-space: pre-wrap; word-break: break-word; box-shadow: 0 1px 2px rgba(0, 0, 0, .25); }
+html[data-bs-theme="light"] .nztg-bubble { background: #fff; color: #111; }
+.nztg-bubble .tg-spoiler, .nztg-bubble tg-spoiler { background: repeating-linear-gradient(45deg, rgba(148, 163, 184, .55) 0 2px, rgba(148, 163, 184, .35) 2px 4px); color: transparent; border-radius: 3px; }
+.nztg-bubble ul, .nztg-bubble ol { margin: 2px 0; padding-left: 18px; }
+.nztg-time { position: absolute; right: 10px; bottom: 4px; font-size: .68rem; opacity: .6; }
+.nztg-empty { opacity: .5; font-style: italic; }
+
+@media (max-width: 1100px) { .nztg-wrap { grid-template-columns: 1fr; } .nztg-preview { position: static; } }
+
+/* post composer buttons (templates/admin/telegram_bot/telegrampost/change_form.html) */
+.nztg-actions { display: flex; flex-direction: column; gap: 8px; margin-bottom: 10px; }
+.nztg-actions .btn { display: flex; align-items: center; justify-content: center; gap: 8px; height: 42px; border-radius: 12px; font-weight: 600; border: 0; }
+.nztg-send { background: linear-gradient(135deg, #229ed9, #0ea5e9); color: #fff; box-shadow: 0 6px 18px rgba(14, 165, 233, .25); }
+.nztg-send:hover { filter: brightness(1.08); color: #fff; }
+.nztg-test { background: rgba(14, 165, 233, .12); color: #38bdf8; border: 1px solid rgba(14, 165, 233, .35) !important; }

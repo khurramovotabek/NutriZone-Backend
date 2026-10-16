@@ -15,6 +15,8 @@ from django.urls import reverse
 
 from apps.notifications.infrastructure import notify
 from apps.notifications.infrastructure.models import BroadcastAudience, NotificationBroadcast
+from apps.telegram_bot.infrastructure.rich_text_field import TelegramRichTextField
+from apps.telegram_bot.infrastructure.telegram_html import to_plain
 
 AUDIENCES = [
     ("all", "Barcha mijozlar", "fa-users", "#2563eb", "Bloklanmagan barcha mijozlar"),
@@ -45,11 +47,12 @@ class BroadcastForm(forms.Form):
     target_segment = forms.CharField(required=False)
     target_phone = forms.CharField(required=False, max_length=20)
     title_uz = forms.CharField(max_length=150, label="Sarlavha")
-    body_uz = forms.CharField(widget=forms.Textarea, max_length=1000, label="Matn")
+    # Rich text (bold, links, spoilers...) -- Telegram gets the formatting, the in-app inbox the plain text.
+    body_uz = TelegramRichTextField(label="Matn", placeholder="Masalan: 🔥 Bugun barcha proteinlarga -15% chegirma!")
     title_ru = forms.CharField(max_length=150, required=False)
-    body_ru = forms.CharField(widget=forms.Textarea, max_length=1000, required=False)
+    body_ru = TelegramRichTextField(required=False, placeholder="Текст на русском (необязательно)")
     title_en = forms.CharField(max_length=150, required=False)
-    body_en = forms.CharField(widget=forms.Textarea, max_length=1000, required=False)
+    body_en = TelegramRichTextField(required=False, placeholder="English text (optional)")
     link = forms.CharField(max_length=255, required=False)
     priority = forms.ChoiceField(choices=[("normal", "Oddiy"), ("high", "Muhim")], initial="normal")
     send_in_app = forms.BooleanField(required=False, initial=True)
@@ -81,13 +84,18 @@ class BroadcastForm(forms.Form):
         return d.get("target_tier", "") if d["audience"] == "tier" else d.get("target_phone", "") if d["audience"] == "phone" else ""
 
     def texts(self) -> dict:
+        """Per language: `body` plain text (inbox), `html` the Telegram-formatted version. Empty ru/en fall back to Uzbek."""
         d = self.cleaned_data
-        uz = {"title": d["title_uz"].strip(), "body": d["body_uz"].strip()}
-        return {
-            "uz": uz,
-            "ru": {"title": d.get("title_ru", "").strip() or uz["title"], "body": d.get("body_ru", "").strip() or uz["body"]},
-            "en": {"title": d.get("title_en", "").strip() or uz["title"], "body": d.get("body_en", "").strip() or uz["body"]},
-        }
+
+        def lang(code: str, fallback: dict | None = None) -> dict:
+            html = (d.get(f"body_{code}") or "").strip()
+            title = (d.get(f"title_{code}") or "").strip()
+            if fallback and not html:
+                return {"title": title or fallback["title"], "body": fallback["body"], "html": fallback["html"]}
+            return {"title": title or (fallback or {}).get("title", ""), "body": to_plain(html), "html": html}
+
+        uz = lang("uz")
+        return {"uz": uz, "ru": lang("ru", uz), "en": lang("en", uz)}
 
 
 def _segments():
@@ -111,7 +119,7 @@ def _initial(request) -> dict:
         texts = source.i18n or {"uz": {"title": source.title, "body": source.body}}
         for code in ("uz", "ru", "en"):
             initial[f"title_{code}"] = (texts.get(code) or {}).get("title", "")
-            initial[f"body_{code}"] = (texts.get(code) or {}).get("body", "")
+            initial[f"body_{code}"] = (texts.get(code) or {}).get("html") or (texts.get(code) or {}).get("body", "")
         initial.update({"link": source.link, "audience": source.audience, "priority": source.priority if source.priority in ("normal", "high") else "normal",
                         "send_in_app": source.send_in_app, "send_telegram": source.send_telegram,
                         "target_tier": source.target if source.audience == "tier" else "", "target_segment": source.target if source.audience == "segment" else "", "target_phone": source.target if source.audience == "phone" else ""})
