@@ -194,6 +194,8 @@ class TelegramPost(models.Model):
     to_customers = models.BooleanField("Barcha Telegram mijozlarga", default=False)
     silent = models.BooleanField("Ovozsiz yuborish", default=False)
     pin = models.BooleanField("Kanalda qadab qo'yish", default=False)
+    source = models.CharField("Manba", max_length=16, default="manual", db_index=True)  # manual / new / sale / restock
+    dedupe_key = models.CharField(max_length=120, null=True, blank=True, unique=True)  # auto posts: one per product event
     status = models.CharField("Holat", max_length=12, choices=TelegramPostStatus.choices, default=TelegramPostStatus.DRAFT, db_index=True)
     recipients = models.PositiveIntegerField("Qabul qiluvchilar", default=0)
     sent_count = models.PositiveIntegerField("Yetkazildi", default=0)
@@ -213,3 +215,43 @@ class TelegramPost(models.Model):
 
     def __str__(self) -> str:
         return self.title
+
+
+class ChannelAutoPostSettings(models.Model):
+    """Dashboard → Telegram → Kanal avtopostlari (singleton, pk=1): which catalog events the bot posts to the shop channel."""
+
+    enabled = models.BooleanField("Avtopostlar yoqilgan", default=False)
+    channel = models.CharField("Kanal", max_length=100, blank=True, default="", help_text="Bo'sh bo'lsa — Sayt sozlamalaridagi Telegram kanal.")
+    new_products = models.BooleanField("Yangi mahsulotlar", default=True)
+    discounts = models.BooleanField("Chegirmalar", default=True)
+    min_discount = models.PositiveSmallIntegerField("Minimal chegirma (%)", default=10)
+    restock = models.BooleanField("Yana sotuvda (omborga qaytgan)", default=True)
+    quiet_from = models.PositiveSmallIntegerField("Jim rejim boshlanishi (soat)", default=22)
+    quiet_to = models.PositiveSmallIntegerField("Jim rejim tugashi (soat)", default=9)
+    max_per_run = models.PositiveSmallIntegerField("Bir martada ko'pi bilan", default=2, help_text="Har 15 daqiqada shuncha postdan oshmaydi — kanal spam bo'lmasin.")
+    enabled_at = models.DateTimeField(null=True, blank=True)  # backlog guard: only products published after this are "new"
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        db_table = "telegram_channel_autopost_settings"
+        verbose_name = "Kanal avtopostlari"
+        verbose_name_plural = "Kanal avtopostlari"
+
+    def __str__(self) -> str:
+        return "Kanal avtopostlari"
+
+    @classmethod
+    def get(cls) -> "ChannelAutoPostSettings":
+        obj, _ = cls.objects.get_or_create(pk=1)
+        return obj
+
+
+class ProductStockFlag(models.Model):
+    """Last seen availability per product -- lets the auto poster notice "sold out → back in stock"."""
+
+    product_id = models.UUIDField(primary_key=True)
+    in_stock = models.BooleanField(default=False)
+    changed_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        db_table = "telegram_product_stock_flags"

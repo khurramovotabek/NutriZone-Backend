@@ -428,6 +428,7 @@ TELEGRAM_ANALYTICS_BOT_TOKEN = os.environ.get("TELEGRAM_ANALYTICS_BOT_TOKEN")
 # The Anthropic SDK reads ANTHROPIC_API_KEY itself; without it the assistant is off (the storefront hides it).
 ANTHROPIC_API_KEY = os.environ.get("ANTHROPIC_API_KEY", "")
 ASSISTANT_ENABLED = os.environ.get("ASSISTANT_ENABLED", "true").lower() in ("1", "true", "yes")
+ASSISTANT_PROVIDER = os.environ.get("ASSISTANT_PROVIDER", "auto")  # auto: Claude when ANTHROPIC_API_KEY is set, else the free local advisor; "local" forces the advisor
 ASSISTANT_MODEL = os.environ.get("ASSISTANT_MODEL", "claude-opus-5-5")
 ASSISTANT_EFFORT = os.environ.get("ASSISTANT_EFFORT", "low")  # chat: low; raise to medium if answers need more care
 ASSISTANT_MAX_TURNS = int(os.environ.get("ASSISTANT_MAX_TURNS", "30"))  # customer questions per conversation

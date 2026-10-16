@@ -32,6 +32,8 @@ class AssistantConversation(models.Model):
     feedback_down = models.PositiveSmallIntegerField(default=0)
     last_message = models.CharField(_("Oxirgi savol"), max_length=300, blank=True, default="")
     errors = models.PositiveSmallIntegerField(default=0)
+    engine = models.CharField(_("Dvigatel"), max_length=12, default="claude")  # claude / local (free NutriZone advisor)
+    meta = models.JSONField(default=dict, blank=True)  # local advisor: the shopper's profile (height, weight, goal...) and last intent
     created_at = models.DateTimeField(_("Boshlangan"), auto_now_add=True, db_index=True)
     updated_at = models.DateTimeField(_("Oxirgi faollik"), auto_now=True, db_index=True)
 
@@ -43,3 +45,20 @@ class AssistantConversation(models.Model):
 
     def __str__(self) -> str:  # pragma: no cover
         return self.last_message or str(self.id)
+
+
+class AdvisorSignal(models.Model):
+    """What the free advisor learned about one product: shown in answers, 👍 / 👎, added to cart, bought afterwards."""
+
+    product_id = models.UUIDField(primary_key=True)
+    shown = models.PositiveIntegerField(default=0)
+    liked = models.PositiveIntegerField(default=0)
+    disliked = models.PositiveIntegerField(default=0)
+    carted = models.PositiveIntegerField(default=0)
+    purchased = models.PositiveIntegerField(default=0)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        db_table = "assistant_advisor_signals"
+        verbose_name = _("Maslahatchi signali")
+        verbose_name_plural = _("Maslahatchi signallari")

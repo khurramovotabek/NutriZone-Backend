@@ -47,7 +47,12 @@ REFUSAL_TEXT = {
 
 
 def is_configured() -> bool:
-    return bool(settings.ASSISTANT_ENABLED and settings.ANTHROPIC_API_KEY)
+    """The widget is on whenever the assistant is enabled: without an Anthropic key the free local advisor answers."""
+    return bool(settings.ASSISTANT_ENABLED)
+
+
+def uses_claude() -> bool:
+    return bool(settings.ANTHROPIC_API_KEY) and getattr(settings, "ASSISTANT_PROVIDER", "auto") != "local"
 
 
 def make_client():
@@ -128,7 +133,19 @@ def _block_dicts(message) -> list[dict]:
 
 
 async def run_turn(conversation_id, user_text: str, client=None) -> AsyncIterator[dict]:
-    """Streams one answer. `client` is injectable (tests); defaults to the configured AsyncAnthropic."""
+    """Streams one answer: Claude when a key is configured (or a test client is injected), else the free local advisor."""
+    if client is None and not uses_claude():
+        from apps.assistant.infrastructure.advisor import engine as local
+
+        async for event in local.run_turn(conversation_id, user_text):
+            yield event
+        return
+    async for event in _claude_turn(conversation_id, user_text, client):
+        yield event
+
+
+async def _claude_turn(conversation_id, user_text: str, client=None) -> AsyncIterator[dict]:
+    """Streams one Claude answer. `client` is injectable (tests); defaults to the configured AsyncAnthropic."""
     import anthropic
 
     conv = await sync_to_async(_load)(conversation_id)

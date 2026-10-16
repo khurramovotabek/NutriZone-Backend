@@ -26,3 +26,11 @@ def send_post(post_id: str) -> dict:
     from apps.telegram_bot.infrastructure.posts import send
 
     return send(post_id)
+
+
+@shared_task(queue="default", name="telegram_bot.channel_autopost")
+def channel_autopost() -> dict:
+    """Every 15 min: new products / discounts / back-in-stock posts to the shop channel (when enabled)."""
+    from apps.telegram_bot.infrastructure.channel_autopost import run
+
+    return run()

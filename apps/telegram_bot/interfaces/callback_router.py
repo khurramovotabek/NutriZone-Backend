@@ -1378,6 +1378,47 @@ def show_product_link(user, chat_id: int, product_id: str) -> None:
     catalog_state.merge(chat_id, has_photo=bool(message_id))
 
 
+def _md_to_html(text: str) -> str:
+    """The advisor's light markdown (**bold**, _italic_, ~~struck~~) as Telegram HTML; everything else escaped."""
+    import re
+
+    out = html.escape(text, quote=False)
+    out = re.sub(r"\*\*(.+?)\*\*", r"<b>\1</b>", out)
+    out = re.sub(r"~~(.+?)~~", r"<s>\1</s>", out)
+    return re.sub(r"(?<![\w])_(.+?)_(?![\w])", r"<i>\1</i>", out, flags=re.S)
+
+
+def _advisor_reply(user, chat_id: int, telegram_user_id: int, text: str, lang: str) -> bool:
+    """Free text that is a question, a goal or profile facts goes to the local advisor (same brain as the website
+    widget, its memory kept per Telegram user for 24 h); plain product words stay a catalogue search."""
+    from datetime import timedelta
+
+    from django.utils import timezone
+
+    from apps.assistant.infrastructure.advisor import nlu
+    from apps.assistant.infrastructure.advisor.engine import _turn_sync
+    from apps.assistant.infrastructure.models import AssistantConversation
+
+    if nlu.parse(text).intent == "search":
+        return False
+    try:
+        key = f"tg:{telegram_user_id}"
+        conv = AssistantConversation.objects.filter(client_key=key, updated_at__gte=timezone.now() - timedelta(hours=24)).order_by("-updated_at").first()
+        if conv is None or conv.turns >= 30:
+            conv = AssistantConversation.objects.create(client_key=key, customer_id=user.id, channel="telegram", locale=lang if lang in ("uz", "ru", "en") else "uz", engine="local")
+        result = _turn_sync(conv.id, text[:800])
+    except Exception:  # noqa: BLE001 -- the bot falls back to the plain search
+        logger.exception("advisor reply failed")
+        return False
+    rows = []
+    for c in result["cards"][:4]:
+        price = f" — {int(float(c['price'])):,}".replace(",", " ") if c.get("price") else ""
+        rows.append([{"text": f"🛒 {c['name'][:34]}{price}", "callback_data": f"po:open:{c['id']}"}])
+    rows.append([{"text": t("home_button", lang), "callback_data": "menu:home"}])
+    _send(chat_id, _md_to_html(result["reply"])[:4000], rows)
+    return True
+
+
 def search_text(chat_id: int, telegram_user_id: int, text: str) -> None:
     """
     A plain text message to the bot is a product search -- the website's smart search (typos, Latin/Cyrillic,
@@ -1391,6 +1432,8 @@ def search_text(chat_id: int, telegram_user_id: int, text: str) -> None:
         _send(chat_id, t("please_register", "uz"))
         return
     lang = _lang(user)
+    if _advisor_reply(user, chat_id, telegram_user_id, text, lang):
+        return  # a question / profile / goal -- answered by the free NutriZone advisor
     query = " ".join(text.split())[:MAX_QUERY_LEN]
     catalog_state.set_browsing(chat_id, "search", page=1, back_to="menu:home", query=query)
     state = catalog_state.get_browsing(chat_id)

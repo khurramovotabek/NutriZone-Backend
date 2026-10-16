@@ -9,13 +9,14 @@ from django.contrib import admin, messages
 from django.db.models import Count, Q, Sum
 from django.http import HttpResponseRedirect
 from django.utils.html import format_html
+from django.utils.safestring import mark_safe
 
 from apps.platform.infrastructure import excel_export as xl
 from apps.platform.infrastructure import premium_admin as ui
 from apps.platform.infrastructure.excel_export import Col, ExcelExportMixin
 from apps.platform.infrastructure.premium_admin import PremiumFormMixin, PremiumListMixin, hero_stat
 from apps.telegram_bot.infrastructure import posts
-from apps.telegram_bot.infrastructure.models import TelegramPost, TelegramPostStatus
+from apps.telegram_bot.infrastructure.models import ChannelAutoPostSettings, TelegramPost, TelegramPostStatus
 from apps.telegram_bot.infrastructure.rich_text_field import TelegramRichTextField
 from apps.telegram_bot.infrastructure.telegram_html import CAPTION_LIMIT, to_plain, visible_length
 
@@ -220,3 +221,65 @@ class TelegramPostAdmin(ExcelExportMixin, PremiumListMixin, PremiumFormMixin, ad
             link = format_html(' · <a href="https://t.me/{}/{}" target="_blank" rel="noopener">Kanaldagi postni ochish ↗</a>', obj.channel.lstrip("@"), obj.channel_message_id)
         return format_html('<div class="nzi-panel-body"><p><b>{}</b> ta yetkazildi, <b>{}</b> ta xato{} {}</p>{}</div>',
                            obj.sent_count, obj.failed_count, f" · {ui.local(obj.sent_at)}" if obj.sent_at else "", link, err)
+
+
+@admin.register(ChannelAutoPostSettings)
+class ChannelAutoPostSettingsAdmin(PremiumFormMixin, admin.ModelAdmin):
+    """Singleton: the list opens the one settings row; a read-only panel shows what would be posted next."""
+
+    readonly_fields = ("queue_panel",)
+    fieldsets = (
+        ("Holat", {"fields": ("enabled", "channel")}),
+        ("Qaysi hodisalar post qilinadi", {"fields": ("new_products", "discounts", "min_discount", "restock")}),
+        ("Tartib", {"fields": ("max_per_run", "quiet_from", "quiet_to")}),
+        ("Navbatdagi postlar", {"classes": ("nzi-panel",), "fields": ("queue_panel",)}),
+    )
+    hero_icon, hero_tone, hero_noun = "fa-bullhorn", "#0ea5e9", "sozlama"
+
+    def has_add_permission(self, request) -> bool:
+        return False
+
+    def has_delete_permission(self, request, obj=None) -> bool:
+        return False
+
+    def changelist_view(self, request, extra_context=None):
+        from django.urls import reverse
+
+        ChannelAutoPostSettings.get()
+        return HttpResponseRedirect(reverse("admin:telegram_bot_channelautopostsettings_change", args=[1]))
+
+    def save_model(self, request, obj, form, change):
+        if obj.enabled and not obj.enabled_at:
+            from django.utils import timezone
+
+            obj.enabled_at = timezone.now()  # products published before today are not announced as "new"
+        super().save_model(request, obj, form, change)
+
+    def form_hero(self, request, obj):
+        from apps.telegram_bot.infrastructure.channel_autopost import _channel
+
+        auto = TelegramPost.objects.exclude(source="manual")
+        return {
+            "title": "Kanal avtopostlari", "subtitle": f"{_channel(obj) or 'Kanal tanlanmagan'} · har 15 daqiqada tekshiriladi",
+            "icon": "fa-bullhorn", "tone": "#16a34a" if obj.enabled else "#64748b",
+            "chips": [format_html('<span class="nzi-pill" style="--t:{}">{}</span>', "#16a34a" if obj.enabled else "#64748b", "Yoqilgan" if obj.enabled else "O'chirilgan")],
+            "stats": [hero_stat("Avtopostlar", auto.count(), "#0ea5e9", "jami", "fa-paper-plane"),
+                      hero_stat("Yetkazildi", auto.filter(status="sent").count(), "#16a34a", "kanalga", "fa-circle-check")],
+        }
+
+    @admin.display(description="")
+    def queue_panel(self, obj):
+        from django.utils.html import format_html_join
+
+        from apps.telegram_bot.infrastructure.channel_autopost import caption, candidates
+
+        try:
+            events = candidates(obj)[:5]
+        except Exception as exc:  # noqa: BLE001
+            return format_html('<p class="nzi-none">Hisoblab bo\'lmadi: {}</p>', exc)
+        if not events:
+            return format_html('<p class="nzi-none">{}</p>', "Hozircha post qilinadigan yangi hodisa yo'q.")
+        label = {"new": "🆕 Yangi", "sale": "🔥 Chegirma", "restock": "📦 Yana sotuvda"}
+        return format_html('<div class="nzi-panel-body"><ul class="nzi-items">{}</ul><p class="nzi-help">Namuna matn:</p><div class="nztg-bubble" style="max-width:420px">{}</div></div>',
+                           format_html_join("", "<li><span>{} — <b>{}</b></span></li>", ((label[k], c["name"]) for k, c, _d in events)),
+                           mark_safe(caption(events[0][0], events[0][1])))

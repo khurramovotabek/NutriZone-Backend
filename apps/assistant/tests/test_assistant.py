@@ -225,8 +225,17 @@ class TestHttp:
         codes = [self._post(c, {"message": "salom"}).status_code for _ in range(4)]
         assert codes == [200, 200, 200, 429]
 
-    def test_disabled_without_a_key(self, settings):
-        settings.ANTHROPIC_API_KEY = ""
+    def test_disabled_only_when_switched_off(self, settings):
+        settings.ASSISTANT_ENABLED = False
         c = Client()
         assert c.get("/api/v1/assistant/status").json()["data"]["enabled"] is False
         assert self._post(c, {"message": "salom"}).status_code == 503
+
+    def test_without_a_key_the_free_advisor_answers(self, settings):
+        settings.ANTHROPIC_API_KEY = ""
+        c = Client()
+        assert c.get("/api/v1/assistant/status").json()["data"]["enabled"] is True
+        events = self._stream(self._post(c, {"message": "salom"}))
+        types = [e["type"] for e in events]
+        assert types[0] == "start" and "chips" in types and types[-1] == "done"
+        assert "Assalomu" in "".join(e.get("delta", "") for e in events)

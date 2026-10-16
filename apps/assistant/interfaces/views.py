@@ -198,6 +198,9 @@ def _feedback(conv, index, value) -> bool:
         old = transcript[index].get("feedback")
         transcript[index] = {**transcript[index], "feedback": value}
         conv.transcript = transcript
+        from apps.assistant.infrastructure.advisor.reco import record_feedback
+
+        record_feedback([c.get("id") for c in transcript[index].get("products") or [] if c.get("id")], value, old)  # the advisor learns from votes
         conv.feedback_up = max(0, conv.feedback_up + (value == "up") - (old == "up"))
         conv.feedback_down = max(0, conv.feedback_down + (value == "down") - (old == "down"))
         conv.save(update_fields=["transcript", "feedback_up", "feedback_down"])

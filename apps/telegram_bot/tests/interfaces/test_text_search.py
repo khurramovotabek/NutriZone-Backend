@@ -108,3 +108,18 @@ def test_price_band_filter_is_stored_and_survives_a_brand_change():
         assert catalog_state.get_browsing(chat)["price_max"] == 500000
         _callback(client, chat, "flt:setprice:1000000-")
         assert (catalog_state.get_browsing(chat)["price_min"], catalog_state.get_browsing(chat)["price_max"]) == (1000000, None)
+
+
+def test_questions_go_to_the_free_advisor_and_product_words_stay_a_search():
+    customer = _make_customer()
+    with patch("apps.telegram_bot.interfaces.callback_router._send") as mock_send:
+        _text(Client(), customer.telegram_user_id, "Yetkazib berish qanday?")
+    text = mock_send.call_args[0][1]
+    assert "Yetkazib berish" in text and "<b>" in text  # FAQ answer, markdown converted to Telegram HTML
+    with patch("apps.telegram_bot.interfaces.callback_router._send") as mock_send:
+        _text(Client(), customer.telegram_user_id, "180 sm 80 kg 25 yosh massa")
+    assert "Kunlik ehtiyoj" in mock_send.call_args[0][1]
+    from apps.assistant.infrastructure.models import AssistantConversation
+
+    conv = AssistantConversation.objects.get(client_key=f"tg:{customer.telegram_user_id}")
+    assert conv.channel == "telegram" and conv.turns == 2 and conv.meta["profile"]["weight"] == 80
