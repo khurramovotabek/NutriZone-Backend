@@ -86,16 +86,16 @@ class ReplenishmentView(APIView):
         from apps.ordering.infrastructure.replenishment import forecasts
         from apps.products.infrastructure import models as p_orm
         from apps.products.infrastructure.selectors import _cards_with_price_and_rating
-        from common.utils.localization import SUPPORTED_LOCALES
+        from common.utils.localization import resolve_locale
 
         _attach_identity(request)
         customer_id = _actor_id(request)
         if customer_id is None:
             return success_response(data=[])
-        locale = request.query_params.get("filter[locale]")
+        locale = resolve_locale(request, explicit=request.query_params.get("filter[locale]"))
         soon = sorted((f for f in forecasts([uuid.UUID(str(customer_id))]) if f.days_left() <= self.HORIZON_DAYS), key=lambda f: f.days_left())
         rows = {p.id: p for p in p_orm.Product.objects.filter(id__in=[f.product_id for f in soon], status="published").prefetch_related("translations", "media", "variants")}
-        cards = {c["id"]: c for c in _cards_with_price_and_rating(list(rows.values()), locale if locale in SUPPORTED_LOCALES else None)}
+        cards = {c["id"]: c for c in _cards_with_price_and_rating(list(rows.values()), locale)}
         data = [
             {"product": cards[str(f.product_id)], "days_left": f.days_left(), "runs_out_at": f.runs_out_at.isoformat(), "last_purchased_at": f.last_at.isoformat(),
              "supply_days": f.supply_days, "basis": f.basis, "variant_id": str(f.variant_id) if f.variant_id else None}

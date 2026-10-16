@@ -13,7 +13,7 @@ from __future__ import annotations
 from django.http import HttpRequest
 
 SUPPORTED_LOCALES = ("uz", "ru", "en")
-DEFAULT_LOCALE = "en"
+DEFAULT_LOCALE = "uz"
 
 # Real, product-required capability: every "*_translations" model
 # across the project had a bare CharField for locale_code -- an admin

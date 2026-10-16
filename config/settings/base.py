@@ -213,8 +213,8 @@ AUTH_PASSWORD_VALIDATORS = [
 # Internationalization (Architecture Review: uz/ru/en, architecture-level
 # localization, not hardcoded)
 # ---------------------------------------------------------------------------
-LANGUAGE_CODE = "en"
-TIME_ZONE = "UTC"
+LANGUAGE_CODE = "uz"
+TIME_ZONE = "Asia/Tashkent"
 USE_I18N = True
 USE_TZ = True
 

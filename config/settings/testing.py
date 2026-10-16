@@ -94,3 +94,6 @@ OTP_MAX_REQUESTS_PER_HOUR = 3
 # infrastructure keeps working without each test file needing its own
 # settings override.
 NUTRIZONE_SMS_LOGIN_ENABLED = True
+
+# The suite asserts Django/admin chrome in English; production serves the dashboard in Uzbek (base.LANGUAGE_CODE).
+LANGUAGE_CODE = "en"

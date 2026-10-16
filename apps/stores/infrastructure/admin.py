@@ -378,6 +378,11 @@ class StoreAdmin(admin.ModelAdmin):
         from apps.stores.infrastructure import stock_service
 
         actor = request.user.get_full_name() or request.user.get_username()
+
+        # Initialize Django formset bookkeeping without directly saving stock.
+        # Stock quantities must still be changed through stock_service.move().
+        formset.save(commit=False)
+
         with transaction.atomic():
             for sub in formset.forms:
                 if not sub.cleaned_data or not sub.has_changed() or not sub.cleaned_data.get("product_variant"):

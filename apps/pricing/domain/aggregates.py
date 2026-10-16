@@ -22,7 +22,7 @@ from __future__ import annotations
 
 import uuid
 from dataclasses import dataclass, field
-from datetime import datetime
+from datetime import UTC, datetime
 
 from apps.pricing.domain.entities import CampaignTarget, CouponRedemption, PriceHistoryEntry, PriceListEntry
 from apps.pricing.domain.enums import (
@@ -83,7 +83,7 @@ class PriceList:
 
         self.history.append(PriceHistoryEntry(
             id=uuid.uuid4(), product_variant_id=product_variant_id, price_type=PriceType.BASE.value,
-            old_amount=old_amount, new_amount=base_price, reason=reason.value, changed_at=at or datetime.utcnow(),
+            old_amount=old_amount, new_amount=base_price, reason=reason.value, changed_at=at or datetime.now(UTC),
         ))
         return PriceSet(price_list_id=self.id, product_variant_id=product_variant_id, price_type=PriceType.BASE.value, old_amount=str(old_amount.amount) if old_amount else None, new_amount=str(base_price.amount))
 

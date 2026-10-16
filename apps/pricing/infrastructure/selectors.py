@@ -6,7 +6,7 @@ established by every prior module.
 from __future__ import annotations
 
 import uuid
-from datetime import datetime
+from datetime import UTC, datetime
 
 from django.db.models import Count, Q
 
@@ -42,14 +42,14 @@ class PricingRuleSelector:
 
 class CampaignSelector:
     def list_active(self, at: datetime | None = None) -> list[dict]:
-        at = at or datetime.utcnow()
+        at = at or datetime.now(UTC)
         qs = orm.CampaignModel.objects.filter(status=CampaignStatus.ACTIVE.value, validity_starts_at__lte=at).filter(Q(validity_ends_at__isnull=True) | Q(validity_ends_at__gt=at))
         return [{"id": str(c.id), "name": c.name, "campaign_type": c.campaign_type, "target_count": c.targets.count()} for c in qs]
 
     def upcoming(self, within_days: int = 7) -> list[dict]:
         from datetime import timedelta
 
-        now = datetime.utcnow()
+        now = datetime.now(UTC)
         cutoff = now + timedelta(days=within_days)
         qs = orm.CampaignModel.objects.filter(status__in=[CampaignStatus.DRAFT.value, CampaignStatus.SCHEDULED.value], validity_starts_at__gte=now, validity_starts_at__lte=cutoff)
         return [{"id": str(c.id), "name": c.name, "starts_at": c.validity_starts_at.isoformat()} for c in qs]
@@ -71,7 +71,7 @@ class PriceSnapshotSelector:
     def list_expiring_soon(self, within_minutes: int = 5) -> list[dict]:
         from datetime import timedelta
 
-        cutoff = datetime.utcnow() + timedelta(minutes=within_minutes)
+        cutoff = datetime.now(UTC) + timedelta(minutes=within_minutes)
         qs = orm.PriceSnapshotModel.objects.filter(status="locked", expires_at__lte=cutoff)
         return [{"id": str(s.id), "token": str(s.token), "expires_at": s.expires_at.isoformat()} for s in qs]
 

@@ -91,6 +91,8 @@ services:
     <<: *django-env
     environment:
       DJANGO_ENV: production
+    healthcheck:
+      disable: true
     command: ["celery", "-A", "config", "worker", "-Q", "transactional,inventory_critical", "-c", "8", "-l", "info"]
     restart: always
     volumes:
@@ -109,6 +111,8 @@ services:
     <<: *django-env
     environment:
       DJANGO_ENV: production
+    healthcheck:
+      disable: true
     command: ["celery", "-A", "config", "worker", "-Q", "default", "-c", "4", "-l", "info"]
     restart: always
     volumes:
@@ -127,6 +131,8 @@ services:
     <<: *django-env
     environment:
       DJANGO_ENV: production
+    healthcheck:
+      disable: true
     command: ["celery", "-A", "config", "worker", "-Q", "bulk,dead_letter", "-c", "2", "-l", "info"]
     restart: always
     volumes:
@@ -145,6 +151,8 @@ services:
     <<: *django-env
     environment:
       DJANGO_ENV: production
+    healthcheck:
+      disable: true
     command: ["celery", "-A", "config", "beat", "-l", "info", "--scheduler", "django_celery_beat.schedulers:DatabaseScheduler"]
     restart: always
     depends_on:
@@ -180,8 +188,7 @@ services:
       - static_volume:/app/static:ro
       - media_volume:/app/media:ro
     ports:
-      - "80:80"
-      - "443:443"
+      - "127.0.0.1:8080:80"
     depends_on:
       - web
     networks: [nutrizone_net]

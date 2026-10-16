@@ -303,11 +303,8 @@ class PopularSearchesView(APIView):
 
 
 def _explicit_locale(request, param: str = "locale") -> str | None:
-    """`?locale=` (or `?filter[locale]=`) = uz|ru|en when the caller asks for one; None keeps an endpoint's long-standing default-locale names."""
-    from common.utils.localization import SUPPORTED_LOCALES
-
-    value = request.query_params.get(param)
-    return value if value in SUPPORTED_LOCALES else None
+    """`?locale=` (or `?filter[locale]=`) > `Accept-Language` > the platform default (uz) -- a caller that forgets the param still gets the shopper's language, never silent English."""
+    return resolve_locale(request, explicit=request.query_params.get(param))
 
 
 class CartRecommendationsView(APIView):

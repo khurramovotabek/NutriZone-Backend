@@ -72,7 +72,7 @@ def drop_orphaned_tables(apps, schema_editor) -> None:
         # Also clears the removed apps' own migration history rows --
         # otherwise `django_migrations` keeps claiming migrations are
         # "applied" for apps that no longer exist in INSTALLED_APPS.
-        cursor.execute("DELETE FROM django_migrations WHERE app IN ('store', 'wallet', 'loyalty');")
+        cursor.execute("DELETE FROM django_migrations WHERE app IN ('store', 'wallet');")
 
 
 class Migration(migrations.Migration):
