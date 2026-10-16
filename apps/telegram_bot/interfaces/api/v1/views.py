@@ -403,8 +403,10 @@ def _handle_contact(message: dict) -> None:
         send_main_menu(chat["id"], lang)
     else:
         _reply_text(chat["id"], t("account_found", lang))
+        from apps.telegram_bot.interfaces import support_confirm
         from apps.telegram_bot.interfaces.callback_router import send_main_menu
 
+        support_confirm.ask(chat["id"], user, lang, suggested_name=full_name)  # account made from a support call
         send_main_menu(chat["id"], lang)
 
 

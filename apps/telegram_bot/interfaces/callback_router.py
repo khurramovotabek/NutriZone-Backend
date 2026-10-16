@@ -257,6 +257,10 @@ def handle_callback(callback_query: dict) -> None:
             _handle_product_card(user, chat_id, action, lang, message)
         elif namespace == "po":
             _handle_product_open(user, chat_id, action, arg, lang)
+        elif namespace == "sup":
+            from apps.telegram_bot.interfaces import support_confirm
+
+            support_confirm.handle(user, chat_id, action, lang)
         elif namespace == "flt":
             _handle_filter(user, chat_id, action, arg, lang, message)
         elif namespace == "ord":
@@ -556,6 +560,9 @@ def _handle_onboarding_action(telegram_user_id: int, chat_id: int, action: str, 
         final_lang = getattr(user, "language", None) or language
         send_welcome(chat_id, user, final_lang)
         if user is not None:
+            from apps.telegram_bot.interfaces import support_confirm
+
+            support_confirm.ask(chat_id, user, final_lang, suggested_name=full_name)  # account made from a support call
             from apps.telegram_bot.interfaces import loyalty_menu
 
             loyalty_menu.apply_pending_referral(user, telegram_user_id, chat_id, final_lang)
@@ -1432,6 +1439,10 @@ def search_text(chat_id: int, telegram_user_id: int, text: str) -> None:
         _send(chat_id, t("please_register", "uz"))
         return
     lang = _lang(user)
+    from apps.telegram_bot.interfaces import support_confirm
+
+    if support_confirm.take_typed_name(user, chat_id, text, lang):
+        return
     if _advisor_reply(user, chat_id, telegram_user_id, text, lang):
         return  # a question / profile / goal -- answered by the free NutriZone advisor
     query = " ".join(text.split())[:MAX_QUERY_LEN]

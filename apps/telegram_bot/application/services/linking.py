@@ -69,7 +69,10 @@ class LinkTelegramCustomer:
             return LinkResult(user_id=existing_link.id, full_name=existing_link.full_name, is_new_customer=False, already_linked_to_this_telegram_account=True)
 
         with transaction.atomic():
-            user = identity_orm.User.objects.filter(phone_number=phone_number.value).first()
+            user = identity_orm.User.all_objects.filter(phone_number=phone_number.value).first()  # a soft-deleted account still owns the number
+            if user is not None and user.is_deleted:
+                identity_orm.User.all_objects.filter(pk=user.pk).update(is_deleted=False, deleted_at=None, deleted_by=None)
+                user.refresh_from_db()
             is_new = user is None
 
             if user is None:

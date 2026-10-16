@@ -83,6 +83,7 @@ JAZZMIN_SETTINGS = {
         # Communication
         "notifications",
         "chat",
+        "support",
         "Telegram",
         "assistant",
         # System
@@ -96,6 +97,8 @@ JAZZMIN_SETTINGS = {
     "icons": {
         "platform": "fas fa-tachometer-alt",
         "Analitika": "fas fa-chart-line",
+        "support": "fas fa-headset",
+        "support.SupportCase": "fas fa-phone-volume",
         "Telegram": "fab fa-telegram",
         "assistant": "fas fa-robot",
         "assistant.assistantconversation": "fas fa-comments",
@@ -171,6 +174,9 @@ JAZZMIN_SETTINGS = {
             {"name": _("Operatorlar hisoboti"), "url": "admin:nz_chat_report", "icon": "fas fa-headset", "permissions": ["chat.view_conversationrating"]},
         ],
         # Telegram -- bots, channel posts and broadcasts (same mechanism).
+        "support": [
+            {"name": _("Support paneli"), "url": "admin:support_supportcase_board", "icon": "fas fa-table-columns", "permissions": ["support.view_supportcase"]},
+        ],
         "Telegram": [
             {"name": _("Botlar markazi"), "url": "admin:nz_telegram_status", "icon": "fas fa-robot"},
             {"name": _("Postlar"), "url": "admin:telegram_bot_telegrampost_changelist", "icon": "fas fa-paper-plane", "permissions": ["telegram_bot.view_telegrampost"]},
