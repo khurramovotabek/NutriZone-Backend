@@ -9726,3 +9726,42 @@ msgstr "«Тестовый ключ». Обязателен в тестовом 
 
 msgid "Keyin aniqlanadi (o'tkazib yuborish)"
 msgstr "Выяснить позже (пропустить)"
+
+msgid "Skaner → savatga"
+msgstr "Сканер → в корзину"
+
+msgid "Narx tekshirish"
+msgstr "Проверка цены"
+
+msgid "Skaner rejimi"
+msgstr "Режим сканера"
+
+msgid "Savatga"
+msgstr "В корзину"
+
+msgid "Shtrix-kodni skanerlang — darhol savatga"
+msgstr "Сканируйте штрихкод — сразу в корзину"
+
+msgid "Skanerlang — narx va qoldiq (savatga qo'shilmaydi)"
+msgstr "Сканируйте — цена и остаток (без добавления в корзину)"
+
+msgid "Keyingi skaner necha dona qo'shadi"
+msgstr "Сколько штук добавит следующий скан"
+
+msgid "Oxirgi skanni bekor qilish"
+msgstr "Отменить последний скан"
+
+msgid "faqat narx"
+msgstr "только цена"
+
+msgid "bu kod bo'yicha mahsulot topilmadi"
+msgstr "по этому коду товар не найден"
+
+msgid "Muddati o'tgan partiya — sotib bo'lmaydi"
+msgstr "Партия просрочена — продавать нельзя"
+
+msgid "Qidiruv: nom, SKU yoki shtrix-kod"
+msgstr "Поиск: название, SKU или штрихкод"
+
+msgid "F2 qidiruv · F3 skaner · F4 to'lov · +/− oxirgi skan"
+msgstr "F2 поиск · F3 сканер · F4 оплата · +/− последний скан"

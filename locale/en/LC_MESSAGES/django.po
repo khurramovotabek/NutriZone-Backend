@@ -365,3 +365,45 @@ msgstr "Order board"
 
 msgid "Keyin aniqlanadi (o'tkazib yuborish)"
 msgstr "Check later (skip)"
+
+msgid "Skaner → savatga"
+msgstr "Scanner → basket"
+
+msgid "Narx tekshirish"
+msgstr "Price check"
+
+msgid "Skaner rejimi"
+msgstr "Scanner mode"
+
+msgid "Savatga"
+msgstr "To basket"
+
+msgid "Narx"
+msgstr "Price"
+
+msgid "Shtrix-kodni skanerlang — darhol savatga"
+msgstr "Scan a barcode — straight to the basket"
+
+msgid "Skanerlang — narx va qoldiq (savatga qo'shilmaydi)"
+msgstr "Scan — price and stock (not added to the basket)"
+
+msgid "Keyingi skaner necha dona qo'shadi"
+msgstr "How many units the next scan adds"
+
+msgid "Oxirgi skanni bekor qilish"
+msgstr "Undo the last scan"
+
+msgid "faqat narx"
+msgstr "price only"
+
+msgid "bu kod bo'yicha mahsulot topilmadi"
+msgstr "no product for this code"
+
+msgid "Muddati o'tgan partiya — sotib bo'lmaydi"
+msgstr "Expired batch — can't be sold"
+
+msgid "Qidiruv: nom, SKU yoki shtrix-kod"
+msgstr "Search: name, SKU or barcode"
+
+msgid "F2 qidiruv · F3 skaner · F4 to'lov · +/− oxirgi skan"
+msgstr "F2 search · F3 scanner · F4 payment · +/− last scan"
