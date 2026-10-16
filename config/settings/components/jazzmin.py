@@ -55,6 +55,7 @@ JAZZMIN_SETTINGS = {
     "order_with_respect_to": [
         # Overview
         "platform",
+        "Analitika",
         # Sales
         "ordering",
         "payment",
@@ -82,6 +83,7 @@ JAZZMIN_SETTINGS = {
         # Communication
         "notifications",
         "chat",
+        "Telegram",
         "assistant",
         # System
         "geo",
@@ -93,6 +95,8 @@ JAZZMIN_SETTINGS = {
     ],
     "icons": {
         "platform": "fas fa-tachometer-alt",
+        "Analitika": "fas fa-chart-line",
+        "Telegram": "fab fa-telegram",
         "assistant": "fas fa-robot",
         "assistant.assistantconversation": "fas fa-comments",
         "ordering": "fas fa-receipt",
@@ -153,16 +157,27 @@ JAZZMIN_SETTINGS = {
     "custom_links": {
         # Biznes analitikasi (apps/platform/infrastructure/analytics_view.py) -- the same numbers NutriZoneAnalyticsBot sends.
         "platform": [
-            {"name": _("Analitika"), "url": "admin:nz_analytics", "icon": "fas fa-chart-pie", "permissions": ["ordering.view_ordermodel", "pos.view_salemodel"]},
             {"name": _("Nazorat markazi"), "url": "admin:nz_control", "icon": "fas fa-shield-halved", "permissions": ["ordering.view_ordermodel", "pos.view_salemodel"]},
+        ],
+        # Analitika -- every report in one section. Not an app: Jazzmin turns a custom_links key that is no installed app into its own sidebar group, named by the key.
+        "Analitika": [
+            {"name": _("Biznes analitikasi"), "url": "admin:nz_analytics", "icon": "fas fa-chart-pie", "permissions": ["ordering.view_ordermodel", "pos.view_salemodel"]},
+            {"name": _("Hisobotlar"), "url": "admin:nz_reports", "icon": "fas fa-file-invoice-dollar", "permissions": ["ordering.view_ordermodel"]},
             {"name": _("Sotuv rejasi"), "url": "admin:nz_sales_plan", "icon": "fas fa-bullseye", "permissions": ["ordering.view_ordermodel", "pos.view_salemodel"]},
+            {"name": _("Filial hisoboti"), "url": "admin:nz_branch_report", "icon": "fas fa-store", "permissions": ["ordering.view_ordermodel"]},
             {"name": _("Mijozlar segmentlari"), "url": "admin:nz_segments", "icon": "fas fa-people-group", "permissions": ["ordering.view_ordermodel", "pos.view_salemodel"]},
-            {"name": _("Telegram botlar"), "url": "admin:nz_telegram_status", "icon": "fab fa-telegram"},
+            {"name": _("Ombor hisobotlari"), "url": "admin:nz_wms_reports", "icon": "fas fa-warehouse", "permissions": ["stores.view_stockmovement"]},
+            {"name": _("Qidiruv tahlili"), "url": "admin:search_searchterm_changelist", "icon": "fas fa-magnifying-glass-chart", "permissions": ["search.view_searchterm"]},
+            {"name": _("Operatorlar hisoboti"), "url": "admin:nz_chat_report", "icon": "fas fa-headset", "permissions": ["chat.view_conversationrating"]},
+        ],
+        # Telegram -- bots, channel posts and broadcasts (same mechanism).
+        "Telegram": [
+            {"name": _("Botlar markazi"), "url": "admin:nz_telegram_status", "icon": "fas fa-robot"},
+            {"name": _("Xabar yuborish"), "url": "admin:nz_notify_send", "icon": "fas fa-paper-plane", "permissions": ["notifications.add_notificationbroadcast"]},
         ],
         # Dispatcher board (apps/ordering/infrastructure/admin_board.py): live Kanban of online orders.
         "ordering": [
             {"name": _("Buyurtmalar paneli"), "url": "admin:ordering_ordermodel_board", "icon": "fas fa-table-columns", "permissions": ["ordering.view_ordermodel"]},
-            {"name": _("Filial hisoboti"), "url": "admin:nz_branch_report", "icon": "fas fa-store", "permissions": ["ordering.view_ordermodel"]},
         ],
         # What shoppers search for -- above all what they search for and don't find (apps/search).
         "products": [
