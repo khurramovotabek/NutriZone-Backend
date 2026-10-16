@@ -468,13 +468,18 @@
 
   // ---- scanning
   var lastCode = "", lastAt = 0;
+  var unitCodes = {}; // DataMatrix ("Asl belgisi") codes carry a per-unit serial: the same unit must not count twice
   function onScan(raw) {
-    var code = (raw || "").trim();
+    // 2D scanners send GS1 DataMatrix with GS (\x1d) separators and an optional "]d2" prefix -- keep the printable part
+    var code = (raw || "").replace(/[\u0000-\u001f\u007f]/g, "").trim();
     if (!code) return;
     var now = Date.now();
     if (code === lastCode && now - lastAt < 150) return; // one physical scan delivered twice (CR+LF / double trigger)
     lastCode = code; lastAt = now;
-    if (code.length > 64 || /[\u0000-\u001f]/.test(code)) { note(false, "Noto'g'ri shtrix-kod", "skaner ma'lumoti buzilgan — qayta skanerlang"); render(); return; }
+    if (code.length > 160) { note(false, "Noto'g'ri shtrix-kod", "skaner ma'lumoti buzilgan — qayta skanerlang"); render(); return; }
+    var unit = /^(\]d2)?01\d{14}21/.test(code) && code.length > 24;
+    if (unit && unitCodes[code]) { wrong("Takroriy skan", "bu dona (markirovka kodi) allaqachon skanerlangan — boshqa donani skanerlang"); return; }
+    if (unit) unitCodes[code] = true;
     var m = mode(), n = multiplier();
     if (m === "draft") {
       api(cfg.urls.lookup + "?code=" + encodeURIComponent(code) + "&location=" + T.source.id).then(function (p) { offerLine(p, n); })

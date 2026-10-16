@@ -703,6 +703,7 @@ class ProductAdmin(ExcelExportMixin, CatalogFormMixin, CatalogAnalyticsMixin, ad
     fieldsets = (
         (_("Basic Information"), {"fields": ("brand", "category", "status", "goals")}),
         (_("Manufacturing"), {"fields": ("manufacturer", "manufacturer_country", "expire_date")}),
+        ("Soliq (fiskal chek)", {"fields": ("mxik_code", "package_code"), "description": "MXIK (IKPU) va qadoq kodi — tasnif.soliq.uz dan. Fiskal chek (OFD / virtual kassa) uchun majburiy."}),
         (
             _("Supplement Facts"),
             {

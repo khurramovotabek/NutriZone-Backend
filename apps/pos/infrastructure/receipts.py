@@ -38,7 +38,27 @@ def assign(sale_id: uuid.UUID) -> tuple[str, str]:
     number, token = f"NZ-{n:06d}", secrets.token_urlsafe(12)
     SaleModel.all_objects.filter(id=sale_id, receipt_number__isnull=True).update(receipt_number=number, receipt_token=token)
     row = SaleModel.all_objects.filter(id=sale_id).values("receipt_number", "receipt_token").first()
+    _register(sale_id)
     return row["receipt_number"], row["receipt_token"]
+
+
+def _register(sale_id) -> None:
+    """The receipts registry (apps.receipts) records the sale once the completion commits."""
+    from django.db import transaction
+
+    def run():
+        import logging
+
+        try:
+            from apps.receipts.infrastructure.builders import from_sale
+
+            sale = SaleModel.all_objects.filter(id=sale_id, status="completed").first()
+            if sale is not None:
+                from_sale(sale)
+        except Exception:  # noqa: BLE001 -- the registry never breaks a sale
+            logging.getLogger("nutrizone.receipts").exception("registry entry for sale %s failed", sale_id)
+
+    transaction.on_commit(run)
 
 
 def public_url(token: str | None) -> str | None:

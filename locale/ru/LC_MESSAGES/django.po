@@ -9723,3 +9723,6 @@ msgstr "В разделе «Реквизиты» добавьте одно по�
 
 msgid "«Тестовый ключ». Test rejimida majburiy."
 msgstr "«Тестовый ключ». Обязателен в тестовом режиме."
+
+msgid "Keyin aniqlanadi (o'tkazib yuborish)"
+msgstr "Выяснить позже (пропустить)"

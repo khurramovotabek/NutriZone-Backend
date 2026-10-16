@@ -362,3 +362,6 @@ msgstr "products"
 
 msgid "Buyurtmalar paneli"
 msgstr "Order board"
+
+msgid "Keyin aniqlanadi (o'tkazib yuborish)"
+msgstr "Check later (skip)"

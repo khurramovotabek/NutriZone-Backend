@@ -493,6 +493,7 @@ class DiscrepancyReason(models.TextChoices):
     PACKAGING = "packaging", _("Qadoq muammosi")
     SHIPMENT_ERROR = "shipment_error", _("Jo'natishdagi xato")
     OTHER = "other", _("Boshqa")
+    UNRESOLVED = "unresolved", _("Keyin aniqlanadi (o'tkazib yuborish)")  # receipt closes now; the manager settles it on approval
 
 
 class StockTransfer(models.Model):

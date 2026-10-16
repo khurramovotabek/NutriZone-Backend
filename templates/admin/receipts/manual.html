@@ -1,0 +1,73 @@
+{% extends "admin/base_site.html" %}
+{% load static %}
+{% block extrastyle %}{{ block.super }}<link rel="stylesheet" href="{% static 'admin/css/nutrizone-support.css' %}?v=2">
+<style>
+  .rcp { max-width: 980px; } .rcp h1 { font-size: 1.4rem; margin: 0 0 4px; } .rcp p.sub { color: rgba(148,163,184,.95); margin: 0 0 16px; }
+  .rcp-card { border: 1px solid rgba(148,163,184,.2); border-radius: 16px; padding: 16px; margin-bottom: 14px; background: rgba(148,163,184,.04); }
+  .rcp-search { position: relative; } .rcp-search input { width: 100%; }
+  .rcp-results { position: absolute; z-index: 20; left: 0; right: 0; top: 42px; background: #1f2937; border: 1px solid rgba(148,163,184,.25); border-radius: 12px; max-height: 280px; overflow: auto; }
+  html[data-bs-theme="light"] .rcp-results { background: #fff; }
+  .rcp-results button { display: flex; justify-content: space-between; width: 100%; padding: 9px 12px; border: 0; background: none; color: inherit; text-align: left; cursor: pointer; }
+  .rcp-results button:hover { background: rgba(37,99,235,.12); }
+  .rcp table { width: 100%; border-collapse: collapse; margin-top: 10px; } .rcp th { text-align: left; font-size: .78rem; color: rgba(148,163,184,.9); padding: 6px; }
+  .rcp td { padding: 6px; border-top: 1px solid rgba(148,163,184,.15); } .rcp td input { width: 100%; height: 34px; }
+  .rcp-total { text-align: right; font-size: 1.3rem; font-weight: 700; margin-top: 10px; }
+  .rcp input, .rcp select, .rcp textarea { height: 38px; border-radius: 10px; border: 1px solid rgb(44,53,64); background: rgba(32,39,47,.55); color: inherit; padding: 0 10px; }
+  .rcp-err { color: #f87171; margin-bottom: 10px; }
+</style>{% endblock %}
+{% block content %}
+<form method="post" class="rcp" id="rcp">{% csrf_token %}
+  <h1><i class="fas fa-receipt" style="color:#0d9488"></i> Yangi chek</h1>
+  <p class="sub">Mahsulotni shtrix-kod (skaner yoki 2D DataMatrix), SKU yoki nomi bo'yicha qo'shing. Chek raqami va QR kod avtomatik beriladi.</p>
+  {% if error %}<div class="rcp-err">{{ error }}</div>{% endif %}
+  <div class="rcp-card">
+    <div class="rcp-search"><input id="q" placeholder="Shtrix-kod, SKU yoki mahsulot nomi… (Enter)" autocomplete="off" autofocus><div class="rcp-results" id="res" hidden></div></div>
+    <table><thead><tr><th>Mahsulot</th><th style="width:90px">Soni</th><th style="width:150px">Narxi (so'm)</th><th style="width:130px" class="r">Summa</th><th style="width:40px"></th></tr></thead><tbody id="lines"></tbody></table>
+    <div class="rcp-total">Jami: <span id="total">0</span> so'm</div>
+  </div>
+  <div class="rcp-card sup-grid">
+    <label>Mijoz ismi<input name="customer_name"></label>
+    <label>Telefon<input name="customer_phone" inputmode="tel" placeholder="+998"></label>
+    <label>To'lov turi<select name="payment_method">{% for k, v in pay_label.items %}<option value="{{ k }}">{{ v }}</option>{% endfor %}</select></label>
+    <label>Chek turi<select name="kind"><option value="sale">Sotuv</option><option value="refund">Qaytarish</option></select></label>
+    <label class="sup-wide">Izoh<input name="note"></label>
+  </div>
+  <input type="hidden" name="lines" id="lines-json">
+  <button type="submit" class="sup-btn"><i class="fas fa-check"></i> Chekni yaratish</button>
+</form>
+<script>
+(function () {
+  var lines = [], q = document.getElementById("q"), res = document.getElementById("res"), timer;
+  function fmt(n) { return Math.round(n).toLocaleString("ru-RU").replace(/\s/g, " "); }
+  function esc(s) { return String(s).replace(/[&<>"]/g, function (c) { return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]; }); }
+  function render() {
+    document.getElementById("lines").innerHTML = lines.map(function (l, i) {
+      return '<tr><td>' + esc(l.name) + '<small style="display:block;opacity:.6">' + esc(l.sku || "") + '</small></td><td><input type="number" min="1" value="' + l.quantity + '" data-i="' + i + '" data-f="quantity"></td>' +
+        '<td><input type="number" min="0" value="' + l.unit_price + '" data-i="' + i + '" data-f="unit_price"></td><td class="r"><b>' + fmt(l.quantity * l.unit_price) + '</b></td><td><button type="button" data-del="' + i + '" style="background:none;border:0;color:#f87171;cursor:pointer">✕</button></td></tr>';
+    }).join("");
+    document.getElementById("total").textContent = fmt(lines.reduce(function (s, l) { return s + l.quantity * l.unit_price; }, 0));
+    document.getElementById("lines-json").value = JSON.stringify(lines);
+  }
+  function add(p) {
+    var same = lines.filter(function (l) { return l.variant_id === p.variant_id; })[0];
+    if (same) same.quantity += 1; else lines.push({ variant_id: p.variant_id, name: p.name, sku: p.sku, quantity: 1, unit_price: Math.round(parseFloat(p.price) || 0) });
+    res.hidden = true; q.value = ""; render(); q.focus();
+  }
+  function search(enter) {
+    var v = q.value.replace(/[\u0000-\u001f]/g, "").trim(); if (v.length < 2) { res.hidden = true; return; }
+    fetch("{{ search_url }}?q=" + encodeURIComponent(v), { credentials: "same-origin" }).then(function (r) { return r.json(); }).then(function (b) {
+      if (enter && b.results.length === 1) { add(b.results[0]); return; }
+      res.innerHTML = b.results.map(function (p, i) { return '<button type="button" data-k="' + i + '"><span>' + esc(p.name) + ' <small style="opacity:.6">' + esc(p.sku || "") + '</small></span><b>' + fmt(parseFloat(p.price)) + '</b></button>'; }).join("") || '<p style="padding:10px;opacity:.7">Topilmadi</p>';
+      res.hidden = false; res._data = b.results;
+    });
+  }
+  q.addEventListener("input", function () { clearTimeout(timer); timer = setTimeout(function () { search(false); }, 250); });
+  q.addEventListener("keydown", function (e) { if (e.key === "Enter") { e.preventDefault(); search(true); } });
+  res.addEventListener("click", function (e) { var b = e.target.closest("[data-k]"); if (b) add(res._data[+b.dataset.k]); });
+  document.getElementById("lines").addEventListener("input", function (e) { var i = e.target.dataset.i; if (i === undefined) return; lines[i][e.target.dataset.f] = Math.max(0, parseFloat(e.target.value) || 0); render(); });
+  document.getElementById("lines").addEventListener("click", function (e) { var d = e.target.closest("[data-del]"); if (d) { lines.splice(+d.dataset.del, 1); render(); } });
+  document.getElementById("rcp").addEventListener("submit", function (e) { if (!lines.length) { e.preventDefault(); alert("Kamida bitta mahsulot qo'shing"); } });
+  render();
+})();
+</script>
+{% endblock %}

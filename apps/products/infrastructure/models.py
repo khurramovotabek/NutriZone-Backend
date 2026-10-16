@@ -313,6 +313,9 @@ class Product(SoftDeleteModel):
     # (already has a flag icon, see geo/infrastructure/models.py) so
     # the Dashboard can offer a real dropdown instead of free text.
     manufacturer = models.CharField(max_length=255, null=True, blank=True, verbose_name=_("Manufacturer"))
+    # Tax codes for fiscal receipts (O'zbekiston: MXIK / IKPU and the package (qadoq) code from tasnif.soliq.uz)
+    mxik_code = models.CharField("MXIK (IKPU) kodi", max_length=32, blank=True, default="", help_text="tasnif.soliq.uz dan: fiskal chek uchun majburiy.")
+    package_code = models.CharField("Qadoq kodi", max_length=32, blank=True, default="", help_text="MXIK bo'yicha o'lchov/qadoq kodi (tasnif.soliq.uz).")
     manufacturer_country = models.ForeignKey("geo.Country", on_delete=models.SET_NULL, null=True, blank=True, related_name="manufactured_products", verbose_name=_("Country of manufacture"))
     expire_date = models.DateField(null=True, blank=True, verbose_name=_("Product expiry date"))
 

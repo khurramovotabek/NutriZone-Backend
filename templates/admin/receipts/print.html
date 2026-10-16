@@ -1,0 +1,59 @@
+<!doctype html>
+<html lang="uz"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Chek {{ r.number }}</title>
+<style>
+  * { box-sizing: border-box; }
+  body { margin: 0; background: #e5e7eb; font: 12px/1.35 "Courier New", ui-monospace, monospace; color: #000; }
+  .sheet { background: #fff; margin: 16px auto; padding: 10px 12px; {% if width == "a4" %}width: 210mm; min-height: 297mm; padding: 18mm; font: 13px/1.45 Arial, sans-serif;{% elif width == "58" %}width: 58mm;{% else %}width: 80mm;{% endif %} }
+  .c { text-align: center; } .r { text-align: right; } .b { font-weight: 700; } .sm { font-size: .88em; }
+  hr { border: 0; border-top: 1px dashed #000; margin: 6px 0; }
+  table { width: 100%; border-collapse: collapse; } td { vertical-align: top; padding: 1px 0; }
+  .total td { font-size: 1.25em; font-weight: 700; padding-top: 4px; }
+  .qr { display: flex; justify-content: center; margin: 8px 0 4px; } .qr img, .qr canvas { width: 34mm !important; height: 34mm !important; }
+  {% if width == "a4" %}.items th { text-align: left; border-bottom: 2px solid #000; padding: 6px 4px; } .items td { border-bottom: 1px solid #ddd; padding: 6px 4px; } .head { display: flex; justify-content: space-between; gap: 20px; }{% endif %}
+  .bar { position: sticky; top: 0; display: flex; gap: 8px; justify-content: center; padding: 10px; background: #111827; }
+  .bar a, .bar button { font: 600 13px Arial; color: #fff; background: #0d9488; border: 0; border-radius: 8px; padding: 8px 14px; text-decoration: none; cursor: pointer; }
+  .bar a { background: #374151; }
+  @media print { body { background: #fff; } .bar { display: none; } .sheet { margin: 0; box-shadow: none; } @page { margin: 0; {% if width != "a4" %}size: {% if width == "58" %}58mm{% else %}80mm{% endif %} auto;{% endif %} } }
+</style></head>
+<body>
+<div class="bar"><button onclick="window.print()">🖨 Chop etish</button><a href="?w=80">80 mm</a><a href="?w=58">58 mm</a><a href="?w=a4">A4</a></div>
+<div class="sheet">
+  {% if width == "a4" %}
+  <div class="head"><div><div class="b" style="font-size:20px">{{ d.requisites.legal_name|default:d.seller.name }}</div>
+    {% if d.requisites.tin %}<div>STIR: {{ d.requisites.tin }}</div>{% endif %}{% if d.requisites.address or d.seller.address %}<div>{{ d.requisites.address|default:d.seller.address }}</div>{% endif %}{% if d.requisites.phone or d.seller.phone %}<div>Tel: {{ d.requisites.phone|default:d.seller.phone }}</div>{% endif %}</div>
+    <div class="r"><div class="b" style="font-size:18px">{% if r.kind == "refund" %}QAYTARISH CHEKI{% else %}SAVDO CHEKI{% endif %} № {{ r.number }}</div><div>{{ r.issued_at|date:"d.m.Y H:i" }}</div>{% if r.order_number %}<div>Buyurtma: {{ r.order_number }}</div>{% endif %}</div></div>
+  {% if d.customer %}<p>Xaridor: <b>{{ d.customer.name }}</b> {{ d.customer.phone }}</p>{% endif %}
+  <table class="items"><thead><tr><th>#</th><th>Mahsulot</th><th>MXIK</th><th class="r">Soni</th><th class="r">Narxi</th><th class="r">Summa</th></tr></thead><tbody>
+  {% for i in d.items %}<tr><td>{{ forloop.counter }}</td><td>{{ i.name }}{% if i.variant_label %}<div class="sm">{{ i.variant_label }}</div>{% endif %}</td><td class="sm">{{ i.mxik|default:"—" }}</td><td class="r">{{ i.quantity }}</td><td class="r">{{ i.unit_price|floatformat:"0g" }}</td><td class="r">{{ i.line_total|floatformat:"0g" }}</td></tr>{% endfor %}
+  </tbody></table>
+  {% else %}
+  <div class="c b" style="font-size:1.15em">{{ d.requisites.legal_name|default:d.seller.name }}</div>
+  {% if d.requisites.tin %}<div class="c sm">STIR: {{ d.requisites.tin }}</div>{% endif %}
+  {% if d.requisites.address or d.seller.address %}<div class="c sm">{{ d.requisites.address|default:d.seller.address }}</div>{% endif %}
+  {% if d.requisites.phone or d.seller.phone %}<div class="c sm">Tel: {{ d.requisites.phone|default:d.seller.phone }}</div>{% endif %}
+  <hr>
+  <div class="c b">{% if r.kind == "refund" %}QAYTARISH CHEKI{% else %}SAVDO CHEKI{% endif %} № {{ r.number }}</div>
+  <div class="c sm">{{ r.issued_at|date:"d.m.Y H:i" }}{% if d.kassa %} · {{ d.kassa }}{% endif %}{% if d.cashier %} · Kassir: {{ d.cashier }}{% endif %}</div>
+  {% if r.order_number %}<div class="c sm">Buyurtma: {{ r.order_number }}</div>{% endif %}
+  <hr>
+  <table>{% for i in d.items %}<tr><td colspan="2">{{ i.name }}{% if i.variant_label %} · {{ i.variant_label }}{% endif %}</td></tr>
+    <tr><td class="sm">{{ i.quantity }} × {{ i.unit_price|floatformat:"0g" }}{% if i.mxik %}<br>MXIK {{ i.mxik }}{% endif %}</td><td class="r">{{ i.line_total|floatformat:"0g" }}</td></tr>{% endfor %}</table>
+  {% endif %}
+  <hr>
+  <table>
+    {% if d.discount and d.discount != "0" and d.discount != "0.00" %}<tr><td>Chegirma</td><td class="r">−{{ d.discount|floatformat:"0g" }}</td></tr>{% endif %}
+    {% if d.coins and d.coins != "0" and d.coins != "0.00" %}<tr><td>Coin bilan</td><td class="r">−{{ d.coins|floatformat:"0g" }}</td></tr>{% endif %}
+    {% if d.delivery and d.delivery != "0" and d.delivery != "0.00" %}<tr><td>Yetkazib berish</td><td class="r">{{ d.delivery|floatformat:"0g" }}</td></tr>{% endif %}
+    <tr class="total"><td>JAMI</td><td class="r">{{ d.total|floatformat:"0g" }} so'm</td></tr>
+    {% if d.vat.payer %}<tr><td class="sm">shu jumladan QQS {{ d.vat.rate|floatformat:"0" }}%</td><td class="r sm">{{ d.vat.amount|floatformat:"0g" }}</td></tr>{% endif %}
+    {% for p in d.payments %}<tr><td class="sm">{% with m=p.method %}{% for k, v in pay_label.items %}{% if k == m %}{{ v }}{% endif %}{% endfor %}{% endwith %}</td><td class="r sm">{{ p.amount|floatformat:"0g" }}</td></tr>{% endfor %}
+    {% if d.change %}<tr><td class="sm">Qaytim</td><td class="r sm">{{ d.change|floatformat:"0g" }}</td></tr>{% endif %}
+  </table>
+  {% if r.status == "fiscalized" %}<hr><div class="sm">FISKAL CHEK<br>Terminal: {{ r.fiscal_terminal_id }}<br>Fiskal raqam: {{ r.fiscal_number }}<br>Fiskal belgi: {{ r.fiscal_sign }}</div>{% endif %}
+  {% if qr %}<div class="qr" id="qr" data-url="{{ qr }}"></div><div class="c sm">{% if r.status == "fiscalized" %}Soliq tizimida tekshirish{% else %}Elektron chek{% endif %}</div>{% endif %}
+  {% if d.footer %}<hr><div class="c sm">{{ d.footer }}</div>{% endif %}
+</div>
+{% if qr %}<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<script>(function(){var b=document.getElementById("qr");try{if(b&&window.QRCode)new QRCode(b,{text:b.getAttribute("data-url"),width:200,height:200,correctLevel:QRCode.CorrectLevel.M});}catch(e){}})();</script>{% endif %}
+</body></html>

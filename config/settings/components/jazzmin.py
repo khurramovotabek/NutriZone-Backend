@@ -68,6 +68,7 @@ JAZZMIN_SETTINGS = {
         "cart.CartAuditEntryModel",
         "pricing",
         "pos",
+        "receipts",
         # Catalog
         "products",
         # Inventory has no registered ModelAdmin of its own (stock is
@@ -98,6 +99,8 @@ JAZZMIN_SETTINGS = {
         "platform": "fas fa-tachometer-alt",
         "Analitika": "fas fa-chart-line",
         "support": "fas fa-headset",
+        "receipts": "fas fa-receipt",
+        "receipts.Receipt": "fas fa-receipt",
         "support.SupportCase": "fas fa-phone-volume",
         "Telegram": "fab fa-telegram",
         "assistant": "fas fa-robot",
@@ -155,7 +158,7 @@ JAZZMIN_SETTINGS = {
     # The WMS models live in the stores app but are reached from the Ombor group (custom_links["inventory"]).
     "hide_models": ["chat.chatsettings", "stores.stocktransfer", "stores.stockreceipt", "stores.stockmovement", "stores.stockcount",
                     "stores.writeoff", "stores.supplier", "stores.supplierpayment", "stores.reorderrule", "stores.storecashier",
-                    "search.searchterm", "telegram_bot.telegrampost", "telegram_bot.channelautopostsettings"],  # reached from the Catalog group (custom_links["products"])
+                    "search.searchterm", "telegram_bot.telegrampost", "telegram_bot.channelautopostsettings", "receipts.receiptsettings"],  # reached from the Catalog group (custom_links["products"])
     "usermenu_links": [{"name": _("Mening profilim"), "url": "admin:nz_profile", "icon": "fas fa-user-circle"}],
     "custom_links": {
         # Biznes analitikasi (apps/platform/infrastructure/analytics_view.py) -- the same numbers NutriZoneAnalyticsBot sends.
@@ -174,6 +177,10 @@ JAZZMIN_SETTINGS = {
             {"name": _("Operatorlar hisoboti"), "url": "admin:nz_chat_report", "icon": "fas fa-headset", "permissions": ["chat.view_conversationrating"]},
         ],
         # Telegram -- bots, channel posts and broadcasts (same mechanism).
+        "receipts": [
+            {"name": _("Yangi chek"), "url": "admin:receipts_receipt_manual", "icon": "fas fa-plus", "permissions": ["receipts.view_receipt"]},
+            {"name": _("Chek sozlamalari"), "url": "admin:receipts_receiptsettings_changelist", "icon": "fas fa-gear", "permissions": ["receipts.change_receiptsettings"]},
+        ],
         "support": [
             {"name": _("Support paneli"), "url": "admin:support_supportcase_board", "icon": "fas fa-table-columns", "permissions": ["support.view_supportcase"]},
         ],

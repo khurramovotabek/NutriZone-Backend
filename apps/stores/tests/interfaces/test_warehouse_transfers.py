@@ -250,3 +250,25 @@ def test_role_permissions_guard_every_action(world):
     r = c.post(f"/django-admin/stores/stocktransfer/{t.id}/do/receive_final/", data=f'{{"counts": {{"{item}": 5}}}}', content_type="application/json")
     assert r.status_code == 200 and r.json()["data"]["status"] == "received"
     assert c.get(f"/django-admin/stores/stocktransfer/{t.id}/document/").status_code == 200
+
+
+def test_mismatch_can_be_skipped_for_the_manager_to_settle(world):
+    """«Keyin aniqlanadi»: the branch closes its receipt now; the discrepancy stays open for the manager's decision."""
+    t = _transfer(world)
+    svc.mark_ready(t.id, "Op")
+    item = _item(t)
+    svc.dispatch(t.id, "Mgr", picked={str(item.id): 15})
+    t = svc.confirm_receipt(t.id, "Rcv", counts={str(item.id): 14}, reasons={str(item.id): {"reason": "unresolved"}})
+    assert t.discrepancy_open
+    t = svc.approve_discrepancies(t.id, "Mgr", {str(item.id): "write_off"})
+    assert not t.discrepancy_open
+
+
+def test_datamatrix_marking_code_resolves_to_the_product(world):
+    from apps.products.infrastructure import barcodes
+
+    world["v"].barcode = "4780012345678"
+    world["v"].save(update_fields=["barcode"])
+    scanned = "]d2010478001234567821aB3xYz9\x1d91EE07\x1d92Vs1m"  # what a 2D scanner sends for an "Asl belgisi" unit
+    match = barcodes.resolve(scanned.replace("\x1d", ""))
+    assert match is not None and match.variant.pk == world["v"].pk
