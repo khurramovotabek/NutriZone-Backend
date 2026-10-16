@@ -19,10 +19,10 @@ deploy_backend() {
   $DC up -d --remove-orphans
   log "Backend: health"
   for i in $(seq 1 30); do
-    if curl -fsS -o /dev/null http://127.0.0.1:8080/health/ready; then echo "ready"; break; fi
+    if curl -fsS -o /dev/null -H "X-Forwarded-Proto: https" http://127.0.0.1:8080/health/ready; then echo "ready"; break; fi
     sleep 3
   done
-  curl -fsS -o /dev/null -w "health/ready %{http_code}\n" http://127.0.0.1:8080/health/ready
+  curl -fsS -o /dev/null -H "X-Forwarded-Proto: https" -w "health/ready %{http_code}\n" http://127.0.0.1:8080/health/ready
   docker image prune -f >/dev/null
 }
 
