@@ -11,9 +11,15 @@ from django.http import HttpResponseRedirect
 from django.shortcuts import render
 from django.urls import reverse
 from django.utils import timezone
+from django.utils.translation import gettext, gettext_lazy
 
 TZ = ZoneInfo("Asia/Tashkent")
-ACTION_META = {ADDITION: ("fa-plus", "#16a34a", "qo'shdi"), CHANGE: ("fa-pen", "#2563eb", "o'zgartirdi"), DELETION: ("fa-trash", "#dc2626", "o'chirdi")}
+# The verb is a whole translatable sentence: word order differs between uz ("Mahsulot qo'shdi") and en ("Added product").
+ACTION_META = {
+    ADDITION: ("fa-plus", "#16a34a", gettext_lazy("%(model)s qo'shdi")),
+    CHANGE: ("fa-pen", "#2563eb", gettext_lazy("%(model)s o'zgartirdi")),
+    DELETION: ("fa-trash", "#dc2626", gettext_lazy("%(model)s o'chirdi")),
+}
 
 
 class ProfileForm(forms.Form):
@@ -52,18 +58,18 @@ def profile_view(request):
         stats["transfers"] = stats["receipts"] = 0
     feed = []
     for e in logs.order_by("-action_time")[:15]:
-        icon, tone, verb = ACTION_META.get(e.action_flag, ("fa-circle", "#64748b", ""))
+        icon, tone, verb = ACTION_META.get(e.action_flag, ("fa-circle", "#64748b", "%(model)s"))
         model = e.content_type.name if e.content_type else ""
         try:
             url = e.get_admin_url()
         except Exception:  # noqa: BLE001
             url = ""
-        feed.append({"icon": icon, "tone": tone, "title": f"{model.capitalize()} {verb}", "object": e.object_repr, "when": _local(e.action_time), "url": url})
+        feed.append({"icon": icon, "tone": tone, "title": str(verb) % {"model": model.capitalize()}, "object": e.object_repr, "when": _local(e.action_time), "url": url})
     name = user.get_full_name() or user.get_username()
     initials = "".join(p[0] for p in name.split()[:2]).upper() or "?"
-    role = "Superadmin" if user.is_superuser else "Xodim"
+    role = gettext("Superadmin") if user.is_superuser else gettext("Xodim")
     return render(request, "admin/profile.html", {
-        **admin.site.each_context(request), "title": "Profil",
+        **admin.site.each_context(request), "title": gettext("Profil"),
         "form": form, "stats": stats, "feed": feed, "initials": initials, "display_name": name, "role": role,
         "groups": list(user.groups.values_list("name", flat=True)),
         "joined": _local(user.date_joined, "%d.%m.%Y"), "last_login": _local(user.last_login),

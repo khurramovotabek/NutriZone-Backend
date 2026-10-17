@@ -161,5 +161,5 @@ class TestTransferSuggestions:
         v = _variant()
         _put(wh, v, 37)
         ReorderRule.objects.create(store=shop, product_variant_id=v.id, min_quantity=5, target_quantity=10)
-        html = _client(superuser=True).get("/django-admin/stores/stocktransfer/new/").content.decode()
+        html = _client(superuser=True).get("/django-admin/stores/stocktransfer/new/", HTTP_ACCEPT_LANGUAGE="uz").content.decode()
         assert "<b>37</b>" in html and "minimumdan past" in html and "nutrizone-transfer-new.js" in html

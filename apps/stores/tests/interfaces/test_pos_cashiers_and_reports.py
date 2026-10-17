@@ -168,7 +168,7 @@ def test_quick_buttons_thermal_receipt_and_leaderboard(monkeypatch, staff, kassa
     done = _sell(c, v, 3, 150000)
     top = c.get(f"{POS}top").json()["data"]["results"]
     assert top and top[0]["variant_id"] == str(v.id) and top[0]["sellable"] and top[0]["sold"] == 3
-    slip = staff.get(f"/django-admin/pos/terminal/receipt/{done['id']}/?w=58").content.decode()
+    slip = staff.get(f"/django-admin/pos/terminal/receipt/{done['id']}/?w=58", HTTP_ACCEPT_LANGUAGE="uz").content.decode()
     assert done["number"] in slip and "58mm" in slip and "Creatine T" in slip and "Olmazor Egasi" in slip and "smena" in slip.lower()
     from apps.platform.infrastructure.dashboard_rankings import build
 

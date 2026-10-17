@@ -168,6 +168,7 @@ MIDDLEWARE = [
     "corsheaders.middleware.CorsMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.locale.LocaleMiddleware",
+    "apps.platform.infrastructure.admin_i18n.AdminTextTranslationMiddleware",  # dashboard HTML phrase by phrase in the staff language (locale/*/admin_phrases.po)
     "apps.platform.infrastructure.branding.AdminBrandingMiddleware",  # Jazzmin header/footer/login follow SiteSettings.site_name  # Phase 08.1: activates the already-configured LANGUAGES/LOCALE_PATHS for the admin dashboard's own language switcher
     "django.middleware.common.CommonMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",

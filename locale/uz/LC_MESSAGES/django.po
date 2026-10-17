@@ -7813,3 +7813,1786 @@ msgstr "Podyezd"
 
 msgid "Units already on hand: posted to the main warehouse as a goods receipt (Kirim) at the cost price above. Later changes go through Ombor documents only."
 msgstr "Hozir qo'lda bor dona: yuqoridagi tannarx bo'yicha asosiy omborga kirim (qabul) sifatida yoziladi. Keyingi o'zgarishlar faqat Ombor hujjatlari orqali."
+
+msgid "\"Buyurtmam qayerda?\" savoliga bot javobi"
+msgstr ""
+
+#, python-format
+msgid "%(d)s: ochilish va yopilish vaqtini to'g'ri kiriting (yoki «Dam olish» belgilang)."
+msgstr ""
+
+#, python-format
+msgid "%(day)s: ochilish vaqti yopilishdan oldin bo'lsin."
+msgstr ""
+
+#, python-format
+msgid "%(n)d ta izoh o'qilgan deb belgilandi."
+msgstr ""
+
+msgid "30 kun sotuv"
+msgstr ""
+
+msgid "30 kunda sotildi"
+msgstr ""
+
+msgid "30 kunlik savdo"
+msgstr ""
+
+msgid "AI maslahatchi"
+msgstr ""
+
+msgid "AI suhbat"
+msgstr ""
+
+msgid "AI suhbatlar"
+msgstr ""
+
+msgid "API foydalanuvchisi (Merchant API uchun)."
+msgstr ""
+
+msgid "Aloqa"
+msgstr ""
+
+msgid "Amal"
+msgstr ""
+
+msgid "Analitika"
+msgstr ""
+
+msgid "Aniqlik"
+msgstr ""
+
+msgid "Aqlli to'ldirish"
+msgstr ""
+
+msgid "Arxiv"
+msgstr ""
+
+msgid "Asosiy ma'lumot"
+msgstr ""
+
+msgid "Auditoriyani tanlang — mijozlar soni darhol hisoblanadi."
+msgstr ""
+
+msgid "Avtomatik bekor qilish"
+msgstr ""
+
+msgid "Avtomatik javob matni"
+msgstr ""
+
+msgid "Avtomatlashtirish"
+msgstr ""
+
+msgid "Avvalgi hisobdagi xato"
+msgstr ""
+
+msgid "Baho"
+msgstr ""
+
+msgid "Band qilish"
+msgstr ""
+
+msgid "Bandlikdan chiqarish"
+msgstr ""
+
+msgid "Bank o'tkazmasi"
+msgstr ""
+
+msgid "Barcha joylar bo'yicha ombor jurnali"
+msgstr ""
+
+msgid "Barcha provayderlar"
+msgstr ""
+
+msgid "Barchasi"
+msgstr ""
+
+msgid "Bayramlar va maxsus kunlar — haftalik jadvaldan ustun turadi."
+msgstr ""
+
+msgid "Bekor qilindi"
+msgstr ""
+
+msgid "Bekor qilingan cheklar (kuniga)"
+msgstr ""
+
+msgid "Bekor qilish (soatdan keyin)"
+msgstr ""
+
+msgid "Bildirishnomalar"
+msgstr ""
+
+msgid "Bir nechta raqam bo'lsa, «Raqam qo'shish»ni bosing. Birinchisi asosiy raqam."
+msgstr ""
+
+msgid "Biznes analitikasi"
+msgstr ""
+
+msgid "Bloklangan"
+msgstr ""
+
+msgid "Boshlagan"
+msgstr ""
+
+msgid "Boshlangan"
+msgstr ""
+
+msgid "Boshqa"
+msgstr ""
+
+msgid "Boshqa sahifa…"
+msgstr ""
+
+msgid "Boshqa variantlar:"
+msgstr ""
+
+msgid "Bosilganda ochiladigan sahifa"
+msgstr ""
+
+msgid "Botga ulangan mijozlarga shaxsiy xabar"
+msgstr ""
+
+msgid "Botlar markazi"
+msgstr ""
+
+msgid "Brend"
+msgstr ""
+
+msgid "Brend rangi"
+msgstr ""
+
+msgid "Brend va sozlamalar"
+msgstr ""
+
+msgid "Bu amal uchun sizda ruxsat yo'q."
+msgstr ""
+
+msgid "Bu do'konni saytdagi o'z kabinetidan boshqaradigan mijoz akkaunti (dashboard xodimi emas). Ixtiyoriy."
+msgstr ""
+
+msgid "Bu oraliqdan tashqaridagi buyurtmalar uchun usul taklif qilinmaydi."
+msgstr ""
+
+msgid "Bu shtrix-kod bo'yicha mahsulot topilmadi."
+msgstr ""
+
+msgid "Bu yerda yo'q"
+msgstr ""
+
+msgid "Bugun onlayn to'langan"
+msgstr ""
+
+msgid "Bugungi vazifalar"
+msgstr ""
+
+msgid "Bunday mahsulot yo'q"
+msgstr ""
+
+msgid "Butun katalog"
+msgstr ""
+
+msgid "Buyurtmaga aylangan"
+msgstr ""
+
+msgid "Buyurtmalar"
+msgstr ""
+
+msgid "Buyurtmani ochish"
+msgstr ""
+
+msgid "Callback"
+msgstr ""
+
+msgid "Callback jurnali"
+msgstr ""
+
+msgid "Callback manzillari"
+msgstr ""
+
+msgid "Chat markazi"
+msgstr ""
+
+msgid "Chat sozlamalari"
+msgstr ""
+
+msgid "Checkout'da karta usuli darhol paydo bo'ladi; aks holda «Tez kunda»."
+msgstr ""
+
+msgid "Checkout'da mavjud"
+msgstr ""
+
+msgid "Chek №"
+msgstr ""
+
+msgid "Chekni saqlab qo'ying: qaytarish va almashtirish shu chek bo'yicha."
+msgstr ""
+
+msgid "Chiqish"
+msgstr ""
+
+msgid "Chop etish / PDF"
+msgstr ""
+
+msgid "Chorshanba"
+msgstr ""
+
+msgid "Click SHOP API: Prepare + Complete, MD5 imzo bilan. Click Up, Uzcard, Humo."
+msgstr ""
+
+msgid "Click texnik qo'llab-quvvatlashidan test to'lovini so'rang va jurnalda Prepare/Complete kelganini tekshiring."
+msgstr ""
+
+msgid "Coin bilan to'landi"
+msgstr ""
+
+msgid "Coin yig'ildi"
+msgstr ""
+
+msgid "Daraja"
+msgstr ""
+
+msgid "Darajasi"
+msgstr ""
+
+msgid "Daromad (yetkazilgan)"
+msgstr ""
+
+msgid "Davom etish: mahsulot qo'shish"
+msgstr ""
+
+msgid "Diqqat"
+msgstr ""
+
+msgid "Do'kon"
+msgstr ""
+
+msgid "Do'kon baholari va izohlari"
+msgstr ""
+
+msgid "Do'konlar"
+msgstr ""
+
+msgid "Dushanba"
+msgstr ""
+
+msgid "E'tiborsiz"
+msgstr ""
+
+msgid "Egasi (sayt akkaunti)"
+msgstr ""
+
+msgid "Ekvayer"
+msgstr ""
+
+msgid "Ekvayerni (Payme, Click yoki Uzum) sozlang va faollashtiring."
+msgstr ""
+
+msgid "Endpoint URL"
+msgstr ""
+
+msgid "Eslatma (daqiqadan keyin)"
+msgstr ""
+
+msgid "Faol"
+msgstr ""
+
+msgid "Faqat ish vaqtida ogohlantirish"
+msgstr ""
+
+msgid "Faqat xatolar"
+msgstr ""
+
+msgid "Farq"
+msgstr ""
+
+msgid "Farq qiymati"
+msgstr ""
+
+msgid "Faylni o'qib bo'lmadi. .xlsx formatidagi shablondan foydalaning."
+msgstr ""
+
+msgid "Faylni tanlang."
+msgstr ""
+
+msgid "Filial (savdo nuqtasi)"
+msgstr ""
+
+msgid "Filial hisoboti"
+msgstr ""
+
+msgid "Filialda tugagan"
+msgstr ""
+
+msgid "Filtrlarni tozalash"
+msgstr ""
+
+msgid "Foydalanuvchilar"
+msgstr ""
+
+msgid "Guruh bo'yicha"
+msgstr ""
+
+msgid "Hal qilindi"
+msgstr ""
+
+msgid "Hal qilingan"
+msgstr ""
+
+msgid "Hal qilingan vaqt"
+msgstr ""
+
+msgid "Hali amallar yo'q."
+msgstr ""
+
+msgid "Hali harakat bo'lmagan"
+msgstr ""
+
+msgid "Hali tekshirilmagan"
+msgstr ""
+
+msgid "Hammasi"
+msgstr ""
+
+msgid "Hammasi joyida — kutayotgan ish yo'q"
+msgstr ""
+
+msgid "Hammasi mos keladi"
+msgstr ""
+
+msgid "Hammasini tanlash"
+msgstr ""
+
+msgid "Har bir so'rov va bizning javobimiz (maxfiy qiymatlar yashirilgan)."
+msgstr ""
+
+msgid "Har kuni 06:00 da to'lovlar, buyurtmalar va provayder holatini solishtiradi."
+msgstr ""
+
+msgid "Har kuni to'lovlar, buyurtmalar va provayder holati solishtiriladi. Nomuvofiqlik topilsa shu yerda chiqadi; muammo bartaraf etilgach keyingi tekshiruvda o'zi yopiladi."
+msgstr ""
+
+msgid "Hech narsa topilmadi"
+msgstr ""
+
+msgid "Hech qayerda yo'q"
+msgstr ""
+
+msgid "Hech qayerda yo'q — kirim kerak"
+msgstr ""
+
+msgid "Hisob maydoni"
+msgstr ""
+
+msgid "Hisobdan chiqarish"
+msgstr ""
+
+msgid "Holat bo'yicha"
+msgstr ""
+
+msgid "Hozir"
+msgstr ""
+
+msgid "Hozir tekshirish"
+msgstr ""
+
+msgid "Hozircha tranzaksiyalar yo'q"
+msgstr ""
+
+msgid "Hujjat"
+msgstr ""
+
+msgid "Humo kartasi bilan to'lov — tanlangan ekvayer (Payme / Click / Uzum) sahifasida."
+msgstr ""
+
+msgid "ICHKI INVENTAR TRANSFERI"
+msgstr ""
+
+msgid "Ichki ehtiyoj"
+msgstr ""
+
+msgid "Ilova ichidagi xabar hamma uchun; Telegram — botga ulanganlarga."
+msgstr ""
+
+msgid "Integratsiya ma'lumotlari"
+msgstr ""
+
+msgid "Inventarizatsiya"
+msgstr ""
+
+msgid "Inventarizatsiya dalolatnomasi"
+msgstr ""
+
+msgid "Ish boshlanishi"
+msgstr ""
+
+msgid "Ish kunlari"
+msgstr ""
+
+msgid "Ish tugashi"
+msgstr ""
+
+msgid "Ish vaqti"
+msgstr ""
+
+msgid "Ish vaqtidan tashqari avtomatik javob"
+msgstr ""
+
+msgid "Ishlatilgan"
+msgstr ""
+
+msgid "Ixtiyoriy. Kirimda shu shtrix-kod skanerlansa partiya avtomatik yoziladi."
+msgstr ""
+
+msgid "Izoh"
+msgstr ""
+
+msgid "Izoh (faqat superadmin)"
+msgstr ""
+
+msgid "Izoh (ixtiyoriy)"
+msgstr ""
+
+msgid "Izoh vaqti"
+msgstr ""
+
+msgid "Jami amallar"
+msgstr ""
+
+msgid "Jarayonda"
+msgstr ""
+
+msgid "Javob"
+msgstr ""
+
+msgid "Javobsiz suhbat haqida Telegram xabari"
+msgstr ""
+
+msgid "Jiddiy"
+msgstr ""
+
+msgid "Jo'natdi (dispetcher)"
+msgstr ""
+
+msgid "Jo'natildi"
+msgstr ""
+
+msgid "Jo'natishdagi xato"
+msgstr ""
+
+msgid "Jo'natishga tayyor"
+msgstr ""
+
+msgid "Jo'natuvchi"
+msgstr ""
+
+msgid "Joylar bo'yicha qoldiq"
+msgstr ""
+
+msgid "Juma"
+msgstr ""
+
+msgid "Jurnal bo'sh"
+msgstr ""
+
+msgid "KPI"
+msgstr ""
+
+msgid "Kabinet → Profil."
+msgstr ""
+
+msgid "Kalit (production)"
+msgstr ""
+
+msgid "Kalitlar bazada AES (Fernet) bilan shifrlanadi va hech qachon qayta ko'rsatilmaydi. Har bir so'rov provayder imzosi/Basic-auth bilan tekshiriladi, summa buyurtmaning server tomonidagi narxi bilan solishtiriladi va barcha callback'lar jurnalga yoziladi."
+msgstr ""
+
+msgid "Kam"
+msgstr ""
+
+msgid "Kam (minimumdan past)"
+msgstr ""
+
+msgid "Kamomad"
+msgstr ""
+
+msgid "Kanal"
+msgstr ""
+
+msgid "Karta qaysi tizim sahifasida qabul qilinadi."
+msgstr ""
+
+msgid "Karta to'lovi qaysi tizimning xavfsiz sahifasida qabul qilinadi."
+msgstr ""
+
+msgid "Kassa"
+msgstr ""
+
+msgid "Kassa ID va kalitlarni shu sahifaga kiriting, avval test rejimida sinang."
+msgstr ""
+
+msgid "Kassa farqi (so'm)"
+msgstr ""
+
+msgid "Kassa sozlamalarida Endpoint URL sifatida quyidagi manzilni kiriting."
+msgstr ""
+
+msgid "Kassa sozlamalaridagi «Rekvizit» kaliti. Odatda order_id."
+msgstr ""
+
+msgid "Kassa → Kalitlar → «Ключ» (asosiy kalit). Production rejimida majburiy."
+msgstr ""
+
+msgid "Kassadan o'tmagan sotuv"
+msgstr ""
+
+msgid "Kassalar va kassirlar"
+msgstr ""
+
+msgid "Kassir qaytarishlari (kuniga)"
+msgstr ""
+
+msgid "Kassirlar"
+msgstr ""
+
+msgid "Katalogda faol, lekin bu joyda bitta ham yo'q. Boshqa joyda bo'lsa — bir bosishda transfer."
+msgstr ""
+
+msgid "Katalogdagi hamma mahsulot bu yerda bor"
+msgstr ""
+
+msgid "Katta chegirma (%)"
+msgstr ""
+
+msgid "Katta chegirma (so'm)"
+msgstr ""
+
+#, python-format
+msgid "Kechikayotgan (%(h)s soat+)"
+msgstr ""
+
+msgid "Kechikish"
+msgstr ""
+
+msgid "Kim hal qildi"
+msgstr ""
+
+msgid "Kimga yuboramiz?"
+msgstr ""
+
+msgid "Kirim"
+msgstr ""
+
+msgid "Kirim (qabul)"
+msgstr ""
+
+msgid "Kirim qilinmagan mahsulot"
+msgstr ""
+
+msgid "Kirim yoki transfer qilinganda bu yerda ko'rinadi."
+msgstr ""
+
+msgid "Kirimlar"
+msgstr ""
+
+msgid "Ko'rinishi"
+msgstr ""
+
+msgid "Ko'rish"
+msgstr ""
+
+msgid "Ko'rsatilgan mahsulotlar"
+msgstr ""
+
+msgid "Kunlik solishtirish"
+msgstr ""
+
+msgid "Kuponlar"
+msgstr ""
+
+msgid "Kuryerga yoki filialda to'lanadi. Hech qanday sozlash talab qilinmaydi."
+msgstr ""
+
+msgid "Kutilayotgan yalpi foyda"
+msgstr ""
+
+msgid "Kutilmoqda"
+msgstr ""
+
+msgid "Limitlar"
+msgstr ""
+
+msgid "Login (Basic Auth)"
+msgstr ""
+
+msgid "Login/parol va Service ID ni shu sahifaga kiriting."
+msgstr ""
+
+msgid "Loyalty darajasi"
+msgstr ""
+
+msgid "Ma'lumot"
+msgstr ""
+
+msgid "Ma'lumot yo'q"
+msgstr ""
+
+msgid "Mahsulot turlari"
+msgstr ""
+
+msgid "Mahsulot yetib kelmadi"
+msgstr ""
+
+msgid "Mahsulotni tanlang."
+msgstr ""
+
+msgid "Maksimal summa (so'm)"
+msgstr ""
+
+msgid "Manzil"
+msgstr ""
+
+msgid "Manzil va xarita"
+msgstr ""
+
+msgid "Manzillar xaritasi"
+msgstr ""
+
+msgid "Mas'ul"
+msgstr ""
+
+msgid "Mas'ul shaxs"
+msgstr ""
+
+msgid "Masalan: 2026-yil mart partiyasi, yangi dizayn qadoq"
+msgstr ""
+
+msgid "Matn"
+msgstr ""
+
+msgid "Mavjud"
+msgstr ""
+
+msgid "Mavjud = qoldiq − band (buyurtma va transferlarga). Min — to'ldirish qoidasidagi minimum."
+msgstr ""
+
+msgid "Maxsus kunlar"
+msgstr ""
+
+msgid "Menejer izohi"
+msgstr ""
+
+msgid "Mening profilim"
+msgstr ""
+
+msgid "Merchant kabineti"
+msgstr ""
+
+msgid "Merchant kabinetidan oling. Maxfiy kalitlar shifrlanadi; bo'sh qoldirilsa, saqlangan qiymat o'zgarmaydi."
+msgstr ""
+
+msgid "Merchant kabinetiga aynan shu manzillarni kiriting (faqat HTTPS)."
+msgstr ""
+
+msgid "Mijoz buyurtmani qabul qilganda kuryerga to'laydi. Buyurtma operator tomonidan tasdiqlanadi."
+msgstr ""
+
+msgid "Mijoz hali to'lov sahifasida — provayderdan so'rov kelmagan."
+msgstr ""
+
+msgid "Mijoz izohi"
+msgstr ""
+
+msgid "Mijozga: «Tez kunda»"
+msgstr ""
+
+msgid "Mijozlar bu usulni hozircha «Tez kunda» deb ko'rishadi. To'ldirilmagan:"
+msgstr ""
+
+msgid "Mijozlar segmentlari"
+msgstr ""
+
+msgid "Mijozlarga xabar"
+msgstr ""
+
+msgid "Minimal qoldiq"
+msgstr ""
+
+msgid "Minimal summa (so'm)"
+msgstr ""
+
+msgid "Miqdor"
+msgstr ""
+
+msgid "Mobil ilova"
+msgstr ""
+
+msgid "Muddati"
+msgstr ""
+
+msgid "Muddati o'tgan"
+msgstr ""
+
+msgid "Muhim"
+msgstr ""
+
+msgid "Muhimlik"
+msgstr ""
+
+msgid "Muvaffaqiyatli to'lovlar (30 kun)"
+msgstr ""
+
+msgid "Muvaffaqiyatsiz"
+msgstr ""
+
+msgid "Naqd pul"
+msgstr ""
+
+msgid "Naqd to'lov"
+msgstr ""
+
+msgid "Naqd — yetkazib berishda to'lanadi"
+msgstr ""
+
+msgid "Narxlar ro'yxati"
+msgstr ""
+
+msgid "Narxlash"
+msgstr ""
+
+msgid "Natijasiz"
+msgstr ""
+
+msgid "Nazorat"
+msgstr ""
+
+msgid "Nazorat markazi"
+msgstr ""
+
+msgid "Nazorat ogohlantirishi"
+msgstr ""
+
+msgid "Nazorat ogohlantirishlari"
+msgstr ""
+
+msgid "Nazorat sozlamalari"
+msgstr ""
+
+msgid "Nazorat yoqilgan"
+msgstr ""
+
+msgid "Nazoratda"
+msgstr ""
+
+msgid "Necha daqiqadan keyin"
+msgstr ""
+
+msgid "Necha daqiqadan keyin ogohlantirish"
+msgstr ""
+
+msgid "Necha soatdan keyin"
+msgstr ""
+
+msgid "Nomi"
+msgstr ""
+
+msgid "Nomi (uz · ru · en)"
+msgstr ""
+
+msgid "Nomi va tavsifi (uz · ru · en)"
+msgstr ""
+
+msgid "Noto'g'ri mahsulot"
+msgstr ""
+
+msgid "Nusxalash"
+msgstr ""
+
+msgid "O'chirilgan"
+msgstr ""
+
+msgid "O'chirilgan bo'lsa mijozga «Tez kunda»."
+msgstr ""
+
+msgid "O'qilgan"
+msgstr ""
+
+msgid "O'qilgan deb belgilash"
+msgstr ""
+
+msgid "O'rtacha chek"
+msgstr ""
+
+msgid "O'zaro hisob / qaytarish"
+msgstr ""
+
+msgid "O'zbekcha majburiy. Ruscha/inglizcha bo'sh qolsa — o'zbekcha ko'rsatiladi."
+msgstr ""
+
+msgid "O'zbekiston viloyatlari va shaharlari ro'yxatidan. Tanlanganda xarita o'sha shaharga o'tadi."
+msgstr ""
+
+msgid "Ochiladi"
+msgstr ""
+
+msgid "Ochish"
+msgstr ""
+
+msgid "Oddiy"
+msgstr ""
+
+msgid "Oflayn"
+msgstr ""
+
+msgid "Ogohlantirish"
+msgstr ""
+
+msgid "Ogohlantirishlar"
+msgstr ""
+
+msgid "Olingan"
+msgstr ""
+
+msgid "Ombor"
+msgstr ""
+
+msgid "Ombor hisobotlari"
+msgstr ""
+
+msgid "Ombor ogohlantirishlari"
+msgstr ""
+
+msgid "Ombor rezervi bo'shaydi, ishlatilgan coinlar qaytadi, mijozga xabar boradi."
+msgstr ""
+
+msgid "Ombor tarixi"
+msgstr ""
+
+msgid "Onlayn buyurtmalar daromadi"
+msgstr ""
+
+msgid "Onlayn kassa"
+msgstr ""
+
+msgid "Onlayn to'lov urinishlari"
+msgstr ""
+
+msgid "Operatorlar hisoboti"
+msgstr ""
+
+msgid "Ortiqcha"
+msgstr ""
+
+msgid "Oxirgi callback'lar"
+msgstr ""
+
+msgid "Oxirgi faollik"
+msgstr ""
+
+msgid "Oxirgi harakat"
+msgstr ""
+
+msgid "Oxirgi kirish"
+msgstr ""
+
+msgid "Oxirgi natija"
+msgstr ""
+
+msgid "Oxirgi savol"
+msgstr ""
+
+msgid "Oy"
+msgstr ""
+
+msgid "Oylik va KPI"
+msgstr ""
+
+msgid "Parol (Basic Auth)"
+msgstr ""
+
+msgid "Parolni o'zgartirish"
+msgstr ""
+
+msgid "Partiya"
+msgstr ""
+
+msgid "Partiya raqami"
+msgstr ""
+
+msgid "Partiyalar"
+msgstr ""
+
+msgid "Past baho (1–2 ★) haqida menejerga Telegram xabari"
+msgstr ""
+
+msgid "Payme Business → Kassa → Sozlamalar."
+msgstr ""
+
+msgid "Payme Merchant API (JSON-RPC). Uzcard, Humo, Visa va Payme ilovasi orqali to'lov."
+msgstr ""
+
+msgid "Payme Sandbox (test.paycom.uz) dagi barcha testlardan o'tgach, production'ga o'ting."
+msgstr ""
+
+msgid "Payme, Click va Uzum orqali har bir to'lov urinishi — holati, summasi va provayder bilan to'liq yozishmasi."
+msgstr ""
+
+msgid "Payme, Click va Uzum yuborgan har bir so'rov va bizning javobimiz — integratsiyani sinash va nizolarni hal qilish uchun."
+msgstr ""
+
+msgid "Payme, Click, Uzum Bank, Uzcard, Humo va naqd to'lov — kalitlar shu yerda shifrlangan holda saqlanadi. Faol bo'lmagan usullar mijozga «Tez kunda» bo'lib ko'rinadi."
+msgstr ""
+
+msgid "Payshanba"
+msgstr ""
+
+msgid "Postlar"
+msgstr ""
+
+msgid "Pozitsiyalar / dona"
+msgstr ""
+
+msgid "Profil"
+msgstr ""
+
+msgid "Provayder bilan yozishma"
+msgstr ""
+
+msgid "Provayder birinchi so'rovni yuborganda u shu yerda paydo bo'ladi."
+msgstr ""
+
+msgid "QAYTARILGAN"
+msgstr ""
+
+msgid "Qabul"
+msgstr ""
+
+msgid "Qabul kutilmoqda"
+msgstr ""
+
+msgid "Qabul qiladigan joyni tanlang."
+msgstr ""
+
+msgid "Qabul qildi"
+msgstr ""
+
+msgid "Qabul qilindi"
+msgstr ""
+
+msgid "Qabul qilinmoqda"
+msgstr ""
+
+msgid "Qabul qiluvchi"
+msgstr ""
+
+msgid "Qabul qiluvchida minimumdan past yoki tez sotilayotgan, manbada mavjud mahsulotlar"
+msgstr ""
+
+msgid "Qadoq muammosi"
+msgstr ""
+
+msgid "Qamrov"
+msgstr ""
+
+msgid "Qanday ishlaydi"
+msgstr ""
+
+msgid "Qanday yuboramiz?"
+msgstr ""
+
+msgid "Qayerda va qancha bor"
+msgstr ""
+
+msgid "Qayerdan"
+msgstr ""
+
+msgid "Qayerdan va qayerga jo'natilishini tanlang — tizim qabul qiluvchida nima kamligini o'zi taklif qiladi."
+msgstr ""
+
+msgid "Qayerga"
+msgstr ""
+
+msgid "Qaytarildi"
+msgstr ""
+
+msgid "Qidirilgan"
+msgstr ""
+
+msgid "Qidiruv"
+msgstr ""
+
+msgid "Qidiruv so'rovi"
+msgstr ""
+
+msgid "Qidiruv tahlili"
+msgstr ""
+
+msgid "Qisman qabul qilindi"
+msgstr ""
+
+msgid "Qisman to'langan"
+msgstr ""
+
+msgid "Qisqa nom"
+msgstr ""
+
+msgid "Qo'ng'iroqcha belgisi va Bildirishnomalar sahifasida"
+msgstr ""
+
+msgid "Qo'shimcha shtrix-kod"
+msgstr ""
+
+msgid "Qo'shimcha shtrix-kodlar"
+msgstr ""
+
+msgid "Qoldig'i borlar"
+msgstr ""
+
+msgid "Qoldiq"
+msgstr ""
+
+msgid "Qoldiqlar"
+msgstr ""
+
+msgid "Qolmagan"
+msgstr ""
+
+msgid "Qoralama"
+msgstr ""
+
+msgid "Qulflangan"
+msgstr ""
+
+msgid "Rad etilgan"
+msgstr ""
+
+msgid "Raqam — sotuvga mavjud dona (band qilinganlar ayirilgan). Mahsulot nomini bosing — barcha joylar bo'yicha batafsil."
+msgstr ""
+
+msgid "Rasmiy hujjatlar"
+msgstr ""
+
+msgid "Rasmlar"
+msgstr ""
+
+msgid "Reyting"
+msgstr ""
+
+msgid "Ro'yxatdan o'tgan"
+msgstr ""
+
+msgid "Ruxsatlar"
+msgstr ""
+
+msgid "SAVDO CHEKI"
+msgstr ""
+
+msgid "Sabab"
+msgstr ""
+
+msgid "Sana / vaqt"
+msgstr ""
+
+msgid "Sanagan(lar)"
+msgstr ""
+
+msgid "Sanaldi"
+msgstr ""
+
+msgid "Sanalmoqda"
+msgstr ""
+
+msgid "Sanashda xato"
+msgstr ""
+
+msgid "Sandbox kaliti va test to'lov sahifasi."
+msgstr ""
+
+msgid "Saqlangan"
+msgstr ""
+
+msgid "Saqlangan kalitlar bilan imzolangan so'rovni o'zimizning endpoint'ga yuboradi (mavjud bo'lmagan buyurtma bilan)."
+msgstr ""
+
+msgid "Saqlanmagan o'zgarishlar"
+msgstr ""
+
+msgid "Saqlash"
+msgstr ""
+
+msgid "Sarlavha"
+msgstr ""
+
+msgid "Sarlavha shu yerda"
+msgstr ""
+
+msgid "Savat tarixi"
+msgstr ""
+
+msgid "Savatlar"
+msgstr ""
+
+msgid "Savollar"
+msgstr ""
+
+msgid "Sayt"
+msgstr ""
+
+msgid "Sayt / ilova ichida"
+msgstr ""
+
+msgid "Saytdagi manzil: /store/<slug>. Bo'sh qoldirilsa nomdan avtomatik yaratiladi."
+msgstr ""
+
+msgid "Service ID, Merchant ID va Secret key ni shu sahifaga kiriting."
+msgstr ""
+
+msgid "Servis sozlamalarida Prepare va Complete URL manzillarini kiriting."
+msgstr ""
+
+msgid "Servis sozlamalaridagi maxfiy kalit (SECRET_KEY)."
+msgstr ""
+
+msgid "Seshanba"
+msgstr ""
+
+msgid "Shaharlar bo'yicha"
+msgstr ""
+
+msgid "Shanba"
+msgstr ""
+
+msgid "Shaxsiy ma'lumotlar"
+msgstr ""
+
+msgid "Shifrlangan holda saqlangan"
+msgstr ""
+
+msgid "Shikastlangan"
+msgstr ""
+
+msgid "Shikastlangan mahsulot"
+msgstr ""
+
+msgid "Shtrix-kod"
+msgstr ""
+
+msgid "Shu hafta"
+msgstr ""
+
+msgid "Shu hafta yangi"
+msgstr ""
+
+msgid "Shu sahifada uni tanlang va «Yoqilgan» ni belgilang."
+msgstr ""
+
+msgid "Sifatsiz / nuqsonli"
+msgstr ""
+
+msgid "Sklad"
+msgstr ""
+
+msgid "Sklad (asosiy ombor)"
+msgstr ""
+
+msgid "Sklad nazoratchisi"
+msgstr ""
+
+msgid "Smena"
+msgstr ""
+
+msgid "Smena maksimal davomiyligi (soat)"
+msgstr ""
+
+msgid "Smena ochilmagan (daqiqa)"
+msgstr ""
+
+msgid "So'nggi 30 kunda savdo bo'lmagan"
+msgstr ""
+
+msgid "So'nggi faollik"
+msgstr ""
+
+msgid "So'nggi harakatlar"
+msgstr ""
+
+msgid "So'rov"
+msgstr ""
+
+msgid "So'rovlar (24 soat)"
+msgstr ""
+
+msgid "Solishtirish"
+msgstr ""
+
+msgid "Sotuv"
+msgstr ""
+
+msgid "Sotuv rejalari"
+msgstr ""
+
+msgid "Sotuv rejasi"
+msgstr ""
+
+msgid "Sozlanmagan"
+msgstr ""
+
+msgid "Sozlash"
+msgstr ""
+
+msgid "Suhbat"
+msgstr ""
+
+msgid "Suhbat baholari"
+msgstr ""
+
+msgid "Suhbat bahosi"
+msgstr ""
+
+msgid "Suhbat yopilgach baho so'rash"
+msgstr ""
+
+msgid "Tafsilotlar"
+msgstr ""
+
+msgid "Tanlangan mahsulotlar"
+msgstr ""
+
+msgid "Tannarx"
+msgstr ""
+
+msgid "Tannarxsiz"
+msgstr ""
+
+msgid "Tarjima"
+msgstr ""
+
+msgid "Tarjimalar"
+msgstr ""
+
+msgid "Tartib"
+msgstr ""
+
+msgid "Tasdiq kutilmoqda"
+msgstr ""
+
+msgid "Tasdiqlagan"
+msgstr ""
+
+msgid "Tasdiqlangan"
+msgstr ""
+
+msgid "Tasdiqlanmagan"
+msgstr ""
+
+msgid "Tasdiqlovchi rahbar"
+msgstr ""
+
+msgid "Tayyor javob"
+msgstr ""
+
+msgid "Tayyor javoblar"
+msgstr ""
+
+msgid "Tayyorladi"
+msgstr ""
+
+msgid "Tekshiruvda"
+msgstr ""
+
+msgid "Telefon"
+msgstr ""
+
+#, python-format
+msgid "Telefon raqami noto'g'ri: %(p)s. Masalan: +998 90 123 45 67"
+msgstr ""
+
+msgid "Telegram ulangan"
+msgstr ""
+
+msgid "Telegram'da to'g'ridan-to'g'ri to'lov sahifasiga tugma va «Naqd to'layman»."
+msgstr ""
+
+msgid "Telegram'ga yuborish"
+msgstr ""
+
+msgid "Test kaliti"
+msgstr ""
+
+msgid "Test rejimi"
+msgstr ""
+
+msgid "Test to'lov bilan jurnalda check → create → confirm ketma-ketligini tekshiring."
+msgstr ""
+
+msgid "Tester / namuna"
+msgstr ""
+
+msgid "Tezkor o'tish"
+msgstr ""
+
+msgid "Tezkor qaytarish (daqiqa)"
+msgstr ""
+
+msgid "Til"
+msgstr ""
+
+msgid "Tizim ma'lumotlari"
+msgstr ""
+
+msgid "Tizimda"
+msgstr ""
+
+msgid "To'landi"
+msgstr ""
+
+msgid "To'langan"
+msgstr ""
+
+msgid "To'lanmagan"
+msgstr ""
+
+msgid "To'ldirish"
+msgstr ""
+
+msgid "To'ldirish (minimal qoldiq)"
+msgstr ""
+
+msgid "To'liq (joydagi barcha mahsulot)"
+msgstr ""
+
+msgid "To'liq kirish"
+msgstr ""
+
+msgid "To'lov eslatmasi"
+msgstr ""
+
+msgid "To'lov havolasi shabloni"
+msgstr ""
+
+msgid "To'lov kutilmoqda"
+msgstr ""
+
+msgid "To'lov sozlamalari"
+msgstr ""
+
+msgid "To'lov tizimi"
+msgstr ""
+
+msgid "To'lov tizimini ulang — mijoz onlayn to'laganda har bir urinish shu yerda paydo bo'ladi."
+msgstr ""
+
+msgid "To'lov tizimlari"
+msgstr ""
+
+msgid "To'lov tizimlarini sozlash"
+msgstr ""
+
+msgid "To'lov xatolari (30 daqiqada)"
+msgstr ""
+
+msgid "To'lovlar"
+msgstr ""
+
+msgid "To'lovlar, buyurtmalar va provayder ma'lumotlari o'rtasida nomuvofiqlik topilmadi."
+msgstr ""
+
+msgid "Topilgan ortiqcha"
+msgstr ""
+
+msgid "Transfer raqami (TR-000001) yoki mahsulot nomi / SKU / shtrix-kod"
+msgstr ""
+
+msgid "Transfer: chiqim"
+msgstr ""
+
+msgid "Transfer: kirim"
+msgstr ""
+
+msgid "Transferga qaytish"
+msgstr ""
+
+msgid "Transferga qo'shiladi"
+msgstr ""
+
+msgid "Transferlar"
+msgstr ""
+
+msgid "Tranzaksiya"
+msgstr ""
+
+msgid "Tranzaksiyalar"
+msgstr ""
+
+msgid "Tugash prognozi (kun)"
+msgstr ""
+
+msgid "Turi"
+msgstr ""
+
+msgid "Tushum rejasi"
+msgstr ""
+
+msgid "Tushum, foyda, filiallar va Telegram hisobotlar"
+msgstr ""
+
+msgid "Tuzatish"
+msgstr ""
+
+msgid "Tuzdi"
+msgstr ""
+
+msgid "Ulanishni tekshirish"
+msgstr ""
+
+msgid "Ularga Base URL ni bering: check, create, confirm, reverse, status shu manzil ostida."
+msgstr ""
+
+msgid "Ulash bo'yicha qadamlar"
+msgstr ""
+
+msgid "Urinishni bekor qilish"
+msgstr ""
+
+msgid "Usul"
+msgstr ""
+
+msgid "Usul sozlangan, lekin o'chirilgan — mijozlar uni «Tez kunda» deb ko'rishadi. Faollashtirish uchun «Yoqilgan» ni belgilang."
+msgstr ""
+
+msgid "Uzcard kartasi bilan to'lov — tanlangan ekvayer (Payme / Click / Uzum) sahifasida."
+msgstr ""
+
+msgid "Uzum Bank bilan merchant shartnomasini tuzing va servis oching."
+msgstr ""
+
+msgid "Uzum Bank tomonidan beriladigan servis raqami."
+msgstr ""
+
+msgid "Uzum so'rovlarini tasdiqlash uchun login."
+msgstr ""
+
+msgid "Vaqt"
+msgstr ""
+
+msgid "Vaqti"
+msgstr ""
+
+msgid "Variant kartasi"
+msgstr ""
+
+msgid "Xabar matni"
+msgstr ""
+
+msgid "Xabar matni shu yerda ko'rinadi."
+msgstr ""
+
+msgid "Xaridingiz uchun rahmat!"
+msgstr ""
+
+msgid "Xaritada"
+msgstr ""
+
+msgid "Xato"
+msgstr ""
+
+msgid "Xato javoblar (24 soat)"
+msgstr ""
+
+msgid "Xavfsizlik"
+msgstr ""
+
+msgid "Xodimlar"
+msgstr ""
+
+msgid "Yakshanba"
+msgstr ""
+
+msgid "Yakunlandi"
+msgstr ""
+
+msgid "Yangi buyurtma, javobsiz chat va kam qolgan mahsulot yo'q."
+msgstr ""
+
+msgid "Yangi inventarizatsiya"
+msgstr ""
+
+msgid "Yangi kirim"
+msgstr ""
+
+msgid "Yangi kirim (qabul)"
+msgstr ""
+
+msgid "Yangi transfer"
+msgstr ""
+
+msgid "Yaratildi"
+msgstr ""
+
+msgid "Yaroqlilik muddati"
+msgstr ""
+
+msgid "Yaroqlilik sanasi noto'g'ri."
+msgstr ""
+
+msgid "Yetarli"
+msgstr ""
+
+msgid "Yetkazib beruvchidan kelgan tovarni qabul qiling: skaner, qidiruv yoki Excel. Tannarx kiritilsa, ombor qiymati va marja avtomatik hisoblanadi."
+msgstr ""
+
+msgid "Yetkazib beruvchilar"
+msgstr ""
+
+msgid "Yetkazilgan"
+msgstr ""
+
+msgid "Yetkazish"
+msgstr ""
+
+msgid "Yetkazish muddati (kun)"
+msgstr ""
+
+msgid "Yig'ilmoqda"
+msgstr ""
+
+msgid "Yig'ish va jo'natish"
+msgstr ""
+
+msgid "Yo'lda"
+msgstr ""
+
+msgid "Yo'nalish"
+msgstr ""
+
+msgid "Yo'nalishni tanlang"
+msgstr ""
+
+msgid "Yo'qolgan / o'g'irlik"
+msgstr ""
+
+msgid "Yopiladi"
+msgstr ""
+
+msgid "Yopilgan"
+msgstr ""
+
+msgid "Yoqilgan"
+msgstr ""
+
+msgid "Yoqilgan va to'liq sozlangan usul checkout'da darhol paydo bo'ladi."
+msgstr ""
+
+msgid "Yuborilgan xabarlar tarixi"
+msgstr ""
+
+msgid "Yuborish"
+msgstr ""
+
+msgid "Yuqoridagi matnlar o'zbekcha. Ruscha va inglizcha saytda shu tarjimalar ko'rinadi; bo'sh qolsa — o'zbekchasi."
+msgstr ""
+
+msgid "biror filialda tugagan"
+msgstr ""
+
+msgid "biznes ko'rinishi"
+msgstr ""
+
+msgid "buyurtma"
+msgstr ""
+
+msgid "dona mavjud, hamma joyda"
+msgstr ""
+
+msgid "dona qaytarildi"
+msgstr ""
+
+msgid "faol"
+msgstr ""
+
+msgid "filialda tugagan"
+msgstr ""
+
+msgid "hech qayerda yo'q"
+msgstr ""
+
+msgid "hozir"
+msgstr ""
+
+msgid "joyda"
+msgstr ""
+
+msgid "joyda bor"
+msgstr ""
+
+msgid "ko'r-ko'rona sanash"
+msgstr ""
+
+msgid "ko'rish"
+msgstr ""
+
+msgid "kunga yetadi"
+msgstr ""
+
+msgid "kunlik o'chirilgan"
+msgstr ""
+
+msgid "mahsulot (variant)"
+msgstr ""
+
+msgid "marja"
+msgstr ""
+
+msgid "merchant.click.uz kabinetida servis oching (yoki mavjudini tanlang)."
+msgstr ""
+
+msgid "merchant.click.uz → Servislar."
+msgstr ""
+
+msgid "merchant.paycom.uz da kassa yarating va «Sayt» turini tanlang."
+msgstr ""
+
+msgid "narx yo'q"
+msgstr ""
+
+msgid "nofaol variant"
+msgstr ""
+
+msgid "o'chirish"
+msgstr ""
+
+msgid "orqali"
+msgstr ""
+
+msgid "pul qaytarish yoki buyurtmani tasdiqlash kerak bo'lishi mumkin."
+msgstr ""
+
+msgid "qabul qilinganda shu joyga kiradi"
+msgstr ""
+
+msgid "qatorda tannarx yo'q"
+msgstr ""
+
+msgid "qoldi"
+msgstr ""
+
+msgid "sklad"
+msgstr ""
+
+msgid "so'nggi 30 kun"
+msgstr ""
+
+msgid "sotuv narxi"
+msgstr ""
+
+msgid "sotuvda"
+msgstr ""
+
+msgid "sotuvga mavjud"
+msgstr ""
+
+msgid "sozlanmagan"
+msgstr ""
+
+msgid "ta (30 kun)"
+msgstr ""
+
+msgid "ta minimumdan past"
+msgstr ""
+
+msgid "ta tanlandi"
+msgstr ""
+
+msgid "ta transfer yo'lda"
+msgstr ""
+
+msgid "ta yozuv"
+msgstr ""
+
+msgid "tafovut"
+msgstr ""
+
+msgid "tannarx"
+msgstr ""
+
+msgid "tannarx kiritilmagan — kirimda kiriting"
+msgstr ""
+
+msgid "to'landi"
+msgstr ""
+
+msgid "tovar shu joy qoldig'idan chiqadi"
+msgstr ""
+
+msgid "tranzaksiya"
+msgstr ""
+
+msgid "tur"
+msgstr ""
+
+msgid "xil"
+msgstr ""
+
+msgid "xil mahsulot"
+msgstr ""
+
+msgid "yangi yozuv"
+msgstr ""
+
+msgid "yo'q"
+msgstr ""
+
+msgid "zarar"
+msgstr ""
+
+msgid "{service_id}, {order}, {amount} (tiyin) almashtiriladi."
+msgstr ""
+
+msgid "«Rekvizitlar» bo'limida bitta maydon qo'shing: order_id (matn)."
+msgstr ""
+
+msgid "«Тестовый ключ». Test rejimida majburiy."
+msgstr ""
+
+#, python-format
+msgid "%(model)s qo'shdi"
+msgstr ""
+
+#, python-format
+msgid "%(model)s o'zgartirdi"
+msgstr ""
+
+#, python-format
+msgid "%(model)s o'chirdi"
+msgstr ""
+
+msgid "Xodim"
+msgstr ""
+
+msgid "Search engines"
+msgstr "Qidiruv tizimlari"
+
+msgid "Paste the verification code (or the whole <meta> tag) from Google Search Console, Yandex Webmaster or Bing Webmaster. It appears on the website within a minute; then press «Verify» in the console and submit the sitemap."
+msgstr "Google Search Console, Yandex Webmaster yoki Bing Webmaster bergan tasdiqlash kodini (yoki butun <meta> tegini) joylang. Bir daqiqada saytda paydo bo'ladi — so'ng konsolda «Tasdiqlash»ni bosing va sitemap'ni yuboring."
+
+msgid "Google Search Console code"
+msgstr "Google Search Console kodi"
+
+msgid "Yandex Webmaster code"
+msgstr "Yandex Webmaster kodi"
+
+msgid "Bing Webmaster code"
+msgstr "Bing Webmaster kodi"
+
+msgid "Sitemap:"
+msgstr "Sayt xaritasi (sitemap):"
+
+msgid "Paste the code (or the whole <meta> tag) exactly as the search console shows it."
+msgstr "Kodni (yoki butun <meta> tegini) konsol ko'rsatganidek aynan joylang."
+
+#, python-format
+msgid "%(store)s ishlatmoqda"
+msgstr ""
+
+#, python-format
+msgid "Mijoz checkout'da «%(n)s» ni tanlaydi va tanlangan ekvayerning xavfsiz sahifasida karta ma'lumotlarini kiritadi. Pul o'sha ekvayer shartnomasi bo'yicha hisobingizga tushadi; alohida kalit kerak emas."
+msgstr ""

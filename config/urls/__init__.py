@@ -14,6 +14,7 @@ from django.contrib import admin
 from django.urls import include, path
 from drf_spectacular.views import SpectacularAPIView, SpectacularRedocView, SpectacularSwaggerView
 
+from apps.platform.infrastructure.admin_i18n import phrases_js_view
 from apps.platform.infrastructure.branding_css import branding_css_view
 
 urlpatterns = [
@@ -21,6 +22,7 @@ urlpatterns = [
     path("health/", include("core.health.urls")),
     path("i18n/", include("django.conf.urls.i18n")),  # Phase 08.1: Django's own set_language view, required for the admin dashboard's language switcher
     path("django-admin/branding.css", branding_css_view, name="nz_branding_css"),  # Site Settings colours/logo for the dashboard (must precede admin.site.urls)
+    path("django-admin/i18n/phrases.<str:lang>.js", phrases_js_view, name="nz_admin_phrases"),  # dashboard phrase catalog for nutrizone-i18n.js (apps/platform/infrastructure/admin_i18n.py)
     path("django-admin/", admin.site.urls),  # engineering/ops debugging tool only -- Django Implementation Blueprint §13
     # --- API namespaces (REST API Blueprint §2) ---
     path("api/v1/", include("config.urls.v1", namespace="v1")),

@@ -1,0 +1,4360 @@
+# Dashboard phrases translated on the rendered page (apps/platform/infrastructure/admin_i18n.py).
+# msgid = the text exactly as the dashboard shows it (numbers written as {0}, {1}...), msgstr = its translation.
+# Edit by hand; no compiling needed -- the catalog is re-read when this file changes.
+msgid ""
+msgstr ""
+"Content-Type: text/plain; charset=UTF-8\n"
+"Language: ru\n"
+
+msgid "\"Sizni sog'indik\" xabari va chegirma kuponi"
+msgstr "Сообщение «Мы скучаем» и купон на скидку"
+
+msgid "+{0} shu hafta"
+msgstr "+{0} за неделю"
+
+msgid "+{0} · ro'yxatdan o'tgan {1}"
+msgstr "+{0} · зарегистрирован {1}"
+
+msgid "1-bosqich — yig'ish va jo'natish"
+msgstr "Этап 1 — сборка и отправка"
+
+msgid "2D skaner sahifaning istalgan joyida ishlaydi"
+msgstr "2D-сканер работает в любом месте страницы"
+
+msgid "30 kun"
+msgstr "30 дней"
+
+msgid "30 kun sotuv"
+msgstr "Продажи за 30 дней"
+
+msgid "4–6 ta raqam. 1111, 1234, 4321 kabi oson PIN qabul qilinmaydi. PIN'ni faqat shu kassa kassirlariga ayting — u smenani ochadi va kassirlarni almashtiradi."
+msgstr "4–6 цифр. Простые PIN вроде 1111, 1234, 4321 не принимаются. Сообщайте PIN только кассирам этой кассы — он открывает смену и переключает кассиров."
+
+msgid "4–6 ta raqam. 1111, 1234, 4321 kabi oson PIN qabul qilinmaydi. PIN'ni faqat shu kassa kassirlariga ayting — u smenani ochish uchun kerak."
+msgstr "4–6 цифр. Простые PIN вроде 1111, 1234, 4321 не принимаются. Сообщайте PIN только кассирам этой кассы — он нужен для открытия смены."
+
+msgid "7 kun"
+msgstr "7 дней"
+
+msgid "@nutrizone · har {0} daqiqada tekshiriladi"
+msgstr "@nutrizone · проверяется каждые {0} мин"
+
+msgid "@username yoki -{0}… ID. Bot kanalda admin bo'lishi kerak."
+msgstr "@username или -{0}… ID. Бот должен быть администратором канала."
+
+msgid "A'zolik — o'zinikini ko'rish"
+msgstr "Членство — просмотр своего"
+
+msgid "AI maslahatchi"
+msgstr "AI-консультант"
+
+msgid "AI suhbatlar"
+msgstr "AI-диалоги"
+
+msgid "Aksiyalar"
+msgstr "Акции"
+
+msgid "Amallar"
+msgstr "Действия"
+
+msgid "Ametist"
+msgstr "Аметист"
+
+msgid "Analitika"
+msgstr "Аналитика"
+
+msgid "Analytics bot: haftalik hisobot (dushanba {0})"
+msgstr "Бот аналитики: недельный отчёт (понедельник {0})"
+
+msgid "Analytics bot: kunlik hisobot ({0})"
+msgstr "Бот аналитики: дневной отчёт ({0})"
+
+msgid "Analytics bot: oylik hisobot ({0}-kun {1})"
+msgstr "Бот аналитики: месячный отчёт ({0}-е число, {1})"
+
+msgid "Aniqlanmoqda…"
+msgstr "Определяем…"
+
+msgid "Apelsin"
+msgstr "Апельсиновый"
+
+msgid "Article text"
+msgstr "Текст статьи"
+
+msgid "Asosiy e'tibor:"
+msgstr "Главное внимание:"
+
+msgid "Asosiy e'tibor: Muddati o'tgan partiyalar javonda: {0} ta ({1} dona)"
+msgstr "Главное внимание: Просроченные партии на полке: {0} ({1} шт.)"
+
+msgid "Asosiy ko'rsatkichlar"
+msgstr "Ключевые показатели"
+
+msgid "Asosiy ma'lumotlar"
+msgstr "Основные данные"
+
+msgid "Asosiy narx ro'yxatiga yoziladi (narx tarixi saqlanadi)."
+msgstr "Записывается в основной прайс-лист (история цен сохраняется)."
+
+msgid "Asosiy ombor yig'adi"
+msgstr "Собирает основной склад"
+
+msgid "Assistant"
+msgstr "AI-консультант"
+
+msgid "Atirgul"
+msgstr "Розовый (роза)"
+
+msgid "Avto-javob yoqilgan"
+msgstr "Автоответ включён"
+
+msgid "Avtomatik — xaridlarga qarab"
+msgstr "Автоматически — по покупкам"
+
+msgid "Avtopostlar"
+msgstr "Автопосты"
+
+msgid "Avtopostlar yoqilgan"
+msgstr "Автопосты включены"
+
+msgid "Avval «Do'konlar» bo'limida «Sklad» turidagi joy yarating"
+msgstr "Сначала создайте точку типа «Склад» в разделе «Магазины»"
+
+msgid "Avval «Do'konlar» bo'limida «Sklad» turidagi joy yarating."
+msgstr "Сначала создайте точку типа «Склад» в разделе «Магазины»."
+
+msgid "Baho so'raladi"
+msgstr "Запрашивается оценка"
+
+msgid "Baho yo'q"
+msgstr "Нет оценки"
+
+msgid "Baholar"
+msgstr "Оценки"
+
+msgid "Baholar taqsimoti"
+msgstr "Распределение оценок"
+
+msgid "Band"
+msgstr "Резерв"
+
+msgid "Band qilindi. Endi yig'ib skanerlang"
+msgstr "Зарезервировано. Теперь соберите и отсканируйте"
+
+msgid "Band qilindi. Endi yig'ib skanerlang."
+msgstr "Зарезервировано. Теперь соберите и отсканируйте."
+
+msgid "Bandlik bekor qilinadi, mahsulotlar yana sotuvga qaytadi."
+msgstr "Резерв снимается, товары возвращаются в продажу."
+
+msgid "Barcha bildirishnomalar"
+msgstr "Все уведомления"
+
+msgid "Barcha darajalar"
+msgstr "Все уровни"
+
+msgid "Barcha do'konlar"
+msgstr "Все магазины"
+
+msgid "barcha do'konlar"
+msgstr "все магазины"
+
+msgid "barcha filial va omborlar"
+msgstr "все филиалы и склады"
+
+msgid "Barcha filiallarni ko'rsatish"
+msgstr "Показать все филиалы"
+
+msgid "Barcha harakatlar"
+msgstr "Все операции"
+
+msgid "Barcha joylar bo'yicha qoldiq"
+msgstr "Остатки по всем точкам"
+
+msgid "Barcha kirimlar"
+msgstr "Все приходы"
+
+msgid "Barcha mavzular"
+msgstr "Все темы"
+
+msgid "Barcha mijozlar"
+msgstr "Все клиенты"
+
+msgid "barcha modullar"
+msgstr "все модули"
+
+msgid "Barcha qatorlar o'chiriladi"
+msgstr "Все строки будут удалены"
+
+msgid "Barcha qatorlar o'chiriladi."
+msgstr "Все строки будут удалены."
+
+msgid "Barcha qatorlar rejadagidek yig'ildi deb belgilanadi. Buni faqat mahsulotlarni qo'lda sanab chiqqan bo'lsangiz qiling."
+msgstr "Все строки будут отмечены как собранные по плану. Делайте это только если пересчитали товары вручную."
+
+msgid "Barcha qurilmalardan chiqarish"
+msgstr "Выйти на всех устройствах"
+
+msgid "barcha ruxsatlar biriktirilgan"
+msgstr "все права назначены"
+
+msgid "Barcha suhbatlardagi xabarlar: matn, rasm va stikerlar, kim yozgani va o'qilgani. Xabarni bosing — suhbat Chat markazida ochiladi."
+msgstr "Сообщения всех диалогов: текст, фото и стикеры, кто написал и прочитано ли. Нажмите на сообщение — диалог откроется в Чат-центре."
+
+msgid "Barcha Telegram mijozlarga"
+msgstr "Всем клиентам в Telegram"
+
+msgid "Barcha transferlar"
+msgstr "Все перемещения"
+
+msgid "barchasi faol"
+msgstr "все активны"
+
+msgid "Baribir jo'natish"
+msgstr "Всё равно отправить"
+
+msgid "Batafsil tahrirlash"
+msgstr "Подробное редактирование"
+
+msgid "Batonchik o'rami"
+msgstr "Обёртка батончика"
+
+msgid "bekor qilingan buyurtmalar"
+msgstr "отменённые заказы"
+
+msgid "Bekor qilingan cheklar"
+msgstr "Аннулированные чеки"
+
+msgid "Bekor qilingan:"
+msgstr "Отменено:"
+
+msgid "Bekor qilish"
+msgstr "Отмена"
+
+msgid "Bekor/qaytarilgan"
+msgstr "Отменено/возвращено"
+
+msgid "Berilgan"
+msgstr "Назначено"
+
+msgid "bildirishnoma oladi"
+msgstr "получает уведомления"
+
+msgid "Bildirishnoma sozlamalari — o'zinikini boshqarish"
+msgstr "Настройки уведомлений — управление своими"
+
+msgid "Bildirishnoma — o'zinikini ko'rish"
+msgstr "Уведомление — просмотр своих"
+
+msgid "Bildirishnomalar"
+msgstr "Уведомления"
+
+msgid "Bildirishnomalar {0}"
+msgstr "Уведомления {0}"
+
+msgid "Binafsha"
+msgstr "Фиолетовый"
+
+msgid "Bir martada ko'pi bilan"
+msgstr "Не больше за раз"
+
+msgid "Bir to'lovda minimal coin"
+msgstr "Минимум коинов за одну оплату"
+
+msgid "biriktirilgan"
+msgstr "назначено"
+
+msgid "Biriktirish va qo'shish"
+msgstr "Привязать и добавить"
+
+msgid "Biriktirishlar"
+msgstr "Назначения"
+
+msgid "Birinchi"
+msgstr "Первый"
+
+msgid "birinchi buyurtma yetkazilmagan"
+msgstr "первый заказ не доставлен"
+
+msgid "Birinchi javob"
+msgstr "Первый ответ"
+
+msgid "birinchi javob"
+msgstr "первый ответ"
+
+msgid "birorta mahsulotda yo'q"
+msgstr "нет ни в одном товаре"
+
+msgid "Bitta mijoz"
+msgstr "Один клиент"
+
+msgid "biznes ko'rinishi"
+msgstr "обзор бизнеса"
+
+msgid "Bizning xodim"
+msgstr "Наш сотрудник"
+
+msgid "Blog bo'limlari"
+msgstr "Разделы блога"
+
+msgid "Blog maqolalari"
+msgstr "Статьи блога"
+
+msgid "bloklagan / topilmagan chatlar"
+msgstr "заблокировавшие / ненайденные чаты"
+
+msgid "Bloklanmagan barcha mijozlar"
+msgstr "Все незаблокированные клиенты"
+
+msgid "Bloklash (barcha sessiyalar yopiladi)"
+msgstr "Заблокировать (все сессии закрываются)"
+
+msgid "Bo'lim"
+msgstr "Раздел"
+
+msgid "Bo'lim nomini yozing — slug avtomatik to'ldiriladi"
+msgstr "Введите название раздела — slug заполнится автоматически"
+
+msgid "Bo'lim nomi…"
+msgstr "Название раздела…"
+
+msgid "Bo'limlar"
+msgstr "Разделы"
+
+msgid "Bo'sh"
+msgstr "Пусто"
+
+msgid "Bo'sh bo'lsa — Sayt sozlamalaridagi Telegram kanal."
+msgstr "Если пусто — Telegram-канал из настроек сайта."
+
+msgid "Bo'sh qator — yangi blok. Nuqtasiz qisqa satr — sarlavha; «•» yoki «-» bilan boshlangan satrlar — ro'yxat; «Muhim:» bilan boshlangan blok — ajratilgan eslatma."
+msgstr "Пустая строка — новый блок. Короткая строка без точки — заголовок; строки с «•» или «-» — список; блок, начинающийся с «Muhim:», — выделенная заметка."
+
+msgid "Bo'sh qoldirilgan til saqlanmaydi"
+msgstr "Незаполненный язык не сохраняется"
+
+msgid "Bo'sh qoldirilsa — asosiy (yuqori darajadagi) kategoriya."
+msgstr "Если пусто — категория верхнего уровня."
+
+msgid "Bo'sh qoldirilsa — chegarasiz (eng yuqori daraja)."
+msgstr "Если пусто — без верхней границы (высший уровень)."
+
+msgid "Bo'sh qoldiring — kod bo'yicha avtomatik qo'yiladi."
+msgstr "Оставьте пустым — подставится автоматически по коду."
+
+msgid "Bo'sh qolsa — ingliz tilidagi saytda o'zbekcha matn ko'rinadi."
+msgstr "Если пусто — на английской версии сайта будет узбекский текст."
+
+msgid "Bo'sh qolsa — rus tilidagi saytda o'zbekcha matn ko'rinadi."
+msgstr "Если пусто — на русской версии сайта будет узбекский текст."
+
+msgid "Bo'sh qolsa — «Noma'lum»."
+msgstr "Если пусто — «Неизвестно»."
+
+msgid "Bo'sh qolsa — «Unknown»."
+msgstr "Если пусто — «Неизвестно»."
+
+msgid "Bo'sh qolsa — «Неизвестно»."
+msgstr "Если пусто — «Неизвестно»."
+
+msgid "Bo'sh qolsa — Неизвестно"
+msgstr "Если пусто — Неизвестно"
+
+msgid "Bo'yi (sm)"
+msgstr "Рост (см)"
+
+msgid "bog'lanish"
+msgstr "связь"
+
+msgid "Bog'lanishlar"
+msgstr "Связи"
+
+msgid "Bonuslar (coin) sahifasi"
+msgstr "Страница бонусов (коины)"
+
+msgid "Boshqa (qo'lda yozish)…"
+msgstr "Другое (ввести вручную)…"
+
+msgid "Bot hozir yuboradigan xabar — xuddi shu Rich Message hujjati, eng so'nggi haqiqiy ma'lumotdan. Telegram'da jadval, rasm kollaji, xarita va tugmalar shunday ko'rinadi."
+msgstr "Сообщение, которое бот отправил бы сейчас, — тот же Rich Message документ из последних реальных данных. Так в Telegram выглядят таблицы, коллаж фото, карта и кнопки."
+
+msgid "Bot hozir yuboradigan xabar — xuddi shu Rich Message hujjati, eng so'nggi haqiqiy ma'lumotdan. Telegram'da jadval, rasm va tugmalar bilan chiqadi."
+msgstr "Сообщение, которое бот отправил бы сейчас, — тот же Rich Message документ из последних реальных данных. В Telegram выглядит с таблицами, фото и кнопками."
+
+msgid "Botda yangiliklarga obuna bo'lgan mijoz birinchi xaridida bir marta oladi. {0} — sovg'a yo'q."
+msgstr "Клиент, подписанный на новости в боте, получает это один раз при первой покупке. {0} — без подарка."
+
+msgid "Botga ulangan mijozlar"
+msgstr "Клиенты, подключённые к боту"
+
+msgid "Botlar"
+msgstr "Боты"
+
+msgid "Botlar markazi"
+msgstr "Центр ботов"
+
+msgid "Botlarni tekshirish"
+msgstr "Проверить ботов"
+
+msgid "Botni ochish"
+msgstr "Открыть бота"
+
+msgid "Brend o'zi zavod / ishlab chiqaruvchi bo'lsa yoqing."
+msgstr "Включите, если бренд сам является заводом / производителем."
+
+msgid "Brendlar"
+msgstr "Бренды"
+
+msgid "Brendlar reytingi"
+msgstr "Рейтинг брендов"
+
+msgid "Brendlar ulushi"
+msgstr "Доля брендов"
+
+msgid "Brendning vatani — saytda bayroq bilan ko'rinadi. Yangi mahsulotga ishlab chiqarilgan davlat bo'sh bo'lsa shu qo'yiladi."
+msgstr "Страна бренда — показывается на сайте с флагом. Подставляется в новые товары, если страна производства не указана."
+
+msgid "Bu amal uchun ruxsatingiz yo'q"
+msgstr "У вас нет прав на это действие"
+
+msgid "Bu amalni ortga qaytarib bo'lmaydi"
+msgstr "Это действие нельзя отменить"
+
+msgid "Bu amalni ortga qaytarib bo'lmaydi."
+msgstr "Это действие нельзя отменить."
+
+msgid "Bu davrda filiallarga onlayn buyurtma berilmagan"
+msgstr "За этот период онлайн-заказы филиалам не передавались"
+
+msgid "Bu davrda kassa savdosi yo'q."
+msgstr "За этот период продаж на кассе нет."
+
+msgid "Bu davrda onlayn buyurtma yo'q."
+msgstr "За этот период онлайн-заказов нет."
+
+msgid "Bu davrda savdo qayd etilmagan"
+msgstr "За этот период продаж не зафиксировано"
+
+msgid "Bu davrda to'lov yo'q."
+msgstr "За этот период платежей нет."
+
+msgid "bu dona (markirovka kodi) allaqachon skanerlangan — boshqa donani skanerlang"
+msgstr "эта единица (код маркировки) уже отсканирована — сканируйте другую"
+
+msgid "Bu kod katalogda yo'q. Agar bu mavjud mahsulotning yangi partiyasi bo'lsa — mahsulotni tanlang, kod unga biriktiriladi va kirimga 1 dona qo'shiladi."
+msgstr "Этого кода нет в каталоге. Если это новая партия существующего товара — выберите товар, код привяжется к нему и в приход добавится 1 шт."
+
+msgid "Bu mahsulotdan omborga kiritilgan miqdordan kam ko'rsatib bo'lmaydi"
+msgstr "Нельзя указать меньше, чем уже оприходовано"
+
+msgid "Bu mahsulotning bir nechta partiyasi bor — qaysi biridan jo'natiladi? (1–{0})"
+msgstr "У товара несколько партий — из какой отправить? (1–{0})"
+
+msgid "Bu mijoz va do'kon o'rtasidagi suhbat — javobni do'kon egasi «Mening do'konim» sahifasida beradi. Siz faqat kuzatasiz"
+msgstr "Это диалог клиента с магазином — отвечает владелец магазина на странице «Мой магазин». Вы только наблюдаете"
+
+msgid "Bu mijoz va do'kon o'rtasidagi suhbat — javobni do'kon egasi «Mening do'konim» sahifasida beradi. Siz faqat kuzatasiz."
+msgstr "Это диалог клиента с магазином — отвечает владелец магазина на странице «Мой магазин». Вы только наблюдаете."
+
+msgid "Bu segmentda hozircha mijoz yo'q."
+msgstr "В этом сегменте пока нет клиентов."
+
+msgid "Bu shtrix-kod bo'yicha mahsulot topilmadi"
+msgstr "По этому штрихкоду товар не найден"
+
+msgid "bu transferda yo'q"
+msgstr "нет в этом перемещении"
+
+msgid "Bugun"
+msgstr "Сегодня"
+
+msgid "Bugun tushgan coin {0} gacha amal qiladi; {1} kun oldin eslatiladi."
+msgstr "Коины, начисленные сегодня, действуют до {0}; напоминание — за {1} дн."
+
+msgid "Bugungi hisobot"
+msgstr "Отчёт за сегодня"
+
+msgid "Bugungi tushum"
+msgstr "Выручка за сегодня"
+
+msgid "Bugungi vazifalar"
+msgstr "Задачи на сегодня"
+
+msgid "Bundan kam coin bilan to'lab bo'lmaydi."
+msgstr "Меньше этого количества коинов оплатить нельзя."
+
+msgid "Butun kompaniya: reja yo'q"
+msgstr "Вся компания: плана нет"
+
+msgid "Buyurtma berdi"
+msgstr "Оформил заказ"
+
+msgid "Buyurtma berilgandan necha kunda yetkaziladi — kartadagi va {yetkazish_sanasi} o'zgaruvchisidagi taxminiy sana shundan hisoblanadi (yakshanba → dushanba)."
+msgstr "Через сколько дней после заказа доставка — по этому считается примерная дата в карточке и в переменной {yetkazish_sanasi} (воскресенье → понедельник)."
+
+msgid "Buyurtma boti va yetkazish muddati"
+msgstr "Бот заказов и срок доставки"
+
+msgid "Buyurtma boti yoqilgan"
+msgstr "Бот заказов включён"
+
+msgid "Buyurtma holati"
+msgstr "Статус заказа"
+
+msgid "Buyurtma posti"
+msgstr "Пост заказа"
+
+msgid "Buyurtma postlari"
+msgstr "Посты заказов"
+
+msgid "Buyurtma raqami"
+msgstr "Номер заказа"
+
+msgid "Buyurtma raqami, mijoz, izoh…"
+msgstr "Номер заказа, клиент, комментарий…"
+
+msgid "buyurtma raqami, telefon, fiskal raqam…"
+msgstr "номер заказа, телефон, фискальный номер…"
+
+msgid "Buyurtma summasi"
+msgstr "Сумма заказа"
+
+msgid "Buyurtma tasdiqlandi"
+msgstr "Заказ подтверждён"
+
+msgid "Buyurtma tayyor"
+msgstr "Заказ готов"
+
+msgid "Buyurtma yetkazildi"
+msgstr "Заказ доставлен"
+
+msgid "Buyurtma yig'ilmoqda"
+msgstr "Заказ собирается"
+
+msgid "Buyurtma yo'lda"
+msgstr "Заказ в пути"
+
+msgid "buyurtma yo'q"
+msgstr "нет заказов"
+
+msgid "Buyurtma yoki metod…"
+msgstr "Заказ или метод…"
+
+msgid "Buyurtma yoki tranzaksiya ID…"
+msgstr "Заказ или ID транзакции…"
+
+msgid "Buyurtmalar"
+msgstr "Заказы"
+
+msgid "Buyurtmalar kanali ulangan"
+msgstr "Канал заказов подключён"
+
+msgid "Buyurtmalar {0}"
+msgstr "Заказы {0}"
+
+msgid "Buyurtmalari"
+msgstr "Заказы"
+
+msgid "Buyurtmaning coin bilan to'lanadigan ulushi (maks. %)"
+msgstr "Доля заказа, оплачиваемая коинами (макс. %)"
+
+msgid "Cash register / OFD provayderi (E-POS va boshqalar)"
+msgstr "Касса / ОФД-провайдер (E-POS и другие)"
+
+msgid "Chapdagi navbatdan suhbatni oching. «Javob kutmoqda» — mijoz oxirgi xabarni yozgan suhbatlar."
+msgstr "Откройте диалог из очереди слева. «Ждёт ответа» — диалоги, где последним написал клиент."
+
+msgid "Chat markazida ⚡ tugmasi bilan bir bosishda qo'yiladigan javoblar. Ko'p ishlatiladiganlarini yuqoriga qo'ying."
+msgstr "Ответы, вставляемые одним нажатием кнопки ⚡ в Чат-центре. Самые частые поставьте наверх."
+
+msgid "Chat sozlamalari"
+msgstr "Настройки чата"
+
+msgid "Chat — o'zinikini ko'rish"
+msgstr "Чат — просмотр своих"
+
+msgid "Checkout payment"
+msgstr "Оплата заказа"
+
+msgid "chek + yetkazilgan buyurtma"
+msgstr "чек + доставленный заказ"
+
+msgid "Chek / buyurtma raqami, telefon, fiskal raqam…"
+msgstr "Чек / номер заказа, телефон, фискальный номер…"
+
+msgid "Chek hali fiskallashtirilmagan."
+msgstr "Чек ещё не фискализирован."
+
+msgid "Chek sozlamalari"
+msgstr "Настройки чеков"
+
+msgid "Chek turi"
+msgstr "Тип чека"
+
+msgid "Chek yuborilmaydi — faqat server va kalit tekshiriladi."
+msgstr "Чек не отправляется — проверяются только сервер и ключ."
+
+msgid "Cheklar"
+msgstr "Чеки"
+
+msgid "Chilonzordagi yangi do'konimizda birinchi hafta barcha mahsulotlarga {0}% chegirma."
+msgstr "{0}% скидка на всё в первую неделю в нашем новом магазине на Чиланзаре."
+
+msgid "chiqish yoki admin tomonidan"
+msgstr "выход или администратором"
+
+msgid "Chiquvchi qo'ng'iroq"
+msgstr "Исходящий звонок"
+
+msgid "Chop etilgan"
+msgstr "Опубликовано"
+
+msgid "Chop etilgan sana"
+msgstr "Дата публикации"
+
+msgid "Coin (cashback)"
+msgstr "Коины (кешбэк)"
+
+msgid "coin = so'm"
+msgstr "коин = сум"
+
+msgid "Coin amal qilish muddati (kun)"
+msgstr "Срок действия коинов (дней)"
+
+msgid "Coin bilan to'lash"
+msgstr "Оплата коинами"
+
+msgid "Coin bilan to'lash yoqilgan"
+msgstr "Оплата коинами включена"
+
+msgid "Coin harakatlari"
+msgstr "Движение коинов"
+
+msgid "Coin qo'shish yoki ayirish"
+msgstr "Начислить или списать коины"
+
+msgid "Coin tushishi, daraja oshishi, referal bonuslari va yonish eslatmalari."
+msgstr "Начисления коинов, повышение уровня, реферальные бонусы и напоминания о сгорании."
+
+msgid "Coin va darajalar"
+msgstr "Коины и уровни"
+
+msgid "Coini bor"
+msgstr "Есть коины"
+
+msgid "Coinlar"
+msgstr "Коины"
+
+msgid "Coinlar partiyalar bo'yicha saqlanadi: xaridda avval muddati yaqini sarflanadi (FIFO)."
+msgstr "Коины хранятся партиями: при покупке сначала тратятся те, у которых ближе срок (FIFO)."
+
+msgid "Coinsiz"
+msgstr "Без коинов"
+
+msgid "Control center: shubhali operatsiyalar va favqulodda holatlar"
+msgstr "Центр контроля: подозрительные операции и ЧП"
+
+msgid "Daraja hali o'zgarmagan."
+msgstr "Уровень ещё не менялся."
+
+msgid "Daraja oxirgi shuncha kundagi xaridlar bo'yicha hisoblanadi (siljuvchi davr). {0} — butun tarix."
+msgstr "Уровень считается по покупкам за столько последних дней (скользящее окно). {0} — вся история."
+
+msgid "Darajadagi mijozlar"
+msgstr "Клиенты уровня"
+
+msgid "Darajalar"
+msgstr "Уровни"
+
+msgid "Darajalar zinapoyasi"
+msgstr "Лестница уровней"
+
+msgid "Darajani qo'lda belgilash"
+msgstr "Задать уровень вручную"
+
+msgid "Daromad (yetkazilgan)"
+msgstr "Доход (доставлено)"
+
+msgid "Dashboard xodimlari"
+msgstr "Сотрудники панели"
+
+msgid "Dashboard'dan yuborilgan e'lonlar va avtomatik promokod / aksiya xabarlari: qancha mijozga yetdi, nechtasi o'qidi, Telegram natijasi."
+msgstr "Объявления из панели и автоматические сообщения о промокодах / акциях: скольким клиентам дошло, сколько прочитали, результат в Telegram."
+
+msgid "Dashboard'dan yuborilgan e'lonlar va avtomatik promokod / aksiya xabarlari: qancha mijozga yetdi, nechtasi o'qidi, Telegram'ga qanchasi bordi."
+msgstr "Объявления из панели и автоматические сообщения о промокодах / акциях: скольким клиентам дошло, сколько прочитали, сколько ушло в Telegram."
+
+msgid "Dashboardga kira oladigan akkauntlar. Ishlatilmayotgan va ortiqcha superuser akkauntlarini o'chirib qo'ying — har biri tizimga kirish yo'li."
+msgstr "Аккаунты с доступом к панели. Отключайте неиспользуемые и лишние аккаунты суперпользователей — каждый из них — путь в систему."
+
+msgid "Dashboardga kira oladigan akkauntlar. Ishlatilmayotgan va ortiqcha superuser akkauntlarini o'chirib qo'ying — har biri to'liq huquqqa ega."
+msgstr "Аккаунты с доступом к панели. Отключайте неиспользуемые и лишние аккаунты суперпользователей — у каждого полный доступ."
+
+msgid "Dasturda ishlatiladi — o'zgartirmang."
+msgstr "Используется программой — не меняйте."
+
+msgid "Davlat nomi yoki kodi…"
+msgstr "Название или код страны…"
+
+msgid "Davlatlar"
+msgstr "Страны"
+
+msgid "Davom etish"
+msgstr "Продолжить"
+
+msgid "Davom etish: mahsulot qo'shish"
+msgstr "Далее: добавить товары"
+
+msgid "Dengiz"
+msgstr "Морской"
+
+msgid "Diqqat talab qiladi"
+msgstr "Требует внимания"
+
+msgid "DIQQAT TALAB QILADI"
+msgstr "ТРЕБУЕТ ВНИМАНИЯ"
+
+msgid "Do'kon"
+msgstr "Магазин"
+
+msgid "Do'kon (ixtiyoriy)"
+msgstr "Магазин (необязательно)"
+
+msgid "Do'kon baholari va izohlari"
+msgstr "Оценки и отзывы магазинов"
+
+msgid "Do'kon doirasida"
+msgstr "В рамках магазина"
+
+msgid "Do'kon egasi"
+msgstr "Владелец магазина"
+
+msgid "do'kon egasi"
+msgstr "владелец магазина"
+
+msgid "do'kon egasi javob beradi"
+msgstr "отвечает владелец магазина"
+
+msgid "do'kon kassalari"
+msgstr "кассы магазинов"
+
+msgid "do'kon kassalari (qaytarishlarsiz) + filialga biriktirilgan yetkazilgan onlayn buyurtmalar. Kompaniya qatori barcha kanallarni, shu jumladan Dashboard POS ni hisoblaydi. Prognoz — oyning shu paytigacha bo'lgan sur'ati."
+msgstr "кассы магазинов (без возвратов) + доставленные онлайн-заказы, привязанные к филиалу. Строка компании учитывает все каналы, включая POS панели. Прогноз — по темпу месяца на текущий момент."
+
+msgid "Do'kon suhbati"
+msgstr "Чат магазина"
+
+msgid "Do'kon suhbatlari"
+msgstr "Чаты магазинов"
+
+msgid "Do'kondagi xaridlar"
+msgstr "Покупки в магазине"
+
+msgid "Do'kondan uzoq manzil"
+msgstr "Адрес далеко от магазина"
+
+msgid "Do'konga keldi"
+msgstr "Пришёл в магазин"
+
+msgid "Do'konlar"
+msgstr "Магазины"
+
+msgid "Do'stini taklif qilgan mijoz {0} coin, do'sti {1} coin oladi — do'stning birinchi buyurtmasi yetkazilganda."
+msgstr "Пригласивший друга получает {0} коинов, друг — {1}, когда доставлен первый заказ друга."
+
+msgid "Doimiy xaridorlar"
+msgstr "Постоянные покупатели"
+
+msgid "Doimiy xaridorlar uchun {0}% coin."
+msgstr "{0}% коинами для постоянных покупателей."
+
+msgid "dona"
+msgstr "шт."
+
+msgid "Dona"
+msgstr "Шт."
+
+msgid "dona (quti uchun × ni oshiring)"
+msgstr "шт. (для коробки увеличьте ×)"
+
+msgid "dona allaqachon skanerlangan"
+msgstr "шт. уже отсканировано"
+
+msgid "dona · {0} xil"
+msgstr "шт. · {0} видов"
+
+msgid "E'lonlar"
+msgstr "Объявления"
+
+msgid "E'lonlar (dashboard)"
+msgstr "Объявления (панель)"
+
+msgid "e'tibor talab qiladi"
+msgstr "требует внимания"
+
+msgid "E-POS kabinetidagi kassir identifikatori, masalan CSH-007."
+msgstr "Идентификатор кассира в кабинете E-POS, например CSH-007."
+
+msgid "E-POS yoki boshqa OFD"
+msgstr "E-POS или другой ОФД"
+
+msgid "EAN-{0} / EAN-{1} / UPC — nazorat raqami tekshiriladi. Partiyalarning boshqa kodlari pastda."
+msgstr "EAN-{0} / EAN-{1} / UPC — контрольная цифра проверяется. Другие коды партий — ниже."
+
+msgid "egalarning shaxsiy chatiga"
+msgstr "в личные чаты владельцев"
+
+msgid "Eng faol mijozlar"
+msgstr "Самые активные клиенты"
+
+msgid "eng ishonchli sharhlar"
+msgstr "самые надёжные отзывы"
+
+msgid "Eng ko'p"
+msgstr "Больше всего"
+
+msgid "Eng ko'p sotilgan ta'mlar"
+msgstr "Самые продаваемые вкусы"
+
+msgid "Eng ko'p sotilgan variantlar"
+msgstr "Самые продаваемые варианты"
+
+msgid "Eng ko'p xarid qilgan {0}% (oxirgi {1} kunda faol)"
+msgstr "Топ {0}% покупателей (активны за последние {1} дн.)"
+
+msgid "Eski narx (chizilgan)"
+msgstr "Старая цена (зачёркнутая)"
+
+msgid "Eski narx sotuv narxidan katta bo'lishi kerak"
+msgstr "Старая цена должна быть выше цены продажи"
+
+msgid "Eskilari"
+msgstr "Старые"
+
+msgid "Excel: ba'zi qatorlar o'tkazib yuborildi"
+msgstr "Excel: некоторые строки пропущены"
+
+msgid "Faol"
+msgstr "Активный"
+
+msgid "Faol bo'lmagan mahsulot"
+msgstr "Неактивный товар"
+
+msgid "Faol darajalar"
+msgstr "Активные уровни"
+
+msgid "faol emas — qo'shib bo'lmaydi"
+msgstr "неактивен — добавить нельзя"
+
+msgid "Faol mijozlar"
+msgstr "Активные клиенты"
+
+msgid "faol sessiya"
+msgstr "активная сессия"
+
+msgid "Faol sessiyalar"
+msgstr "Активные сессии"
+
+msgid "Faol usullar · {0} soatda {1} xato · {2} kutilmoqda"
+msgstr "Активные методы · {1} ошибок за {0} ч · {2} в ожидании"
+
+msgid "Faollik"
+msgstr "Активность"
+
+msgid "faqat bitta do'konda"
+msgstr "только в одном магазине"
+
+msgid "Faqat dashboardda ko'rinadi (mijozga yuborilmaydi)."
+msgstr "Видно только в панели (клиентам не отправляется)."
+
+msgid "Faqat ichki — mijozga ko'rinmaydi."
+msgstr "Только для внутреннего использования — клиенту не видно."
+
+msgid "Faqat JPEG, PNG yoki WebP"
+msgstr "Только JPEG, PNG или WebP"
+
+msgid "Faqat skanerlangan miqdor jo'natiladi, farq jurnalga yoziladi."
+msgstr "Отправится только отсканированное количество, разница запишется в журнал."
+
+msgid "Farq"
+msgstr "Разница"
+
+msgid "Farq bilan jo'natish"
+msgstr "Отправить с расхождением"
+
+msgid "Favqulodda holatlar"
+msgstr "Чрезвычайные ситуации"
+
+msgid "Fayl o'qilmoqda…"
+msgstr "Читаем файл…"
+
+msgid "Faylni shu yerga tashlang yoki"
+msgstr "Перетащите файл сюда или"
+
+msgid "Filial"
+msgstr "Филиал"
+
+msgid "Filial egalariga"
+msgstr "Владельцам филиалов"
+
+msgid "Filial haqida qisqacha: mo'ljal, parkovka, xizmatlar…"
+msgstr "О филиале: ориентир, парковка, услуги…"
+
+msgid "Filial hisoboti"
+msgstr "Отчёт филиала"
+
+msgid "filial ololmagan buyurtmalar"
+msgstr "заказы, которые филиал не смог взять"
+
+msgid "Filial qabul qiluvchi"
+msgstr "Приёмщик филиала"
+
+msgid "filial · {0} ta xarid · {1} dona"
+msgstr "филиал · {0} покупок · {1} шт."
+
+msgid "filiallar + omborlar"
+msgstr "филиалы + склады"
+
+msgid "Filiallar bo'yicha kunlik savdo"
+msgstr "Ежедневные продажи по филиалам"
+
+msgid "Filiallar bo'yicha kunlik savdo grafigi"
+msgstr "График ежедневных продаж по филиалам"
+
+msgid "Filiallar hozir"
+msgstr "Филиалы сейчас"
+
+msgid "FILIALLAR REYTINGI"
+msgstr "РЕЙТИНГ ФИЛИАЛОВ"
+
+msgid "Filiallar reytingi"
+msgstr "Рейтинг филиалов"
+
+msgid "Filiallar reytingi (baho)"
+msgstr "Рейтинг филиалов (оценка)"
+
+msgid "Filiallar reytingi (tushum)"
+msgstr "Рейтинг филиалов (выручка)"
+
+msgid "Filiallar shaharlar bo'yicha"
+msgstr "Филиалы по городам"
+
+msgid "Filiallarga berilgan buyurtma"
+msgstr "Заказы, переданные филиалам"
+
+msgid "Filiallarga berilgan buyurtmalar — kunlar bo'yicha"
+msgstr "Заказы, переданные филиалам, — по дням"
+
+msgid "Firuza"
+msgstr "Бирюзовый"
+
+msgid "Fiskal ma'lumot"
+msgstr "Фискальные данные"
+
+msgid "Fiskal tayyorlik"
+msgstr "Фискальная готовность"
+
+msgid "Fiskallashtirilgan"
+msgstr "Фискализирован"
+
+msgid "Foydalanuvchi rollari"
+msgstr "Роли пользователей"
+
+msgid "Foydalanuvchilar"
+msgstr "Пользователи"
+
+msgid "Foydalanuvchini qidirib toping, rolni va (kerak bo'lsa) do'konni tanlang"
+msgstr "Найдите пользователя, выберите роль и (при необходимости) магазин"
+
+msgid "Foydali javoblar"
+msgstr "Полезные ответы"
+
+msgid "Fuksiya"
+msgstr "Фуксия"
+
+msgid "Grafiklar, hisobotlar va filial kartasida shu rang ishlatiladi"
+msgstr "Этот цвет используется в графиках, отчётах и карточке филиала"
+
+msgid "haftalik hisobot (dushanba {0})"
+msgstr "недельный отчёт (понедельник {0})"
+
+msgid "Hajm / og'irlik"
+msgstr "Объём / вес"
+
+msgid "Hajm va qadoq"
+msgstr "Объём и упаковка"
+
+msgid "Hali baho yo'q"
+msgstr "Оценок пока нет"
+
+msgid "Hali coin harakati yo'q."
+msgstr "Движений коинов пока нет."
+
+msgid "hali ishlamagan"
+msgstr "ещё не запускался"
+
+msgid "hali kirmagan"
+msgstr "ещё не входил"
+
+msgid "hali ma'lumot yo'q"
+msgstr "данных пока нет"
+
+msgid "hali mahsulot qo'shilmagan"
+msgstr "товары ещё не добавлены"
+
+msgid "Hali post yo'q"
+msgstr "Постов пока нет"
+
+msgid "Hali qidiruv yo'q"
+msgstr "Поисковых запросов пока нет"
+
+msgid "Hali qurilma ro'yxatdan o'tmagan"
+msgstr "Устройства пока не зарегистрированы"
+
+msgid "Hali referal yo'q"
+msgstr "Рефералов пока нет"
+
+msgid "Hali suhbat yo'q"
+msgstr "Диалогов пока нет"
+
+msgid "Hali tizimga kirmagan."
+msgstr "Ещё не входил в систему."
+
+msgid "Hamkorlik"
+msgstr "Сотрудничество"
+
+msgid "Hamma filiallar"
+msgstr "Все филиалы"
+
+msgid "hamma filialni ko'radigan chatlar"
+msgstr "чаты, которые видят все филиалы"
+
+msgid "Hamma savollarga javob berilgan"
+msgstr "На все вопросы ответили"
+
+msgid "Hammasi"
+msgstr "Все"
+
+msgid "hammasi biriktirilgan"
+msgstr "все назначены"
+
+msgid "hammasi topilyapti"
+msgstr "всё находится"
+
+msgid "hammasi vaqtida"
+msgstr "всё вовремя"
+
+msgid "Hammasi yetarli"
+msgstr "Всего достаточно"
+
+msgid "hammasi yetkazildi"
+msgstr "все доставлены"
+
+msgid "hammasiga javob berilgan"
+msgstr "на все ответили"
+
+msgid "Hamyon odatda avtomatik yaratiladi. Qo'lda faqat bonus berish uchun kerak bo'lsa yarating."
+msgstr "Кошелёк обычно создаётся автоматически. Создавайте вручную, только если нужно начислить бонус."
+
+msgid "Hamyon — o'zinikini ko'rish"
+msgstr "Кошелёк — просмотр своего"
+
+msgid "hamyoni bor mijozlar"
+msgstr "клиенты с кошельком"
+
+msgid "Har bir coin qayerdan kelgani va qayerga ketgani: keshbek, referal, xaridda ishlatilgan, qaytarilgan va yonib ketganlar. Yozuvlar o'zgartirilmaydi."
+msgstr "Откуда пришёл и куда ушёл каждый коин: кешбэк, рефералы, оплата покупок, возвраты и сгорания. Записи не изменяются."
+
+msgid "Har bir kamomad / ortiqcha uchun sababni tanlang"
+msgstr "Выберите причину для каждой недостачи / излишка"
+
+msgid "Har bir mijozning darajasi, coin balansi va harakati. Daraja yoki balansni faqat superadmin sabab ko'rsatib o'zgartiradi."
+msgstr "Уровень, баланс коинов и движения каждого клиента. Уровень или баланс меняет только суперадмин с указанием причины."
+
+msgid "Har bir mijozning taklif kodi va natijasi: nechta do'st keldi, nechtasi xarid qildi va qancha coin ishlandi. Kod mijoz ilovasida ko'rinadi."
+msgstr "Код приглашения каждого клиента и результат: сколько друзей пришло, сколько купили и сколько коинов заработано. Код виден в приложении клиента."
+
+msgid "Har bir mijozning taklif kodi va natijasi: nechta do'st keldi, nechtasi xarid qildi va qancha coin ishlandi. Kod mijoz loyalty sahifasini ochganda yaratiladi."
+msgstr "Код приглашения каждого клиента и результат: сколько друзей пришло, сколько купили и сколько коинов заработано. Код создаётся, когда клиент открывает страницу лояльности."
+
+msgid "Har bir pog'ona: hisoblanadigan xarid oralig'i, keshbek foizi va hozir shu darajadagi mijozlar."
+msgstr "Каждая ступень: учитываемый диапазон покупок, процент кешбэка и клиенты на этом уровне сейчас."
+
+msgid "Har bir rol mijoz sayt va ilovada nima qila olishini belgilaydi. Rolni oching — ruxsatlarni modul bo'yicha belgilang."
+msgstr "Каждая роль определяет, что клиент может делать на сайте и в приложении. Откройте роль и отметьте права по модулям."
+
+msgid "Har bir skaner sonni 1 taga oshiradi; qutilab kelgan bo'lsa sonni qo'lda yozing. Yoki Excel shablonni to'ldirib yuklang — tannarx, partiya va muddat ham o'qiladi."
+msgstr "Каждый скан добавляет 1; если товар пришёл коробками, введите количество вручную. Или заполните и загрузите шаблон Excel — себестоимость, партия и срок тоже считываются."
+
+msgid "Har bir tafovut uchun qarorni tanlang"
+msgstr "Выберите решение по каждому расхождению"
+
+msgid "Har bir xariddan coin yig'ing va ularni keyingi buyurtmalarda ishlating."
+msgstr "Копите коины с каждой покупки и тратьте их на следующие заказы."
+
+msgid "Har bir yangi buyurtma summasining shuncha foizi coin bo'lib qaytadi ({0} so'm = {1} coin)."
+msgstr "Этот процент от каждого нового заказа возвращается коинами ({0} сум = {1} коин)."
+
+msgid "Har bir yangi chek darhol provayderga yuboriladi."
+msgstr "Каждый новый чек сразу отправляется провайдеру."
+
+msgid "Har {0} daqiqada shuncha postdan oshmaydi — kanal spam bo'lmasin."
+msgstr "Не больше стольких постов каждые {0} мин — чтобы канал не превращался в спам."
+
+msgid "har {0} daqiqada tekshiriladi"
+msgstr "проверяется каждые {0} мин"
+
+msgid "harakat yo'q"
+msgstr "нет операций"
+
+msgid "Havola qo'shish"
+msgstr "Добавить ссылку"
+
+msgid "Havoladan joylashuv topilmadi. Yandex / Google / Apple / 2GIS havolasi yoki \"41.31, 69.27\" yozing"
+msgstr "В ссылке не найдено местоположение. Вставьте ссылку Яндекс / Google / Apple / 2GIS или напишите \"41.31, 69.27\""
+
+msgid "Havolasiz"
+msgstr "Без ссылки"
+
+msgid "Hech bir rolda yo'q"
+msgstr "Нет ни в одной роли"
+
+msgid "Hisobdan chiqarish (yo'lda yo'qolgan / shikastlangan)"
+msgstr "Списать (утеряно / повреждено в пути)"
+
+msgid "Hisoblash qoidalari"
+msgstr "Правила расчёта"
+
+msgid "Hisobot turi"
+msgstr "Тип отчёта"
+
+msgid "Holat"
+msgstr "Статус"
+
+msgid "Holatlar ({0} kun)"
+msgstr "Статусы ({0} дн.)"
+
+msgid "Hozir yuborish"
+msgstr "Отправить сейчас"
+
+msgid "Hozirgi holat"
+msgstr "Текущее состояние"
+
+msgid "hozirgina"
+msgstr "только что"
+
+msgid "Hujjatlar"
+msgstr "Документы"
+
+msgid "Ichimlik bankasi (tayyor ichimlik)"
+msgstr "Банка напитка (готовый напиток)"
+
+msgid "Ichki artikul: KATTA lotin harflari, raqam va chiziqcha (masalan AN-CREA-250)."
+msgstr "Внутренний артикул: ЗАГЛАВНЫЕ латинские буквы, цифры и дефис (например AN-CREA-250)."
+
+msgid "Ichki kategoriyalar"
+msgstr "Подкатегории"
+
+msgid "Ichki nom"
+msgstr "Внутреннее название"
+
+msgid "Ikki yo'l:"
+msgstr "Два способа:"
+
+msgid "Imzo joylari bilan"
+msgstr "С местами для подписей"
+
+msgid "Indigo"
+msgstr "Индиго"
+
+msgid "Inson tushunadigan izoh — rol tahririda shu matn ko'rinadi."
+msgstr "Понятное описание — показывается в редакторе ролей."
+
+msgid "ish vaqti bo'yicha, Toshkent vaqti"
+msgstr "по часам работы, время Ташкента"
+
+msgid "Ish vaqti hisobida: tunda yozilgan xabar ish boshlanganidan hisoblanadi"
+msgstr "В рабочем времени: сообщение, написанное ночью, считается с начала рабочего дня"
+
+msgid "Ishlab chiqaruvchi"
+msgstr "Производитель"
+
+msgid "ishlanmoqda"
+msgstr "в работе"
+
+msgid "Ishlatilishi"
+msgstr "Использование"
+
+msgid "Ishlatilmagan coin partiyasi yo'q."
+msgstr "Неиспользованных партий коинов нет."
+
+msgid "Ishlatilmagan qoldig'i bor"
+msgstr "Есть неиспользованный остаток"
+
+msgid "Ishlatilmoqda"
+msgstr "Используется"
+
+msgid "ishlatmoqda"
+msgstr "используется"
+
+msgid "ishlayotgan filial kassalari"
+msgstr "работающие кассы филиалов"
+
+msgid "Ishlov kutmoqda"
+msgstr "Ожидает обработки"
+
+msgid "Ism, telefon yoki IP…"
+msgstr "Имя, телефон или IP…"
+
+msgid "Ism, telefon yoki rol…"
+msgstr "Имя, телефон или роль…"
+
+msgid "Ism, telefon yoki Telegram…"
+msgstr "Имя, телефон или Telegram…"
+
+msgid "Ism, telefon yoki xabar…"
+msgstr "Имя, телефон или сообщение…"
+
+msgid "Ism, telefon, username, email yoki Telegram…"
+msgstr "Имя, телефон, username, email или Telegram…"
+
+msgid "Ismsiz foydalanuvchi"
+msgstr "Пользователь без имени"
+
+msgid "Ismsiz · +{0}"
+msgstr "Без имени · +{0}"
+
+msgid "ixtiyoriy — qarzni kuzatish uchun tavsiya etiladi"
+msgstr "необязательно — рекомендуется для учёта долга"
+
+msgid "Ixtiyoriy, takrorlanmas. Profil havolasida ishlatiladi."
+msgstr "Необязательно, уникально. Используется в ссылке профиля."
+
+msgid "Ixtiyoriy. Sotuv narxidan katta bo'lsa saytda chizib ko'rsatiladi."
+msgstr "Необязательно. Если больше цены продажи, на сайте показывается зачёркнутой."
+
+msgid "Izoh matni…"
+msgstr "Текст комментария…"
+
+msgid "Jami"
+msgstr "Итого"
+
+msgid "Jami brend"
+msgstr "Всего брендов"
+
+msgid "Jami cheklar"
+msgstr "Всего чеков"
+
+msgid "Jami dona"
+msgstr "Всего шт."
+
+msgid "Jami ishlagan"
+msgstr "Всего заработано"
+
+msgid "Jami kategoriya"
+msgstr "Всего категорий"
+
+msgid "Jami maqolalar"
+msgstr "Всего статей"
+
+msgid "Jami qayd etilgan"
+msgstr "Всего зафиксировано"
+
+msgid "Jami qurilma"
+msgstr "Всего устройств"
+
+msgid "Jami ta'm"
+msgstr "Всего вкусов"
+
+msgid "Jami takliflar"
+msgstr "Всего приглашений"
+
+msgid "Jami teg"
+msgstr "Всего тегов"
+
+msgid "Jami xabarlar"
+msgstr "Всего сообщений"
+
+msgid "Jami xodimlar"
+msgstr "Всего сотрудников"
+
+msgid "jami yozgan"
+msgstr "всего написано"
+
+msgid "Jami:"
+msgstr "Итого:"
+
+msgid "Javob berilgan murojaat"
+msgstr "Отвеченные обращения"
+
+msgid "Javob kutayotgan chatlar"
+msgstr "Чаты, ждущие ответа"
+
+msgid "javob kutayotganlar"
+msgstr "ждут ответа"
+
+msgid "Javob kutmoqda"
+msgstr "Ждёт ответа"
+
+msgid "javob kutmoqda"
+msgstr "ждёт ответа"
+
+msgid "Javob vaqti ish soatlari bo'yicha hisoblanadi. Avtomatik javob va bot xabarlari javob hisoblanmaydi. «Yopgan» — suhbat yopilganda kim yopgani."
+msgstr "Время ответа считается в рабочих часах. Автоответы и сообщения бота не считаются ответом. «Закрыл» — кто закрыл диалог."
+
+msgid "Javob vaqti ish soatlari bo'yicha hisoblanadi. Avtomatik javob va bot xabarlari javob hisoblanmaydi. «Yopgan» — suhbat yopilganda unga biriktirilgan xodim."
+msgstr "Время ответа считается в рабочих часах. Автоответы и сообщения бота не считаются ответом. «Закрыл» — сотрудник, назначенный на диалог при закрытии."
+
+msgid "Javobsiz chatlar shu botga keladi"
+msgstr "Неотвеченные чаты приходят в этого бота"
+
+msgid "javobsiz qolsa"
+msgstr "если без ответа"
+
+msgid "Javobsiz suhbatlar — Telegram ogohlantirish"
+msgstr "Неотвеченные диалоги — оповещение в Telegram"
+
+msgid "Jim rejim boshlanishi (soat)"
+msgstr "Начало тихого режима (час)"
+
+msgid "Jo'natdi"
+msgstr "Отправил"
+
+msgid "jo'natgan. Kelgan har bir mahsulotni skanerlang — jo'natilgan son avtomatik qabul qilingan deb belgilanmaydi."
+msgstr "отправил. Отсканируйте каждый прибывший товар — отправленное количество не считается принятым автоматически."
+
+msgid "Jo'natiladi"
+msgstr "Будет отправлено"
+
+msgid "Jo'natildi — transfer yo'lda"
+msgstr "Отправлено — перемещение в пути"
+
+msgid "Jo'natilgan"
+msgstr "Отправлено"
+
+msgid "jo'natilgan / qabul / farq"
+msgstr "отправлено / принято / разница"
+
+msgid "Jo'natilgandan keyin ro'yxatni o'zgartirib bo'lmaydi."
+msgstr "После отправки список изменить нельзя."
+
+msgid "jo'natilgandan ko'p"
+msgstr "больше отправленного"
+
+msgid "Jo'natish"
+msgstr "Отправить"
+
+msgid "Jo'natish jurnali"
+msgstr "Журнал отправки"
+
+msgid "Jo'natish nakladnoyi (Excel)"
+msgstr "Накладная (Excel)"
+
+msgid "Jo'natuvchi"
+msgstr "Отправитель"
+
+msgid "joriy oy"
+msgstr "текущий месяц"
+
+msgid "Joy turi"
+msgstr "Тип точки"
+
+msgid "Joy yoki ko'cha: Chorsu, Amir Temur {0}…"
+msgstr "Место или улица: Чорсу, Амир Темур {0}…"
+
+msgid "Joylashuv va holat"
+msgstr "Расположение и статус"
+
+msgid "JPEG, PNG yoki WebP. Avtomatik optimallashtiriladi (WebP + kichik nusxalar)."
+msgstr "JPEG, PNG или WebP. Оптимизируется автоматически (WebP + уменьшенные копии)."
+
+msgid "JPEG, PNG yoki WebP. Kichik o'lchamlar avtomatik tayyorlanadi."
+msgstr "JPEG, PNG или WebP. Уменьшенные копии создаются автоматически."
+
+msgid "JPG / PNG. Matn 1024 belgigacha bo'lsa rasm ostida chiqadi, uzunroq bo'lsa — rasmdan keyin alohida xabar."
+msgstr "JPG / PNG. Текст до 1024 символов идёт под фото, длиннее — отдельным сообщением после фото."
+
+msgid "Kam qolgan mahsulotlar:"
+msgstr "Заканчивающиеся товары:"
+
+msgid "Kam qolgan mahsulotlar: {0} ta"
+msgstr "Заканчивающиеся товары: {0}"
+
+msgid "Kam qolganlar"
+msgstr "Заканчиваются"
+
+msgid "Kamida bitta mahsulot qo'shing (yoki skanerlang)"
+msgstr "Добавьте хотя бы один товар (или отсканируйте)"
+
+msgid "Kanal avtopostlari"
+msgstr "Автопосты канала"
+
+msgid "kanal va shaxsiy chatlar"
+msgstr "канал и личные чаты"
+
+msgid "Kanal, yangilik obunachilari va mijozlarga formatlangan post: rasm, mahsulot, tugmalar — oldindan ko'rish va sinov bilan."
+msgstr "Оформленный пост для канала, подписчиков новостей и клиентов: фото, товар, кнопки — с предпросмотром и тестовой отправкой."
+
+msgid "Kanalda qadab qo'yish"
+msgstr "Закрепить в канале"
+
+msgid "kanaldagi murojaatlar"
+msgstr "обращения в канале"
+
+msgid "kanalga yuborilgan onlayn buyurtmalar"
+msgstr "онлайн-заказы, отправленные в канал"
+
+msgid "Kanallar"
+msgstr "Каналы"
+
+msgid "Kapsula idishi"
+msgstr "Банка капсул"
+
+msgid "Karta Payme orqali qabul qilinadi, lekin Payme hali faol emas — avval uni sozlang."
+msgstr "Карты принимаются через Payme, но Payme ещё не активен — сначала настройте его."
+
+msgid "Kartochka va qidiruv natijalarida ko'rinadi — 1–2 jumla, 300 belgigacha."
+msgstr "Видно в карточке и в результатах поиска — 1–2 предложения, до 300 символов."
+
+msgid "Kassa / OFD provayderi (E-POS va boshqalar)"
+msgstr "Касса / ОФД-провайдер (E-POS и другие)"
+
+msgid "Kassa farqi"
+msgstr "Расхождение кассы"
+
+msgid "Kassa ishlatilmaydi"
+msgstr "Касса не используется"
+
+msgid "Kassa ochiq"
+msgstr "Касса открыта"
+
+msgid "kassa orqali"
+msgstr "через кассу"
+
+msgid "Kassa savdosi"
+msgstr "Продажа на кассе"
+
+msgid "Kassa savdosi postlari"
+msgstr "Посты продаж на кассе"
+
+msgid "Kassalar va kassirlar"
+msgstr "Кассы и кассиры"
+
+msgid "Kassir qaytarishlari"
+msgstr "Возвраты кассиров"
+
+msgid "Kassirlar ({0})"
+msgstr "Кассиры ({0})"
+
+msgid "Kassirlar reytingi"
+msgstr "Рейтинг кассиров"
+
+msgid "Katalog, savat, buyurtma, coins, yangiliklar, operator bilan chat"
+msgstr "Каталог, корзина, заказы, коины, новости, чат с оператором"
+
+msgid "Katalogda topilmadi. Mahsulot avval «Mahsulotlar» bo'limida yaratilishi kerak."
+msgstr "В каталоге не найдено. Сначала создайте товар в разделе «Товары»."
+
+msgid "Katalogdagi, lekin bu joyda umuman yo'q mahsulotlar"
+msgstr "Товары из каталога, которых нет в этой точке"
+
+msgid "Kategoriya kartochkasidagi rasm. Shaffof fonli PNG / WebP eng chiroyli chiqadi."
+msgstr "Изображение на карточке категории. Лучше всего — PNG / WebP с прозрачным фоном."
+
+msgid "Kategoriyalar"
+msgstr "Категории"
+
+msgid "Kategoriyalar bo'yicha"
+msgstr "По категориям"
+
+msgid "Kategoriyalar reytingi"
+msgstr "Рейтинг категорий"
+
+msgid "Kategoriyalar ulushi"
+msgstr "Доля категорий"
+
+msgid "Katta miqdor"
+msgstr "Крупная сумма"
+
+msgid "Kecha"
+msgstr "Вчера"
+
+msgid "Kechagi hisobot"
+msgstr "Отчёт за вчера"
+
+msgid "Kechikayotgan buyurtma"
+msgstr "Задерживающийся заказ"
+
+msgid "Kechikayotgan buyurtmalar"
+msgstr "Задерживающиеся заказы"
+
+msgid "Keshbek (buyurtma)"
+msgstr "Кешбэк (заказ)"
+
+msgid "Keshbek oralig'i"
+msgstr "Диапазон кешбэка"
+
+msgid "Ketish xavfi"
+msgstr "Риск ухода"
+
+msgid "Keyingi oy"
+msgstr "Следующий месяц"
+
+msgid "Kichik raqam ro'yxatda oldinroq chiqadi."
+msgstr "Меньшее число — выше в списке."
+
+msgid "Kichik raqam tanlov ro'yxatida oldinroq chiqadi."
+msgstr "Меньшее число — выше в списке выбора."
+
+msgid "Kichik raqam — ro'yxatda yuqorida."
+msgstr "Меньшее число — выше в списке."
+
+msgid "Kim kimni taklif qildi va qaysi kanal orqali. Ikkala tomon ham do'stning birinchi buyurtmasi yetkazilganda coin oladi."
+msgstr "Кто кого пригласил и через какой канал. Обе стороны получают коины, когда доставлен первый заказ друга."
+
+msgid "Kim qaysi qurilmadan kirgan, qachon faol bo'lgan va qaysi sessiyalar ochiq. Shubhali sessiyani bir bosishda yopish mumkin."
+msgstr "Кто с какого устройства входил, когда был активен и какие сессии открыты. Подозрительную сессию можно закрыть в один клик."
+
+msgid "Kimga qaysi rol berilgan va qaysi do'kon doirasida. Rol berish yoki olib tashlash darhol ruxsatlarga ta'sir qiladi."
+msgstr "Кому какая роль назначена и в каком магазине. Назначение или снятие роли сразу меняет права."
+
+msgid "Kimga yuboriladi"
+msgstr "Кому отправляется"
+
+msgid "Kimlar oldi"
+msgstr "Кто получил"
+
+msgid "Kimlar:"
+msgstr "Кто:"
+
+msgid "Kimlarda bor"
+msgstr "У кого есть"
+
+msgid "Kirim (qabul)"
+msgstr "Приход (приёмка)"
+
+msgid "Kiruvchi qo'ng'iroq"
+msgstr "Входящий звонок"
+
+msgid "kishi"
+msgstr "чел."
+
+msgid "Ko'cha va uy"
+msgstr "Улица и дом"
+
+msgid "Ko'cha, mijoz ismi yoki telefon…"
+msgstr "Улица, имя клиента или телефон…"
+
+msgid "Ko'cha, tuman va viloyatni nuqta bo'yicha aniqlash"
+msgstr "Определить улицу, район и область по точке"
+
+msgid "Ko'cha, uy, mo'ljal"
+msgstr "Улица, дом, ориентир"
+
+msgid "Ko'p ishlatilgan"
+msgstr "Часто используемые"
+
+msgid "Ko'p natijasiz"
+msgstr "Чаще всего без результатов"
+
+msgid "Ko'p o'qilgan"
+msgstr "Самые читаемые"
+
+msgid "Ko'p qidirilgan"
+msgstr "Самые частые запросы"
+
+msgid "Ko'radi"
+msgstr "Видит"
+
+msgid "Ko'rib chiqish va band qilish"
+msgstr "Проверить и зарезервировать"
+
+msgid "Ko'rib chiqish va tasdiqlash"
+msgstr "Проверить и подтвердить"
+
+msgid "Ko'rishlar"
+msgstr "Просмотры"
+
+msgid "Ko'rsatish"
+msgstr "Показать"
+
+msgid "Kobalt"
+msgstr "Кобальт"
+
+msgid "kod bilan kelgan mijozlar"
+msgstr "клиенты, пришедшие по коду"
+
+msgid "Kod yoki ism / telefon…"
+msgstr "Код или имя / телефон…"
+
+msgid "Kod yoki mijoz…"
+msgstr "Код или клиент…"
+
+msgid "Kod yoki tavsif…"
+msgstr "Код или описание…"
+
+msgid "Kodlar"
+msgstr "Коды"
+
+msgid "Konversiya ({0} kun) · {1} kutilmoqda"
+msgstr "Конверсия ({0} дн.) · {1} в ожидании"
+
+msgid "Koordinatasiz"
+msgstr "Без координат"
+
+msgid "kun ichida"
+msgstr "в течение дней"
+
+msgid "Kunlik dinamika"
+msgstr "Динамика по дням"
+
+msgid "kunlik hisobot ({0})"
+msgstr "дневной отчёт ({0})"
+
+msgid "Kunlik/haftalik hisobot, grafiklar, reja, nazorat ogohlantirishlari"
+msgstr "Дневные/недельные отчёты, графики, план, оповещения контроля"
+
+msgid "Kuponlar"
+msgstr "Купоны"
+
+msgid "Kuryer ko'radigan ma'lumot"
+msgstr "Что видит курьер"
+
+msgid "kuryer uchun tafsilot bor"
+msgstr "есть детали для курьера"
+
+msgid "Kutilgan dona"
+msgstr "Ожидаемое кол-во"
+
+msgid "Kutilgan qatorlar"
+msgstr "Ожидаемые строки"
+
+msgid "Kutilmoqda"
+msgstr "Ожидается"
+
+msgid "Lavanda"
+msgstr "Лавандовый"
+
+msgid "Laym"
+msgstr "Лайм"
+
+msgid "Login, ism yoki email…"
+msgstr "Логин, имя или email…"
+
+msgid "Lotin harflari, raqam va _ (masalan: store_manager). Kod orqali dasturda tekshiriladi — keyin o'zgartirmang."
+msgstr "Латинские буквы, цифры и _ (например: store_manager). Программа проверяет роль по коду — потом не меняйте."
+
+msgid "Loyalty darajalari"
+msgstr "Уровни лояльности"
+
+msgid "Ma'lumotlarni to'ldiring — nom kiritilishi bilan bu yerda ko'rinadi"
+msgstr "Заполните данные — появится здесь, как только будет введено название"
+
+msgid "Mahsulot"
+msgstr "Товар"
+
+msgid "mahsulot belgilari"
+msgstr "метки товаров"
+
+msgid "Mahsulot bo'yicha savol"
+msgstr "Вопрос о товаре"
+
+msgid "Mahsulot kartasi"
+msgstr "Карточка товара"
+
+msgid "Mahsulot kartochkasida birinchi bo'lib tanlangan turadi."
+msgstr "На карточке товара выбран первым."
+
+msgid "Mahsulot ko'rsatilgan"
+msgstr "Показан товар"
+
+msgid "Mahsulot mavjud"
+msgstr "Товар в наличии"
+
+msgid "Mahsulot reytingi"
+msgstr "Рейтинг товара"
+
+msgid "Mahsulot sahifasi"
+msgstr "Страница товара"
+
+msgid "Mahsulot variantlari"
+msgstr "Варианты товаров"
+
+msgid "Mahsulot yoki buyurtma endi mavjud emas"
+msgstr "Товар или заказ больше не существует"
+
+msgid "Mahsulot yoki buyurtma kartochkasi"
+msgstr "Карточка товара или заказа"
+
+msgid "mahsulot ↔ teg"
+msgstr "товар ↔ тег"
+
+msgid "Mahsulotga o'tish"
+msgstr "Перейти к товару"
+
+msgid "mahsuloti bor davlatlar"
+msgstr "страны с товарами"
+
+msgid "Mahsulotlar"
+msgstr "Товары"
+
+msgid "Mahsulotlar katalogi"
+msgstr "Каталог товаров"
+
+msgid "Mahsulotlar ro'yxati tozalanadi — ular yangi manba qoldig'idan qayta qo'shiladi."
+msgstr "Список товаров очистится — товары добавятся заново из остатка нового источника."
+
+msgid "Mahsulotlar soni bo'yicha"
+msgstr "По количеству товаров"
+
+msgid "Mahsulotlar taqsimoti"
+msgstr "Распределение товаров"
+
+msgid "Mahsulotlardagi ta'mlar"
+msgstr "Вкусы в товарах"
+
+msgid "mahsulotlarga biriktirilgan"
+msgstr "привязано к товарам"
+
+msgid "Mahsulotlari"
+msgstr "Товары"
+
+msgid "Mahsulotni shtrix-kod (skaner yoki {0}D DataMatrix), SKU yoki nomi bo'yicha qo'shing. Chek raqami va QR kod avtomatik beriladi."
+msgstr "Добавляйте товары по штрихкоду (сканер или {0}D DataMatrix), SKU или названию. Номер чека и QR-код присваиваются автоматически."
+
+msgid "Mahsulotni skanerlang yoki yuqoridan qidiring. Faqat"
+msgstr "Отсканируйте товар или найдите выше. Добавляются только товары из остатка"
+
+msgid "Mahsulotsiz"
+msgstr "Без товаров"
+
+msgid "mahsulotsiz"
+msgstr "без товаров"
+
+msgid "Main navigation"
+msgstr "Главное меню"
+
+msgid "Maksimal xarid (so'm)"
+msgstr "Максимум покупок (сум)"
+
+msgid "Malina"
+msgstr "Малиновый"
+
+msgid "Manba va qabul qiluvchi bir xil bo'lishi mumkin emas"
+msgstr "Источник и получатель не могут совпадать"
+
+msgid "Manbada yetarli qoldiq yo'q"
+msgstr "У источника недостаточно остатка"
+
+msgid "Manbadan ayirish (hisobsiz jo'natilgan)"
+msgstr "Списать у источника (отправлено без учёта)"
+
+msgid "Manbaga qaytarish (umuman jo'natilmagan)"
+msgstr "Вернуть источнику (не отправлялось)"
+
+msgid "Manzil formasida birinchi tanlanadigan hudud. Har viloyatda shaharlar va (kerak bo'lsa) tumanlar bor."
+msgstr "Область, которая выбирается первой в форме адреса. В каждой есть города и (при необходимости) районы."
+
+msgid "Manzillar"
+msgstr "Адреса"
+
+msgid "Manzillar ro'yxati"
+msgstr "Список адресов"
+
+msgid "Manzillar xaritasi"
+msgstr "Карта адресов"
+
+msgid "Maqola (o'zbekcha)"
+msgstr "Статья (на узбекском)"
+
+msgid "Maqolalar"
+msgstr "Статьи"
+
+msgid "Maqolalari"
+msgstr "Статьи"
+
+msgid "Maqolalarni mavzular bo'yicha guruhlang. Tartib raqami saytdagi ketma-ketlikni belgilaydi."
+msgstr "Группируйте статьи по темам. Порядковый номер задаёт порядок на сайте."
+
+msgid "Maqolaning qisqacha mazmuni…"
+msgstr "Краткое содержание статьи…"
+
+msgid "Marjon"
+msgstr "Коралловый"
+
+msgid "Markaziy ombor"
+msgstr "Центральный склад"
+
+msgid "marta o'qilgan"
+msgstr "прочтений"
+
+msgid "Masalan: haftalik to'ldirish"
+msgstr "Например: еженедельное пополнение"
+
+msgid "Masalan: Kreatin qanday ichiladi?"
+msgstr "Например: Как принимать креатин?"
+
+msgid "Masalan: Navro'z"
+msgstr "Например: Навруз"
+
+msgid "Masalan: Yangi filial ochildi! 🎉"
+msgstr "Например: Открылся новый филиал! 🎉"
+
+msgid "Masalan: «Assalomu alaykum, {ism}! {buyurtma_raqami} buyurtmangiz taxminan {yetkazish_sanasi} yetkaziladi.»"
+msgstr "Например: «Assalomu alaykum, {ism}! {buyurtma_raqami} buyurtmangiz taxminan {yetkazish_sanasi} yetkaziladi.»"
+
+msgid "Maslahatlar"
+msgstr "Советы"
+
+msgid "Matnni formatlang, rasm yoki mahsulot qo'shing, avval o'zingizga sinov yuboring."
+msgstr "Оформите текст, добавьте фото или товар и сначала отправьте тест себе."
+
+msgid "Maxsus kun qo'shish"
+msgstr "Добавить особый день"
+
+msgid "Maysa"
+msgstr "Травяной"
+
+msgid "mediana, {0} kun"
+msgstr "медиана, {0} дн."
+
+msgid "Mening"
+msgstr "Мои"
+
+msgid "mening"
+msgstr "мои"
+
+msgid "Mening bonuslarim"
+msgstr "Мои бонусы"
+
+msgid "Mening profilim"
+msgstr "Мой профиль"
+
+msgid "Mijoz"
+msgstr "Клиент"
+
+msgid "Mijoz bahosi"
+msgstr "Оценка клиента"
+
+msgid "mijoz bahosi"
+msgstr "оценка клиента"
+
+msgid "Mijoz bilan bog'lanib, natijani yozing"
+msgstr "Свяжитесь с клиентом и запишите результат"
+
+msgid "Mijoz bilan bog'lanib, natijani yozing…"
+msgstr "Свяжитесь с клиентом и запишите результат…"
+
+msgid "mijoz bilan bog'laning"
+msgstr "свяжитесь с клиентом"
+
+msgid "Mijoz buyurtmasi"
+msgstr "Заказ клиента"
+
+msgid "Mijoz checkout'da «Humo» ni tanlaydi va tanlangan ekvayerning xavfsiz sahifasida karta ma'lumotlarini kiritadi. Pul o'sha ekvayer orqali hisobingizga tushadi."
+msgstr "Клиент выбирает «Humo» при оформлении и вводит данные карты на защищённой странице выбранного эквайера. Деньги поступают на ваш счёт через этого эквайера."
+
+msgid "Mijoz faqat baho qo'ygan, izoh yozmagan."
+msgstr "Клиент поставил только оценку, без комментария."
+
+msgid "Mijoz ilovada bajarishi mumkin bo'lgan har bir amal. Ruxsat rolga biriktiriladi, rol esa foydalanuvchiga."
+msgstr "Каждое действие, доступное в приложении. Право привязывается к роли, а роль — к пользователю."
+
+msgid "Mijoz ish vaqtidan tashqari yozsa, bir marta ({0} soatda ko'pi bilan bir marta) avtomatik javob oladi; javob oxirida ish vaqti ko'rsatiladi."
+msgstr "Если клиент пишет вне рабочего времени, он один раз (не чаще раза в {0} ч) получает автоответ; в конце ответа указаны часы работы."
+
+msgid "Mijoz ismi"
+msgstr "Имя клиента"
+
+msgid "Mijoz javob kutayotgan suhbat xodimlar Telegram kanaliga (buyurtmalar kanali) «Javob berish» tugmasi bilan yuboriladi."
+msgstr "Диалог, где клиент ждёт ответа, отправляется в Telegram-канал сотрудников (канал заказов) с кнопкой «Ответить»."
+
+msgid "Mijoz kartasi"
+msgstr "Карточка клиента"
+
+msgid "Mijoz ma'lumotlari shu yerda ko'rinadi."
+msgstr "Здесь появятся данные клиента."
+
+msgid "mijoz manzili biriktirilgan"
+msgstr "привязаны адреса клиентов"
+
+msgid "Mijoz nima so'radi, nima taklif qilindi, kelishuv…"
+msgstr "Что спросил клиент, что предложили, договорённость…"
+
+msgid "Mijoz nima so'radi, nima taklif qilindi…"
+msgstr "Что спросил клиент, что предложили…"
+
+msgid "Mijoz o'z kodini do'stiga yuborsa va do'sti ro'yxatdan o'tsa, shu yerda paydo bo'ladi."
+msgstr "Когда клиент отправит свой код другу и тот зарегистрируется, это появится здесь."
+
+msgid "mijoz oxirgi bo'lib yozgan"
+msgstr "клиент написал последним"
+
+msgid "Mijoz oxirgi {0} kundagi xaridlari summasiga qarab darajaga tushadi va har bir yangi xariddan shu darajaning foizicha coin oladi ({1} so'm = {2} coin)."
+msgstr "Уровень клиента зависит от суммы покупок за последние {0} дн., с каждой новой покупки начисляется процент уровня коинами ({1} сум = {2} коин)."
+
+msgid "Mijoz sahifasida ko'rinadi (faqat o'zbekcha)."
+msgstr "Показывается на странице клиента (только на узбекском)."
+
+msgid "Mijoz sharhlari"
+msgstr "Отзывы клиентов"
+
+msgid "mijoz shu raqam bilan SMS kod orqali kiradi"
+msgstr "клиент входит по этому номеру через SMS-код"
+
+msgid "Mijoz uchun qanday ko'rinadi"
+msgstr "Как это видит клиент"
+
+msgid "Mijoz xaritada nuqta qo'yganda tuman nomi avtomatik aniqlanadi (OpenStreetMap bo'yicha) — nomlar shu ro'yxat bilan solishtiriladi."
+msgstr "Когда клиент ставит точку на карте, район определяется автоматически (по OpenStreetMap) и сверяется с этим списком."
+
+msgid "Mijoz yozgan va shu xodim birinchi bo'lib javob bergan murojaatlar"
+msgstr "Обращения клиентов, на которые этот сотрудник ответил первым"
+
+msgid "Mijoz «Buyurtmam qayerda?», «где мой заказ» deb yoki buyurtma raqamini yozsa, bot darhol (kechasi ham) buyurtma kartasini yuboradi. Suhbat baribir operator navbatida qoladi."
+msgstr "Если клиент пишет «Buyurtmam qayerda?», «где мой заказ» или номер заказа, бот сразу (даже ночью) присылает карточку заказа. Диалог всё равно остаётся в очереди оператора."
+
+msgid "Mijoz «joylashuvimni aniqlash» yoki xaritada pin qo'yganda nuqta saqlanadi; nuqtasiz manzillarni ro'yxatda «Koordinatasiz» filtri bilan toping."
+msgstr "Точка сохраняется, когда клиент нажимает «определить моё местоположение» или ставит пин; адреса без точки ищите фильтром «Без координат»."
+
+msgid "Mijozdan o'qilmagan"
+msgstr "Непрочитанные от клиента"
+
+msgid "Mijozga coin yonishidan shuncha kun oldin Telegram va bildirishnoma orqali eslatiladi."
+msgstr "Клиенту напоминают за столько дней до сгорания коинов — в Telegram и уведомлением."
+
+msgid "Mijozga «bir porsiya narxi»ni ko'rsatadi (solishtirish sahifasi) va xarid qachon tugashini hisoblab, o'z vaqtida «qayta buyurtma» eslatmasini yuboradi. Qadoqdagi «Serving size» / «Servings per container» qatorlaridan oling."
+msgstr "Показывает клиенту «цену за порцию» (страница сравнения) и рассчитывает, когда закончится покупка, чтобы вовремя напомнить о повторном заказе. Берите значения из строк «Serving size» / «Servings per container» на упаковке."
+
+msgid "Mijozlar AI maslahatchiga nima so'rayapti, qaysi mahsulotlar taklif qilindi va javoblar qanchalik foydali bo'ldi."
+msgstr "Что клиенты спрашивают у AI-консультанта, какие товары были предложены и насколько полезны ответы."
+
+msgid "Mijozlar bilan barcha suhbatlar: kim yozdi, oxirgi xabar, o'qilmaganlar va kim javob beryapti. Suhbatni bosing — Chat markazida ochiladi."
+msgstr "Все диалоги с клиентами: кто написал, последнее сообщение, непрочитанные и кто отвечает. Нажмите — откроется в Чат-центре."
+
+msgid "Mijozlar boti"
+msgstr "Бот для клиентов"
+
+msgid "mijozlar hali ochmagan"
+msgstr "клиенты ещё не открыли"
+
+msgid "Mijozlar ilovasi va kassalardagi ro'yxatdan o'tgan qurilmalar: turi, egasi, ishonchliligi va push bildirishnoma holati."
+msgstr "Устройства, зарегистрированные в клиентском приложении и на кассах: тип, владелец, доверие и статус push-уведомлений."
+
+msgid "Mijozlar katalogda qidirganda bu yerda paydo bo'ladi."
+msgstr "Появится здесь, когда клиенты начнут искать в каталоге."
+
+msgid "Mijozlar katalogdan nimani qidirmoqda. «Topilmadi» — qidirilgan, lekin do'konda yo'q narsalar: yangi mahsulot yoki yetishmayotgan nom/sinonim uchun signal."
+msgstr "Что клиенты ищут в каталоге. «Не найдено» — то, чего нет в магазине: сигнал для нового товара или недостающего названия/синонима."
+
+msgid "mijozlar manzillari"
+msgstr "адреса клиентов"
+
+msgid "Mijozlar manzillari, do'konlar va omborlar bitta xaritada. Pinni bosing — kim, qayer, eng yaqin do'kon va Yandex / Google / Apple / {0}GIS'da ochish."
+msgstr "Адреса клиентов, магазины и склады на одной карте. Нажмите на пин — кто, где, ближайший магазин и открыть в Яндекс / Google / Apple / {0}GIS."
+
+msgid "Mijozlar qo'llab-quvvatlash suhbatini {0}–{1} yulduz bilan baholaydi. Past baholarni ko'rib, mijoz bilan qayta bog'laning."
+msgstr "Клиенты оценивают диалог с поддержкой на {0}–{1} звёзд. Смотрите низкие оценки и связывайтесь с клиентом."
+
+msgid "Mijozlar savollariga shu yerda javob bering — javob mijozga darhol yetadi, oflayn bo'lsa bildirishnoma boradi."
+msgstr "Отвечайте на вопросы клиентов здесь — ответ приходит сразу, а если клиент офлайн, он получит уведомление."
+
+msgid "Mijozlar saytdagi AI maslahatchiga yozganda bu yerda paydo bo'ladi."
+msgstr "Появится здесь, когда клиенты напишут AI-консультанту на сайте."
+
+msgid "Mijozlar segmenti"
+msgstr "Сегмент клиентов"
+
+msgid "Mijozlar segmentlari"
+msgstr "Сегменты клиентов"
+
+msgid "Mijozlar sharhga biriktirgan rasm va videolar. Rasmni bosing — sharhni ochib, saytga chiqarish yoki yashirish mumkin."
+msgstr "Фото и видео, приложенные клиентами к отзывам. Нажмите — откроется отзыв, его можно опубликовать или скрыть."
+
+msgid "Mijozlar sharhlari: tekshiring, saytga chiqaring yoki sabab ko'rsatib rad eting. Faqat «Saytda» holatidagi sharhlar mahsulot sahifasida va bosh sahifada ko'rinadi."
+msgstr "Отзывы клиентов: проверьте, опубликуйте или отклоните с указанием причины. Только отзывы со статусом «На сайте» видны на странице товара и на главной."
+
+msgid "Mijozlar va coinlar"
+msgstr "Клиенты и коины"
+
+msgid "Mijozlardan yashirish (bekor qilish)"
+msgstr "Скрыть от клиентов (отозвать)"
+
+msgid "Mijozlarga xabar"
+msgstr "Сообщение клиентам"
+
+msgid "Mijozlarga yuborilgan har bir xabar: buyurtma holati, coin, promokod va e'lonlar — kim oldi, o'qidimi va Telegram'ga yetib bordimi."
+msgstr "Каждое сообщение клиентам: статус заказа, коины, промокоды и объявления — кто получил, прочитал ли и дошло ли в Telegram."
+
+msgid "Mijozlarning o'rtacha bahosi, {0} kun"
+msgstr "Средняя оценка клиентов, {0} дн."
+
+msgid "Mijozlarning yetkazib berish manzillari: aniq nuqta, podyezd, qavat, domofon va mo'ljal — kuryer shuni ko'radi."
+msgstr "Адреса доставки клиентов: точная точка, подъезд, этаж, домофон и ориентир — это видит курьер."
+
+msgid "Mijozni xariddan qat'i nazar bitta darajaga qotirish yoki «Avtomatik» bilan qaytarish."
+msgstr "Закрепить клиента на одном уровне независимо от покупок или вернуть «Автоматически»."
+
+msgid "Mijozning hisoblanadigan xaridlari (yetkazilgan buyurtmalar va kassa xaridlari) [minimal, maksimal) oralig'ida bo'lsa, har bir yangi xaridda shu foiz coin oladi."
+msgstr "Если учитываемые покупки клиента (доставленные заказы и покупки на кассе) в диапазоне [минимум, максимум), с каждой новой покупки начисляется этот процент коинами."
+
+msgid "Mijozning hisoblanadigan xaridlari shu summadan boshlab bu darajaga kiradi."
+msgstr "Клиент попадает на этот уровень, когда учитываемые покупки достигают этой суммы."
+
+msgid "Mijozning ismi"
+msgstr "Имя клиента"
+
+msgid "Mijozning o'rtacha bahosi"
+msgstr "Средняя оценка клиента"
+
+msgid "Mijozning oxirgi xabaridan shuncha daqiqa o'tib javob bo'lmasa — ogohlantirish. Har bir xabar uchun bir marta."
+msgstr "Оповещение, если через столько минут после последнего сообщения клиента нет ответа. Один раз на сообщение."
+
+msgid "Minimal xarid (so'm)"
+msgstr "Минимум покупок (сум)"
+
+msgid "Miqdor"
+msgstr "Количество"
+
+msgid "Misol saqlangan sozlamalar bo'yicha hisoblanadi — o'zgartirgandan keyin saqlang."
+msgstr "Пример считается по сохранённым настройкам — после изменения сохраните."
+
+msgid "Mo'ljal va izoh kuryerga"
+msgstr "Ориентир и комментарий для курьера"
+
+msgid "Moderatsiya kutmoqda"
+msgstr "Ожидает модерации"
+
+msgid "modul.resurs.amal ko'rinishida, masalan: reviews.review.create. Dasturdagi tekshiruvlar shu kodni ishlatadi."
+msgstr "В формате модуль.ресурс.действие, например: reviews.review.create. Проверки в программе используют этот код."
+
+msgid "Modullar"
+msgstr "Модули"
+
+msgid "Moliya ({0} kun)"
+msgstr "Финансы ({0} дн.)"
+
+msgid "Moviy"
+msgstr "Голубой"
+
+msgid "Moviy-yashil"
+msgstr "Сине-зелёный"
+
+msgid "Muddati"
+msgstr "Срок"
+
+msgid "muddati ko'rsatilmagan"
+msgstr "срок не указан"
+
+msgid "muddati o'tgan"
+msgstr "просрочено"
+
+msgid "Muddati o'tgan partiyalar javonda: {0} ta ({1} dona)"
+msgstr "Просроченные партии на полке: {0} ({1} шт.)"
+
+msgid "Muddati o'tgan partiyani jo'natib bo'lmaydi"
+msgstr "Просроченную партию отправить нельзя"
+
+msgid "muddati o'tgan — jo'natib bo'lmaydi"
+msgstr "просрочено — отправить нельзя"
+
+msgid "Muddati tugaydigan coinlar"
+msgstr "Сгорающие коины"
+
+msgid "Muddati yaqinlar"
+msgstr "Скоро истекает срок"
+
+msgid "Mukofot taklif qilingan do'stning birinchi buyurtmasi yetkazilganda va shu summadan kam bo'lmasa beriladi."
+msgstr "Награда начисляется, когда первый заказ приглашённого друга доставлен и не меньше этой суммы."
+
+msgid "Muomaladagi coinlar"
+msgstr "Коины в обращении"
+
+msgid "Muqova va holat"
+msgstr "Обложка и статус"
+
+msgid "Murojaatlar"
+msgstr "Обращения"
+
+msgid "Murojaatlar:"
+msgstr "Обращения:"
+
+msgid "Musbat — qo'shish, manfiy — ayirish. Ismingiz bilan coin tarixiga yoziladi; balans hech qachon to'g'ridan-to'g'ri o'zgartirilmaydi."
+msgstr "Положительное — начислить, отрицательное — списать. Записывается в историю коинов с вашим именем; баланс напрямую не меняется."
+
+msgid "Muvaffaqiyatsiz"
+msgstr "Неуспешно"
+
+msgid "MXIK (IKPU) va qadoq kodi — tasnif.soliq.uz dan. Fiskal chek (OFD / virtual kassa) uchun majburiy."
+msgstr "ИКПУ (MXIK) и код упаковки — с tasnif.soliq.uz. Обязательны для фискального чека (ОФД / виртуальная касса)."
+
+msgid "MXIK bo'yicha o'lchov/qadoq kodi (tasnif.soliq.uz)."
+msgstr "Код единицы/упаковки по ИКПУ (tasnif.soliq.uz)."
+
+msgid "Narx"
+msgstr "Цена"
+
+msgid "Narx variantga (hajm / ta'm) qo'yiladi. Avval mahsulot kartasida variant qo'shing — keyin narxni shu yerdan bir bosishda qo'yasiz"
+msgstr "Цена задаётся для варианта (объём / вкус). Сначала добавьте вариант в карточке товара — затем ставьте цену здесь в один клик"
+
+msgid "Narx variantga (hajm / ta'm) qo'yiladi. Avval mahsulot kartasida variant qo'shing — keyin narxni shu yerdan bir bosishda qo'yasiz."
+msgstr "Цена задаётся для варианта (объём / вкус). Сначала добавьте вариант в карточке товара — затем ставьте цену здесь в один клик."
+
+msgid "narx yo'q"
+msgstr "нет цены"
+
+msgid "Narxi (so'm)"
+msgstr "Цена (сум)"
+
+msgid "Narxlar"
+msgstr "Цены"
+
+msgid "Narxlar saqlandi"
+msgstr "Цены сохранены"
+
+msgid "Narxlar {0}"
+msgstr "Цены {0}"
+
+msgid "Narxni tahrirlash"
+msgstr "Изменить цену"
+
+msgid "navbat bo'sh"
+msgstr "очередь пуста"
+
+msgid "Navbatdagi postlar"
+msgstr "Посты в очереди"
+
+msgid "Nazorat markazi"
+msgstr "Центр контроля"
+
+msgid "Nazorat markazi: shubhali operatsiyalar va favqulodda holatlar"
+msgstr "Центр контроля: подозрительные операции и ЧП"
+
+msgid "Nofaol"
+msgstr "Неактивный"
+
+msgid "Nom va kodni kiriting, so'ng ruxsatlarni belgilang"
+msgstr "Введите название и код, затем отметьте права"
+
+msgid "Nom yoki matn…"
+msgstr "Название или текст…"
+
+msgid "Nom, oraliq va keshbek foizini kiriting — oraliqlar boshqa darajalar bilan ustma-ust tushmasin"
+msgstr "Введите название, диапазон и процент кешбэка — диапазоны не должны пересекаться с другими уровнями"
+
+msgid "Nomdan avtomatik yasaladi; faqat lotin harflari, raqam va chiziqcha."
+msgstr "Создаётся из названия автоматически; только латиница, цифры и дефис."
+
+msgid "Nomi (inglizcha)"
+msgstr "Название (английское)"
+
+msgid "Nomi (o'zbekcha)"
+msgstr "Название (узбекское)"
+
+msgid "Nomi (ruscha)"
+msgstr "Название (русское)"
+
+msgid "Nomsiz mahsulot"
+msgstr "Товар без названия"
+
+msgid "Notanish shtrix-kod — mavjud mahsulotga partiya kodi sifatida biriktiriladi"
+msgstr "Незнакомый штрихкод привязывается к существующему товару как код партии"
+
+msgid "Noto'g'ri mahsulot"
+msgstr "Не тот товар"
+
+msgid "Noto'g'ri partiya"
+msgstr "Не та партия"
+
+msgid "Noto'g'ri shtrix-kod"
+msgstr "Неверный штрихкод"
+
+msgid "Nuqtali manzillar"
+msgstr "Адреса с точкой"
+
+msgid "Nusxa olib yangi xabar"
+msgstr "Копировать в новое сообщение"
+
+msgid "NutriZone Support: yangi xabar"
+msgstr "NutriZone Support: новое сообщение"
+
+msgid "NutriZoneAnalyticsBot · So'rov bo'yicha hisobot"
+msgstr "NutriZoneAnalyticsBot · Отчёт по запросу"
+
+msgid "O'chiriladi"
+msgstr "Будет удалено"
+
+msgid "O'chirilgan (ichki chek)"
+msgstr "Отключено (внутренний чек)"
+
+msgid "O'chirilgan foydalanuvchi"
+msgstr "Удалённый пользователь"
+
+msgid "O'chirilsa brend saytdagi brendlar ro'yxatida ko'rinmaydi."
+msgstr "Если выключить, бренд не показывается в списке брендов на сайте."
+
+msgid "O'chirilsa kategoriya saytda ko'rinmaydi."
+msgstr "Если выключить, категория не показывается на сайте."
+
+msgid "O'chirilsa variantlarga yangidan tanlab bo'lmaydi."
+msgstr "Если выключить, его нельзя будет выбрать для вариантов."
+
+msgid "O'chirilsa yangi mahsulotlarga tanlab bo'lmaydi."
+msgstr "Если выключить, его нельзя будет выбрать для новых товаров."
+
+msgid "O'chirish"
+msgstr "Удалить"
+
+msgid "O'chirish (ro'yxatdan yashirish)"
+msgstr "Отключить (скрыть из списка)"
+
+msgid "O'chirish (saytda ko'rinmaydi)"
+msgstr "Отключить (не видно на сайте)"
+
+msgid "O'lchov birligi"
+msgstr "Единица измерения"
+
+msgid "O'qildi"
+msgstr "Прочитано"
+
+msgid "o'qildi"
+msgstr "прочитано"
+
+msgid "O'qilish darajasi"
+msgstr "Доля прочтений"
+
+msgid "O'qilmagan"
+msgstr "Непрочитанные"
+
+msgid "O'rtacha"
+msgstr "В среднем"
+
+msgid "O'rtacha baho"
+msgstr "Средняя оценка"
+
+msgid "O'rtacha baho ({0} kun)"
+msgstr "Средняя оценка ({0} дн.)"
+
+msgid "O'rtacha chek"
+msgstr "Средний чек"
+
+msgid "o'rtacha chek {0}"
+msgstr "средний чек {0}"
+
+msgid "O'rtacha reyting"
+msgstr "Средний рейтинг"
+
+msgid "o'rtacha {0} ★"
+msgstr "в среднем {0} ★"
+
+msgid "o'rtacha, to'g'ri chiziqda"
+msgstr "в среднем, по прямой"
+
+msgid "O'tgan hafta"
+msgstr "Прошлая неделя"
+
+msgid "O'tgan oy"
+msgstr "Прошлый месяц"
+
+msgid "O'ylab ko'radi"
+msgstr "Думает"
+
+msgid "O'z Telegram ID raqamingiz (@userinfobot ko'rsatadi). «Sinov yuborish» faqat shu chatga yuboradi."
+msgstr "Ваш Telegram ID (покажет @userinfobot). «Отправить тест» отправляет только в этот чат."
+
+msgid "O'zbekcha"
+msgstr "Узбекский"
+
+msgid "O'zgarish yo'q"
+msgstr "Нет изменений"
+
+msgid "O'zgarishlar hali saqlanmadi"
+msgstr "Изменения ещё не сохранены"
+
+msgid "O'zgaruvchi"
+msgstr "Переменная"
+
+msgid "O'zgaruvchilar"
+msgstr "Переменные"
+
+msgid "O'zgaruvchilar:"
+msgstr "Переменные:"
+
+msgid "O'zi haqida"
+msgstr "О себе"
+
+msgid "o'zinikini boshqarish"
+msgstr "управление своими"
+
+msgid "o'zinikini ko'rish"
+msgstr "просмотр своих"
+
+msgid "Obunachilar"
+msgstr "Подписчики"
+
+msgid "Ochilgan"
+msgstr "Открыто"
+
+msgid "Ochiq kassalar"
+msgstr "Открытые кассы"
+
+msgid "Ochiq sessiyalar"
+msgstr "Открытые сессии"
+
+msgid "Ochiq signallar"
+msgstr "Открытые сигналы"
+
+msgid "Ochiq suhbatlar"
+msgstr "Открытые диалоги"
+
+msgid "Ochish"
+msgstr "Открыть"
+
+msgid "OFD provayderi (E-POS va boshqalar)"
+msgstr "ОФД-провайдер (E-POS и другие)"
+
+msgid "Olcha"
+msgstr "Вишнёвый"
+
+msgid "Oldin saytda bo'lgan (o'zgartirilgach qayta tekshiruvga tushdi)"
+msgstr "Был на сайте (после изменения отправлен на повторную проверку)"
+
+msgid "Oldingi davrda yetkazilgan buyurtma yo'q"
+msgstr "В предыдущем периоде доставленных заказов нет"
+
+msgid "Oldingi oy"
+msgstr "Предыдущий месяц"
+
+msgid "Ombor hisobotlari"
+msgstr "Складские отчёты"
+
+msgid "OMBOR NAZORATI"
+msgstr "КОНТРОЛЬ СКЛАДА"
+
+msgid "Ombor nazorati"
+msgstr "Контроль склада"
+
+msgid "Ombor tarixi"
+msgstr "История склада"
+
+msgid "Ombor va muddatlar"
+msgstr "Склад и сроки"
+
+msgid "Ombordagi qoldiq"
+msgstr "Остаток на складе"
+
+msgid "omborga kiritilmaydi. Kerak bo'lsa, tegishli qatorda «Noto'g'ri mahsulot» sababini tanlang va menejerga xabar bering."
+msgstr "не оприходуются. При необходимости выберите в строке причину «Не тот товар» и сообщите менеджеру."
+
+msgid "Omborga qaytarilgan"
+msgstr "Возвращено на склад"
+
+msgid "Omborga qaytarilgan buyurtma yo'q"
+msgstr "Нет заказов, возвращённых на склад"
+
+msgid "Omborlar"
+msgstr "Склады"
+
+msgid "Omborlar (sklad)"
+msgstr "Склады"
+
+msgid "ommaviy yuborilgan"
+msgstr "массовая рассылка"
+
+msgid "Onlayn (yetkazilgan)"
+msgstr "Онлайн (доставлено)"
+
+msgid "Onlayn buyurtma"
+msgstr "Онлайн-заказ"
+
+msgid "Onlayn buyurtma va kassa savdolari postlari, tasdiqlash tugmalari, filial egalariga"
+msgstr "Посты онлайн-заказов и продаж на кассе, кнопки подтверждения, владельцам филиалов"
+
+msgid "Onlayn buyurtma yo'q."
+msgstr "Онлайн-заказов нет."
+
+msgid "ONLAYN BUYURTMALAR"
+msgstr "ОНЛАЙН-ЗАКАЗЫ"
+
+msgid "Onlayn buyurtmalar"
+msgstr "Онлайн-заказы"
+
+msgid "Onlayn buyurtmalar grafigi"
+msgstr "График онлайн-заказов"
+
+msgid "Onlayn buyurtmalar · do'konda xaridlar"
+msgstr "Онлайн-заказы · покупки в магазине"
+
+msgid "onlayn buyurtmalar. Yo'ldagi buyurtmalar tushumga kirmaydi."
+msgstr "онлайн-заказы. Заказы в пути в выручку не входят."
+
+msgid "Onlayn do'kon"
+msgstr "Интернет-магазин"
+
+msgid "Onlayn kassa"
+msgstr "Онлайн-касса"
+
+msgid "Onlayn to'lovni boshlab, to'lamagan buyurtmalar uchun Telegram eslatma va avtomatik bekor qilish. Hozir to'lov kutayotgan buyurtmalar: {0}."
+msgstr "Напоминание в Telegram и автоотмена для заказов, где онлайн-оплату начали, но не завершили. Сейчас ждут оплаты: {0}."
+
+msgid "Onlayn yoki do'kondan xarid qilganlar"
+msgstr "Покупавшие онлайн или в магазине"
+
+msgid "Online order cancelled"
+msgstr "Онлайн-заказ отменён"
+
+msgid "Online order reserved"
+msgstr "Онлайн-заказ зарезервирован"
+
+msgid "Online order shipped"
+msgstr "Онлайн-заказ отправлен"
+
+msgid "Operator bosganda javob maydoniga mijoz ma'lumotlari bilan to'ldirilib qo'yiladi — yuborishdan oldin o'zgartirish mumkin. O'zgaruvchilar:"
+msgstr "При нажатии вставляется в поле ответа с данными клиента — перед отправкой можно изменить. Переменные:"
+
+msgid "Operatorlar hisoboti"
+msgstr "Отчёт по операторам"
+
+msgid "Operatsion xarajatlar / sof foyda"
+msgstr "Операционные расходы / чистая прибыль"
+
+msgid "Oq yoki shaffof fonli kvadrat logo eng chiroyli chiqadi. Saqlanganda media pipeline orqali kichik o'lchamlari ham yaratiladi."
+msgstr "Лучше всего смотрится квадратный логотип на белом или прозрачном фоне. При сохранении создаются уменьшенные копии."
+
+msgid "Oraliq va foizlarni shu yerda bir vaqtda o'zgartiring — butun zinapoya birga tekshiriladi (ustma-ust tushish va bo'shliqlar)."
+msgstr "Меняйте диапазоны и проценты здесь вместе — вся лестница проверяется целиком (пересечения и пропуски)."
+
+msgid "Order — o'zinikini ko'rish"
+msgstr "Заказ — просмотр своих"
+
+msgid "Orders bot"
+msgstr "Бот заказов"
+
+msgid "Orqaga"
+msgstr "Назад"
+
+msgid "Orxideya"
+msgstr "Орхидея"
+
+msgid "Osmon"
+msgstr "Небесный"
+
+msgid "Ovozsiz yuborish"
+msgstr "Отправить без звука"
+
+msgid "Oxirgi o'zgargan"
+msgstr "Последнее изменение"
+
+msgid "oxirgi o'zgarish: {0}"
+msgstr "последнее изменение: {0}"
+
+msgid "Oxirgi savdo"
+msgstr "Последняя продажа"
+
+msgid "Oxirgi xabar"
+msgstr "Последнее сообщение"
+
+msgid "Oxirgi xarid {0}–{1} kun oldin"
+msgstr "Последняя покупка {0}–{1} дн. назад"
+
+msgid "oylik hisobot ({0}-kun {1})"
+msgstr "месячный отчёт ({0}-е число, {1})"
+
+msgid "Oylik reja"
+msgstr "План на месяц"
+
+msgid "Oylik reja, so'm"
+msgstr "План на месяц, сум"
+
+msgid "Oylik va KPI"
+msgstr "Зарплата и KPI"
+
+msgid "Partiya"
+msgstr "Партия"
+
+msgid "Partiya kodlari"
+msgstr "Коды партий"
+
+msgid "Partiyali qatorlar"
+msgstr "Строки с партиями"
+
+msgid "partiyasiz"
+msgstr "без партии"
+
+msgid "Partiyasiz"
+msgstr "Без партии"
+
+msgid "Past baho (1–2 ★) olgan suhbatlar"
+msgstr "Диалоги с низкой оценкой (1–2 ★)"
+
+msgid "Past baho olgan, hali hal qilinmagan suhbatlar"
+msgstr "Диалоги с низкой оценкой, ещё не решённые"
+
+msgid "Past baho yo'q"
+msgstr "Низких оценок нет"
+
+msgid "Payme bilan to'langan buyurtmalar uchun soliq cheki Payme virtual kassasi orqali chiqadi (QR kod bilan). Payme Business kabinetida fiskalizatsiya yoqilgan bo'lishi kerak."
+msgstr "Для заказов, оплаченных через Payme, фискальный чек выдаёт виртуальная касса Payme (с QR-кодом). В кабинете Payme Business должна быть включена фискализация."
+
+msgid "Po'lat"
+msgstr "Стальной"
+
+msgid "Podyezd / mo'ljal"
+msgstr "Подъезд / ориентир"
+
+msgid "POS + onlayn + qo'lda"
+msgstr "POS + онлайн + вручную"
+
+msgid "POS kassa"
+msgstr "POS-касса"
+
+msgid "POS kassa · {0}"
+msgstr "POS-касса · {0}"
+
+msgid "POS, onlayn buyurtma va qo'lda yaratilgan barcha cheklar: chop etish, elektron chek (QR) va fiskallashtirish."
+msgstr "Все чеки POS, онлайн-заказов и созданные вручную: печать, электронный чек (QR) и фискализация."
+
+msgid "Postlar"
+msgstr "Посты"
+
+msgid "Promokod va aksiyalar"
+msgstr "Промокоды и акции"
+
+msgid "Provayder (OFD / virtual kassa) chek qabul qiladigan URL."
+msgstr "URL, по которому провайдер (ОФД / виртуальная касса) принимает чеки."
+
+msgid "Push yoqilgan"
+msgstr "Push включён"
+
+msgid "Pushti"
+msgstr "Розовый"
+
+msgid "Qabul qilingan"
+msgstr "Принято"
+
+msgid "Qabul qilingan mahsulotlar"
+msgstr "Принятые товары"
+
+msgid "Qabul qilish (ortiqcha topilgan)"
+msgstr "Принять (найден излишек)"
+
+msgid "Qabul qilish uchun «Filial qabul qiluvchi» ruxsati kerak"
+msgstr "Для приёмки нужно право «Приёмщик филиала»"
+
+msgid "Qabul qiluvchida shoshilinch kamomad yo'q. Mahsulotlarni keyingi qadamda skaner yoki qidiruv bilan qo'shasiz."
+msgstr "У получателя нет срочного дефицита. Товары добавите на следующем шаге сканером или поиском."
+
+msgid "Qabul qiluvchilar:"
+msgstr "Получатели:"
+
+msgid "Qabul qiluvchilar: {0} ta (rahbariyat — hammasi, filial egasi — o'z filiali). Botda: /nazorat"
+msgstr "Получатели: {0} (руководство — всё, владелец филиала — свой филиал). В боте: /nazorat"
+
+msgid "Qachon va nima uchun qayta qo'ng'iroq (ixtiyoriy)"
+msgstr "Когда и зачем перезвонить (необязательно)"
+
+msgid "qadog'i ko'rsatilgan"
+msgstr "с указанной упаковкой"
+
+msgid "qadoq ko'rsatilmaydi"
+msgstr "упаковка не указывается"
+
+msgid "Qadoq turlari"
+msgstr "Типы упаковки"
+
+msgid "Qadoqdagi porsiyalar soni"
+msgstr "Порций в упаковке"
+
+msgid "Qadoqlar"
+msgstr "Упаковки"
+
+msgid "Qadoqlarni boshqarish"
+msgstr "Управление упаковками"
+
+msgid "Qadoqsiz"
+msgstr "Без упаковки"
+
+msgid "qadoqsiz"
+msgstr "без упаковки"
+
+msgid "Qadoqsiz variant"
+msgstr "Вариант без упаковки"
+
+msgid "Qahrabo"
+msgstr "Янтарный"
+
+msgid "Qaror"
+msgstr "Решение"
+
+msgid "Qarorlar qoldiqlarga qo'llanadi va audit tarixiga yoziladi."
+msgstr "Решения применяются к остаткам и записываются в историю аудита."
+
+msgid "qatorda tannarx yo'q — ombor qiymati va marja hisoblanmaydi"
+msgstr "строк без себестоимости — стоимость склада и маржа не считаются"
+
+msgid "Qatorlar"
+msgstr "Строки"
+
+msgid "Qayerda bor"
+msgstr "Где есть"
+
+msgid "Qaysi hodisalar post qilinadi"
+msgstr "Какие события публикуются"
+
+msgid "Qaysi rol nima qila oladi va kimlarda bor — bitta jadvalda. Rolni o'zgartirish uchun uning nomini bosing."
+msgstr "Что может каждая роль и у кого она есть — в одной таблице. Нажмите на название роли, чтобы изменить её."
+
+msgid "Qayta ochish"
+msgstr "Открыть снова"
+
+msgid "Qayta qo'ng'iroq"
+msgstr "Перезвонить"
+
+msgid "Qayta qo'ng'iroq vaqti o'tgan"
+msgstr "Время перезвона прошло"
+
+msgid "Qaytarilgan"
+msgstr "Возвращено"
+
+msgid "qaytarilgan {0} · bekor {1}"
+msgstr "возвращено {0} · отменено {1}"
+
+msgid "Qidirish"
+msgstr "Поиск"
+
+msgid "Qidirish…"
+msgstr "Поиск…"
+
+msgid "Qidiruvda ↑ ↓ va Enter bilan tanlang"
+msgstr "В поиске выбирайте ↑ ↓ и Enter"
+
+msgid "Qidiruvlar"
+msgstr "Поисковые запросы"
+
+msgid "Qisqa nom va javob matnini yozing"
+msgstr "Введите короткое название и текст ответа"
+
+msgid "Qisqa tavsif"
+msgstr "Краткое описание"
+
+msgid "Qisqa va aniq: nima, kim uchun, nimasi bilan ajralib turadi…"
+msgstr "Коротко и ясно: что это, для кого и чем выделяется…"
+
+msgid "Qizil"
+msgstr "Красный"
+
+msgid "qizil pin — yangi do'kon uchun signal"
+msgstr "красный пин — сигнал для нового магазина"
+
+msgid "Qiziqqan mahsulotlar"
+msgstr "Интересующие товары"
+
+msgid "Qo'lda belgilangan"
+msgstr "Задано вручную"
+
+msgid "Qo'lda berilgan daraja"
+msgstr "Уровень, назначенный вручную"
+
+msgid "Qo'lda daraja"
+msgstr "Ручной уровень"
+
+msgid "Qo'llab-quvvatlash"
+msgstr "Поддержка"
+
+msgid "qo'llab-quvvatlash"
+msgstr "поддержка"
+
+msgid "Qo'llab-quvvatlash suhbati yopilganda mijozdan {0}–{1} yulduz bilan baho so'raladi (bildirishnoma + Telegram)."
+msgstr "При закрытии диалога поддержки клиента просят поставить оценку {0}–{1} звёзд (уведомление + Telegram)."
+
+msgid "Qo'ng'iroq"
+msgstr "Звонок"
+
+msgid "Qo'ng'iroq natijasi, kelishuv…"
+msgstr "Результат звонка, договорённость…"
+
+msgid "Qo'ng'iroq va murojaatlar: kartani ustunga sudrab holatini o'zgartiring. Vaqti o'tgan qayta qo'ng'iroqlar qizil."
+msgstr "Звонки и обращения: перетащите карточку в колонку, чтобы сменить статус. Просроченные перезвоны — красные."
+
+msgid "Qo'ng'iroqlar va murojaatlar: kim, nima haqida, natija va keyingi qadam. Ish uchun — Support paneli."
+msgstr "Звонки и обращения: кто, о чём, результат и следующий шаг. Для работы — панель Support."
+
+msgid "Qo'ng'iroqni yozish"
+msgstr "Записать звонок"
+
+msgid "qo'shiladi"
+msgstr "будет добавлено"
+
+msgid "Qo'shilgan"
+msgstr "Добавлен"
+
+msgid "Qo'shimcha shtrix-kodlar (partiyalar)"
+msgstr "Дополнительные штрихкоды (партии)"
+
+msgid "qo'shish"
+msgstr "добавление"
+
+msgid "Qo'shish"
+msgstr "Добавить"
+
+msgid "Qoidalar va chegaralar"
+msgstr "Правила и пороги"
+
+msgid "qoldig'i {0}"
+msgstr "остаток {0}"
+
+msgid "qoldig'ida topilmadi"
+msgstr "в остатке не найдено"
+
+msgid "qoldig'ida yo'q"
+msgstr "нет в остатке"
+
+msgid "qoldig'idagi mahsulotlar qo'shiladi; bir nechta partiya bo'lsa, tanlash oynasi chiqadi."
+msgstr "; если партий несколько, откроется окно выбора."
+
+msgid "qoldig'iga qo'shiladi, har bir qator Ombor tarixiga «Kirim» bo'lib yoziladi. Tannarx keyingi kirimlarda va hisobotlarda avtomatik ishlatiladi."
+msgstr ", каждая строка записывается в «Историю склада» как «Приход». Себестоимость автоматически используется в следующих приходах и отчётах."
+
+msgid "Qoldiq holati"
+msgstr "Состояние остатка"
+
+msgid "qoldiq yo'q"
+msgstr "нет остатка"
+
+msgid "Qoldiqdan ko'p"
+msgstr "Больше остатка"
+
+msgid "Qoldiqlar"
+msgstr "Остатки"
+
+msgid "Qolgan qutilar kelganda qabulni davom ettirasiz"
+msgstr "Продолжите приёмку, когда придут остальные коробки"
+
+msgid "Qolgan qutilar kelganda qabulni davom ettirasiz."
+msgstr "Продолжите приёмку, когда придут остальные коробки."
+
+msgid "QQS to'lovchisi"
+msgstr "Плательщик НДС"
+
+msgid "Qum"
+msgstr "Песочный"
+
+msgid "Qurilma nomi, ism yoki telefon…"
+msgstr "Название устройства, имя или телефон…"
+
+msgid "Qurilmalar"
+msgstr "Устройства"
+
+msgid "Qurilmalar mobil ilova yoki kassa push bildirishnomaga ulanganda yoziladi. Veb-saytdagi kirishlar «Sessiyalar» bo'limida ko'rinadi."
+msgstr "Устройства записываются, когда мобильное приложение или касса подключается к push-уведомлениям. Входы на сайте видны в разделе «Сессии»."
+
+msgid "qurilmasiz (brauzer) kirishlar"
+msgstr "входы без устройства (браузер)"
+
+msgid "Rahbariyat uchun avtomatik hisobotlar va javobsiz chat ogohlantirishlari"
+msgstr "Автоматические отчёты для руководства и оповещения о неотвеченных чатах"
+
+msgid "Rang"
+msgstr "Цвет"
+
+msgid "Rang va rasm"
+msgstr "Цвет и изображение"
+
+msgid "Raqam qo'shish"
+msgstr "Добавить номер"
+
+msgid "Raqam — sotuvga mavjud dona (band qilinganlar ayirilgan). Qoldiq faqat ombor hujjatlari orqali o'zgaradi:"
+msgstr "Число — доступно к продаже (без резерва). Остаток меняется только складскими документами:"
+
+msgid "Raqam, telefon, ism yoki mazmun…"
+msgstr "Номер, телефон, имя или содержание…"
+
+msgid "Raqamli ro'yxat"
+msgstr "Нумерованный список"
+
+msgid "Rasm (JPEG/PNG/WebP) yoki video (MP4/MOV/WebM). Saqlanganda avtomatik optimallashtiriladi."
+msgstr "Фото (JPEG/PNG/WebP) или видео (MP4/MOV/WebM). При сохранении оптимизируется автоматически."
+
+msgid "Rasm / videoli"
+msgstr "С фото / видео"
+
+msgid "Rasm va mahsulot"
+msgstr "Фото и товар"
+
+msgid "Rasm va videolar"
+msgstr "Фото и видео"
+
+msgid "Rasm yoki video"
+msgstr "Фото или видео"
+
+msgid "Rasmsiz"
+msgstr "Без изображения"
+
+msgid "Receipt / buyurtma raqami, telefon, fiskal raqam…"
+msgstr "Чек / номер заказа, телефон, фискальный номер…"
+
+msgid "Referal kodlari"
+msgstr "Реферальные коды"
+
+msgid "Referal yoqilgan"
+msgstr "Рефералы включены"
+
+msgid "Referal: birinchi buyurtma minimal summasi (so'm)"
+msgstr "Реферал: минимальная сумма первого заказа (сум)"
+
+msgid "Referallar"
+msgstr "Рефералы"
+
+msgid "reja yo'q"
+msgstr "плана нет"
+
+msgid "Rejadagidan ko'p olib bo'lmaydi (faqat band qilingan miqdor)"
+msgstr "Нельзя взять больше плана (только зарезервированное количество)"
+
+msgid "rejadan ko'p bo'lmaydi"
+msgstr "не может быть больше плана"
+
+msgid "Rejani saqlash"
+msgstr "Сохранить план"
+
+msgid "Rekvizitlar, QQS va fiskal provayder"
+msgstr "Реквизиты, НДС и фискальный провайдер"
+
+msgid "Revenue — do'kon kassalari (qaytarishlarsiz) + filialga biriktirilgan yetkazilgan onlayn buyurtmalar. Kompaniya qatori barcha kanallarni, shu jumladan Dashboard POS ni hisoblaydi. Prognoz — oyning shu paytigacha bo'lgan sur'ati."
+msgstr "Выручка — кассы магазинов (без возвратов) + доставленные онлайн-заказы, привязанные к филиалу. Строка компании учитывает все каналы, включая POS панели. Прогноз — по темпу месяца на текущий момент."
+
+msgid "Ro'yxat"
+msgstr "Список"
+
+msgid "Ro'yxatda ko'rinadigan qisqa nom, masalan «Buyurtma yo'lda»."
+msgstr "Короткое название в списке, например «Заказ в пути»."
+
+msgid "ro'yxatdagi o'rni"
+msgstr "позиция в списке"
+
+msgid "ro'yxatdagi yetkazib beruvchi"
+msgstr "поставщик из списка"
+
+msgid "Ro'yxatdan o'tgan, hali xarid yo'q"
+msgstr "Зарегистрированы, покупок пока нет"
+
+msgid "Ro'yxatni tozalash"
+msgstr "Очистить список"
+
+msgid "Rol biriktirilmagan — oddiy mijoz."
+msgstr "Роль не назначена — обычный клиент."
+
+msgid "Rol biriktirish"
+msgstr "Назначить роль"
+
+msgid "Rol bo'yicha"
+msgstr "По роли"
+
+msgid "Rol mijozning sayt va ilovadagi ruxsatlarini belgilaydi. Do'kon tanlansa, rol faqat o'sha do'konda amal qiladi."
+msgstr "Роль задаёт права клиента на сайте и в приложении. Если выбран магазин, роль действует только в нём."
+
+msgid "Rol nomi yoki kodi…"
+msgstr "Название или код роли…"
+
+msgid "Rolga biriktirilgan"
+msgstr "Привязано к роли"
+
+msgid "Rolga ega foydalanuvchilar"
+msgstr "Пользователи с ролью"
+
+msgid "Rollar"
+msgstr "Роли"
+
+msgid "Rollar va ruxsatlar"
+msgstr "Роли и права"
+
+msgid "Rolsiz (mijoz)"
+msgstr "Без роли (клиент)"
+
+msgid "Ruxsat har safar jonli tekshiriladi: filial egasi faqat o'z filiallarini ko'radi, hammasini — faqat ruxsat ro'yxatidagilar."
+msgstr "Доступ проверяется каждый раз: владелец филиала видит только свои филиалы, всё — только те, кто в списке доступа."
+
+msgid "Ruxsat ro'yxati"
+msgstr "Список доступа"
+
+msgid "Ruxsat yo'q"
+msgstr "Нет доступа"
+
+msgid "Ruxsatlar matritsasi"
+msgstr "Матрица прав"
+
+msgid "Ruxsatni qidirish"
+msgstr "Поиск права"
+
+msgid "Ruxsatni qidirish…"
+msgstr "Поиск права…"
+
+msgid "Sabab"
+msgstr "Причина"
+
+msgid "Sahifadagi filtr va qidiruv bo'yicha butun ro'yxat"
+msgstr "Весь список по текущему фильтру и поиску"
+
+msgid "Sana"
+msgstr "Дата"
+
+msgid "sanani tuzating: inventarizatsiyada partiyani to'g'ri muddat bilan qayta sanang"
+msgstr "исправьте дату: пересчитайте партию с правильным сроком при инвентаризации"
+
+msgid "Saqlanmoqda…"
+msgstr "Сохраняем…"
+
+msgid "saqlanmoqda…"
+msgstr "сохраняем…"
+
+msgid "Saqlash"
+msgstr "Сохранить"
+
+msgid "Saqlash va menga sinov"
+msgstr "Сохранить и отправить мне тест"
+
+msgid "Saqlash va ulanishni tekshirish"
+msgstr "Сохранить и проверить подключение"
+
+msgid "Saqlash va yuborish"
+msgstr "Сохранить и отправить"
+
+msgid "Sarlavha nomi"
+msgstr "Название в шапке"
+
+msgid "Sarlavha yoki qisqa matn…"
+msgstr "Заголовок или краткий текст…"
+
+msgid "Sarlavha, matn yoki havola…"
+msgstr "Заголовок, текст или ссылка…"
+
+msgid "Sarlavha, matn yoki kim yuborgan…"
+msgstr "Заголовок, текст или отправитель…"
+
+msgid "Sarlavha, qisqa matn va muqova — kartochkada aynan shular ko'rinadi"
+msgstr "Заголовок, краткий текст и обложка — именно это видно в карточке"
+
+msgid "Sarlavhadan avtomatik to'ldiriladi: /blog/maqola-nomi"
+msgstr "Заполняется из заголовка автоматически: /blog/nazvanie-stati"
+
+msgid "Savatlar"
+msgstr "Корзины"
+
+msgid "savdo bo'lmagan"
+msgstr "продаж не было"
+
+msgid "Savdo hisobotlari"
+msgstr "Отчёты о продажах"
+
+msgid "Savdo qilgan filiallar"
+msgstr "Филиалы с продажами"
+
+msgid "Savdo tushumi"
+msgstr "Выручка от продаж"
+
+msgid "Savdo tushumi:"
+msgstr "Выручка от продаж:"
+
+msgid "Savdo vaqtlari"
+msgstr "Время продаж"
+
+msgid "Savdo yo'q"
+msgstr "Нет продаж"
+
+msgid "Savdodagi ulush"
+msgstr "Доля в продажах"
+
+msgid "Savol matni bo'yicha…"
+msgstr "По тексту вопроса…"
+
+msgid "Sayt, Telegram va bildirishnomalar shu tilda yuboriladi."
+msgstr "Сайт, Telegram и уведомления будут на этом языке."
+
+msgid "Sayt, Telegram va do'kon mijozlari: holat, rollar, loyalty, xaridlar va faollik bir joyda."
+msgstr "Клиенты сайта, Telegram и магазинов: статус, роли, лояльность, покупки и активность в одном месте."
+
+msgid "Saytda ko'rinadi"
+msgstr "Видно на сайте"
+
+msgid "saytda ko'rinmaydi"
+msgstr "не видно на сайте"
+
+msgid "Saytda ko'rish"
+msgstr "Смотреть на сайте"
+
+msgid "saytda rang bilan chiqadi"
+msgstr "на сайте показывается цветом"
+
+msgid "Saytda ro'yxatdan o'tgan"
+msgstr "Зарегистрирован на сайте"
+
+msgid "Saytdagi sahifada ko'rinadi. Emoji va yangi qatorlar saqlanadi."
+msgstr "Показывается на странице сайта. Эмодзи и переносы строк сохраняются."
+
+msgid "Saytdagi ta'm almashtirgichda ko'rinadi. Rasm bo'lmasa — tanlangan rang chiqadi."
+msgstr "Показывается в переключателе вкусов на сайте. Без изображения — выбранный цвет."
+
+msgid "Segmentlar"
+msgstr "Сегменты"
+
+msgid "Sekin sotilayotganlar:"
+msgstr "Медленно продаются:"
+
+msgid "Sessiyalar"
+msgstr "Сессии"
+
+msgid "sessiyalar va qurilmalar"
+msgstr "сессии и устройства"
+
+msgid "Sessiyalari"
+msgstr "Сессии"
+
+msgid "Shablon (barcha mahsulotlar)"
+msgstr "Шаблон (все товары)"
+
+msgid "Shahar markazi. Xaritada bosing, qidiring yoki Yandex havolasini joylang — maydonlar o'zi to'ladi."
+msgstr "Центр города. Нажмите на карту, найдите или вставьте ссылку Яндекса — поля заполнятся сами."
+
+msgid "Shahar nomi"
+msgstr "Название города"
+
+msgid "Shahar nomi yoki kodi…"
+msgstr "Название или код города…"
+
+msgid "Shahar yo'q"
+msgstr "Нет города"
+
+msgid "Shaharlar"
+msgstr "Города"
+
+msgid "Shaharlar ({0}):"
+msgstr "Города ({0}):"
+
+msgid "Shaharlar bo'yicha"
+msgstr "По городам"
+
+msgid "Shaharlar va tumanlar"
+msgstr "Города и районы"
+
+msgid "Sharh matni bo'yicha…"
+msgstr "По тексту отзыва…"
+
+msgid "Sharh matni yoki sarlavha…"
+msgstr "Текст или заголовок отзыва…"
+
+msgid "Sharh rasmlari va videolari"
+msgstr "Фото и видео отзывов"
+
+msgid "Sharh — o'zinikini ko'rish"
+msgstr "Отзыв — просмотр своих"
+
+msgid "Sharh — qo'shish"
+msgstr "Отзыв — добавление"
+
+msgid "Sharh — tahrirlash"
+msgstr "Отзыв — редактирование"
+
+msgid "sharhi chop etilgan"
+msgstr "отзыв опубликован"
+
+msgid "Sharhlar"
+msgstr "Отзывы"
+
+msgid "Sharhlar {0}"
+msgstr "Отзывы {0}"
+
+msgid "Short summary"
+msgstr "Краткое описание"
+
+msgid "Shtrix-kod, SKU yoki mahsulot nomi… (Enter)"
+msgstr "Штрихкод, SKU или название товара… (Enter)"
+
+msgid "Shtrix-kodni skanerlang yoki mahsulot nomini yozing…"
+msgstr "Отсканируйте штрихкод или введите название товара…"
+
+msgid "Shtrix-kodsiz"
+msgstr "Без штрихкода"
+
+msgid "Shu buyurtmaning {0} so'migacha coin bilan to'lash mumkin (kamida {1} coin)."
+msgstr "До {0} сум этого заказа можно оплатить коинами (минимум {1} коинов)."
+
+msgid "Shu oy"
+msgstr "Этот месяц"
+
+msgid "Shu oy berilgan"
+msgstr "Начислено в этом месяце"
+
+msgid "shu qadoqdagi"
+msgstr "в этой упаковке"
+
+msgid "shu teg biriktirilgan"
+msgstr "этот тег привязан"
+
+msgid "Shu tildagi nomini kiriting"
+msgstr "Введите название на этом языке"
+
+msgid "Shubhali operatsiyalar"
+msgstr "Подозрительные операции"
+
+msgid "shubhali operatsiyalar va favqulodda holatlar"
+msgstr "подозрительные операции и ЧП"
+
+msgid "Signallar"
+msgstr "Сигналы"
+
+msgid "Sinov uchun Telegram ID"
+msgstr "Telegram ID для теста"
+
+msgid "Siren"
+msgstr "Сирень"
+
+msgid "skaner bilan topilmaydi"
+msgstr "не находится сканером"
+
+msgid "skaner ma'lumoti buzilgan — qayta skanerlang"
+msgstr "данные скана повреждены — отсканируйте снова"
+
+msgid "Skaner sahifaning istalgan joyida ishlaydi"
+msgstr "Сканер работает в любом месте страницы"
+
+msgid "Skanerlangan soni rejadan farq qiladi"
+msgstr "Отсканированное количество отличается от плана"
+
+msgid "Skanerlashni davom ettiring — sonlar ekranda turadi va aloqa tiklanishi bilan avtomatik saqlanadi"
+msgstr "Продолжайте сканировать — количество остаётся на экране и сохранится автоматически, когда связь восстановится"
+
+msgid "Skanersiz tasdiqlash"
+msgstr "Подтвердить без сканирования"
+
+msgid "Smenalar tarixi"
+msgstr "История смен"
+
+msgid "so'm"
+msgstr "сум"
+
+msgid "so'm (narx ichida)"
+msgstr "сум (включено в цену)"
+
+msgid "so'm hisoblanadigan xarid"
+msgstr "сум учитываемых покупок"
+
+msgid "so'm spent"
+msgstr "сум потрачено"
+
+msgid "so'm · do'kon kassalari"
+msgstr "сум · кассы магазинов"
+
+msgid "so'm · POS + onlayn"
+msgstr "сум · POS + онлайн"
+
+msgid "So'nggi buyurtmalar"
+msgstr "Последние заказы"
+
+msgid "So'nggi omborga qaytarishlar"
+msgstr "Последние возвраты на склад"
+
+msgid "So'nggi past baholar"
+msgstr "Последние низкие оценки"
+
+msgid "So'nggi {0} kun"
+msgstr "Последние {0} дн."
+
+msgid "so'nggi {0} kunda"
+msgstr "за последние {0} дн."
+
+msgid "So'nggi {0} kunda ro'yxatdan o'tganlar"
+msgstr "Зарегистрировались за последние {0} дн."
+
+msgid "so'ralgan"
+msgstr "запрошено"
+
+msgid "So'rov bo'yicha hisobot"
+msgstr "Отчёт по запросу"
+
+msgid "so'z · ~{0} daqiqa"
+msgstr "слов · ~{0} мин"
+
+msgid "soatdan ko'p"
+msgstr "больше часов"
+
+msgid "Sof tushum"
+msgstr "Чистая выручка"
+
+msgid "Son juda katta — qayta sanab ko'ring"
+msgstr "Слишком большое количество — пересчитайте"
+
+msgid "Sotilgan"
+msgstr "Продано"
+
+msgid "Sotilgan mahsulot"
+msgstr "Продано товаров"
+
+msgid "Sotilgan mahsulot:"
+msgstr "Продано товаров:"
+
+msgid "sotuv bo'yicha"
+msgstr "по продажам"
+
+msgid "sotuv qilmaydi"
+msgstr "не продаёт"
+
+msgid "Sotuv rejasi"
+msgstr "План продаж"
+
+msgid "Sotuvchi rekvizitlari (chekda ko'rinadi)"
+msgstr "Реквизиты продавца (видны в чеке)"
+
+msgid "Sotuvchi rekvizitlarida"
+msgstr "В реквизитах продавца"
+
+msgid "Sotuvchi rekvizitlarida (YaTT yoki MChJ)"
+msgstr "В реквизитах продавца (ИП или ООО)"
+
+msgid "sotuvdagi, qoldig'i {0}"
+msgstr "в продаже, остаток {0}"
+
+msgid "Sotuvi bor"
+msgstr "Есть продажи"
+
+msgid "Sozlamalar"
+msgstr "Настройки"
+
+msgid "Sport ovqatlanishi bo'yicha maqolalar — foydali kontent saytga qidiruvdan mijoz olib keladi."
+msgstr "Статьи о спортивном питании — полезный контент приводит клиентов на сайт из поиска."
+
+msgid "Stikerlar"
+msgstr "Стикеры"
+
+msgid "sub-kategoriyalar"
+msgstr "подкатегории"
+
+msgid "Suhbat baholari"
+msgstr "Оценки диалогов"
+
+msgid "Suhbat yo'q"
+msgstr "Нет диалогов"
+
+msgid "Suhbat yopilgach mijozdan baho so'raladi (Chat sozlamalarida yoqiladi)."
+msgstr "После закрытия диалога клиента просят оценить его (включается в настройках чата)."
+
+msgid "Suhbat yopilgan. Javob yozish uchun «Qayta ochish»ni bosing"
+msgstr "Диалог закрыт. Чтобы ответить, нажмите «Открыть снова»"
+
+msgid "Suhbat yopilgan. Javob yozish uchun «Qayta ochish»ni bosing."
+msgstr "Диалог закрыт. Чтобы ответить, нажмите «Открыть снова»."
+
+msgid "Suhbatlar"
+msgstr "Диалоги"
+
+msgid "Suhbatlar ({0} kun)"
+msgstr "Диалоги ({0} дн.)"
+
+msgid "Suhbatni tanlang"
+msgstr "Выберите диалог"
+
+msgid "Summa"
+msgstr "Сумма"
+
+msgid "Support"
+msgstr "Поддержка"
+
+msgid "Support murojaatlari"
+msgstr "Обращения в поддержку"
+
+msgid "ta / {0} daqiqa"
+msgstr "шт. / {0} мин"
+
+msgid "Ta'mlar"
+msgstr "Вкусы"
+
+msgid "Ta'mning belgisi — rasm bo'lmaganda chiqadigan rang."
+msgstr "Значок вкуса — цвет, который показывается без изображения."
+
+msgid "Tabriklaymiz! Siz Gold darajasidasiz"
+msgstr "Поздравляем! Ваш уровень — Gold"
+
+msgid "Tafovut bor — transfer menejer tasdig'iga o'tadi"
+msgstr "Есть расхождения — перемещение уходит на подтверждение менеджеру"
+
+msgid "Tafovut tasdig'i kutilmoqda"
+msgstr "Ожидает подтверждения расхождения"
+
+msgid "Tafovut yo'q — jo'natilgan va qabul qilingan miqdorlar to'liq mos"
+msgstr "Расхождений нет — отправленное и принятое количество полностью совпадают"
+
+msgid "Tafovutlar"
+msgstr "Расхождения"
+
+msgid "Tafovutli qatorlar"
+msgstr "Строки с расхождениями"
+
+msgid "Tagiga chizilgan (Ctrl+U)"
+msgstr "Подчёркнутый (Ctrl+U)"
+
+msgid "Tahlil qilinmoqda…"
+msgstr "Анализируем…"
+
+msgid "tahrirlash"
+msgstr "редактирование"
+
+msgid "Tahrirlash"
+msgstr "Изменить"
+
+msgid "taklif qilgan + yangi mijoz"
+msgstr "пригласивший + новый клиент"
+
+msgid "Taklif qilganlar"
+msgstr "Пригласившие"
+
+msgid "Takliflar"
+msgstr "Приглашения"
+
+msgid "Takliflar «To'ldirish (minimal qoldiq)» qoidalari va 30 kunlik sotuvdan hisoblanadi"
+msgstr "Предложения рассчитываются по правилам «Пополнение (минимальный остаток)» и продажам за 30 дней"
+
+msgid "Takliflar «To'ldirish (minimal qoldiq)» qoidalari va 30 kunlik sotuvdan hisoblanadi."
+msgstr "Предложения рассчитываются по правилам «Пополнение (минимальный остаток)» и продажам за 30 дней."
+
+msgid "Tanlang yoki yangi nom yozing"
+msgstr "Выберите или введите новое название"
+
+msgid "Tanlangan darajadagi mijozlar"
+msgstr "Клиенты выбранного уровня"
+
+msgid "Tanlangan rollarni olib tashlash"
+msgstr "Снять выбранные роли"
+
+msgid "Tanlangan sessiyalarni yopish"
+msgstr "Закрыть выбранные сессии"
+
+msgid "Tanlanganlarni Excel'ga yuklash"
+msgstr "Выгрузить выбранные в Excel"
+
+msgid "Tanlanganlarni fiskallashtirish (soliqqa yuborish)"
+msgstr "Фискализировать выбранные (отправить в налоговую)"
+
+msgid "Tanlanganlarni o'chirish (ishlatilmayotgan bo'lsa)"
+msgstr "Удалить выбранные (если не используются)"
+
+msgid "Tanlanganlarni tiklash"
+msgstr "Восстановить выбранные"
+
+msgid "Tanlanganlarni yashirish"
+msgstr "Скрыть выбранные"
+
+msgid "Tanlansa, rol faqat shu do'kon doirasida amal qiladi."
+msgstr "Если выбрать, роль действует только в этом магазине."
+
+msgid "Tanlansa: rasm bo'lmasa mahsulot rasmi qo'yiladi va «Sotib olish» tugmasi qo'shiladi."
+msgstr "Если выбрать: при отсутствии фото ставится фото товара и добавляется кнопка «Купить»."
+
+msgid "tanlov ro'yxatidagi o'rni"
+msgstr "позиция в списке выбора"
+
+msgid "Tannarx (dona)"
+msgstr "Себестоимость (за шт.)"
+
+msgid "tannarx qamrovi — (kerak ≥{0}%)"
+msgstr "покрытие себестоимостью — (нужно ≥{0}%)"
+
+msgid "Tannarxsiz qatorlarga narx berish"
+msgstr "Указать цену для строк без себестоимости"
+
+msgid "tarix hali yetarli emas"
+msgstr "истории пока недостаточно"
+
+msgid "tarixini ko'rish"
+msgstr "просмотр истории"
+
+msgid "Tarmoq bilan aloqa yo'q"
+msgstr "Нет подключения к сети"
+
+msgid "Tarmoq yo'q"
+msgstr "Нет сети"
+
+msgid "Tartib bo'yicha"
+msgstr "По порядку"
+
+msgid "Tasdiqlangach tovar"
+msgstr "После подтверждения товар добавится в остаток"
+
+msgid "tasdiqlangan qurilmalar"
+msgstr "подтверждённые устройства"
+
+msgid "Tasdiqlash"
+msgstr "Подтвердить"
+
+msgid "Tasdiqlash uchun «Sklad menejeri» ruxsati kerak"
+msgstr "Для подтверждения нужно право «Менеджер склада»"
+
+msgid "Tasdiqlash va saytga chiqarish"
+msgstr "Одобрить и опубликовать"
+
+msgid "tasnif.soliq.uz dan: fiskal chek uchun majburiy."
+msgstr "С tasnif.soliq.uz: обязательно для фискального чека."
+
+msgid "Tavsif yo'q"
+msgstr "Нет описания"
+
+msgid "Tayyor javoblar"
+msgstr "Быстрые ответы"
+
+msgid "Tayyor qatorlar"
+msgstr "Готовые строки"
+
+msgid "Tayyorlanmoqda"
+msgstr "Готовится"
+
+msgid "Teglar"
+msgstr "Теги"
+
+msgid "Tekshiruv har {0} daqiqada. Smena, buyurtma signallari sabab yo'qolganda o'zi yopiladi."
+msgstr "Проверка каждые {0} мин. Сигналы смен и заказов закрываются сами, когда причина устранена."
+
+msgid "Telefon raqami bo'yicha (sinov uchun qulay)"
+msgstr "По номеру телефона (удобно для теста)"
+
+msgid "Telefon raqami bo'yicha mijoz topiladi yoki avtomatik yaratiladi. Ism kiritilmasa — «Noma'lum»."
+msgstr "Клиент находится по номеру телефона или создаётся автоматически. Если имя не указано — «Неизвестно»."
+
+msgid "Telefon raqami bo'yicha mijoz topiladi yoki avtomatik yaratiladi. Ism kiritilmasa — «Unknown»."
+msgstr "Клиент находится по номеру телефона или создаётся автоматически. Если имя не указано — «Неизвестно»."
+
+msgid "Telefon raqami bo'yicha mijoz topiladi yoki avtomatik yaratiladi. Ism kiritilmasa — «Неизвестно»."
+msgstr "Клиент находится по номеру телефона или создаётся автоматически. Если имя не указано — «Неизвестно»."
+
+msgid "Telefon raqami majburiy — mijoz shu raqam bilan SMS kod orqali kiradi"
+msgstr "Номер телефона обязателен — клиент входит по этому номеру через SMS-код"
+
+msgid "telefon tasdiqlangan"
+msgstr "телефон подтверждён"
+
+msgid "Telefon, ism yoki mazmun…"
+msgstr "Телефон, имя или содержание…"
+
+msgid "Telefoni tasdiqlangan mijozlar"
+msgstr "Клиенты с подтверждённым телефоном"
+
+msgid "Telegram botlar markazi"
+msgstr "Центр Telegram-ботов"
+
+msgid "Telegram buyurtmalari"
+msgstr "Заказы из Telegram"
+
+msgid "Telegram post"
+msgstr "Пост в Telegram"
+
+msgid "Telegram postlar"
+msgstr "Посты в Telegram"
+
+msgid "Telegram ulangan mijozlar"
+msgstr "Клиенты с подключённым Telegram"
+
+msgid "Telegram ulanganlar"
+msgstr "Подключены к Telegram"
+
+msgid "Telegram xabarnomalari"
+msgstr "Уведомления в Telegram"
+
+msgid "Telegram yangiliklariga obuna sovg'asi (coin)"
+msgstr "Подарок за подписку на новости в Telegram (коины)"
+
+msgid "Telegram_bot"
+msgstr "Telegram-бот"
+
+msgid "telegramga o'ting"
+msgstr "перейдите в Telegram"
+
+msgid "Telegramga o'tish"
+msgstr "Перейти в Telegram"
+
+msgid "Tillar"
+msgstr "Языки"
+
+msgid "Tizim roli avtomatik beriladi (masalan, har bir yangi mijozga «customer») va o'chirilmaydi."
+msgstr "Системная роль назначается автоматически (например, «customer» каждому новому клиенту) и не удаляется."
+
+msgid "tizimdagi barcha ruxsatlar"
+msgstr "все права в системе"
+
+msgid "To'langan bonus"
+msgstr "Выплаченный бонус"
+
+msgid "To'ldirilmagan"
+msgstr "Не заполнено"
+
+msgid "To'ldirish (minimal qoldiq)"
+msgstr "Пополнение (минимальный остаток)"
+
+msgid "To'liq"
+msgstr "Заполнено"
+
+msgid "to'liq huquq — kam bo'lgani ma'qul"
+msgstr "полный доступ — чем меньше, тем лучше"
+
+msgid "to'liq ishlatilgan"
+msgstr "полностью использовано"
+
+msgid "To'liq ism"
+msgstr "Полное имя"
+
+msgid "To'lov (Naqd)"
+msgstr "Оплата (наличные)"
+
+msgid "To'lov kutilmoqda"
+msgstr "Ожидает оплаты"
+
+msgid "To'lov tizimi xatolari"
+msgstr "Ошибки платёжной системы"
+
+msgid "To'lov tizimlari"
+msgstr "Платёжные системы"
+
+msgid "To'lov usullari"
+msgstr "Способы оплаты"
+
+msgid "To'lovlar"
+msgstr "Платежи"
+
+msgid "To'q sariq"
+msgstr "Оранжевый"
+
+msgid "Tomizg'ichli flakon"
+msgstr "Флакон с пипеткой"
+
+msgid "Top mahsulotlar"
+msgstr "Топ товаров"
+
+msgid "TOP MAHSULOTLAR"
+msgstr "ТОП ТОВАРОВ"
+
+msgid "top mahsulotlar kollaji, narx/reyting/qoldiq jadvali, har biriga tugma"
+msgstr "коллаж топ-товаров, таблица цена/рейтинг/остаток, кнопка для каждого"
+
+msgid "Topilmadi"
+msgstr "Не найдено"
+
+msgid "Topilmadi — boshqacha yozib ko'ring yoki xaritada bosing"
+msgstr "Не найдено — попробуйте написать иначе или нажмите на карту"
+
+msgid "Toshkent vaqti bilan. Kechasi ishlasangiz (masalan 20:00–02:00) ham to'g'ri hisoblanadi."
+msgstr "По времени Ташкента. Ночная работа (например 20:00–02:00) тоже считается правильно."
+
+msgid "Transfer"
+msgstr "Перемещение"
+
+msgid "Transfer holati o'zgargan — yangilanmoqda"
+msgstr "Статус перемещения изменился — обновляем"
+
+msgid "Transfer jo'natishga tayyor emas"
+msgstr "Перемещение не готово к отправке"
+
+msgid "Transferga mos kelmagan skanlar"
+msgstr "Сканы, не совпадающие с перемещением"
+
+msgid "Transferlar"
+msgstr "Перемещения"
+
+msgid "Transferni jo'natish"
+msgstr "Отправить перемещение"
+
+msgid "Tranzaksiyalar"
+msgstr "Транзакции"
+
+msgid "Tug'ilgan sana"
+msgstr "Дата рождения"
+
+msgid "Tugmalar"
+msgstr "Кнопки"
+
+msgid "Tuman nomi yoki kodi…"
+msgstr "Название или код района…"
+
+msgid "Tumanlar"
+msgstr "Районы"
+
+msgid "Tumanlar ({0}):"
+msgstr "Районы ({0}):"
+
+msgid "Turlar"
+msgstr "Виды"
+
+msgid "turli mahsulot"
+msgstr "разных товаров"
+
+msgid "Tushum — do'kon kassalari (qaytarishlarsiz) + filialga biriktirilgan yetkazilgan onlayn buyurtmalar. Kompaniya qatori barcha kanallarni, shu jumladan Dashboard POS ni hisoblaydi. Prognoz — oyning shu paytigacha bo'lgan sur'ati."
+msgstr "Выручка — кассы магазинов (без возвратов) + доставленные онлайн-заказы, привязанные к филиалу. Строка компании учитывает все каналы, включая POS панели. Прогноз — по темпу месяца на текущий момент."
+
+msgid "Tushum, foyda, filiallar va Telegram hisobotlar"
+msgstr "Выручка, прибыль, филиалы и отчёты в Telegram"
+
+msgid "uchun ma'lumot yo'q — yuborishdan oldin o'zingiz yozing"
+msgstr "нет данных — впишите сами перед отправкой"
+
+msgid "Ulgurji / hamkorlik"
+msgstr "Опт / сотрудничество"
+
+msgid "Upload file."
+msgstr "Загрузите файл."
+
+msgid "User agent"
+msgstr "User-Agent"
+
+msgid "username (@ siz)"
+msgstr "username (без @)"
+
+msgid "Ustidan chizilgan"
+msgstr "Зачёркнутый"
+
+msgid "uz · ru · en to'liq"
+msgstr "uz · ru · en заполнено"
+
+msgid "vaqt noto'g'ri"
+msgstr "неверное время"
+
+msgid "Variantlar"
+msgstr "Варианты"
+
+msgid "Variantlar qadoq bo'yicha"
+msgstr "Варианты по упаковке"
+
+msgid "variantlarga biriktirilgan"
+msgstr "привязано к вариантам"
+
+msgid "Veb sessiyalar"
+msgstr "Веб-сессии"
+
+msgid "Videolar"
+msgstr "Видео"
+
+msgid "Viloyat nomi yoki kodi…"
+msgstr "Название или код области…"
+
+msgid "Viloyatlar"
+msgstr "Области"
+
+msgid "VIP mijozlar"
+msgstr "VIP-клиенты"
+
+msgid "VIP, doimiy, ketish xavfi, yo'qotilgan…"
+msgstr "VIP, постоянные, в зоне риска, потерянные…"
+
+msgid "Xabar ko'rinishi (jonli preview)"
+msgstr "Вид сообщения (живой предпросмотр)"
+
+msgid "Xabar mavjud “Xabar yuborish” tizimi orqali boradi: bloklangan mijozlar va bildirishnomani o'chirganlarga yuborilmaydi."
+msgstr "Сообщение уходит через систему «Отправка сообщений»: заблокированным и отключившим уведомления оно не отправляется."
+
+msgid "Xabar o'chirilgan"
+msgstr "Сообщение удалено"
+
+msgid "Xabar turlari"
+msgstr "Типы сообщений"
+
+msgid "Xabar yo'q"
+msgstr "Нет сообщений"
+
+msgid "Xabar yuborish"
+msgstr "Отправка сообщений"
+
+msgid "Xabarlar"
+msgstr "Сообщения"
+
+msgid "Xarid qilganlar"
+msgstr "Совершили покупку"
+
+msgid "Xaridda coin bilan to'lash"
+msgstr "Оплата коинами при покупке"
+
+msgid "xaridda to'langan"
+msgstr "оплачено покупками"
+
+msgid "Xaridlar"
+msgstr "Покупки"
+
+msgid "xaridlar hisoblanadi"
+msgstr "учитываются покупки"
+
+msgid "Xaridlar:"
+msgstr "Покупки:"
+
+msgid "Xaridorlar (tanilgan)"
+msgstr "Покупатели (известные)"
+
+msgid "Xaritada bosing yoki markerni suring — koordinatalar o'zi yoziladi"
+msgstr "Нажмите на карту или перетащите маркер — координаты заполнятся сами"
+
+msgid "Xaritaning o'ng yuqorisida:"
+msgstr "В правом верхнем углу карты:"
+
+msgid "Xatolar"
+msgstr "Ошибки"
+
+msgid "xatosiz"
+msgstr "без ошибок"
+
+msgid "Xavfsizlik: sessiyalar va qurilmalar"
+msgstr "Безопасность: сессии и устройства"
+
+msgid "xil so'rov qidirildi"
+msgstr "разных запросов"
+
+msgid "Xodim botlari obunachilari"
+msgstr "Подписчики ботов для сотрудников"
+
+msgid "Xush kelibsiz"
+msgstr "Добро пожаловать"
+
+msgid "Yakunlangan transferni o'zgartirib bo'lmaydi"
+msgstr "Завершённое перемещение изменить нельзя"
+
+msgid "Yalpi savdo"
+msgstr "Валовые продажи"
+
+msgid "Yalpiz"
+msgstr "Мятный"
+
+msgid "yana {0} ta →"
+msgstr "ещё {0} →"
+
+msgid "Yangi"
+msgstr "Новый"
+
+msgid "Yangi (o'qilmagan)"
+msgstr "Новые (непрочитанные)"
+
+msgid "Yangi bo'lim"
+msgstr "Новый раздел"
+
+msgid "Yangi brend"
+msgstr "Новый бренд"
+
+msgid "Yangi chek"
+msgstr "Новый чек"
+
+msgid "Yangi daraja"
+msgstr "Новый уровень"
+
+msgid "Yangi hamyon"
+msgstr "Новый кошелёк"
+
+msgid "Yangi izohlar"
+msgstr "Новые комментарии"
+
+msgid "Yangi javob"
+msgstr "Новый ответ"
+
+msgid "Yangi kalit (o'zgartirmaslik uchun bo'sh qoldiring)"
+msgstr "Новый ключ (оставьте пустым, чтобы не менять)"
+
+msgid "Yangi kategoriya"
+msgstr "Новая категория"
+
+msgid "Yangi kirganlar"
+msgstr "Новые входы"
+
+msgid "Yangi kirim (qabul)"
+msgstr "Новый приход (приёмка)"
+
+msgid "Yangi kirishlar ({0} kun)"
+msgstr "Новые входы ({0} дн.)"
+
+msgid "Yangi mahsulotlar"
+msgstr "Новые товары"
+
+msgid "Yangi maqola"
+msgstr "Новая статья"
+
+msgid "Yangi mijozlar"
+msgstr "Новые клиенты"
+
+msgid "Yangi murojaat"
+msgstr "Новое обращение"
+
+msgid "yangi murojaat"
+msgstr "новое обращение"
+
+msgid "Yangi murojaatlar"
+msgstr "Новые обращения"
+
+msgid "Yangi ochilganlar"
+msgstr "Новые"
+
+msgid "Yangi qadoq"
+msgstr "Новая упаковка"
+
+msgid "Yangi qo'shilgan"
+msgstr "Недавно добавленные"
+
+msgid "Yangi ro'yxatdan o'tganlar"
+msgstr "Новые регистрации"
+
+msgid "Yangi signallar @NutriZoneAnalyticsBot orqali darhol yuboriladi"
+msgstr "Новые сигналы сразу отправляются через @NutriZoneAnalyticsBot"
+
+msgid "Yangi ta'm"
+msgstr "Новый вкус"
+
+msgid "Yangi teg"
+msgstr "Новый тег"
+
+msgid "Yangi xaridorlar"
+msgstr "Новые покупатели"
+
+msgid "Yangi xodim"
+msgstr "Новый сотрудник"
+
+msgid "yangi yetkazib beruvchi sifatida qo'shiladi"
+msgstr "будет добавлен как новый поставщик"
+
+msgid "Yangilari"
+msgstr "Новые"
+
+msgid "Yangilik obunachilariga"
+msgstr "Подписчикам новостей"
+
+msgid "Yaratilgan"
+msgstr "Создано"
+
+msgid "Yaratilmoqda…"
+msgstr "Создаём…"
+
+msgid "Yaroqlilik"
+msgstr "Срок годности"
+
+msgid "Yaroqlilik muddati"
+msgstr "Сроки годности"
+
+msgid "yaroqlilik sanasi noto'g'ri kiritilgan ({0} dona)"
+msgstr "неверно введён срок годности ({0} шт.)"
+
+msgid "Yashil"
+msgstr "Зелёный"
+
+msgid "Yetakchi"
+msgstr "Лидер"
+
+msgid "Yetakchi brend"
+msgstr "Ведущий бренд"
+
+msgid "Yetakchi filial"
+msgstr "Ведущий филиал"
+
+msgid "Yetkazib berish davlati (O'zbekiston) va mahsulotlarning ishlab chiqarilgan davlatlari. Bayroq kod bo'yicha avtomatik."
+msgstr "Страна доставки (Узбекистан) и страны производства товаров. Флаг — автоматически по коду."
+
+msgid "Yetkazib beruvchi ko'rsatilmagan — qarz kuzatilmaydi"
+msgstr "Поставщик не указан — долг не отслеживается"
+
+msgid "Yetkazib beruvchilar"
+msgstr "Поставщики"
+
+msgid "Yetkazilgan"
+msgstr "Доставлено"
+
+msgid "yetkazilgan bildirishnomalar"
+msgstr "доставленные уведомления"
+
+msgid "Yetkazilgan buyurtma yo'q"
+msgstr "Нет доставленных заказов"
+
+msgid "yetkazilgan buyurtmalar"
+msgstr "доставленные заказы"
+
+msgid "yetkazilgan/yakunlangan"
+msgstr "доставлено/завершено"
+
+msgid "Yetkazilgan:"
+msgstr "Доставлено:"
+
+msgid "Yig'ilayotgan mahsulotni skanerlang…"
+msgstr "Отсканируйте собираемый товар…"
+
+msgid "yig'ilmoqda {0}, yo'lda {1}"
+msgstr "собирается {0}, в пути {1}"
+
+msgid "Yig'ish"
+msgstr "Сборка"
+
+msgid "Yo'lda"
+msgstr "В пути"
+
+msgid "yo'lda"
+msgstr "в пути"
+
+msgid "Yo'nalish"
+msgstr "Маршрут"
+
+msgid "Yo'nalish o'zgardi"
+msgstr "Маршрут изменён"
+
+msgid "Yo'nalishni o'zgartirish"
+msgstr "Изменить маршрут"
+
+msgid "Yo'nalishni tanlang"
+msgstr "Выберите маршрут"
+
+msgid "Yo'q"
+msgstr "Нет"
+
+msgid "Yo'qotilgan"
+msgstr "Потеряно"
+
+msgid "Yo'qotilgan mijozlar"
+msgstr "Потерянные клиенты"
+
+msgid "Yo'qotilgan talab"
+msgstr "Упущенный спрос"
+
+msgid "yoki chegirma summasi"
+msgstr "или сумма скидки"
+
+msgid "Yopilgan"
+msgstr "Закрыт"
+
+msgid "Yopilgan suhbat"
+msgstr "Закрытый диалог"
+
+msgid "Yopish"
+msgstr "Закрыть"
+
+msgid "Yuboriladi"
+msgstr "Будет отправлено"
+
+msgid "Yuborilgan"
+msgstr "Отправлено"
+
+msgid "yuborilgan hisobotlar"
+msgstr "отправленные отчёты"
+
+msgid "Yuborilgan xabarlar"
+msgstr "Отправленные сообщения"
+
+msgid "Yuklanmoqda…"
+msgstr "Загрузка…"
+
+msgid "yuqori darajadagi"
+msgstr "верхнего уровня"
+
+msgid "Yuridik manzil"
+msgstr "Юридический адрес"
+
+msgid "Yuridik nom"
+msgstr "Юридическое название"
+
+msgid "Zaytun"
+msgstr "Оливковый"
+
+msgid "Zumrad"
+msgstr "Изумрудный"
+
+msgid "{0} / {1} ta ruxsat tanlangan"
+msgstr "выбрано прав: {0} / {1}"
+
+msgid "{0} Cheklar"
+msgstr "{0} чеков"
+
+msgid "{0} chop etilgan"
+msgstr "{0} опубликовано"
+
+msgid "{0} coin = {1} so'm. Mijoz buyurtma summasining ko'pi bilan shuncha foizini coin bilan to'lay oladi."
+msgstr "{0} коин = {1} сум. Клиент может оплатить коинами не больше этой доли суммы заказа."
+
+msgid "{0} dan buyon har bir filial: qancha onlayn buyurtma berildi, qanchalik tez qabul qilindi, nechtasi yakunlandi, qanchasi omborga qaytdi."
+msgstr "Каждый филиал с {0}: сколько онлайн-заказов получил, как быстро принимал, сколько завершил и сколько вернул на склад."
+
+msgid "{0} dan buyon har bir filial: qancha onlayn buyurtma berildi, qanchalik tez qabul qilindi, nechtasi yakunlandi, qaytarildi yoki omborga qaytarildi."
+msgstr "Каждый филиал с {0}: сколько онлайн-заказов передано, как быстро приняты, сколько завершено, возвращено или отправлено обратно на склад."
+
+msgid "{0} dan buyon har bir xodim: qancha murojaatga javob bergan, qanchalik tez, nechta suhbatni yopgan va mijozlar qanday baholagan."
+msgstr "Каждый сотрудник с {0}: на сколько обращений ответил, как быстро, сколько диалогов закрыл и как его оценили клиенты."
+
+msgid "{0} daq oldin"
+msgstr "{0} мин назад"
+
+msgid "{0} daqiqa keyin"
+msgstr "через {0} мин"
+
+msgid "{0} daqiqa oldin"
+msgstr "{0} мин назад"
+
+msgid "{0} days · o'rtacha chek {1}"
+msgstr "{0} дн. · средний чек {1}"
+
+msgid "{0} dona"
+msgstr "{0} шт."
+
+msgid "{0} dona sotildi"
+msgstr "продано {0} шт."
+
+msgid "{0} dona • Sekin sotilayotganlar:"
+msgstr "{0} шт. • Медленно продаются:"
+
+msgid "{0} hafta keyin"
+msgstr "через {0} нед."
+
+msgid "{0} hafta oldin"
+msgstr "{0} нед. назад"
+
+msgid "{0} ishlatmoqda"
+msgstr "использует {0}"
+
+msgid "{0} kishi"
+msgstr "{0} чел."
+
+msgid "{0} kun ichida xarid qilgan"
+msgstr "покупали в течение {0} дн."
+
+msgid "{0} kun ichida yo'q"
+msgstr "нет за {0} дн."
+
+msgid "{0} kun keyin"
+msgstr "через {0} дн."
+
+msgid "{0} kun oldin"
+msgstr "{0} дн. назад"
+
+msgid "{0} kun qoldi"
+msgstr "осталось {0} дн."
+
+msgid "{0} kun sotilmagan"
+msgstr "не продавался {0} дн."
+
+msgid "{0} kun to'lov muddati"
+msgstr "отсрочка {0} дн."
+
+msgid "{0} kun to'lov muddati — qarz avtomatik yoziladi"
+msgstr "отсрочка {0} дн. — долг записывается автоматически"
+
+msgid "{0} kunda {1} · bugun {2}"
+msgstr "{1} за {0} дн. · сегодня {2}"
+
+msgid "{0} kunda · {1} ta to'lov"
+msgstr "за {0} дн. · {1} платежей"
+
+msgid "{0} kundan beri xarid yo'q"
+msgstr "нет покупок {0} дн."
+
+msgid "{0} kunlik savdo"
+msgstr "продажи за {0} дн."
+
+msgid "{0} kunlik tarix hali yo'q"
+msgstr "истории за {0} дн. пока нет"
+
+msgid "{0} kunlik tushum"
+msgstr "выручка за {0} дн."
+
+msgid "{0} kunlik tushumdan"
+msgstr "от выручки за {0} дн."
+
+msgid "{0} maydon to'ldirilmagan"
+msgstr "не заполнено полей: {0}"
+
+msgid "{0} mijoz"
+msgstr "{0} клиентов"
+
+msgid "{0} mln so'm"
+msgstr "{0} млн сум"
+
+msgid "{0} mln so'm · {1}%"
+msgstr "{0} млн сум · {1}%"
+
+msgid "{0} oy keyin"
+msgstr "через {0} мес."
+
+msgid "{0} oy oldin"
+msgstr "{0} мес. назад"
+
+msgid "{0} products · {1} so'm"
+msgstr "{0} товаров · {1} сум"
+
+msgid "{0} products · {1} units · {2} so'm"
+msgstr "{0} товаров · {1} шт. · {2} сум"
+
+msgid "{0} qatorda tannarx yo'q — ombor qiymati va marja hisoblanmaydi"
+msgstr "в {0} строках нет себестоимости — стоимость склада и маржа не считаются"
+
+msgid "{0} so'm"
+msgstr "{0} сум"
+
+msgid "{0} so'm kutilmoqda"
+msgstr "{0} сум в ожидании"
+
+msgid "{0} so'm tushum"
+msgstr "{0} сум выручки"
+
+msgid "{0} so'm · {1} batches"
+msgstr "{0} сум · {1} партий"
+
+msgid "{0} so'm → {1}"
+msgstr "{0} сум → {1}"
+
+msgid "{0} so'mlik buyurtma: Bronze darajasida +{1} coin, VIP darajasida +{2} coin."
+msgstr "Заказ на {0} сум: +{1} коинов на уровне Bronze, +{2} коинов на уровне VIP."
+
+msgid "{0} so'mlik xaridga"
+msgstr "на покупку {0} сум"
+
+msgid "{0} soat keyin"
+msgstr "через {0} ч"
+
+msgid "{0} soat oldin"
+msgstr "{0} ч назад"
+
+msgid "{0} soatda faol"
+msgstr "активны за {0} ч"
+
+msgid "{0} soatda xabarlar"
+msgstr "сообщения за {0} ч"
+
+msgid "{0} ta"
+msgstr "{0} шт."
+
+msgid "{0} ta baho"
+msgstr "{0} оценок"
+
+msgid "{0} ta baho dona"
+msgstr "{0} оценок"
+
+msgid "{0} ta baho, {1} kun"
+msgstr "{0} оценок, {1} дн."
+
+msgid "{0} ta bekor / qaytarilgan"
+msgstr "{0} отменено / возвращено"
+
+msgid "{0} ta biriktirish"
+msgstr "{0} назначений"
+
+msgid "{0} ta bot · Rich xabarlar (rasm, jadval, grafik, tugmalar) · tokenlar hech qachon ko'rsatilmaydi"
+msgstr "{0} бота · Rich-сообщения (фото, таблицы, графики, кнопки) · токены никогда не показываются"
+
+msgid "{0} ta mahsulot tannarxdan arzon sotilyapti"
+msgstr "{0} товаров продаются ниже себестоимости"
+
+msgid "{0} ta mahsulot zarariga sotilyapti"
+msgstr "{0} товаров продаются в убыток"
+
+msgid "{0} ta mijoz · oxirgi xarid, chastota va summa (RFM) bo'yicha · onlayn + do'kon"
+msgstr "{0} клиентов · по давности, частоте и сумме покупок (RFM) · онлайн + магазин"
+
+msgid "{0} ta o'qilgan"
+msgstr "{0} прочитано"
+
+msgid "{0} ta o'zgarish"
+msgstr "{0} изменений"
+
+msgid "{0} ta partiyaning muddati 90 kundan kam"
+msgstr "у {0} партий срок меньше 90 дней"
+
+msgid "{0} ta qadoq turi"
+msgstr "{0} типов упаковки"
+
+msgid "{0} ta qator qo'shildi — tekshirib «Kirimni tasdiqlash»ni bosing"
+msgstr "Добавлено строк: {0} — проверьте и нажмите «Подтвердить приход»"
+
+msgid "{0} ta qoralama"
+msgstr "{0} черновиков"
+
+msgid "{0} ta savdo"
+msgstr "{0} продаж"
+
+msgid "{0} ta savol"
+msgstr "{0} вопросов"
+
+msgid "{0} ta saytdagi sharh"
+msgstr "{0} отзывов на сайте"
+
+msgid "{0} ta shahar"
+msgstr "{0} городов"
+
+msgid "{0} ta sharhda"
+msgstr "в {0} отзывах"
+
+msgid "{0} ta shu hafta"
+msgstr "{0} за неделю"
+
+msgid "{0} ta sotuvdagi mahsulotda MXIK yo'q"
+msgstr "у {0} товаров в продаже нет кода ИКПУ"
+
+msgid "{0} ta sotuvdagi mahsulotda qadoq kodi yo'q"
+msgstr "у {0} товаров в продаже нет кода упаковки"
+
+msgid "{0} ta stiker"
+msgstr "{0} стикеров"
+
+msgid "{0} ta suhbat — ro'yxatdan o'tgan mijoz"
+msgstr "{0} диалогов — зарегистрированные клиенты"
+
+msgid "{0} ta to'lov"
+msgstr "{0} платежей"
+
+msgid "{0} ta variant · narxlar barcha kanallarda (sayt, kassa) darhol yangilanadi"
+msgstr "{0} вариантов · цены сразу обновляются во всех каналах (сайт, касса)"
+
+msgid "{0} ta viloyatda"
+msgstr "в {0} областях"
+
+msgid "{0} ta xarid"
+msgstr "{0} покупок"
+
+msgid "{0} ta xarid · {1} dona"
+msgstr "{0} покупок · {1} шт."
+
+msgid "{0} ta yetkazilgan"
+msgstr "{0} доставлено"
+
+msgid "{0} ta yetkazilgan · {1} mijoz"
+msgstr "{0} доставлено · {1} клиентов"
+
+msgid "{0} ta yopilgan murojaatdan"
+msgstr "из {0} закрытых обращений"
+
+msgid "{0} ta {1} kunda"
+msgstr "{0} за {1} дн."
+
+msgid "{0} tasi kimnidir taklif qilgan"
+msgstr "{0} кого-то пригласили"
+
+msgid "{0} tasi nuqtasiz"
+msgstr "{0} без точки"
+
+msgid "{0} tasi qo'lda, {1} tasi avtomatik"
+msgstr "{0} вручную, {1} автоматически"
+
+msgid "{0} tasi to'lov kutyapti"
+msgstr "{0} ждут оплаты"
+
+msgid "{0} tasi yo'lda"
+msgstr "{0} в пути"
+
+msgid "{0} xil mahsulot"
+msgstr "{0} видов товаров"
+
+msgid "{0} xil mahsulot sotilgan"
+msgstr "продано {0} видов товаров"
+
+msgid "{0} xil so'rov"
+msgstr "{0} разных запросов"
+
+msgid "{0} · POS kassa"
+msgstr "{0} · POS-касса"
+
+msgid "{0} дней · o'rtacha chek {1}"
+msgstr "{0} дней · средний чек {1}"
+
+msgid "{0} – {1} so'm"
+msgstr "{0} – {1} сум"
+
+msgid "{0}% mijozlar"
+msgstr "{0}% клиентов"
+
+msgid "{0}% yopilgan suhbatlar baholangan"
+msgstr "{0}% закрытых диалогов оценены"
+
+msgid "{0}+ kun kirmagan faol akkaunt"
+msgstr "активный аккаунт без входа {0}+ дн."
+
+msgid "{0}+ so'm"
+msgstr "{0}+ сум"
+
+msgid "{0}: {1} so'm · {2} sales"
+msgstr "{0}: {1} сум · {2} продаж"
+
+msgid "{0}M so'm"
+msgstr "{0} млн сум"
+
+msgid "{0}–{1} yulduz qo'yilsa, suhbat «Nazoratda» belgisini oladi va xodimlar Telegram kanaliga xabar boradi. Menejer mijoz bilan bog'lanib, Chat markazida «Hal qilindi» deydi."
+msgstr "При {0}–{1} звёздах диалог получает отметку «На контроле», в Telegram-канал сотрудников приходит сообщение. Менеджер связывается с клиентом и отмечает «Решено» в Чат-центре."
+
+msgid "«Payme orqali fiskal chek»ni yoqing yoki provayder tanlang"
+msgstr "Включите «Фискальный чек через Payme» или выберите провайдера"
+
+msgid "«Qabul qilish» — buyurtma filialga berilgandan filial birinchi qadamni (qabul qilish yoki yig'ish) qilgunicha, median. «Omborga qaytargan» — filial ololmay qaytargan buyurtmalar, berilganlarga nisbatan."
+msgstr "«Принятие» — медиана времени от передачи заказа филиалу до первого шага филиала (принять или собрать). «Вернул на склад» — заказы, которые филиал не смог взять, относительно переданных."
+
+msgid "«Qo'shish» tugmasi bilan birinchi Telegram postini tayyorlang."
+msgstr "Создайте первый пост для Telegram кнопкой «Добавить»."
+
+msgid "«Token alohida sarlavhada» uchun, masalan X-API-Key."
+msgstr "Для «Токен в отдельном заголовке», например X-API-Key."
+
+msgid "Администрирование приложения «Cheklar»"
+msgstr "Администрирование приложения «Чеки»"
+
+msgid "Выручка — do'kon kassalari (qaytarishlarsiz) + filialga biriktirilgan yetkazilgan onlayn buyurtmalar. Kompaniya qatori barcha kanallarni, shu jumladan Dashboard POS ni hisoblaydi. Prognoz — oyning shu paytigacha bo'lgan sur'ati."
+msgstr "Выручка — кассы магазинов (без возвратов) + доставленные онлайн-заказы, привязанные к филиалу. Строка компании учитывает все каналы, включая POS панели. Прогноз — по темпу месяца на текущий момент."
+
+msgid "Диалог — o'zinikini ko'rish"
+msgstr "Диалог — просмотр своих"
+
+msgid "Заказ — o'zinikini ko'rish"
+msgstr "Заказ — просмотр своих"
+
+msgid "Номер телефона обязателен — mijoz shu raqam bilan SMS kod orqali kiradi"
+msgstr "Номер телефона обязателен — клиент входит по этому номеру через SMS-код"
+
+msgid "сум · do'kon kassalari"
+msgstr "сум · кассы магазинов"
+
+msgid "Уровень — tarixini ko'rish"
+msgstr "Уровень — просмотр истории"
+
+msgid "филиал · {0} ta xarid · {1} dona"
+msgstr "филиал · {0} покупок · {1} шт."
+
+msgid "Центр контроля: shubhali operatsiyalar va favqulodda holatlar"
+msgstr "Центр контроля: подозрительные операции и ЧП"
+
+msgid "Чек / buyurtma raqami, telefon, fiskal raqam…"
+msgstr "Чек / номер заказа, телефон, фискальный номер…"
+
+msgid "— davom etayotgan davr oldingi davrning aynan shu qismiga solishtiriladi (bugun {0}–hozir ↔ kecha {1}–shu vaqt)."
+msgstr "— текущий период сравнивается с той же частью предыдущего (сегодня {0}–сейчас ↔ вчера {1}–то же время)."
+
+msgid "— do'kon kassalari (chek summasi − chegirma + yetkazish − qaytarish; coin bilan to'langan qism ham kiradi) +"
+msgstr "— кассы магазинов (сумма чека − скидка + доставка − возвраты; часть, оплаченная коинами, тоже входит) +"
+
+msgid "— eng yaqin do'kondan {0} km dan uzoq manzil. Ular ko'p joy — yangi filial yoki tez yetkazish hududi uchun signal."
+msgstr "— адрес дальше {0} км от ближайшего магазина. Где их много — сигнал для нового филиала или зоны быстрой доставки."
+
+msgid "— faqat mijoz biriktirilgan cheklar va buyurtmalar; takroriy = davrgacha ham xarid qilgan yoki davrda {0}+ marta xarid qilgan."
+msgstr "— только чеки и заказы с привязанным клиентом; повторный = покупал и до периода или {0}+ раз за период."
+
+msgid "— holat bosqichlari, mahsulotlar nomi bilan, xarita"
+msgstr "— этапы статуса, товары по названию, карта"
+
+msgid "— kassa va qolgan cheklar uchun. Kalitlar shifrlangan holda saqlanadi."
+msgstr "— для касс и остальных чеков. Ключи хранятся в зашифрованном виде."
+
+msgid "— KPI banner, dinamika, filiallar, top mahsulotlar grafigi"
+msgstr "— KPI-баннер, динамика, филиалы, график топ-товаров"
+
+msgid "— mahsulot rasmlari, qoldiq, coins/naqd taqsimoti"
+msgstr "— фото товаров, остаток, разбивка коины/наличные"
+
+msgid "— oxirgi kirim narxi, bo'lmasa narxlar ro'yxatidagi tannarx. Savdoning {0}% dan kamida tannarx ma'lum bo'lmasa yalpi foyda ko'rsatilmaydi."
+msgstr "— последняя цена прихода, иначе себестоимость из прайс-листа. Валовая прибыль не показывается, если себестоимость известна меньше чем для {0}% продаж."
+
+msgid "— Payme bilan to'langan buyurtmalarga soliq cheki va QR kodni Payme o'zi chiqaradi (Payme Business'da fiskalizatsiyani yoqing, kalitlar To'lov tizimlari sahifasida);"
+msgstr "— для заказов, оплаченных через Payme, фискальный чек и QR-код выдаёт сам Payme (включите фискализацию в Payme Business; ключи — на странице «Платёжные системы»);"
+
+msgid "— rasm, chegirma, hajmlar jadvali, ozuqaviy qiymat, savatga/hozir sotib olish"
+msgstr "— фото, скидка, таблица объёмов, пищевая ценность, в корзину / купить сейчас"
+
+msgid "— Shaharni tanlang —"
+msgstr "— Выберите город —"
+
+msgid "— yig'ilmoqda {0}, yo'lda {1}"
+msgstr "— собирается {0}, в пути {1}"
+
+msgid "— “📦 Products”: top mahsulotlar kollaji, narx/reyting/qoldiq jadvali, har biriga tugma"
+msgstr "— «📦 Товары»: коллаж топ-товаров, таблица цена/рейтинг/остаток, кнопка для каждого"
+
+msgid "“📦 Products”: top mahsulotlar kollaji, narx/reyting/qoldiq jadvali, har biriga tugma"
+msgstr "«📦 Товары»: коллаж топ-товаров, таблица цена/рейтинг/остаток, кнопка для каждого"
+
+msgid "−{0} so'm"
+msgstr "−{0} сум"
+
+msgid "✓ — rol shu amalga ruxsat beradi. Sariq qatorlar hech bir rolda yo'q."
+msgstr "✓ — роль разрешает это действие. Жёлтые строки не входят ни в одну роль."

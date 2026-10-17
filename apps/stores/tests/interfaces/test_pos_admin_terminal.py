@@ -46,7 +46,7 @@ def post(c, action, **body):
 
 def test_full_shift_and_sale(staff, kassa):
     wh, v = kassa
-    page = staff.get("/django-admin/pos/terminal/")
+    page = staff.get("/django-admin/pos/terminal/", HTTP_ACCEPT_LANGUAGE="uz")
     assert page.status_code == 200 and b"Onlayn kassa" in page.content
     state = staff.get(f"{API}state").json()["data"]
     assert state["session"] is None and state["has_pin"] and state["store"]["name"] == "Onlayn kassa"

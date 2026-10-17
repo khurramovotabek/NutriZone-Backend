@@ -9765,3 +9765,47 @@ msgstr "Поиск: название, SKU или штрихкод"
 
 msgid "F2 qidiruv · F3 skaner · F4 to'lov · +/− oxirgi skan"
 msgstr "F2 поиск · F3 сканер · F4 оплата · +/− последний скан"
+
+#, python-format
+msgid "%(model)s qo'shdi"
+msgstr "%(model)s: добавлено"
+
+#, python-format
+msgid "%(model)s o'zgartirdi"
+msgstr "%(model)s: изменено"
+
+#, python-format
+msgid "%(model)s o'chirdi"
+msgstr "%(model)s: удалено"
+
+msgid "Xodim"
+msgstr "Сотрудник"
+
+msgid "Search engines"
+msgstr "Поисковые системы"
+
+msgid "Paste the verification code (or the whole <meta> tag) from Google Search Console, Yandex Webmaster or Bing Webmaster. It appears on the website within a minute; then press «Verify» in the console and submit the sitemap."
+msgstr "Вставьте код подтверждения (или весь тег <meta>) из Google Search Console, Яндекс Вебмастера или Bing Webmaster. Через минуту он появится на сайте — затем нажмите «Подтвердить» в консоли и отправьте sitemap."
+
+msgid "Google Search Console code"
+msgstr "Код Google Search Console"
+
+msgid "Yandex Webmaster code"
+msgstr "Код Яндекс Вебмастера"
+
+msgid "Bing Webmaster code"
+msgstr "Код Bing Webmaster"
+
+msgid "Sitemap:"
+msgstr "Карта сайта (sitemap):"
+
+msgid "Paste the code (or the whole <meta> tag) exactly as the search console shows it."
+msgstr "Вставьте код (или весь тег <meta>) точно так, как показывает консоль."
+
+#, python-format
+msgid "%(store)s ishlatmoqda"
+msgstr "использует %(store)s"
+
+#, python-format
+msgid "Mijoz checkout'da «%(n)s» ni tanlaydi va tanlangan ekvayerning xavfsiz sahifasida karta ma'lumotlarini kiritadi. Pul o'sha ekvayer shartnomasi bo'yicha hisobingizga tushadi; alohida kalit kerak emas."
+msgstr "Клиент выбирает «%(n)s» при оформлении и вводит данные карты на защищённой странице выбранного эквайера. Деньги поступают на ваш счёт по договору с этим эквайером; отдельный ключ не нужен."

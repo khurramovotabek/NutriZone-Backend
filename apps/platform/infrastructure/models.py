@@ -141,6 +141,11 @@ class SiteSettings(models.Model):
     telegram_channel_url = models.URLField(blank=True, default="")
     instagram_url = models.URLField(blank=True, default="")
 
+    # --- Search engines (site ownership codes; the storefront renders them as <meta> verification tags) ---
+    google_site_verification = models.CharField(max_length=128, blank=True, default="", verbose_name=_("Google Search Console code"))
+    yandex_verification = models.CharField(max_length=128, blank=True, default="", verbose_name=_("Yandex Webmaster code"))
+    bing_verification = models.CharField(max_length=128, blank=True, default="", verbose_name=_("Bing Webmaster code"))
+
     updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:

@@ -53,8 +53,17 @@ class SiteSettingsPublicView(APIView):
             "telegram_channel_url": settings_obj.telegram_channel_url,
             "instagram_url": settings_obj.instagram_url,
             "primary_color": settings_obj.primary_color,
+            "verification": _verification_codes(),
             **_brand_payload(request),
         })
+
+
+def _verification_codes() -> dict:
+    """Search-engine ownership codes (Dashboard → Sozlamalar → Qidiruv tizimlari) for the storefront's <meta> tags."""
+    from apps.platform.infrastructure.models import SiteSettings
+
+    row = SiteSettings.objects.filter(pk=1).values("google_site_verification", "yandex_verification", "bing_verification").first() or {}
+    return {"google": row.get("google_site_verification", ""), "yandex": row.get("yandex_verification", ""), "bing": row.get("bing_verification", "")}
 
 
 def _brand_payload(request) -> dict:

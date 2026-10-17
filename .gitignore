@@ -47,3 +47,4 @@ logs/*
 
 # Docker
 docker-compose.override.yml
+.i18n_audit/

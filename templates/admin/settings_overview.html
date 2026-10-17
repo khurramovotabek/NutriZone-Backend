@@ -32,6 +32,7 @@
     <a href="#st-general"><i class="fas fa-sliders" aria-hidden="true"></i> {% translate "General" %}</a>
     <a href="#st-contact"><i class="fas fa-headset" aria-hidden="true"></i> {% translate "Contact" %}</a>
     <a href="#st-social"><i class="fas fa-share-nodes" aria-hidden="true"></i> {% translate "Social networks" %}</a>
+    <a href="#st-seo"><i class="fas fa-magnifying-glass-chart" aria-hidden="true"></i> {% translate "Search engines" %}</a>
     <a href="#st-storefront"><i class="fas fa-store" aria-hidden="true"></i> {% translate "Storefront preview" %}</a>
     <a href="#st-integrations"><i class="fas fa-plug" aria-hidden="true"></i> {% translate "Integrations" %}</a>
   </nav>
@@ -182,6 +183,21 @@
         {% include "admin/nz_settings_field.html" with field=form.telegram_username label=_("Telegram username") icon="fa-at" %}
         {% include "admin/nz_settings_field.html" with field=form.telegram_channel_url label=_("Telegram channel") icon="fa-paper-plane" %}
         {% include "admin/nz_settings_field.html" with field=form.instagram_url label=_("Instagram") icon="fa-camera" %}
+      </section>
+
+      {# --- Search engines: ownership codes rendered on every storefront page as <meta> tags --- #}
+      <section class="nz-card nz-st-card" id="st-seo">
+        <header class="nz-st-card-head">
+          <span class="nz-st-icon"><i class="fas fa-magnifying-glass-chart" aria-hidden="true"></i></span>
+          <div>
+            <h3>{% translate "Search engines" %}</h3>
+            <p>{% translate "Paste the verification code (or the whole <meta> tag) from Google Search Console, Yandex Webmaster or Bing Webmaster. It appears on the website within a minute; then press «Verify» in the console and submit the sitemap." %}</p>
+          </div>
+        </header>
+        {% include "admin/nz_settings_field.html" with field=form.google_site_verification label=_("Google Search Console code") icon="fa-g" %}
+        {% include "admin/nz_settings_field.html" with field=form.yandex_verification label=_("Yandex Webmaster code") icon="fa-y" %}
+        {% include "admin/nz_settings_field.html" with field=form.bing_verification label=_("Bing Webmaster code") icon="fa-b" %}
+        <p class="nz-st-hint"><i class="fas fa-sitemap" aria-hidden="true"></i> {% translate "Sitemap:" %} <code>https://nutrizone.uz/sitemap.xml</code></p>
       </section>
 
       {# --- Storefront contact preview (live) --- #}

@@ -120,7 +120,7 @@ class StoreColorWidget(forms.TextInput):
             owner = owners.get(hex_)
             checked = hex_ == value
             chips.append(
-                f'<label class="nzc-chip{" is-used" if owner else ""}" style="--c:{hex_}" title="{escape(label)}{escape(" — " + owner + " ishlatmoqda") if owner else ""}">'
+                f'<label class="nzc-chip{" is-used" if owner else ""}" style="--c:{hex_}" title="{escape(label)}{escape(" — " + str(_("%(store)s ishlatmoqda") % {"store": owner})) if owner else ""}">'
                 f'<input type="radio" name="{name}__pick" value="{hex_}"{" checked" if checked else ""}{" disabled" if owner else ""}>'
                 f'<span class="nzc-dot"></span><span class="nzc-name">{escape(label)}</span>'
                 f'{f"<small>{escape(owner)}</small>" if owner else ""}</label>'

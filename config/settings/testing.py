@@ -97,6 +97,8 @@ NUTRIZONE_SMS_LOGIN_ENABLED = True
 
 # The suite asserts Django/admin chrome in English; production serves the dashboard in Uzbek (base.LANGUAGE_CODE).
 LANGUAGE_CODE = "en"
+# The suite asserts the dashboard's own (Uzbek) source text; the phrase layer has its own tests (test_admin_phrases.py).
+ADMIN_PHRASES_ENABLED = False
 
 # Every pytest-xdist worker has its own PostgreSQL test database, so it gets its own Redis database too: with one
 # shared Redis, a worker read objects another worker had cached from *its* database (DoesNotExist / stale rows) and

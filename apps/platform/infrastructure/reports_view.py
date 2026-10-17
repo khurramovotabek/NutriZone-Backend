@@ -106,6 +106,7 @@ def settings_overview_view(request):
                 "primary_color", "secondary_color", "accent_color",
                 "support_phone", "support_email", "address", "working_hours",
                 "telegram_username", "telegram_channel_url", "instagram_url",
+                "google_site_verification", "yandex_verification", "bing_verification",
             ]
             widgets = {
                 "site_name": forms.TextInput(attrs=text),
@@ -120,6 +121,9 @@ def settings_overview_view(request):
                 "telegram_username": forms.TextInput(attrs={**text, "placeholder": "nutrizone_support"}),
                 "telegram_channel_url": forms.URLInput(attrs={**text, "placeholder": "https://t.me/nutrizone"}),
                 "instagram_url": forms.URLInput(attrs={**text, "placeholder": "https://instagram.com/nutrizone"}),
+                "google_site_verification": forms.TextInput(attrs={**text, "placeholder": '<meta name="google-site-verification" content="…">', "spellcheck": "false"}),
+                "yandex_verification": forms.TextInput(attrs={**text, "placeholder": '<meta name="yandex-verification" content="…">', "spellcheck": "false"}),
+                "bing_verification": forms.TextInput(attrs={**text, "placeholder": '<meta name="msvalidate.01" content="…">', "spellcheck": "false"}),
                 "logo": forms.ClearableFileInput(attrs={"class": "nz-file-input", "accept": "image/png,image/jpeg,image/webp"}),
                 "favicon": forms.ClearableFileInput(attrs={"class": "nz-file-input", "accept": "image/png,image/jpeg,image/webp,image/x-icon"}),
             }
@@ -154,6 +158,24 @@ def settings_overview_view(request):
 
         def clean_favicon(self):
             return self._clean_image("favicon")
+
+        def _clean_verification(self, name):
+            # Accept the whole <meta ... content="CODE"> tag the search console shows, or just the code.
+            value = (self.cleaned_data.get(name) or "").strip()
+            m = re.search(r'content\s*=\s*["\']([^"\']+)["\']', value)
+            value = (m.group(1) if m else value).strip()
+            if value and not re.fullmatch(r"[A-Za-z0-9_\-.=+/]{6,128}", value):
+                raise forms.ValidationError(_("Paste the code (or the whole <meta> tag) exactly as the search console shows it."))
+            return value
+
+        def clean_google_site_verification(self):
+            return self._clean_verification("google_site_verification")
+
+        def clean_yandex_verification(self):
+            return self._clean_verification("yandex_verification")
+
+        def clean_bing_verification(self):
+            return self._clean_verification("bing_verification")
 
         def clean_telegram_username(self):
             return (self.cleaned_data.get("telegram_username") or "").strip().lstrip("@")

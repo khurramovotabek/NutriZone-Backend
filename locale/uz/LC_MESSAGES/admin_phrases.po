@@ -1,0 +1,286 @@
+# Dashboard phrases translated on the rendered page (apps/platform/infrastructure/admin_i18n.py).
+# msgid = the text exactly as the dashboard shows it (numbers written as {0}, {1}...), msgstr = its translation.
+# Edit by hand; no compiling needed -- the catalog is re-read when this file changes.
+msgid ""
+msgstr ""
+"Content-Type: text/plain; charset=UTF-8\n"
+"Language: uz\n"
+
+msgid "Account"
+msgstr "Hisob"
+
+msgid "Action"
+msgstr "Amal"
+
+msgid "Actions"
+msgstr "Amallar"
+
+msgid "Add"
+msgstr "Qo'shish"
+
+msgid "All"
+msgstr "Hammasi"
+
+msgid "All rights reserved."
+msgstr "Barcha huquqlar himoyalangan."
+
+msgid "Any date"
+msgstr "Istalgan sana"
+
+msgid "Apply"
+msgstr "Qo'llash"
+
+msgid "Article text"
+msgstr "Maqola matni"
+
+msgid "Assistant"
+msgstr "AI maslahatchi"
+
+msgid "Bearer token (Authorization: Bearer …)"
+msgstr "Bearer token (Authorization: Bearer …)"
+
+msgid "Change"
+msgstr "O'zgartirish"
+
+msgid "Checkout payment"
+msgstr "Checkout to'lovi"
+
+msgid "Choose"
+msgstr "Tanlash"
+
+msgid "Clear"
+msgstr "Tozalash"
+
+msgid "Clear all filters"
+msgstr "Barcha filtrlarni tozalash"
+
+msgid "Click here to select the objects across all pages"
+msgstr "Barcha sahifalardagi yozuvlarni tanlash uchun shu yerni bosing"
+
+msgid "Close"
+msgstr "Yopish"
+
+msgid "Coin (cashback)"
+msgstr "Coin (keshbek)"
+
+msgid "Delete"
+msgstr "O'chirish"
+
+msgid "Edit"
+msgstr "Tahrirlash"
+
+msgid "Email"
+msgstr "Email"
+
+msgid "Filter"
+msgstr "Filtr"
+
+msgid "Filters"
+msgstr "Filtrlar"
+
+msgid "First, enter a username and password. Then, you'll be able to edit more user options."
+msgstr "Avval login va parolni kiriting. Keyin boshqa sozlamalarni tahrirlashingiz mumkin."
+
+msgid "Go"
+msgstr "Bajarish"
+
+msgid "Has date"
+msgstr "Sanasi bor"
+
+msgid "Hello! We're outside working hours right now. Leave your question and we'll reply as soon as we're back."
+msgstr "Assalomu alaykum! Hozir ish vaqtidan tashqari. Savolingizni qoldiring — ish boshlanishi bilan javob beramiz."
+
+msgid "History"
+msgstr "Tarix"
+
+msgid "Log out"
+msgstr "Chiqish"
+
+msgid "Login"
+msgstr "Login"
+
+msgid "Logo"
+msgstr "Logotip"
+
+msgid "Main navigation"
+msgstr "Asosiy menyu"
+
+msgid "Marketing"
+msgstr "Marketing"
+
+msgid "Media"
+msgstr "Media"
+
+msgid "My actions"
+msgstr "Mening amallarim"
+
+msgid "No"
+msgstr "Yo'q"
+
+msgid "No date"
+msgstr "Sanasiz"
+
+msgid "No nutrition facts recorded."
+msgstr "Ozuqaviy qiymat kiritilmagan."
+
+msgid "No specifications recorded."
+msgstr "Xususiyatlar kiritilmagan."
+
+msgid "None available"
+msgstr "Mavjud emas"
+
+msgid "Now"
+msgstr "Hozir"
+
+msgid "Old password"
+msgstr "Eski parol"
+
+msgid "Online order cancelled"
+msgstr "Onlayn buyurtma bekor qilindi"
+
+msgid "Online order reserved"
+msgstr "Onlayn buyurtma band qilindi"
+
+msgid "Online order shipped"
+msgstr "Onlayn buyurtma jo'natildi"
+
+msgid "Operator"
+msgstr "Operator"
+
+msgid "Optional"
+msgstr "Ixtiyoriy"
+
+msgid "Orders bot"
+msgstr "Buyurtmalar boti"
+
+msgid "Password change"
+msgstr "Parolni o'zgartirish"
+
+msgid "Password change successful"
+msgstr "Parol muvaffaqiyatli o'zgartirildi"
+
+msgid "Password-based authentication"
+msgstr "Parol bilan kirish"
+
+msgid "Past 7 days"
+msgstr "Oxirgi 7 kun"
+
+msgid "Please enter your old password, for security's sake, and then enter your new password twice so we can verify you typed it in correctly."
+msgstr "Xavfsizlik uchun eski parolingizni, so'ng yangi parolni ikki marta kiriting — to'g'ri yozilganini tekshiramiz."
+
+msgid "Post"
+msgstr "Post"
+
+msgid "Recent actions"
+msgstr "So'nggi amallar"
+
+msgid "Required. {0} characters or fewer. Letters, digits and @/./+/-/_ only."
+msgstr "Majburiy. {0} ta belgigacha. Faqat harflar, raqamlar va @/./+/-/_."
+
+msgid "Run"
+msgstr "Bajarish"
+
+msgid "Save"
+msgstr "Saqlash"
+
+msgid "Save and add another"
+msgstr "Saqlash va yana qo'shish"
+
+msgid "Save and continue editing"
+msgstr "Saqlash va tahrirlashni davom ettirish"
+
+msgid "Search"
+msgstr "Qidirish"
+
+msgid "See Profile"
+msgstr "Profilni ko'rish"
+
+msgid "Segment"
+msgstr "Segment"
+
+msgid "Select all objects on this page for an action"
+msgstr "Amal uchun sahifadagi barcha yozuvlarni tanlash"
+
+msgid "Select this object for an action"
+msgstr "Amal uchun shu yozuvni tanlash"
+
+msgid "Short summary"
+msgstr "Qisqa mazmun"
+
+msgid "Show all"
+msgstr "Hammasini ko'rsatish"
+
+msgid "STIR (INN)"
+msgstr "STIR (INN)"
+
+msgid "Superuser"
+msgstr "Superadmin"
+
+msgid "Support"
+msgstr "Qo'llab-quvvatlash"
+
+msgid "Telegram post"
+msgstr "Telegram post"
+
+msgid "Telegram_bot"
+msgstr "Telegram bot"
+
+msgid "This month"
+msgstr "Shu oy"
+
+msgid "This year"
+msgstr "Shu yil"
+
+msgid "Today"
+msgstr "Bugun"
+
+msgid "Toggle navigation"
+msgstr "Menyuni ochish/yopish"
+
+msgid "Unknown"
+msgstr "Noma'lum"
+
+msgid "Upload file."
+msgstr "Fayl yuklang."
+
+msgid "Username"
+msgstr "Foydalanuvchi nomi"
+
+msgid "Variant"
+msgstr "Variant"
+
+msgid "Video"
+msgstr "Video"
+
+msgid "View"
+msgstr "Ko'rish"
+
+msgid "View on site"
+msgstr "Saytda ko'rish"
+
+msgid "Whether the user will be able to authenticate using a password or not. If disabled, they may still be able to authenticate using other backends, such as Single Sign-On or LDAP."
+msgstr "Foydalanuvchi parol bilan kira oladimi. O'chirilsa ham boshqa usullar (Single Sign-On, LDAP) orqali kirishi mumkin."
+
+msgid "Yes"
+msgstr "Ha"
+
+msgid "Yesterday"
+msgstr "Kecha"
+
+msgid "Your password can't be a commonly used password."
+msgstr "Parol keng tarqalgan parollardan bo'lmasin."
+
+msgid "Your password can't be entirely numeric."
+msgstr "Parol faqat raqamlardan iborat bo'lmasin."
+
+msgid "Your password can't be too similar to your other personal information."
+msgstr "Parol shaxsiy ma'lumotlaringizga juda o'xshash bo'lmasin."
+
+msgid "Your password must contain at least {0} characters."
+msgstr "Parol kamida {0} ta belgidan iborat bo'lsin."
+
+msgid "Your password was changed."
+msgstr "Parolingiz o'zgartirildi."
+
+msgid "{0} of {1} selected"
+msgstr "{1} tadan {0} tasi tanlandi"
