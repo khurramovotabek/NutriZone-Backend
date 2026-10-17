@@ -640,6 +640,31 @@ def _product_excel_prepare(objs) -> None:
                "stock": sum(stock.get(v["id"], 0) for v in vs) if any(v["id"] in stock for v in vs) else None}
 
 
+def category_path_labels() -> dict:
+    """{category id: "Sport ozuqalari › Proteinlar › Whey protein"} -- the same name can live in two sections
+    ("Vitaminlar", "Hardcore"), so pickers show the whole path, in the order of the tree."""
+    rows = list(orm.Category.objects.filter(is_deleted=False).prefetch_related("translations"))
+    by_id = {c.id: c for c in rows}
+    names = {c.id: _display_name(c.translations.all(), c.id) for c in rows}
+    labels = {}
+    for c in rows:
+        parts, node, guard = [], c, 0
+        while node is not None and guard < 6:
+            parts.append(names[node.id])
+            node, guard = by_id.get(node.parent_id), guard + 1
+        labels[c.id] = " › ".join(reversed(parts))
+    return labels
+
+
+def _category_formfield(field):
+    """Category picker ordered as the tree (section before its product types), each option with its full path."""
+    labels = category_path_labels()
+    field.queryset = field.queryset.filter(id__in=labels)
+    field.label_from_instance = lambda c: labels.get(c.id, str(c))
+    field.choices = [("", "---------")] + sorted(((c.id, labels[c.id]) for c in field.queryset), key=lambda x: x[1].lower())
+    return field
+
+
 @admin.register(orm.Product)
 class ProductAdmin(ExcelExportMixin, CatalogFormMixin, CatalogAnalyticsMixin, admin.ModelAdmin):
     excel_title = "Mahsulotlar"
@@ -652,6 +677,10 @@ class ProductAdmin(ExcelExportMixin, CatalogFormMixin, CatalogAnalyticsMixin, ad
         Col("Qoldiq (dona)", lambda p: p.x["stock"], 12, number=True), Col("Maqsadlar", "goals", 20), Col("Yaratilgan", "created_at", 17),
     ]
 
+
+    def formfield_for_foreignkey(self, db_field, request, **kwargs):
+        field = super().formfield_for_foreignkey(db_field, request, **kwargs)
+        return _category_formfield(field) if db_field.name == "category" and field is not None else field
     def excel_prepare(self, objs):
         _product_excel_prepare(objs)
 

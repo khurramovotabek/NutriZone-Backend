@@ -140,7 +140,9 @@ class CatalogSelector:
         """`locale` and `order_by_newest` are both optional and default to this method's exact prior behavior (no locale passthrough, no explicit ordering) -- added only for `apps.telegram_bot`'s own "🆕 Yangi mahsulotlar" listing, which needs both a locale-correct name and a real newest-first order with zero change to any existing caller (the REST `ProductListView` passes neither)."""
         qs = orm.Product.objects.filter(status=ProductStatus.PUBLISHED.value)
         if category_id:
-            qs = qs.filter(category_id=category_id)
+            from apps.products.infrastructure.catalog_browse import category_scope
+
+            qs = qs.filter(category_id__in=category_scope(category_id))  # a section lists its product types' products too
         if brand_id:
             qs = qs.filter(brand_id=brand_id)
         if order_by_newest:
@@ -336,7 +338,9 @@ class FilterSelector:
     def facets(self, category_id=None) -> dict:
         product_qs = orm.Product.objects.filter(status=ProductStatus.PUBLISHED.value)
         if category_id:
-            product_qs = product_qs.filter(category_id=category_id)
+            from apps.products.infrastructure.catalog_browse import category_scope
+
+            product_qs = product_qs.filter(category_id__in=category_scope(category_id))
 
         brand_ids = product_qs.exclude(brand_id=None).values_list("brand_id", flat=True).distinct()
         brands = orm.Brand.objects.filter(id__in=brand_ids).prefetch_related("translations")

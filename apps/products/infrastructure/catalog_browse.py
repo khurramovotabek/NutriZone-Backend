@@ -129,19 +129,25 @@ def _attach_stock(by_id: dict) -> None:
         by_id[product_by_variant[variant_id]].stock += units
 
 
-def _category_scope(category_id) -> set:
-    """The category itself plus its direct children -- a parent category shows its sub-categories' products."""
+def category_scope(category_id) -> set:
+    """The category and every category below it (section → product type) -- a parent shows all its products."""
     if not category_id:
         return set()
     ids = {uuid.UUID(str(category_id))}
-    ids.update(orm.Category.objects.filter(parent_id=category_id).values_list("id", flat=True))
+    frontier = set(ids)
+    while frontier:  # the tree is 3 levels deep; one query per level
+        frontier = set(orm.Category.objects.filter(parent_id__in=frontier, is_deleted=False).values_list("id", flat=True)) - ids
+        ids |= frontier
     return ids
+
+
+_category_scope = category_scope
 
 
 def _predicates(filters: dict) -> dict:
     """{dimension: predicate(candidate) -> bool} for every active filter."""
     preds = {}
-    scope = _category_scope(filters.get("category_id"))
+    scope = category_scope(filters.get("category_id"))
     if scope:
         preds["category"] = lambda c: c.category_id in scope
     brand_ids = {uuid.UUID(str(b)) for b in filters.get("brand_ids") or []}
