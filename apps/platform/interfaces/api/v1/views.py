@@ -95,7 +95,9 @@ class BannerListView(APIView):
         for banner in banners:
             image_url = None
             if banner.image_storage_path:
-                path = banner.image_thumbnail_paths.get("large") or banner.image_storage_path
+                # The hero is full-width (2560 px on a retina laptop): send the full-resolution original -- the
+                # storefront's image optimizer serves each screen its own size; the 800 px thumbnail only blurred.
+                path = banner.image_storage_path
                 base = (getattr(django_settings, "PUBLIC_BASE_URL", None) or "").rstrip("/")
                 image_url = path if path.startswith(("http://", "https://")) else f"{base}{django_settings.MEDIA_URL}{path}"
             data.append({

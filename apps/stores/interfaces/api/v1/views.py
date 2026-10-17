@@ -19,8 +19,12 @@ from common.responses import success_response
 
 
 def _media_url(storage_path: str, thumbnail_paths: dict, size: str = "medium") -> str | None:
+    """A thumbnail (`size`), or the full-resolution original with size="original" -- for photos shown large (store
+    cover, gallery): the storefront's image optimizer scales it down per screen, a 400 px thumbnail can only blur."""
     if not storage_path:
         return None
+    if size == "original":
+        return f"/media/{storage_path}"
     return f"/media/{(thumbnail_paths or {}).get(size) or storage_path}"
 
 
@@ -46,8 +50,8 @@ def _rating_fields(store: Store) -> dict:
 def _store_list_payload(store: Store, distance_meters: float | None = None) -> dict:
     return {
         "id": store.id, "name": store.name, "slug": store.slug, "status": store.status,
-        "logo_url": _media_url(store.logo_storage_path, store.logo_thumbnail_paths, "small"),
-        "cover_image_url": _media_url(store.cover_image_storage_path, store.cover_image_thumbnail_paths),
+        "logo_url": _media_url(store.logo_storage_path, store.logo_thumbnail_paths, "medium"),
+        "cover_image_url": _media_url(store.cover_image_storage_path, store.cover_image_thumbnail_paths, "original"),
         "address": store.address, "city": store.city, "district": store.district,
         "latitude": store.latitude, "longitude": store.longitude,
         "is_open_now": store.is_open_now(),
@@ -155,7 +159,7 @@ class StoreListView(APIView):
 
 def _build_store_detail_payload(store: Store, request) -> dict:
     media = [
-        {"id": m.id, "url": _media_url(m.storage_path, m.thumbnail_paths), "is_video": m.is_video, "sort_order": m.sort_order}
+        {"id": m.id, "url": _media_url(m.storage_path, m.thumbnail_paths, "original"), "is_video": m.is_video, "sort_order": m.sort_order}
         for m in store.media.all().order_by("sort_order")
     ]
 

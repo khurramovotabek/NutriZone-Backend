@@ -91,7 +91,12 @@ class SiteSettingsAdmin(admin.ModelAdmin):
 
 
 class BannerAdminForm(forms.ModelForm):
-    image_upload = forms.ImageField(required=False, label="Rasm yuklash", help_text="JPEG, PNG yoki WebP. Saqlanganda avtomatik optimallashtiriladi (WebP + kichik nusxalar).")
+    image_upload = forms.ImageField(
+        required=False, label="Rasm yuklash",
+        help_text="Tavsiya: 2400×800 px (3:1), JPEG / PNG / WebP. Kamida 1200 px kenglik — aks holda katta ekranda xira ko'rinadi. "
+                  "Telefonda chetlari kesiladi: muhim qismini (mahsulot, matn) markazga joylang. Har bir ekranga mos o'lcham avtomatik beriladi.",
+    )
+    MIN_WIDTH_PX = 1200
     # Explicit field (not left to the model's own required=True) so a form
     # submission that omits it -- e.g. an older client/test -- still saves
     # the model's own default instead of failing validation.
@@ -107,6 +112,14 @@ class BannerAdminForm(forms.ModelForm):
 
     def clean_duration_seconds(self):
         return self.cleaned_data.get("duration_seconds") or 45
+
+    def clean_image_upload(self):
+        # A hero banner fills a 1 250 px wide slot (2 500 px on retina screens): small images can only look blurry.
+        image = self.cleaned_data.get("image_upload")
+        width = getattr(getattr(image, "image", None), "width", None)
+        if image and width and width < self.MIN_WIDTH_PX:
+            raise forms.ValidationError(f"Rasm juda kichik: {width} px kenglik. Kamida {self.MIN_WIDTH_PX} px kerak (tavsiya 2400×800).")
+        return image
 
 
 def _media_url(path: str) -> str:

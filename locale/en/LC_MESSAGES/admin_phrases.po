@@ -369,6 +369,9 @@ msgstr "Links"
 msgid "Bonuslar (coin) sahifasi"
 msgstr "Bonuses (coins) page"
 
+msgid "Bosh sahifa slayderida banner keyingisiga o'tguncha necha soniya turadi ({0}–{1})."
+msgstr "How many seconds the banner stays in the home slider before the next one ({0}–{1})."
+
 msgid "Boshqa (qo'lda yozish)…"
 msgstr "Other (type it in)…"
 
@@ -1569,6 +1572,9 @@ msgstr "Views"
 msgid "Ko'rsatish"
 msgstr "Show"
 
+msgid "Ko'rsatish davomiyligi (soniya)"
+msgstr "Display time (seconds)"
+
 msgid "Kobalt"
 msgstr "Cobalt"
 
@@ -2754,6 +2760,9 @@ msgstr "Image (JPEG/PNG/WebP) or video (MP4/MOV/WebM). Optimized automatically o
 msgid "Rasm / videoli"
 msgstr "With photo / video"
 
+msgid "Rasm juda kichik: {0} px kenglik. Kamida {1} px kerak (tavsiya {2}×{3})."
+msgstr "The image is too small: {0} px wide. At least {1} px is needed (recommended {2}×{3})."
+
 msgid "Rasm va mahsulot"
 msgstr "Image and product"
 
@@ -2762,6 +2771,9 @@ msgstr "Photos and videos"
 
 msgid "Rasm yoki video"
 msgstr "Image or video"
+
+msgid "Rasm yuklash"
+msgstr "Upload image"
 
 msgid "Rasmsiz"
 msgstr "No image"
@@ -3365,6 +3377,9 @@ msgstr "From tasnif.soliq.uz: required for fiscal receipts."
 
 msgid "Tavsif yo'q"
 msgstr "No description"
+
+msgid "Tavsiya: 2400×800 px (3:1), JPEG / PNG / WebP. Kamida 1200 px kenglik — aks holda katta ekranda xira ko'rinadi. Telefonda chetlari kesiladi: muhim qismini (mahsulot, matn) markazga joylang. Har bir ekranga mos o'lcham avtomatik beriladi."
+msgstr "Recommended: 2400×800 px (3:1), JPEG / PNG / WebP. At least 1200 px wide — otherwise it looks blurry on large screens. On phones the edges are cropped: keep the important part (product, text) in the centre. Each screen gets its own size automatically."
 
 msgid "Tayyor javoblar"
 msgstr "Quick replies"

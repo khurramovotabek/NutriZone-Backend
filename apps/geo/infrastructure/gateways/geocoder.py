@@ -107,29 +107,50 @@ def reverse(lat: float, lng: float, lang: str = "uz") -> dict | None:
     return out
 
 
+TASHKENT = (41.2995, 69.2401)
+LOCAL_BOX_DEG = 0.35  # ~40 km around the map centre: "Chorsu" means Tashkent's Chorsu, not Qarshi's restaurant
+
+
+def _search(query: str, lang: str, box: tuple[float, float, float, float] | None) -> list[dict]:
+    params = {"q": query, "countrycodes": "uz", "limit": 10, "addressdetails": 1, "accept-language": lang}
+    if box:
+        params.update(viewbox=f"{box[0]},{box[1]},{box[2]},{box[3]}", bounded=1)
+    rows = []
+    for d in _get("/search", params) or []:
+        try:
+            lat, lng = float(d["lat"]), float(d["lon"])
+        except (KeyError, TypeError, ValueError):
+            continue
+        name = d.get("name") or (d.get("display_name") or "").split(",")[0]
+        rest = ", ".join(p.strip() for p in (d.get("display_name") or "").split(",")[1:4])
+        rows.append({"title": name, "subtitle": rest, "lat": lat, "lng": lng, "kind": d.get("type") or d.get("category") or ""})
+    return rows
+
+
 def geocode(query: str, lang: str = "uz", near: tuple[float, float] | None = None, limit: int = 6) -> list[dict]:
-    """Places matching a free-text query, Uzbekistan only, closest to `near` first when given."""
+    """
+    Places matching a free-text query, Uzbekistan only. Places around `near` (the map's centre; Tashkent when not
+    given) come first -- searched inside a ~40 km box -- then the rest of the country, each group closest first.
+    """
     query = (query or "").strip()
     if len(query) < 3:
         return []
     lang = lang if lang in LANGS else "uz"
-    key = f"geo:search:{lang}:{hashlib.sha1(query.lower().encode()).hexdigest()}"
+    centre = near if near and in_uzbekistan(*near) else TASHKENT
+    cell = f"{round(centre[0] * 2) / 2},{round(centre[1] * 2) / 2}"  # ~50 km cache cells
+    key = f"geo:search:v2:{lang}:{cell}:{hashlib.sha1(query.lower().encode()).hexdigest()}"
     rows = cache.get(key)
     if rows is None:
-        data = _get("/search", {"q": query, "countrycodes": "uz", "limit": 10, "addressdetails": 1, "accept-language": lang})
-        rows = []
-        for d in data or []:
-            try:
-                lat, lng = float(d["lat"]), float(d["lon"])
-            except (KeyError, TypeError, ValueError):
-                continue
-            name = d.get("name") or (d.get("display_name") or "").split(",")[0]
-            rest = ", ".join(p.strip() for p in (d.get("display_name") or "").split(",")[1:4])
-            rows.append({"title": name, "subtitle": rest, "lat": lat, "lng": lng, "kind": d.get("type") or d.get("category") or ""})
+        box = (centre[1] - LOCAL_BOX_DEG, centre[0] + LOCAL_BOX_DEG, centre[1] + LOCAL_BOX_DEG, centre[0] - LOCAL_BOX_DEG)
+        local = _search(query, lang, box)
+        wider = _search(query, lang, None) if len(local) < 4 else []
+        seen = {(round(r["lat"], 4), round(r["lng"], 4)) for r in local}
+        rows = local + [r for r in wider if (round(r["lat"], 4), round(r["lng"], 4)) not in seen]
         cache.set(key, rows, 60 * 60 if rows else 60 * 5)
-    if near:
-        rows = sorted(rows, key=lambda r: haversine_km(near[0], near[1], r["lat"], r["lng"]))
-    return rows[:limit]
+    def rank(r):
+        d = haversine_km(centre[0], centre[1], r["lat"], r["lng"])
+        return (d > LOCAL_BOX_DEG * 111, d)
+    return sorted(rows, key=rank)[:limit]
 
 
 # ---------------------------------------------------------------- our own reference data
