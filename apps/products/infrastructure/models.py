@@ -63,8 +63,12 @@ class Category(SoftDeleteModel):
         indexes = [models.Index(fields=["parent", "sort_order"])]
 
     def __str__(self) -> str:  # pragma: no cover
-        translation = self.translations.first()
-        return translation.name if translation is not None else str(self.id)
+        # In the dashboard's language (pickers, filters, history), then Uzbek, then English.
+        from django.utils.translation import get_language
+
+        rows = {t.locale_code: t.name for t in self.translations.all()}
+        lang = (get_language() or "uz")[:2]
+        return rows.get(lang) or rows.get("uz") or rows.get("en") or next(iter(rows.values()), str(self.id))
 
 
 class CategoryTranslation(models.Model):

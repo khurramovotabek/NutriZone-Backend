@@ -1668,7 +1668,17 @@ class CategoryAdmin(ExcelExportMixin, CatalogFormMixin, CatalogAnalyticsMixin, a
         super().save_model(request, obj, form, change)
 
     def get_queryset(self, request):
-        return super().get_queryset(request).select_related("parent").prefetch_related("translations", "parent__translations")
+        # Tree order: each top section, then its sections, each followed by its product types (by sort_order).
+        from django.db.models import Case, F, IntegerField, Value, When
+        from django.db.models.functions import Coalesce
+
+        return super().get_queryset(request).select_related("parent", "parent__parent").prefetch_related(
+            "translations", "parent__translations", "parent__parent__translations",
+        ).annotate(
+            _k1=Coalesce("parent__parent__sort_order", "parent__sort_order", "sort_order"),
+            _k2=Case(When(parent__parent__isnull=False, then=F("parent__sort_order")), When(parent__isnull=False, then=F("sort_order")), default=Value(-1), output_field=IntegerField()),
+            _k3=Case(When(parent__parent__isnull=False, then=F("sort_order")), default=Value(-1), output_field=IntegerField()),
+        ).order_by("_k1", "_k2", "_k3", "pk")
 
     def analytics(self, request, snap):
         from django.db.models import Count, Q
@@ -1701,8 +1711,15 @@ class CategoryAdmin(ExcelExportMixin, CatalogFormMixin, CatalogAnalyticsMixin, a
 
     @admin.display(description="Kategoriya")
     def category_col(self, obj: orm.Category) -> str:
-        parent = format_html('<small><i class="fas fa-level-up-alt fa-rotate-90"></i> {}</small>', _display_name(obj.parent.translations.all(), obj.parent_id)) if obj.parent else mark_safe("<small>Asosiy kategoriya</small>")
-        return format_html('<div class="nzc-name"><b>{}</b>{}</div>', _display_name(obj.translations.all(), obj.id), parent)
+        # Indented by level, with the path above it: "Sport ozuqalari › Proteinlar" over "Whey protein".
+        chain, node = [], obj.parent
+        while node is not None and len(chain) < 4:
+            chain.insert(0, _display_name(node.translations.all(), node.id))
+            node = node.parent
+        depth = len(chain)
+        parent = format_html('<small><i class="fas fa-level-up-alt fa-rotate-90"></i> {}</small>', " › ".join(chain)) if chain else mark_safe("<small>Asosiy kategoriya</small>")
+        return format_html('<div class="nzc-name" style="padding-left:{}rem;{}"><b>{}</b>{}</div>', depth * 1.25,
+                           "border-left:2px solid var(--nz-border,#e2e8f0);" if depth else "", _display_name(obj.translations.all(), obj.id), parent)
 
     @admin.display(description="Mahsulotlar")
     def products_col(self, obj: orm.Category) -> str:

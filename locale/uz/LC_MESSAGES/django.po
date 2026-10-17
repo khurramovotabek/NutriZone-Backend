@@ -9596,3 +9596,7 @@ msgstr ""
 #, python-format
 msgid "Mijoz checkout'da «%(n)s» ni tanlaydi va tanlangan ekvayerning xavfsiz sahifasida karta ma'lumotlarini kiritadi. Pul o'sha ekvayer shartnomasi bo'yicha hisobingizga tushadi; alohida kalit kerak emas."
 msgstr ""
+
+#, python-format
+msgid "Delete selected %(verbose_name_plural)s"
+msgstr "Tanlanganlarni o'chirish"
