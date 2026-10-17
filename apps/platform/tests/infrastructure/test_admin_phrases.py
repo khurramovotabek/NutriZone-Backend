@@ -80,3 +80,10 @@ class TestMiddleware:
         assert resp.status_code == 200
         assert resp["Content-Type"].startswith("application/javascript")
         assert b"window.NZ_PHRASES=" in resp.content
+
+
+def test_confirmation_attributes_are_translated(monkeypatch):
+    monkeypatch.setattr(ai, "catalog", lambda lang: ({**TABLE, "Suhbat arxivga o'tkazilsinmi?": "Move the chat to the archive?"}, "v"))
+    out = ai.translate_html('<button data-nzi-confirm="Suhbat arxivga o&#x27;tkazilsinmi?">x</button><button data-confirm="Kanal avtopostlari">y</button>', "en")
+    assert 'data-nzi-confirm="Move the chat to the archive?"' in out
+    assert 'data-confirm="Channel auto-posts"' in out

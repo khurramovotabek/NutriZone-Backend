@@ -65,7 +65,13 @@
 
   <div class="nzg-actions">
     <a class="nzp-btn nzp-btn-ghost" href="{% url 'admin:nz_product_grouping' %}">Bekor qilish</a>
-    <button type="submit" class="nzp-btn nzp-btn-primary" onclick="return confirm('Mahsulotlar bitta mahsulotga birlashtirilsinmi? Boshqa mahsulotlar arxivlanadi, eski havolalar yangi sahifaga yo\'naltiriladi.')"><i class="fas fa-layer-group" aria-hidden="true"></i> Guruhlash</button>
+    {# data-confirm: the dashboard's phrase layer translates it like any other visible text (an onclick string it can't) #}
+    <button type="submit" class="nzp-btn nzp-btn-primary" data-confirm="Mahsulotlar bitta mahsulotga birlashtirilsinmi? Boshqa mahsulotlar arxivlanadi, eski havolalar yangi sahifaga yo'naltiriladi."><i class="fas fa-layer-group" aria-hidden="true"></i> Guruhlash</button>
   </div>
 </form>
+<script>
+  document.querySelectorAll("[data-confirm]").forEach(function (btn) {
+    btn.addEventListener("click", function (e) { if (!window.confirm(btn.getAttribute("data-confirm"))) e.preventDefault(); });
+  });
+</script>
 {% endblock %}

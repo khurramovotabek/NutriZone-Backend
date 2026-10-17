@@ -276,7 +276,7 @@
     var act = e.target.closest("[data-act]");
     if (act) {
       var name = act.getAttribute("data-act");
-      if ((name === "close" || name === "archive") && !window.confirm(name === "close" ? "Suhbat yopilsinmi? Mijoz yangi xabar yozsa, uni qayta ochish mumkin." : "Suhbat arxivga o'tkazilsinmi?")) return;
+      if ((name === "close" || name === "archive") && !window.confirm((window.nzTranslate || String)(name === "close" ? "Suhbat yopilsinmi? Mijoz yangi xabar yozsa, uni qayta ochish mumkin." : "Suhbat arxivga o'tkazilsinmi?"))) return;
       act.disabled = true;
       post(url("action", S.active, name)).then(function (d) { S.conv = d.conversation; renderHead(); loadQueue(); toast({ take: "Suhbat sizga biriktirildi", close: "Suhbat yopildi", reopen: "Suhbat qayta ochildi", archive: "Arxivlandi" }[name]); })
         .catch(function (err) { toast(err.message, true); act.disabled = false; });

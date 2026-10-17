@@ -9600,3 +9600,7 @@ msgstr ""
 #, python-format
 msgid "Delete selected %(verbose_name_plural)s"
 msgstr "Tanlanganlarni o'chirish"
+
+#, python-format
+msgid "%(role)s roli olib tashlansinmi?"
+msgstr ""

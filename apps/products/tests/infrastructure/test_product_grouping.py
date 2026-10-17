@@ -123,3 +123,72 @@ def test_dashboard_grouping_pages(olimp):
     # the changelist action opens the review screen
     resp = c.post("/django-admin/products/product/", {"action": "group_selected", "_selected_action": [str(olimp["other"].id), str(target.id)]})
     assert resp.status_code == 302 and "/products/grouping/?ids=" in resp["Location"]
+
+
+def _priced_family(olimp):
+    """The Olimp family grouped, with a price per variant: 2.27 kg 890 000 ... 350 g 190 000."""
+    from decimal import Decimal
+
+    from apps.pricing.infrastructure.models import PriceListEntryModel, PriceListModel
+
+    target = olimp["products"][0]
+    merge_products(target.id, [p.id for p in olimp["products"]])
+    pl = PriceListModel.objects.filter(status="active").first() or PriceListModel.objects.create(name="Asosiy", currency="UZS", status="active")
+    for sku, price in {"OL-CW-2270-CH": 890000, "OL-CW-1800-CC": 760000, "OL-CW-700-ST": 340000, "OL-CW-350-SC": 190000}.items():
+        PriceListEntryModel.objects.create(price_list=pl, product_variant_id=orm.ProductVariant.objects.get(sku=sku).id, base_price_amount=Decimal(price))
+    return target
+
+
+def _ids(result):
+    return [str(i) for i in result["ordered_ids"]]
+
+
+def test_catalog_filters_judge_one_variant_at_a_time(olimp):
+    from apps.products.infrastructure.catalog_browse import browse
+
+    target = _priced_family(olimp)
+    choc, coco, straw, caramel = olimp["flavours"]
+    run = lambda filters: browse(None, filters, "-created_at", 1, 50, "uz")  # noqa: E731
+
+    # price: any variant in range counts (the default variant is 890 000)
+    assert str(target.id) in _ids(run({"price": {"lte": "200000"}}))
+    assert str(target.id) not in _ids(run({"price": {"gte": "900000"}}))
+    # size + flavour must be the same variant: 350 g exists only as Salted Caramel
+    assert str(target.id) not in _ids(run({"sizes": ["350g"], "flavour_ids": [str(choc.id)]}))
+    assert str(target.id) in _ids(run({"sizes": ["350g"], "flavour_ids": [str(caramel.id)]}))
+    # flavour + price together: Chocolate is only 890 000
+    assert str(target.id) not in _ids(run({"flavour_ids": [str(choc.id)], "price": {"lte": "500000"}}))
+    # facets follow the chosen flavour: sizes and price range of Strawberry only
+    facets = run({"flavour_ids": [str(straw.id)]})["facets"]
+    assert [s["id"] for s in facets["size"]] == ["700g"]
+    facets = run({})["facets"]
+    assert facets["price_range"]["min"] == "190000.00" and facets["price_range"]["max"] == "890000.00"
+
+
+def test_price_sort_uses_the_from_price(olimp):
+    from decimal import Decimal
+
+    from apps.pricing.infrastructure.models import PriceListEntryModel, PriceListModel
+    from apps.products.infrastructure.catalog_browse import browse
+
+    target = _priced_family(olimp)
+    other = olimp["other"]
+    pl = PriceListModel.objects.filter(status="active").first()
+    PriceListEntryModel.objects.create(price_list=pl, product_variant_id=other.variants.first().id, base_price_amount=Decimal(250000))
+    order = _ids(browse(None, {}, "price", 1, 50, "uz"))
+    assert order.index(str(target.id)) < order.index(str(other.id))  # 190 000 "from" < 250 000
+
+
+def test_grouping_confirmation_is_translated(olimp, settings):
+    from django.contrib.auth import get_user_model
+    from django.test import Client
+
+    settings.ADMIN_PHRASES_ENABLED = True
+    user = get_user_model().objects.create(username="grouping_admin_en", is_staff=True, is_superuser=True)
+    c = Client()
+    c.force_login(user)
+    c.cookies["django_language"] = "en"
+    ids = ",".join(str(p.id) for p in olimp["products"])
+    html = c.get(f"/django-admin/products/grouping/?ids={ids}", HTTP_ACCEPT_LANGUAGE="en").content.decode()
+    assert 'data-confirm="Merge the products into one?' in html
+    assert "birlashtirilsinmi" not in html

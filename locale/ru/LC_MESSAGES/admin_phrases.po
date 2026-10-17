@@ -981,6 +981,12 @@ msgstr "Фискальная готовность"
 msgid "Fiskallashtirilgan"
 msgstr "Фискализирован"
 
+msgid "Foydalanuvchi barcha qurilmalarda qayta kirishi kerak bo'ladi. Davom etilsinmi?"
+msgstr "Пользователю придётся заново войти на всех устройствах. Продолжить?"
+
+msgid "Foydalanuvchi bloklanadi va barcha sessiyalari yopiladi. Davom etilsinmi?"
+msgstr "Пользователь будет заблокирован, все его сессии закроются. Продолжить?"
+
 msgid "Foydalanuvchi rollari"
 msgstr "Роли пользователей"
 
@@ -2580,6 +2586,9 @@ msgstr "POS-касса · {0}"
 msgid "POS, onlayn buyurtma va qo'lda yaratilgan barcha cheklar: chop etish, elektron chek (QR) va fiskallashtirish."
 msgstr "Все чеки POS, онлайн-заказов и созданные вручную: печать, электронный чек (QR) и фискализация."
 
+msgid "Post tanlangan auditoriyaga yuboriladi. Davom etasizmi?"
+msgstr "Пост будет отправлен выбранной аудитории. Продолжить?"
+
 msgid "Postlar"
 msgstr "Посты"
 
@@ -3117,6 +3126,9 @@ msgstr "Текст или заголовок отзыва…"
 msgid "Sharh rasmlari va videolari"
 msgstr "Фото и видео отзывов"
 
+msgid "Sharh saytdan olib tashlanadi. Davom etilsinmi?"
+msgstr "Отзыв будет снят с сайта. Продолжить?"
+
 msgid "Sharh — o'zinikini ko'rish"
 msgstr "Отзыв — просмотр своих"
 
@@ -3300,6 +3312,9 @@ msgstr "Стикеры"
 msgid "sub-kategoriyalar"
 msgstr "подкатегории"
 
+msgid "Suhbat arxivga o'tkazilsinmi?"
+msgstr "Перенести диалог в архив?"
+
 msgid "Suhbat baholari"
 msgstr "Оценки диалогов"
 
@@ -3314,6 +3329,9 @@ msgstr "Диалог закрыт. Чтобы ответить, нажмите �
 
 msgid "Suhbat yopilgan. Javob yozish uchun «Qayta ochish»ni bosing."
 msgstr "Диалог закрыт. Чтобы ответить, нажмите «Открыть снова»."
+
+msgid "Suhbat yopilsinmi? Mijoz yangi xabar yozsa, uni qayta ochish mumkin."
+msgstr "Закрыть диалог? Если клиент напишет снова, его можно будет открыть заново."
 
 msgid "Suhbatlar"
 msgstr "Диалоги"
@@ -3413,6 +3431,9 @@ msgstr "Снять выбранные роли"
 
 msgid "Tanlangan sessiyalarni yopish"
 msgstr "Закрыть выбранные сессии"
+
+msgid "tanlangan {0} ta yozuv uchun bajarilsinmi?"
+msgstr "выполнить для {0} выбранных записей?"
 
 msgid "Tanlanganlarni Excel'ga yuklash"
 msgstr "Выгрузить выбранные в Excel"

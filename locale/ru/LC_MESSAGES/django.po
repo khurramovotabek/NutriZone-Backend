@@ -9809,3 +9809,7 @@ msgstr "использует %(store)s"
 #, python-format
 msgid "Mijoz checkout'da «%(n)s» ni tanlaydi va tanlangan ekvayerning xavfsiz sahifasida karta ma'lumotlarini kiritadi. Pul o'sha ekvayer shartnomasi bo'yicha hisobingizga tushadi; alohida kalit kerak emas."
 msgstr "Клиент выбирает «%(n)s» при оформлении и вводит данные карты на защищённой странице выбранного эквайера. Деньги поступают на ваш счёт по договору с этим эквайером; отдельный ключ не нужен."
+
+#, python-format
+msgid "%(role)s roli olib tashlansinmi?"
+msgstr "Снять роль «%(role)s»?"

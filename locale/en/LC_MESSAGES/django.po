@@ -2573,3 +2573,7 @@ msgstr "used by %(store)s"
 #, python-format
 msgid "Mijoz checkout'da «%(n)s» ni tanlaydi va tanlangan ekvayerning xavfsiz sahifasida karta ma'lumotlarini kiritadi. Pul o'sha ekvayer shartnomasi bo'yicha hisobingizga tushadi; alohida kalit kerak emas."
 msgstr "The customer chooses «%(n)s» at checkout and enters the card details on the chosen acquirer's secure page. The money reaches your account under that acquirer's agreement; no separate key is needed."
+
+#, python-format
+msgid "%(role)s roli olib tashlansinmi?"
+msgstr "Remove the %(role)s role?"

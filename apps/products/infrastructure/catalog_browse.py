@@ -8,10 +8,14 @@ silently ignored everything except brand and category):
 
     category_id          one category (and its direct sub-categories)
     brand_ids            any of several brands
-    price {gte, lte}     default-variant price range
+    price {gte, lte}     some variant priced in the range
     rating_gte           minimum average rating (1..5)
-    flavour_ids          any of several flavours (product-level tags)
+    flavour_ids          any of several flavours
     sizes                any of several variant sizes ("250g", "2.27kg")
+
+Size, flavour and price are judged on the product's variants together (a family is one variant per size x
+flavour): "350 g + Chocolate + up to 300 000" matches only when ONE variant is all three. Their facet counts follow
+the same rule, so picking a flavour narrows the sizes and the price range to what exists in that flavour.
     goals                any of several training goals (goals.py)
     in_stock             only products with units in any store
 
@@ -36,6 +40,21 @@ from apps.products.infrastructure import models as orm
 SORTS = {"relevance", "-created_at", "created_at", "price", "-price", "-rating", "-popularity", "name", "-name", "-discount"}
 
 
+@dataclass(frozen=True)
+class Offer:
+    """One purchasable variant as the filters see it."""
+    size: str | None
+    flavours: frozenset
+    price: Decimal | None
+
+
+class OfferTest:
+    """A filter judged per variant (size / flavour / price) -- see _passes."""
+
+    def __init__(self, test):
+        self.test = test
+
+
 @dataclass
 class Candidate:
     id: uuid.UUID
@@ -53,6 +72,8 @@ class Candidate:
     stock: int = 0
     popularity: int = 0
     rank: int = 0  # position in the smart-search ranking (query only)
+    offers: list = field(default_factory=list)
+    price_from: Decimal | None = None  # lowest variant price -- the "from" price the card shows, used for sorting
 
 
 def size_key(value, unit) -> str | None:
@@ -105,12 +126,32 @@ def _load_candidates(product_ids: list | None, locale: str) -> dict:
             candidate.rating, candidate.rating_count = summary.get("average"), summary.get("count") or 0
     for product_id, flavour_id in orm.ProductFlavour.objects.filter(product_id__in=by_id).values_list("product_id", "flavour_id"):
         by_id[product_id].flavour_ids.add(flavour_id)
+    _attach_offers(by_id, products)
     for product_id, units in _units_sold_by_product().items():
         candidate = by_id.get(uuid.UUID(product_id))
         if candidate is not None:
             candidate.popularity = units
     _attach_stock(by_id)
     return by_id
+
+
+def _attach_offers(by_id: dict, products: list) -> None:
+    """Every active variant as (size, flavour, price); one price query for the whole catalog."""
+    from apps.products.infrastructure.selectors import bulk_variant_prices
+
+    active = [v for p in products for v in p.variants.all() if v.status == "active"]
+    prices = bulk_variant_prices([v.id for v in active])
+    for v in active:
+        c = by_id[v.product_id]
+        price = prices.get(v.id)
+        # a variant without its own flavour carries the product's flavour tags (one-flavour-per-product data)
+        flavours = frozenset({v.flavour_id}) if v.flavour_id else frozenset(c.flavour_ids)
+        c.offers.append(Offer(size=size_key(v.weight_value, v.weight_unit), flavours=flavours, price=Decimal(price["amount"]) if price else None))
+    for c in by_id.values():
+        if not c.offers:  # no active variant: the product-level facts still count
+            c.offers.append(Offer(size=None, flavours=frozenset(c.flavour_ids), price=c.price))
+        priced = [o.price for o in c.offers if o.price is not None]
+        c.price_from = min(priced) if priced else c.price
 
 
 def _candidate(product, locale: str) -> Candidate:
@@ -156,16 +197,16 @@ def _predicates(filters: dict) -> dict:
     price = filters.get("price") or {}
     lo, hi = _parse_decimal(price.get("gte")), _parse_decimal(price.get("lte"))
     if lo is not None or hi is not None:
-        preds["price"] = lambda c: c.price is not None and (lo is None or c.price >= lo) and (hi is None or c.price <= hi)
+        preds["price"] = OfferTest(lambda o: o.price is not None and (lo is None or o.price >= lo) and (hi is None or o.price <= hi))
     rating = _parse_decimal(filters.get("rating_gte"))
     if rating is not None:
         preds["rating"] = lambda c: c.rating is not None and Decimal(str(c.rating)) >= rating
     flavour_ids = {uuid.UUID(str(f)) for f in filters.get("flavour_ids") or []}
     if flavour_ids:
-        preds["flavour"] = lambda c: bool(c.flavour_ids & flavour_ids)
+        preds["flavour"] = OfferTest(lambda o: bool(o.flavours & flavour_ids))
     sizes = set(filters.get("sizes") or [])
     if sizes:
-        preds["size"] = lambda c: bool(c.sizes & sizes)
+        preds["size"] = OfferTest(lambda o: o.size in sizes)
     goals = set(filters.get("goals") or [])
     if goals:
         preds["goal"] = lambda c: bool(c.goals & goals)
@@ -176,16 +217,29 @@ def _predicates(filters: dict) -> dict:
     return preds
 
 
+def _offer_tests(preds: dict, skip: str | None = None) -> list:
+    return [pred.test for dim, pred in preds.items() if dim != skip and isinstance(pred, OfferTest)]
+
+
+def _matching_offers(candidate, preds: dict, skip: str | None = None) -> list:
+    tests = _offer_tests(preds, skip)
+    return [o for o in candidate.offers if all(t(o) for t in tests)]
+
+
 def _passes(candidate, preds: dict, skip: str | None = None) -> bool:
-    return all(pred(candidate) for dim, pred in preds.items() if dim != skip)
+    """Product-level filters on the product; size / flavour / price on one and the same variant."""
+    for dim, pred in preds.items():
+        if dim != skip and not isinstance(pred, OfferTest) and not pred(candidate):
+            return False
+    return not _offer_tests(preds, skip) or bool(_matching_offers(candidate, preds, skip))
 
 
 def _sort(rows: list, sort: str) -> list:
     if sort == "relevance":
         return sorted(rows, key=lambda c: c.rank)
     if sort in ("price", "-price"):
-        priced = sorted((c for c in rows if c.price is not None), key=lambda c: c.price, reverse=sort == "-price")
-        return priced + [c for c in rows if c.price is None]  # unpriced always last
+        priced = sorted((c for c in rows if c.price_from is not None), key=lambda c: c.price_from, reverse=sort == "-price")
+        return priced + [c for c in rows if c.price_from is None]  # unpriced always last
     if sort == "-rating":
         return sorted(rows, key=lambda c: (c.rating or 0, c.rating_count), reverse=True)
     if sort == "-discount":
@@ -213,20 +267,21 @@ def _facets(candidates: list, preds: dict, locale: str) -> dict:
     for c in pool("category"):
         if c.category_id:
             category_counts[c.category_id] = category_counts.get(c.category_id, 0) + 1
+    # variant dimensions: an option counts when a variant has it AND fits the other variant filters
     flavour_counts: dict = {}
     for c in pool("flavour"):
-        for f in c.flavour_ids:
+        for f in {f for o in _matching_offers(c, preds, skip="flavour") for f in o.flavours}:
             flavour_counts[f] = flavour_counts.get(f, 0) + 1
     size_counts: dict = {}
     for c in pool("size"):
-        for s in c.sizes:
+        for s in {o.size for o in _matching_offers(c, preds, skip="size") if o.size}:
             size_counts[s] = size_counts.get(s, 0) + 1
     goal_counts: dict = {}
     for c in pool("goal"):
         for g in c.goals:
             goal_counts[g] = goal_counts.get(g, 0) + 1
     rating_pool = pool("rating")
-    price_pool = [c.price for c in pool("price") if c.price is not None]
+    price_pool = [o.price for c in pool("price") for o in _matching_offers(c, preds, skip="price") if o.price is not None]
 
     brands = orm.Brand.objects.filter(id__in=brand_counts).prefetch_related("translations")
     categories = orm.Category.objects.filter(id__in=category_counts).prefetch_related("translations")

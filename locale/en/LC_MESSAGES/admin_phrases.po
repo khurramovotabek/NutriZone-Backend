@@ -972,6 +972,12 @@ msgstr "Fiscal readiness"
 msgid "Fiskallashtirilgan"
 msgstr "Fiscalized"
 
+msgid "Foydalanuvchi barcha qurilmalarda qayta kirishi kerak bo'ladi. Davom etilsinmi?"
+msgstr "The user will have to sign in again on every device. Continue?"
+
+msgid "Foydalanuvchi bloklanadi va barcha sessiyalari yopiladi. Davom etilsinmi?"
+msgstr "The user will be blocked and all their sessions closed. Continue?"
+
 msgid "Foydalanuvchi rollari"
 msgstr "User roles"
 
@@ -2556,6 +2562,9 @@ msgstr "POS register · {0}"
 msgid "POS, onlayn buyurtma va qo'lda yaratilgan barcha cheklar: chop etish, elektron chek (QR) va fiskallashtirish."
 msgstr "All receipts from POS, online orders and manual entry: printing, e-receipt (QR) and fiscalization."
 
+msgid "Post tanlangan auditoriyaga yuboriladi. Davom etasizmi?"
+msgstr "The post will be sent to the chosen audience. Continue?"
+
 msgid "Postlar"
 msgstr "Posts"
 
@@ -3093,6 +3102,9 @@ msgstr "Review text or title…"
 msgid "Sharh rasmlari va videolari"
 msgstr "Review photos and videos"
 
+msgid "Sharh saytdan olib tashlanadi. Davom etilsinmi?"
+msgstr "The review will be removed from the website. Continue?"
+
 msgid "Sharh — o'zinikini ko'rish"
 msgstr "Review — view own"
 
@@ -3273,6 +3285,9 @@ msgstr "Stickers"
 msgid "sub-kategoriyalar"
 msgstr "subcategories"
 
+msgid "Suhbat arxivga o'tkazilsinmi?"
+msgstr "Move the chat to the archive?"
+
 msgid "Suhbat baholari"
 msgstr "Chat ratings"
 
@@ -3287,6 +3302,9 @@ msgstr "The chat is closed. Click «Reopen» to reply"
 
 msgid "Suhbat yopilgan. Javob yozish uchun «Qayta ochish»ni bosing."
 msgstr "The chat is closed. Click «Reopen» to reply."
+
+msgid "Suhbat yopilsinmi? Mijoz yangi xabar yozsa, uni qayta ochish mumkin."
+msgstr "Close the chat? If the customer writes again, it can be reopened."
 
 msgid "Suhbatlar"
 msgstr "Chats"
@@ -3383,6 +3401,9 @@ msgstr "Remove selected roles"
 
 msgid "Tanlangan sessiyalarni yopish"
 msgstr "Close selected sessions"
+
+msgid "tanlangan {0} ta yozuv uchun bajarilsinmi?"
+msgstr "run it for the {0} selected records?"
 
 msgid "Tanlanganlarni Excel'ga yuklash"
 msgstr "Export selected to Excel"

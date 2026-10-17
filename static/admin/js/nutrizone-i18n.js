@@ -10,7 +10,7 @@
   if (!data || !data.t) return;
   var table = data.t;
   var SKIP = { SCRIPT: 1, STYLE: 1, TEXTAREA: 1, PRE: 1, CODE: 1, NOSCRIPT: 1 };
-  var ATTRS = ["placeholder", "title", "aria-label", "alt", "data-label", "data-title"];
+  var ATTRS = ["placeholder", "title", "aria-label", "alt", "data-label", "data-title", "data-confirm", "data-nzi-confirm"];
   var SEPARATORS = [" | ", " · ", " • ", " — ", " – ", " - ", " → ", " ← ", ": ", " / "];
   var PREFIXES = ["Change ", "Add ", "View ", "Delete ", "Select ", "Edit ", "Изменить ", "Добавить ", "Просмотреть ", "Удалить ", "Выбрать ", "Выберите "];
   var NUM = /\d+(?:[  .,:]\d+)*/g;

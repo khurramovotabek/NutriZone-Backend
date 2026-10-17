@@ -206,7 +206,7 @@ def translate_text(text: str, lang: str, table: dict[str, str] | None = None, _d
 
 _SKIP_BLOCK = re.compile(r"<(script|style|textarea|pre|code)\b[^>]*>.*?</\1\s*>|<!--.*?-->", re.S | re.I)
 _TAG = re.compile(r"<[^>]+>")
-_ATTR = re.compile(r"""(\s(?:placeholder|title|aria-label|alt|data-label|data-title|data-confirm)=)(["'])(.*?)\2""", re.S | re.I)
+_ATTR = re.compile(r"""(\s(?:placeholder|title|aria-label|alt|data-label|data-title|data-confirm|data-nzi-confirm)=)(["'])(.*?)\2""", re.S | re.I)
 _BTN_VALUE = re.compile(r"""(\svalue=)(["'])(.*?)\2""", re.S | re.I)
 _NO_TRANSLATE_OPEN = re.compile(r"""<(\w+)\b[^>]*(?:\stranslate=["']no["']|class=["'][^"']*\bnotranslate\b)[^>]*>""", re.I)
 

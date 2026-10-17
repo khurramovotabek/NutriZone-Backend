@@ -29,7 +29,11 @@
     });
     list.addEventListener("submit", function (e) {
       var btn = e.submitter;
-      if (btn && /blok|chiqar|olib tashla|yopish/i.test(btn.textContent) && !window.confirm(btn.textContent.trim() + " — tanlangan " + boxes.filter(function (b) { return b.checked; }).length + " ta yozuv uchun bajarilsinmi?")) e.preventDefault();
+      // Risky bulk actions ask first -- recognised by the action's code name (the button text is translated).
+      if (!btn || !/block|logout|revoke|remove|close|delete|deactivate|archive|hide/i.test(btn.value || "")) return;
+      var n = boxes.filter(function (b) { return b.checked; }).length;
+      var question = (window.nzTranslate || String)("tanlangan " + n + " ta yozuv uchun bajarilsinmi?");
+      if (!window.confirm(btn.textContent.trim() + " — " + question)) e.preventDefault();
     });
     sync();
   }

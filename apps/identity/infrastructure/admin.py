@@ -21,6 +21,7 @@ from django.http import HttpResponseRedirect
 from django.shortcuts import get_object_or_404
 from django.urls import path, reverse
 from django.utils import timezone
+from django.utils.translation import gettext
 from django.utils.html import format_html, format_html_join
 
 from apps.identity.infrastructure import admin_ui as ui
@@ -408,7 +409,7 @@ class UserAdmin(ExcelExportMixin, ui.PremiumListMixin, CatalogFormMixin, admin.M
         stores = _store_names([r.store_id for r in rows])
         items = format_html_join("", '<li><span class="nzi-ico" style="--t:#6366f1"><i class="fas fa-user-shield" aria-hidden="true"></i></span><span><b>{}</b><small>{} · {}</small></span>{}</li>', (
             (r.role.name, f"faqat: {stores.get(r.store_id, 'do‘kon')}" if r.store_id else "barcha do'konlar", ui.local(r.created_at, "%d.%m.%Y"),
-             _btn(reverse("admin:identity_user_role_remove", args=[obj.pk, r.pk]), "Olib tashlash", "fa-xmark", "danger", f"{r.role.name} roli olib tashlansinmi?"))
+             _btn(reverse("admin:identity_user_role_remove", args=[obj.pk, r.pk]), "Olib tashlash", "fa-xmark", "danger", gettext("%(role)s roli olib tashlansinmi?") % {"role": r.role.name}))
             for r in rows))
         try:
             from apps.stores.infrastructure.models import Store

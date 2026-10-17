@@ -2,4 +2,4 @@
 {% load static %}
 {# Premium add/change pages outside the catalog (Identity, Loyalty, ...): the shared form chrome + info panels, permission matrix and confirm buttons. #}
 {% block extrastyle %}{{ block.super }}{% for c in nz_css %}<link rel="stylesheet" href="{% static c %}?v={{ nz_asset_v }}">{% endfor %}<link rel="stylesheet" href="{% static 'admin/css/nutrizone-premium.css' %}?v=6">{% endblock %}
-{% block extrajs %}{{ block.super }}<script src="{% static 'admin/js/nutrizone-premium.js' %}?v=4" defer></script>{% endblock %}
+{% block extrajs %}{{ block.super }}<script src="{% static 'admin/js/nutrizone-premium.js' %}?v=5" defer></script>{% endblock %}
