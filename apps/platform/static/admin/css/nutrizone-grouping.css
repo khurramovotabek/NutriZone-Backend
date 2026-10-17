@@ -1,0 +1,32 @@
+/* Mahsulotlar → Guruhlash (templates/admin/products/grouping*.html) */
+.nzg-groups { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 14px; }
+.nzg-group { display: flex; flex-direction: column; gap: 10px; padding: 16px; border: 1px solid var(--nz-border, #e2e8f0); border-radius: 16px; background: var(--nz-surface, #fff); }
+.nzg-group-head h4 { margin: 2px 0; font-size: 16px; font-weight: 700; }
+.nzg-group-head small { color: var(--nz-text-soft, #64748b); }
+.nzg-brand { font-size: 11px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: #4f46e5; }
+.nzg-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 4px; font-size: 13px; color: var(--nz-text-muted, #475569); flex: 1; }
+.nzg-list i { color: var(--nz-text-soft, #94a3b8); margin-right: 4px; }
+.nzg-empty { display: flex; gap: 14px; align-items: flex-start; padding: 18px; border-radius: 14px; background: color-mix(in srgb, #16a34a 8%, transparent); }
+.nzg-empty i { font-size: 22px; color: #16a34a; }
+.nzg-empty p { margin: 0; }
+.nzg-alert { display: flex; gap: 10px; align-items: flex-start; padding: 12px 14px; border-radius: 12px; margin-bottom: 12px; font-size: 13px; }
+.nzg-alert.warn { background: color-mix(in srgb, #f59e0b 12%, transparent); }
+.nzg-alert.bad { background: color-mix(in srgb, #dc2626 12%, transparent); }
+.nzg-names { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 12px; }
+.nzg-names label span { display: block; font-size: 12px; font-weight: 600; margin-bottom: 4px; color: var(--nz-text-muted, #475569); }
+.nzg-names .nz-input { width: 100%; }
+.nzg-sub { margin-top: 18px !important; }
+.nzg-sub small { font-weight: 400; color: var(--nz-text-soft, #64748b); }
+.nzg-targets { display: flex; flex-wrap: wrap; gap: 8px; }
+.nzg-target { display: inline-flex; align-items: center; gap: 8px; padding: 8px 12px; border: 1px solid var(--nz-border, #e2e8f0); border-radius: 10px; cursor: pointer; font-size: 13px; }
+.nzg-target:has(input:checked) { border-color: #4f46e5; background: color-mix(in srgb, #4f46e5 8%, transparent); }
+.nzg-table td, .nzg-table th { vertical-align: middle; }
+.nzg-pname { font-weight: 600; font-size: 13px; }
+.nzg-size { white-space: nowrap; }
+.nzg-size .nz-input:first-child { width: 80px; }
+.nzg-size select { width: 96px; }
+.nzg-flavour { min-width: 180px; }
+.nzg-hint { display: block; margin-top: 3px; font-size: 11px; color: #4f46e5; }
+.nzg-hint.warn { color: #d97706; }
+.nzg-actions { display: flex; justify-content: flex-end; gap: 10px; position: sticky; bottom: 0; padding: 12px 0; background: linear-gradient(to top, var(--nz-bg, #f8fafc) 70%, transparent); }
+@media (max-width: 640px) { .nzg-actions { justify-content: stretch; } .nzg-actions > * { flex: 1; justify-content: center; } }

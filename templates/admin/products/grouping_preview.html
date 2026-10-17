@@ -1,0 +1,71 @@
+{% extends "admin/base_site.html" %}
+{% load i18n static %}
+{# Mahsulotlar → Guruhlash → ko'rib chiqish: family name, main product, each variant's size and flavour, then merge. #}
+{% block extrastyle %}{{ block.super }}<link rel="stylesheet" href="{% static 'admin/css/nutrizone-platform.css' %}?v=5"><link rel="stylesheet" href="{% static 'admin/css/nutrizone-premium.css' %}?v=6"><link rel="stylesheet" href="{% static 'admin/css/nutrizone-chat-desk.css' %}?v=6"><link rel="stylesheet" href="{% static 'admin/css/nutrizone-grouping.css' %}?v=1">{% endblock %}
+{% block breadcrumbs %}<ol class="breadcrumb"><li class="breadcrumb-item"><a href="{% url 'admin:index' %}">{% translate "Home" %}</a></li><li class="breadcrumb-item"><a href="{{ product_list_url }}">Mahsulotlar</a></li><li class="breadcrumb-item"><a href="{% url 'admin:nz_product_grouping' %}">Guruhlash</a></li><li class="breadcrumb-item active">Ko'rib chiqish</li></ol>{% endblock %}
+{% block content_title %}{% endblock %}
+{% block content %}
+<form method="post" class="nzp nzr nzg" action="{% url 'admin:nz_product_grouping' %}">
+  {% csrf_token %}
+  <input type="hidden" name="ids" value="{{ ids }}">
+  <header class="nzp-hero">
+    <div class="nzp-hero-main">
+      <span class="nzp-hero-icon" style="--c:#4f46e5"><i class="fas fa-layer-group" aria-hidden="true"></i></span>
+      <div><h2>{{ preview.names.uz|default:"Guruh" }}</h2><p>{{ products|length }} ta mahsulot bitta mahsulotga birlashadi — {{ preview.variants|length }} ta variant. Har bir variantning o'lchami va ta'mini tekshiring.</p></div>
+    </div>
+  </header>
+
+  {% if preview.brands > 1 %}<div class="nzg-alert bad"><i class="fas fa-triangle-exclamation" aria-hidden="true"></i> Tanlangan mahsulotlar turli brendlarga tegishli. Odatda bitta guruh — bitta brend.</div>{% endif %}
+  {% if preview.duplicates %}<div class="nzg-alert warn"><i class="fas fa-clone" aria-hidden="true"></i> Bir xil o'lcham va ta'm bir necha marta uchradi: <b>{{ preview.duplicates|join:", " }}</b>. Ta'm yoki o'lchamni to'g'rilang — aks holda mijoz ularni ajrata olmaydi.</div>{% endif %}
+  {% if preview.missing_flavour %}<div class="nzg-alert warn"><i class="fas fa-droplet-slash" aria-hidden="true"></i> {{ preview.missing_flavour }} ta variantning ta'mi aniqlanmadi — ro'yxatdan tanlang (ta'msiz mahsulotlar uchun bo'sh qoldiring).</div>{% endif %}
+
+  <section class="nzr-card">
+    <h3><i class="fas fa-signature" aria-hidden="true"></i> Guruh nomi</h3>
+    <div class="nzg-names">
+      <label><span>O'zbekcha</span><input class="nz-input" name="name_uz" value="{{ preview.names.uz }}" required></label>
+      <label><span>Ruscha</span><input class="nz-input" name="name_ru" value="{{ preview.names.ru }}"></label>
+      <label><span>Inglizcha</span><input class="nz-input" name="name_en" value="{{ preview.names.en }}"></label>
+    </div>
+    <h3 class="nzg-sub"><i class="fas fa-star" aria-hidden="true"></i> Asosiy mahsulot <small>— tavsifi, kategoriyasi va sahifa manzili saqlanadi</small></h3>
+    <div class="nzg-targets">
+      {% for p in products %}
+      <label class="nzg-target"><input type="radio" name="target" value="{{ p.id }}"{% if p.is_target %} checked{% endif %}> <span>{{ p.name }}</span></label>
+      {% endfor %}
+    </div>
+  </section>
+
+  <section class="nzr-card">
+    <h3><i class="fas fa-swatchbook" aria-hidden="true"></i> Variantlar — o'lcham × ta'm</h3>
+    <div class="nzr-scroll">
+      <table class="nzr-table nzg-table">
+        <thead><tr><th scope="col">Hozirgi mahsulot</th><th scope="col">SKU</th><th scope="col">O'lcham</th><th scope="col">Ta'm</th></tr></thead>
+        <tbody>
+        {% for v in preview.variants %}
+        <tr>
+          <th scope="row"><span class="nzg-pname">{{ v.product_name }}</span></th>
+          <td><code>{{ v.sku }}</code></td>
+          <td class="nzg-size">
+            <input class="nz-input" name="size_value_{{ v.variant_id }}" value="{% if v.size_value %}{{ v.size_value|stringformat:'g' }}{% endif %}" inputmode="decimal" aria-label="O'lcham">
+            <select class="nz-input" name="size_unit_{{ v.variant_id }}" aria-label="Birlik">{% for u, l in units %}<option value="{{ u }}"{% if u == v.size_unit %} selected{% endif %}>{{ l }}</option>{% endfor %}</select>
+            {% if v.size_from_name %}<small class="nzg-hint"><i class="fas fa-wand-magic-sparkles"></i> nomdan</small>{% endif %}
+          </td>
+          <td>
+            <select class="nz-input nzg-flavour" name="flavour_{{ v.variant_id }}" aria-label="Ta'm">
+              <option value="">— ta'msiz —</option>
+              {% for fid, fname, color in flavours %}<option value="{{ fid }}" data-color="{{ color }}"{% if fid == v.flavour_id %} selected{% endif %}>{{ fname }}</option>{% endfor %}
+            </select>
+            {% if v.flavour_detected %}<small class="nzg-hint"><i class="fas fa-wand-magic-sparkles"></i> aniqlandi</small>{% elif not v.flavour_id %}<small class="nzg-hint warn">tanlang</small>{% endif %}
+          </td>
+        </tr>
+        {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <div class="nzg-actions">
+    <a class="nzp-btn nzp-btn-ghost" href="{% url 'admin:nz_product_grouping' %}">Bekor qilish</a>
+    <button type="submit" class="nzp-btn nzp-btn-primary" onclick="return confirm('Mahsulotlar bitta mahsulotga birlashtirilsinmi? Boshqa mahsulotlar arxivlanadi, eski havolalar yangi sahifaga yo\'naltiriladi.')"><i class="fas fa-layer-group" aria-hidden="true"></i> Guruhlash</button>
+  </div>
+</form>
+{% endblock %}

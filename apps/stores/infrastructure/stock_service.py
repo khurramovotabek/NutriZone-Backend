@@ -71,7 +71,9 @@ def variant_infos(variant_ids, locale: str = "uz") -> dict:
     from apps.products.infrastructure.models import ProductMedia, ProductTranslation, ProductVariant
     from apps.products.infrastructure.selectors import bulk_variant_prices
 
-    variants = list(ProductVariant.objects.filter(id__in=list(variant_ids)).select_related("package"))
+    from apps.products.infrastructure.variant_labels import variant_label
+
+    variants = list(ProductVariant.objects.filter(id__in=list(variant_ids)).select_related("package", "flavour").prefetch_related("flavour__translations"))
     if not variants:
         return {}
     pids = {v.product_id for v in variants}
@@ -85,10 +87,7 @@ def variant_infos(variant_ids, locale: str = "uz") -> dict:
     out = {}
     for v in variants:
         by = names.get(v.product_id, {})
-        size = None
-        if v.weight_value:
-            value = int(v.weight_value) if float(v.weight_value).is_integer() else v.weight_value
-            size = f"{value} {v.weight_unit}"
+        size = variant_label(v, locale, package=False)  # "2.27 kg · Chocolate"
         price = prices.get(v.id)
         out[v.id] = VariantInfo(
             id=v.id, product_id=v.product_id, name=by.get(locale) or by.get("uz") or by.get("en") or next(iter(by.values()), v.sku),

@@ -24,13 +24,13 @@ def _product_names(variant_ids) -> tuple[dict, str | None]:
     from apps.products.infrastructure.selectors import ProductDetailSelector
 
     selector, names, image = ProductDetailSelector(), {}, None
-    for variant in products_orm.ProductVariant.objects.filter(id__in=list(variant_ids)).select_related("product"):
+    for variant in products_orm.ProductVariant.objects.filter(id__in=list(variant_ids)).select_related("product", "flavour").prefetch_related("flavour__translations"):
         product = selector.get_by_id(variant.product_id, locale="uz")
         if product:
-            size = ""
-            if variant.weight_value:
-                value = int(variant.weight_value) if float(variant.weight_value).is_integer() else variant.weight_value
-                size = f" · {value} {variant.weight_unit}"
+            from apps.products.infrastructure.variant_labels import variant_label
+
+            label = variant_label(variant, package=False)
+            size = f" · {label}" if label else ""
             names[variant.id] = f"{product['name']}{size}"
             image = image or product.get("primary_image_path")
     return names, image

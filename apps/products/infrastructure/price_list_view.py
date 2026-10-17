@@ -210,7 +210,7 @@ def _bulk_row_images(variants: list) -> dict:
 
 
 def _bulk_flavor_names(variants: list) -> dict:
-    """Flavour is a Product-level tag (see domain/aggregates.py::Flavour's docstring), not a per-variant attribute -- resolved via each variant's own product_id, then joined (", ") when a product carries more than one flavour tag, matching this file's own established descriptor convention."""
+    """Product-level flavour tags for variants that have no flavour of their own (legacy data), joined with ", "."""
     from apps.products.infrastructure.admin import _display_name as _dn
 
     product_ids = {v.product_id for v in variants}
@@ -220,7 +220,8 @@ def _bulk_flavor_names(variants: list) -> dict:
     for link in links:
         names_by_product.setdefault(link.product_id, []).append(_dn(link.flavour.translations.all(), link.flavour_id))
 
-    return {v.id: ", ".join(names_by_product[v.product_id]) for v in variants if v.product_id in names_by_product}
+    # A variant's own flavour is already in _variant_size(); the product-level tags only describe legacy variants without one.
+    return {v.id: ", ".join(names_by_product[v.product_id]) for v in variants if v.product_id in names_by_product and not getattr(v, "flavour_id", None)}
 
 
 def _bulk_variant_counts(product_ids: list) -> dict:
@@ -395,10 +396,12 @@ def _build_rows(page_products, default_variant_by_product, prices_by_variant, va
 
 
 def _variant_size(v) -> str:
-    if not getattr(v, "weight_value", None):
-        return ""
-    value = int(v.weight_value) if float(v.weight_value).is_integer() else v.weight_value
-    return f"{value} {v.weight_unit or ''}".strip()
+    """Size, then flavour: "2.27 kg · Chocolate" (each variant of a family is one size x one flavour)."""
+    from apps.products.infrastructure.variant_labels import size_text, translated_name
+
+    size = size_text(getattr(v, "weight_value", None), getattr(v, "weight_unit", "") or "") or ""
+    flavour = translated_name(v.flavour) if getattr(v, "flavour_id", None) else ""
+    return " · ".join(x for x in (size, flavour) if x)
 
 
 def _attach_other_variants(rows: list, page_products, default_variant_by_product) -> None:

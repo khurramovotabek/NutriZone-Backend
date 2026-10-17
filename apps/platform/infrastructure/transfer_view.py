@@ -84,6 +84,15 @@ def _brand_names(products) -> dict:
 
 
 def _weight_label(variant) -> str | None:
+    """Size (and flavour) of a variant: "2.27 kg · Chocolate"."""
+    from apps.products.infrastructure.variant_labels import translated_name
+
+    size = _size_only(variant)
+    flavour = translated_name(variant.flavour) if getattr(variant, "flavour_id", None) else ""
+    return " · ".join(x for x in (size, flavour) if x) or None
+
+
+def _size_only(variant) -> str | None:
     if not variant.weight_value:
         return None
     value = variant.weight_value

@@ -192,8 +192,13 @@ class ProductDetailView(APIView):
         redundant with the selector).
         """
         default_collector.counter("catalog_queries_total")
+        from apps.products.infrastructure.selectors import ProductDetailSelector, merged_product_target
+
+        # A product grouped into another one (Dashboard → Guruhlash): its old address answers with where it went.
+        moved = merged_product_target(slug)
+        if moved is not None:
+            return success_response(data={"moved_to": moved})
         composition.build_get_product().execute(slug)
-        from apps.products.infrastructure.selectors import ProductDetailSelector
 
         locale = resolve_locale(request, explicit=request.query_params.get("filter[locale]"))
         card = ProductDetailSelector().get_by_slug(slug, locale=locale)

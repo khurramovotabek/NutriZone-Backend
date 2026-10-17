@@ -196,6 +196,7 @@ JAZZMIN_SETTINGS = {
         ],
         # What shoppers search for -- above all what they search for and don't find (apps/search).
         "products": [
+            {"name": _("Guruhlash"), "url": "admin:nz_product_grouping", "icon": "fas fa-layer-group", "permissions": ["products.change_product"]},
             {"name": _("Qidiruv tahlili"), "url": "admin:search_searchterm_changelist", "icon": "fas fa-magnifying-glass-chart", "permissions": ["search.view_searchterm"]},
         ],
         "pricing": [

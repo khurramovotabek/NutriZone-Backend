@@ -79,13 +79,9 @@ def first_name(full_name: str | None) -> str | None:
 
 
 def _variant_label(variant) -> str | None:
-    parts = []
-    if variant.weight_value:
-        value = int(variant.weight_value) if float(variant.weight_value).is_integer() else variant.weight_value
-        parts.append(f"{value} {variant.weight_unit}")
-    if variant.package_id and getattr(variant, "package", None):
-        parts.append(str(variant.package))
-    return " · ".join(parts) or None
+    from apps.products.infrastructure.variant_labels import variant_label
+
+    return variant_label(variant)  # "2.27 kg · Chocolate · Banka"
 
 
 def _names(product_ids, locale: str) -> dict:
@@ -130,7 +126,7 @@ def receipt(sale: SaleModel, locale: str = "uz", public: bool = True) -> dict:
 
     lines = list(SaleLineItemModel.objects.filter(sale_id=sale.id))
     names = _names([li.product_id for li in lines], locale)
-    variants = {v.id: v for v in ProductVariant.objects.filter(id__in=[li.product_variant_id for li in lines if li.product_variant_id]).select_related("package")}
+    variants = {v.id: v for v in ProductVariant.objects.filter(id__in=[li.product_variant_id for li in lines if li.product_variant_id]).select_related("package", "flavour").prefetch_related("flavour__translations", "package__translations")}
     items = []
     for li in lines:
         v = variants.get(li.product_variant_id)

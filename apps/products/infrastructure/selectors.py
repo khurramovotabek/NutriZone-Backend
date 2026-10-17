@@ -25,6 +25,7 @@ from django.db.models import Count, Q, Sum
 
 from apps.products.domain.enums import ProductStatus
 from apps.products.infrastructure import models as orm
+from apps.products.infrastructure.variant_labels import variant_label
 from apps.products.infrastructure.repositories import _DEFAULT_LOCALE, DjangoProductRepository
 
 
@@ -87,7 +88,7 @@ class ProductDetailSelector:
             # method's existing "zero new queries" property (see
             # _product_card's own docstring).
             "flavour_links__flavour__translations",
-            "variants__media", "variants__package__translations",
+            "variants__media", "variants__package__translations", "variants__flavour__translations",
         ).first()
         if row is None:
             return None
@@ -120,7 +121,7 @@ class ProductDetailSelector:
         ).prefetch_related(
             "translations", "variants", "media",
             "flavour_links__flavour__translations",
-            "variants__media", "variants__package__translations",
+            "variants__media", "variants__package__translations", "variants__flavour__translations",
         ).first()
         if row is None:
             return None
@@ -737,6 +738,31 @@ def _bulk_variant_store_stock(variant_ids: list) -> dict:
     return branches(variant_ids)
 
 
+def _with_family(cards: list[dict], rows: list) -> None:
+    """
+    Product-family facts for list cards: how many sizes and flavours the family sells, and `price_from` -- the
+    lowest active variant price when the family's prices differ ("from 190 000 so'm"), else None.
+    """
+    by_product: dict = {}
+    for vid, pid, status, weight, unit, flavour in rows:
+        if status != "active":
+            continue
+        fam = by_product.setdefault(str(pid), {"sizes": set(), "flavours": set(), "variants": []})
+        if weight:
+            fam["sizes"].add((weight, unit))
+        if flavour:
+            fam["flavours"].add(flavour)
+        fam["variants"].append(vid)
+    multi = [vid for fam in by_product.values() if len(fam["variants"]) > 1 for vid in fam["variants"]]
+    prices = bulk_variant_prices(multi) if multi else {}
+    for card in cards:
+        fam = by_product.get(str(card["id"]))
+        card["size_count"] = len(fam["sizes"]) if fam else 0
+        card["flavour_count"] = len(fam["flavours"]) if fam else 0
+        amounts = sorted({float(prices[v]["amount"]) for v in (fam["variants"] if fam else []) if v in prices})
+        card["price_from"] = f"{amounts[0]:.2f}" if len(amounts) > 1 else None
+
+
 def _with_stock(cards: list[dict]) -> list[dict]:
     """
     Adds the product's total available stock to list-level cards --
@@ -752,7 +778,9 @@ def _with_stock(cards: list[dict]) -> list[dict]:
         return cards
     from apps.stores.infrastructure.availability import sellable
 
-    product_by_variant = dict(orm.ProductVariant.objects.filter(product_id__in=[c["id"] for c in cards]).values_list("id", "product_id"))
+    rows = list(orm.ProductVariant.objects.filter(product_id__in=[c["id"] for c in cards]).values_list("id", "product_id", "status", "weight_value", "weight_unit", "flavour_id"))
+    product_by_variant = {vid: pid for vid, pid, *_rest in rows}
+    _with_family(cards, rows)
     totals: dict = {}
     tracked: set = set()
     for variant_id, units in sellable(list(product_by_variant)).items():
@@ -772,7 +800,7 @@ def _with_stock(cards: list[dict]) -> list[dict]:
 
 
 def _variant_summary(variant: orm.ProductVariant, locale: str, price_by_variant: dict, stock_by_variant: dict, stores_by_variant: dict | None = None) -> dict:
-    """Real, closed gap: the public variant payload carried no way to tell what a variant actually weighs, what it costs, whether it's in stock, or what it looks like -- a storefront could offer `product_variant_id` to Cart's AddItem but never render a real "2.27 kg, 620,000 UZS, in stock"-style selector. `media` is the real per-variant subset of `catalog.product_media` (its `variant` FK, previously write-only -- see UploadImage's new `variant_id` param). All prefetched/bulk-resolved by the caller so this adds no new queries per variant. Flavour is a Product-level tag, not a variant dimension (see `_resolve_flavour_switcher`), so it is not part of this per-variant shape."""
+    """Real, closed gap: the public variant payload carried no way to tell what a variant actually weighs, what it costs, whether it's in stock, or what it looks like -- a storefront could offer `product_variant_id` to Cart's AddItem but never render a real "2.27 kg, 620,000 UZS, in stock"-style selector. `media` is the real per-variant subset of `catalog.product_media` (its `variant` FK, previously write-only -- see UploadImage's new `variant_id` param). All prefetched/bulk-resolved by the caller so this adds no new queries per variant. `flavour` is the variant's own flavour (size x flavour families); `_resolve_flavour_switcher` covers legacy one-flavour-per-product data."""
     own_media = sorted(
         (m for m in variant.media.all() if m.media_role in ("primary", "gallery")),
         key=lambda m: (0 if m.media_role == "primary" else 1, m.sort_order),
@@ -794,6 +822,8 @@ def _variant_summary(variant: orm.ProductVariant, locale: str, price_by_variant:
         "weight_value": variant.weight_value,
         "weight_unit": variant.weight_unit,
         "package": _package_summary(variant.package, locale),
+        # each variant of a family is one size x one flavour (ProductVariant.flavour); null for legacy single-flavour rows
+        "flavour": _flavour_summary(variant.flavour, locale) if variant.flavour_id else None,
         "gallery": gallery,
         "video_url": _resolve_media_url(video.storage_path) if video else None,
         "price": price_info["amount"] if price_info else None,
@@ -819,6 +849,19 @@ def _resolve_flavour_switcher(row: orm.Product, own_slug: str, locale: str, defa
     AND category (both required) specifically to avoid false-positive
     grouping across unrelated products that happen to share a weight.
     """
+    # A product family whose variants carry their own flavour: every flavour is chosen on this page, no sibling hops.
+    variant_flavours = {}
+    for v in row.variants.all():
+        if v.flavour_id and v.status == "active" and not getattr(v, "is_deleted", False) and v.flavour_id not in variant_flavours:
+            variant_flavours[v.flavour_id] = v.flavour
+    if variant_flavours:
+        current = default_variant.flavour_id if default_variant is not None else None
+        options = [
+            {**_flavour_summary(f, locale), "product_id": str(row.id), "product_slug": own_slug, "is_current": fid == current}
+            for fid, f in variant_flavours.items()
+        ]
+        return sorted(options, key=lambda o: o["name"].lower())
+
     own_options = [
         {**_flavour_summary(link.flavour, locale), "product_id": str(row.id), "product_slug": own_slug, "is_current": True}
         for link in row.flavour_links.all()
@@ -1173,8 +1216,8 @@ class VariantDisplaySelector:
         effective_locale = locale or _DEFAULT_LOCALE
         variants = (
             orm.ProductVariant.objects.filter(id__in=ids)
-            .select_related("product", "product__brand", "package")
-            .prefetch_related("product__translations", "product__brand__translations", "package__translations", "media", "product__media")
+            .select_related("product", "product__brand", "package", "flavour")
+            .prefetch_related("product__translations", "product__brand__translations", "package__translations", "flavour__translations", "media", "product__media")
         )
         return [self._display(v, effective_locale) for v in variants]
 
@@ -1206,5 +1249,32 @@ class VariantDisplaySelector:
             "weight_value": variant.weight_value,
             "weight_unit": variant.weight_unit,
             "package": _package_summary(variant.package, locale),
+            "flavour": _flavour_summary(variant.flavour, locale) if variant.flavour_id else None,
+            "variant_label": variant_label(variant, locale, package=False),
             "is_published": product.status == ProductStatus.PUBLISHED.value,
         }
+
+
+def merged_product_target(slug: str) -> dict | None:
+    """
+    {"slug": <family slug>, "variant_id": <one of the moved variants>} when `slug` belongs to a product that was grouped
+    into another one (Product.merged_into) -- old links, bookmarks and search results then land on the right variant.
+    """
+    old = (
+        orm.Product.all_objects.filter(translations__slug=slug, merged_into__isnull=False)
+        .select_related("merged_into").prefetch_related("merged_into__translations").first()
+    )
+    if old is None:
+        return None
+    target, hops = old.merged_into, 0
+    while target is not None and target.merged_into_id and hops < 5:  # grouped again later
+        target, hops = target.merged_into, hops + 1
+    if target is None or target.status != ProductStatus.PUBLISHED.value:
+        return None
+    translations = list(target.translations.all())
+    t = next((x for x in translations if x.locale_code == "uz"), None) or (translations[0] if translations else None)
+    if t is None:
+        return None
+    from apps.products.infrastructure.product_grouping import moved_variant_of
+
+    return {"slug": t.slug, "variant_id": moved_variant_of(old.id, target.id)}

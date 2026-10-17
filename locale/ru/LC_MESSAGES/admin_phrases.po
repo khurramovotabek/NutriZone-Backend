@@ -72,6 +72,9 @@ msgstr "Бот аналитики: дневной отчёт ({0})"
 msgid "Analytics bot: oylik hisobot ({0}-kun {1})"
 msgstr "Бот аналитики: месячный отчёт ({0}-е число, {1})"
 
+msgid "aniqlandi"
+msgstr "определён"
+
 msgid "Aniqlanmoqda…"
 msgstr "Определяем…"
 
@@ -92,6 +95,9 @@ msgstr "Ключевые показатели"
 
 msgid "Asosiy ma'lumotlar"
 msgstr "Основные данные"
+
+msgid "Asosiy mahsulot"
+msgstr "Основной товар"
 
 msgid "Asosiy narx ro'yxatiga yoziladi (narx tarixi saqlanadi)."
 msgstr "Записывается в основной прайс-лист (история цен сохраняется)."
@@ -255,11 +261,20 @@ msgstr "Уведомления {0}"
 msgid "Binafsha"
 msgstr "Фиолетовый"
 
+msgid "Bir brendda nomi o'lcham va ta'mdan tashqari bir xil bo'lgan mahsulotlar paydo bo'lsa, shu yerda ko'rinadi. Mahsulotlar ro'yxatida bir nechtasini belgilab, «Tanlanganlarni guruhlash» amalini ham ishlatishingiz mumkin."
+msgstr "Когда у бренда появятся товары с одинаковым названием (кроме объёма и вкуса), они будут здесь. Можно также отметить несколько товаров в списке и выбрать действие «Сгруппировать выбранные»."
+
+msgid "Bir brendning faqat o'lcham va ta'mi bilan farq qiladigan mahsulotlari bitta mahsulotga birlashadi: mijoz bitta sahifada o'lcham va ta'mni tanlaydi. SKU, shtrix-kod, narx, qoldiq va savdo tarixi saqlanadi."
+msgstr "Товары одного бренда, которые отличаются только объёмом и вкусом, объединяются в один товар: клиент выбирает объём и вкус на одной странице. SKU, штрихкоды, цены, остатки и история продаж сохраняются."
+
 msgid "Bir martada ko'pi bilan"
 msgstr "Не больше за раз"
 
 msgid "Bir to'lovda minimal coin"
 msgstr "Минимум коинов за одну оплату"
+
+msgid "Bir xil o'lcham va ta'm bir necha marta uchradi:"
+msgstr "Одинаковый объём и вкус встречаются несколько раз:"
 
 msgid "biriktirilgan"
 msgstr "назначено"
@@ -281,6 +296,12 @@ msgstr "Первый ответ"
 
 msgid "birinchi javob"
 msgstr "первый ответ"
+
+msgid "Birlashadigan mahsulot"
+msgstr "Товаров к объединению"
+
+msgid "Birlik"
+msgstr "Единица"
 
 msgid "birorta mahsulotda yo'q"
 msgstr "нет ни в одном товаре"
@@ -978,6 +999,24 @@ msgstr "Фуксия"
 msgid "Grafiklar, hisobotlar va filial kartasida shu rang ishlatiladi"
 msgstr "Этот цвет используется в графиках, отчётах и карточке филиала"
 
+msgid "Guruh nomi"
+msgstr "Название группы"
+
+msgid "Guruhlanadigan mahsulot topilmadi"
+msgstr "Товаров для группировки не найдено"
+
+msgid "Guruhlandi: {0} ta mahsulot → bitta mahsulot, {1} ta variant (o'lcham × ta'm)."
+msgstr "Сгруппировано: {0} товаров → один товар, {1} вариантов (объём × вкус)."
+
+msgid "Guruhlash"
+msgstr "Группировка"
+
+msgid "Guruhlash uchun kamida 2 ta mahsulot belgilang."
+msgstr "Выберите хотя бы 2 товара для группировки."
+
+msgid "Guruhlash uchun kamida 2 ta mahsulot tanlang."
+msgstr "Выберите хотя бы 2 товара для группировки."
+
 msgid "haftalik hisobot (dushanba {0})"
 msgstr "недельный отчёт (понедельник {0})"
 
@@ -1142,6 +1181,9 @@ msgstr "Отправить сейчас"
 
 msgid "Hozirgi holat"
 msgstr "Текущее состояние"
+
+msgid "Hozirgi mahsulot"
+msgstr "Текущий товар"
 
 msgid "hozirgina"
 msgstr "только что"
@@ -1569,8 +1611,14 @@ msgstr "Самые частые запросы"
 msgid "Ko'radi"
 msgstr "Видит"
 
+msgid "Ko'rib chiqish"
+msgstr "Проверка"
+
 msgid "Ko'rib chiqish va band qilish"
 msgstr "Проверить и зарезервировать"
+
+msgid "Ko'rib chiqish va guruhlash"
+msgstr "Проверить и объединить"
 
 msgid "Ko'rib chiqish va tasdiqlash"
 msgstr "Проверить и подтвердить"
@@ -1704,6 +1752,9 @@ msgstr "страны с товарами"
 msgid "Mahsulotlar"
 msgstr "Товары"
 
+msgid "Mahsulotlar bitta mahsulotga birlashtirilsinmi? Boshqa mahsulotlar arxivlanadi, eski havolalar yangi sahifaga yo'naltiriladi."
+msgstr "Объединить товары в один? Остальные будут архивированы, старые ссылки перенаправятся на новую страницу."
+
 msgid "Mahsulotlar katalogi"
 msgstr "Каталог товаров"
 
@@ -1718,6 +1769,9 @@ msgstr "Распределение товаров"
 
 msgid "Mahsulotlardagi ta'mlar"
 msgstr "Вкусы в товарах"
+
+msgid "Mahsulotlardan qo'lda tanlash"
+msgstr "Выбрать товары вручную"
 
 msgid "mahsulotlarga biriktirilgan"
 msgstr "привязано к товарам"
@@ -2148,6 +2202,9 @@ msgstr "Название или текст…"
 msgid "Nom, oraliq va keshbek foizini kiriting — oraliqlar boshqa darajalar bilan ustma-ust tushmasin"
 msgstr "Введите название, диапазон и процент кешбэка — диапазоны не должны пересекаться с другими уровнями"
 
+msgid "nomdan"
+msgstr "из названия"
+
 msgid "Nomdan avtomatik yasaladi; faqat lotin harflari, raqam va chiziqcha."
 msgstr "Создаётся из названия автоматически; только латиница, цифры и дефис."
 
@@ -2216,6 +2273,9 @@ msgstr "Отключить (скрыть из списка)"
 
 msgid "O'chirish (saytda ko'rinmaydi)"
 msgstr "Отключить (не видно на сайте)"
+
+msgid "O'lcham"
+msgstr "Объём"
 
 msgid "O'lchov birligi"
 msgstr "Единица измерения"
@@ -3276,11 +3336,20 @@ msgstr "Обращения в поддержку"
 msgid "ta / {0} daqiqa"
 msgstr "шт. / {0} мин"
 
+msgid "Ta'm"
+msgstr "Вкус"
+
+msgid "Ta'm yoki o'lchamni to'g'rilang — aks holda mijoz ularni ajrata olmaydi."
+msgstr "Исправьте вкус или объём — иначе клиент не сможет их различить."
+
 msgid "Ta'mlar"
 msgstr "Вкусы"
 
 msgid "Ta'mning belgisi — rasm bo'lmaganda chiqadigan rang."
 msgstr "Значок вкуса — цвет, который показывается без изображения."
+
+msgid "Ta'msiz"
+msgstr "Без вкуса"
 
 msgid "Tabriklaymiz! Siz Gold darajasidasiz"
 msgstr "Поздравляем! Ваш уровень — Gold"
@@ -3327,11 +3396,17 @@ msgstr "Предложения рассчитываются по правила�
 msgid "Takliflar «To'ldirish (minimal qoldiq)» qoidalari va 30 kunlik sotuvdan hisoblanadi."
 msgstr "Предложения рассчитываются по правилам «Пополнение (минимальный остаток)» и продажам за 30 дней."
 
+msgid "tanlang"
+msgstr "выберите"
+
 msgid "Tanlang yoki yangi nom yozing"
 msgstr "Выберите или введите новое название"
 
 msgid "Tanlangan darajadagi mijozlar"
 msgstr "Клиенты выбранного уровня"
+
+msgid "Tanlangan mahsulotlar turli brendlarga tegishli. Odatda bitta guruh — bitta brend."
+msgstr "Выбранные товары относятся к разным брендам. Обычно одна группа — один бренд."
 
 msgid "Tanlangan rollarni olib tashlash"
 msgstr "Снять выбранные роли"
@@ -3344,6 +3419,9 @@ msgstr "Выгрузить выбранные в Excel"
 
 msgid "Tanlanganlarni fiskallashtirish (soliqqa yuborish)"
 msgstr "Фискализировать выбранные (отправить в налоговую)"
+
+msgid "Tanlanganlarni guruhlash (o'lcham × ta'm)"
+msgstr "Сгруппировать выбранные (объём × вкус)"
 
 msgid "Tanlanganlarni o'chirish (ishlatilmayotgan bo'lsa)"
 msgstr "Удалить выбранные (если не используются)"
@@ -3407,6 +3485,15 @@ msgstr "С tasnif.soliq.uz: обязательно для фискального
 
 msgid "Tavsif yo'q"
 msgstr "Нет описания"
+
+msgid "tavsifi, kategoriyasi va sahifa manzili saqlanadi"
+msgstr "сохраняются его описание, категория и адрес страницы"
+
+msgid "Tavsiya etilgan guruh"
+msgstr "Предлагаемые группы"
+
+msgid "Tavsiya etilgan guruhlar"
+msgstr "Предлагаемые группы"
 
 msgid "Tavsiya: 2400×800 px (3:1), JPEG / PNG / WebP. Kamida 1200 px kenglik — aks holda katta ekranda xira ko'rinadi. Telefonda chetlari kesiladi: muhim qismini (mahsulot, matn) markazga joylang. Har bir ekranga mos o'lcham avtomatik beriladi."
 msgstr "Рекомендуется: 2400×800 px (3:1), JPEG / PNG / WebP. Не меньше 1200 px в ширину — иначе на больших экранах будет размыто. На телефонах края обрезаются: держите главное (товар, текст) в центре. Каждый экран получает свой размер автоматически."
@@ -3627,11 +3714,17 @@ msgstr "uz · ru · en заполнено"
 msgid "vaqt noto'g'ri"
 msgstr "неверное время"
 
+msgid "Variant (o'lcham × ta'm)"
+msgstr "Варианты (объём × вкус)"
+
 msgid "Variantlar"
 msgstr "Варианты"
 
 msgid "Variantlar qadoq bo'yicha"
 msgstr "Варианты по упаковке"
+
+msgid "Variantlar — o'lcham × ta'm"
+msgstr "Варианты — объём × вкус"
 
 msgid "variantlarga biriktirilgan"
 msgstr "привязано к вариантам"
@@ -4143,11 +4236,17 @@ msgstr "{0} назначений"
 msgid "{0} ta bot · Rich xabarlar (rasm, jadval, grafik, tugmalar) · tokenlar hech qachon ko'rsatilmaydi"
 msgstr "{0} бота · Rich-сообщения (фото, таблицы, графики, кнопки) · токены никогда не показываются"
 
+msgid "{0} ta mahsulot bitta mahsulotga birlashadi — {1} ta variant. Har bir variantning o'lchami va ta'mini tekshiring."
+msgstr "{0} товаров объединяются в один — {1} вариантов. Проверьте объём и вкус каждого варианта."
+
 msgid "{0} ta mahsulot tannarxdan arzon sotilyapti"
 msgstr "{0} товаров продаются ниже себестоимости"
 
 msgid "{0} ta mahsulot zarariga sotilyapti"
 msgstr "{0} товаров продаются в убыток"
+
+msgid "{0} ta mahsulot · {1} ta variant"
+msgstr "{0} товаров · {1} вариантов"
 
 msgid "{0} ta mijoz · oxirgi xarid, chastota va summa (RFM) bo'yicha · onlayn + do'kon"
 msgstr "{0} клиентов · по давности, частоте и сумме покупок (RFM) · онлайн + магазин"
@@ -4205,6 +4304,9 @@ msgstr "{0} платежей"
 
 msgid "{0} ta variant · narxlar barcha kanallarda (sayt, kassa) darhol yangilanadi"
 msgstr "{0} вариантов · цены сразу обновляются во всех каналах (сайт, касса)"
+
+msgid "{0} ta variantning ta'mi aniqlanmadi — ro'yxatdan tanlang (ta'msiz mahsulotlar uchun bo'sh qoldiring)."
+msgstr "Вкус {0} вариантов не определён — выберите из списка (для товаров без вкуса оставьте пустым)."
 
 msgid "{0} ta viloyatda"
 msgstr "в {0} областях"
@@ -4358,6 +4460,9 @@ msgstr "— фото, скидка, таблица объёмов, пищева�
 
 msgid "— Shaharni tanlang —"
 msgstr "— Выберите город —"
+
+msgid "— ta'msiz —"
+msgstr "— без вкуса —"
 
 msgid "— yig'ilmoqda {0}, yo'lda {1}"
 msgstr "— собирается {0}, в пути {1}"

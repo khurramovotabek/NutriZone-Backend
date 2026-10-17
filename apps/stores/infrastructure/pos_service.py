@@ -84,13 +84,9 @@ def _first_phone(store: Store) -> str | None:
 
 
 def _variant_label(variant) -> str | None:
-    parts = []
-    if variant.weight_value:
-        value = int(variant.weight_value) if float(variant.weight_value).is_integer() else variant.weight_value
-        parts.append(f"{value} {variant.weight_unit}")
-    if variant.package_id and getattr(variant, "package", None):
-        parts.append(str(variant.package))
-    return " · ".join(parts) or None
+    from apps.products.infrastructure.variant_labels import variant_label
+
+    return variant_label(variant)  # "2.27 kg · Chocolate · Banka"
 
 
 # ---------------------------------------------------------------- catalog
@@ -100,7 +96,7 @@ def catalog(store: Store, locale: str, q: str = "", page: int = 1, page_size: in
     """The store's own sellable range: every product it stocks, with live price and the store's own quantity."""
     from apps.products.infrastructure.selectors import bulk_variant_prices
 
-    qs = StoreProductStock.objects.filter(store=store).select_related("product_variant", "product_variant__product", "product_variant__package")
+    qs = StoreProductStock.objects.filter(store=store).select_related("product_variant", "product_variant__product", "product_variant__package", "product_variant__flavour").prefetch_related("product_variant__flavour__translations", "product_variant__package__translations")
     if in_stock_only:
         qs = qs.filter(quantity__gt=F("reserved_quantity"))
     q = (q or "").strip()
@@ -911,7 +907,7 @@ def sale_payload(store: Store, sale, locale: str = "uz") -> dict:
     refunded_qty = dict(SaleLineItemModel.objects.filter(sale_id=sale.id).values_list("id", "refunded_quantity"))
     line_batches = dict(SaleLineItemModel.objects.filter(sale_id=sale.id).values_list("id", "batches"))
     variant_map = _line_variant_map(sale.id)
-    variants = {v.id: v for v in ProductVariant.objects.filter(id__in=[vid for vid in variant_map.values() if vid]).select_related("package")}
+    variants = {v.id: v for v in ProductVariant.objects.filter(id__in=[vid for vid in variant_map.values() if vid]).select_related("package", "flavour").prefetch_related("flavour__translations", "package__translations")}
     info = {i["variant_id"]: i for i in catalog_items_by_variant(store, locale, list(variants))}
     lines = []
     for line in sale.line_items.values():
@@ -980,7 +976,7 @@ def catalog_items_by_variant(store: Store, locale: str, variant_ids: list) -> li
         return []
     from apps.products.infrastructure.models import ProductMedia, ProductTranslation, ProductVariant
 
-    variants = list(ProductVariant.objects.filter(id__in=variant_ids).select_related("package"))
+    variants = list(ProductVariant.objects.filter(id__in=variant_ids).select_related("package", "flavour").prefetch_related("flavour__translations", "package__translations"))
     stock = {r["product_variant_id"]: max(0, r["quantity"] - r["reserved_quantity"]) for r in StoreProductStock.objects.filter(store=store, product_variant_id__in=variant_ids).values("product_variant_id", "quantity", "reserved_quantity")}
     product_ids = {v.product_id for v in variants}
     names: dict = {}

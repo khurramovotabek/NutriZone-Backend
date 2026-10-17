@@ -121,8 +121,11 @@ class Brand(SoftDeleteModel):
         verbose_name_plural = _("Brands")
 
     def __str__(self) -> str:  # pragma: no cover
-        translation = self.translations.first()
-        return translation.name if translation is not None else str(self.id)
+        from django.utils.translation import get_language
+
+        rows = {t.locale_code: t.name for t in self.translations.all()}
+        lang = (get_language() or "uz")[:2]
+        return rows.get(lang) or rows.get("uz") or rows.get("en") or next(iter(rows.values()), str(self.id))
 
 
 class BrandTranslation(models.Model):
@@ -212,8 +215,11 @@ class Flavour(SoftDeleteModel):
         ordering = ["sort_order", "-created_at"]
 
     def __str__(self) -> str:  # pragma: no cover
-        translation = self.translations.first()
-        return translation.name if translation is not None else str(self.id)
+        from django.utils.translation import get_language
+
+        rows = {t.locale_code: t.name for t in self.translations.all()}
+        lang = (get_language() or "uz")[:2]
+        return rows.get(lang) or rows.get("uz") or rows.get("en") or next(iter(rows.values()), str(self.id))
 
 
 class FlavourTranslation(models.Model):
@@ -256,8 +262,11 @@ class Package(SoftDeleteModel):
         ordering = ["sort_order", "-created_at"]
 
     def __str__(self) -> str:  # pragma: no cover
-        translation = self.translations.first()
-        return translation.name if translation is not None else str(self.id)
+        from django.utils.translation import get_language
+
+        rows = {t.locale_code: t.name for t in self.translations.all()}
+        lang = (get_language() or "uz")[:2]
+        return rows.get(lang) or rows.get("uz") or rows.get("en") or next(iter(rows.values()), str(self.id))
 
 
 class PackageTranslation(models.Model):
@@ -347,6 +356,9 @@ class Product(SoftDeleteModel):
     # through model carries no fields beyond its own id/created_at, so
     # Django permits this despite the explicit `through=`).
     flavours = models.ManyToManyField("Flavour", through="ProductFlavour", related_name="products", blank=True)
+    # Set when this product was grouped into another one (Dashboard → Guruhlash): its old address redirects there.
+    merged_into = models.ForeignKey("self", on_delete=models.SET_NULL, null=True, blank=True, related_name="merged_products", editable=False)
+    merged_variant_ids = models.JSONField(default=list, blank=True, editable=False)  # the variants that moved with it
     # Training goals this product serves (codes from goals.py) -- "shop by goal" on the storefront.
     goals = models.JSONField(default=list, blank=True, verbose_name=_("Goals"))
 
@@ -361,8 +373,11 @@ class Product(SoftDeleteModel):
         ]
 
     def __str__(self) -> str:  # pragma: no cover
-        translation = self.translations.first()
-        return translation.name if translation is not None else str(self.id)
+        from django.utils.translation import get_language
+
+        rows = {t.locale_code: t.name for t in self.translations.all()}
+        lang = (get_language() or "uz")[:2]
+        return rows.get(lang) or rows.get("uz") or rows.get("en") or next(iter(rows.values()), str(self.id))
 
 
 class ProductTag(models.Model):
@@ -446,6 +461,9 @@ class ProductVariant(SoftDeleteModel):
     weight_value = models.FloatField(null=True, blank=True)
     weight_unit = models.CharField(default=WeightUnit.GRAM.value, **enum_field_kwargs(WeightUnit))
     package = models.ForeignKey(Package, on_delete=models.SET_NULL, null=True, blank=True, related_name="variants")
+    # A product is one family ("Olimp Complex Whey"); each purchasable variant is one size x one flavour, with its
+    # own SKU, barcode, price, stock and photos. Product.flavours is kept in step with the variants' flavours.
+    flavour = models.ForeignKey(Flavour, on_delete=models.SET_NULL, null=True, blank=True, related_name="variants", verbose_name=_("Flavour"))
     is_default = models.BooleanField(default=False)
 
     class Meta:

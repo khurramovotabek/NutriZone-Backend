@@ -72,6 +72,9 @@ msgstr "Analytics bot: daily report ({0})"
 msgid "Analytics bot: oylik hisobot ({0}-kun {1})"
 msgstr "Analytics bot: monthly report (day {0}, {1})"
 
+msgid "aniqlandi"
+msgstr "detected"
+
 msgid "Aniqlanmoqda…"
 msgstr "Detecting…"
 
@@ -89,6 +92,9 @@ msgstr "Key metrics"
 
 msgid "Asosiy ma'lumotlar"
 msgstr "Basic information"
+
+msgid "Asosiy mahsulot"
+msgstr "Main product"
 
 msgid "Asosiy narx ro'yxatiga yoziladi (narx tarixi saqlanadi)."
 msgstr "Written to the main price list (price history is kept)."
@@ -252,11 +258,20 @@ msgstr "Notifications {0}"
 msgid "Binafsha"
 msgstr "Violet"
 
+msgid "Bir brendda nomi o'lcham va ta'mdan tashqari bir xil bo'lgan mahsulotlar paydo bo'lsa, shu yerda ko'rinadi. Mahsulotlar ro'yxatida bir nechtasini belgilab, «Tanlanganlarni guruhlash» amalini ham ishlatishingiz mumkin."
+msgstr "When a brand has products whose names match apart from size and flavour, they appear here. You can also tick several products in the product list and use «Group selected»."
+
+msgid "Bir brendning faqat o'lcham va ta'mi bilan farq qiladigan mahsulotlari bitta mahsulotga birlashadi: mijoz bitta sahifada o'lcham va ta'mni tanlaydi. SKU, shtrix-kod, narx, qoldiq va savdo tarixi saqlanadi."
+msgstr "Products of one brand that differ only by size and flavour become one product: the customer picks size and flavour on one page. SKUs, barcodes, prices, stock and sales history are kept."
+
 msgid "Bir martada ko'pi bilan"
 msgstr "At most at a time"
 
 msgid "Bir to'lovda minimal coin"
 msgstr "Minimum coins per payment"
+
+msgid "Bir xil o'lcham va ta'm bir necha marta uchradi:"
+msgstr "The same size and flavour appear more than once:"
 
 msgid "biriktirilgan"
 msgstr "attached"
@@ -278,6 +293,12 @@ msgstr "First response"
 
 msgid "birinchi javob"
 msgstr "first response"
+
+msgid "Birlashadigan mahsulot"
+msgstr "Products to merge"
+
+msgid "Birlik"
+msgstr "Unit"
 
 msgid "birorta mahsulotda yo'q"
 msgstr "not on any product"
@@ -969,6 +990,24 @@ msgstr "Fuchsia"
 msgid "Grafiklar, hisobotlar va filial kartasida shu rang ishlatiladi"
 msgstr "This colour is used in charts, reports and the branch card"
 
+msgid "Guruh nomi"
+msgstr "Group name"
+
+msgid "Guruhlanadigan mahsulot topilmadi"
+msgstr "No products to group"
+
+msgid "Guruhlandi: {0} ta mahsulot → bitta mahsulot, {1} ta variant (o'lcham × ta'm)."
+msgstr "Grouped: {0} products → one product, {1} variants (size × flavour)."
+
+msgid "Guruhlash"
+msgstr "Grouping"
+
+msgid "Guruhlash uchun kamida 2 ta mahsulot belgilang."
+msgstr "Select at least 2 products to group."
+
+msgid "Guruhlash uchun kamida 2 ta mahsulot tanlang."
+msgstr "Choose at least 2 products to group."
+
 msgid "haftalik hisobot (dushanba {0})"
 msgstr "weekly report (Monday {0})"
 
@@ -1133,6 +1172,9 @@ msgstr "Send now"
 
 msgid "Hozirgi holat"
 msgstr "Current state"
+
+msgid "Hozirgi mahsulot"
+msgstr "Current product"
 
 msgid "hozirgina"
 msgstr "just now"
@@ -1560,8 +1602,14 @@ msgstr "Most searched"
 msgid "Ko'radi"
 msgstr "Sees"
 
+msgid "Ko'rib chiqish"
+msgstr "Review"
+
 msgid "Ko'rib chiqish va band qilish"
 msgstr "Review and reserve"
+
+msgid "Ko'rib chiqish va guruhlash"
+msgstr "Review and group"
 
 msgid "Ko'rib chiqish va tasdiqlash"
 msgstr "Review and confirm"
@@ -1695,6 +1743,9 @@ msgstr "countries with products"
 msgid "Mahsulotlar"
 msgstr "Products"
 
+msgid "Mahsulotlar bitta mahsulotga birlashtirilsinmi? Boshqa mahsulotlar arxivlanadi, eski havolalar yangi sahifaga yo'naltiriladi."
+msgstr "Merge the products into one? The others are archived and their old links redirect to the new page."
+
 msgid "Mahsulotlar katalogi"
 msgstr "Product catalog"
 
@@ -1709,6 +1760,9 @@ msgstr "Product distribution"
 
 msgid "Mahsulotlardagi ta'mlar"
 msgstr "Flavours on products"
+
+msgid "Mahsulotlardan qo'lda tanlash"
+msgstr "Pick products manually"
 
 msgid "mahsulotlarga biriktirilgan"
 msgstr "attached to products"
@@ -2136,6 +2190,9 @@ msgstr "Name or text…"
 msgid "Nom, oraliq va keshbek foizini kiriting — oraliqlar boshqa darajalar bilan ustma-ust tushmasin"
 msgstr "Enter the name, range and cashback percentage — ranges must not overlap other tiers"
 
+msgid "nomdan"
+msgstr "from the name"
+
 msgid "Nomdan avtomatik yasaladi; faqat lotin harflari, raqam va chiziqcha."
 msgstr "Generated from the name automatically; Latin letters, digits and hyphens only."
 
@@ -2204,6 +2261,9 @@ msgstr "Turn off (hide from the list)"
 
 msgid "O'chirish (saytda ko'rinmaydi)"
 msgstr "Turn off (hidden on the website)"
+
+msgid "O'lcham"
+msgstr "Size"
 
 msgid "O'lchov birligi"
 msgstr "Unit of measure"
@@ -3246,11 +3306,20 @@ msgstr "Support requests"
 msgid "ta / {0} daqiqa"
 msgstr "per {0} minutes"
 
+msgid "Ta'm"
+msgstr "Flavour"
+
+msgid "Ta'm yoki o'lchamni to'g'rilang — aks holda mijoz ularni ajrata olmaydi."
+msgstr "Correct the flavour or size — otherwise customers cannot tell them apart."
+
 msgid "Ta'mlar"
 msgstr "Flavours"
 
 msgid "Ta'mning belgisi — rasm bo'lmaganda chiqadigan rang."
 msgstr "The flavour's swatch — the colour shown when there is no image."
+
+msgid "Ta'msiz"
+msgstr "No flavour"
 
 msgid "Tabriklaymiz! Siz Gold darajasidasiz"
 msgstr "Congratulations! You are now Gold"
@@ -3297,11 +3366,17 @@ msgstr "Suggestions are calculated from the «Replenishment (minimum stock)» ru
 msgid "Takliflar «To'ldirish (minimal qoldiq)» qoidalari va 30 kunlik sotuvdan hisoblanadi."
 msgstr "Suggestions are calculated from the «Replenishment (minimum stock)» rules and 30-day sales."
 
+msgid "tanlang"
+msgstr "choose"
+
 msgid "Tanlang yoki yangi nom yozing"
 msgstr "Choose or type a new name"
 
 msgid "Tanlangan darajadagi mijozlar"
 msgstr "Customers in the chosen tier"
+
+msgid "Tanlangan mahsulotlar turli brendlarga tegishli. Odatda bitta guruh — bitta brend."
+msgstr "The selected products belong to different brands. Normally one group is one brand."
 
 msgid "Tanlangan rollarni olib tashlash"
 msgstr "Remove selected roles"
@@ -3314,6 +3389,9 @@ msgstr "Export selected to Excel"
 
 msgid "Tanlanganlarni fiskallashtirish (soliqqa yuborish)"
 msgstr "Fiscalize selected (send to the tax system)"
+
+msgid "Tanlanganlarni guruhlash (o'lcham × ta'm)"
+msgstr "Group selected (size × flavour)"
 
 msgid "Tanlanganlarni o'chirish (ishlatilmayotgan bo'lsa)"
 msgstr "Delete selected (if unused)"
@@ -3377,6 +3455,15 @@ msgstr "From tasnif.soliq.uz: required for fiscal receipts."
 
 msgid "Tavsif yo'q"
 msgstr "No description"
+
+msgid "tavsifi, kategoriyasi va sahifa manzili saqlanadi"
+msgstr "its description, category and page address are kept"
+
+msgid "Tavsiya etilgan guruh"
+msgstr "Suggested groups"
+
+msgid "Tavsiya etilgan guruhlar"
+msgstr "Suggested groups"
 
 msgid "Tavsiya: 2400×800 px (3:1), JPEG / PNG / WebP. Kamida 1200 px kenglik — aks holda katta ekranda xira ko'rinadi. Telefonda chetlari kesiladi: muhim qismini (mahsulot, matn) markazga joylang. Har bir ekranga mos o'lcham avtomatik beriladi."
 msgstr "Recommended: 2400×800 px (3:1), JPEG / PNG / WebP. At least 1200 px wide — otherwise it looks blurry on large screens. On phones the edges are cropped: keep the important part (product, text) in the centre. Each screen gets its own size automatically."
@@ -3588,11 +3675,17 @@ msgstr "uz · ru · en complete"
 msgid "vaqt noto'g'ri"
 msgstr "invalid time"
 
+msgid "Variant (o'lcham × ta'm)"
+msgstr "Variants (size × flavour)"
+
 msgid "Variantlar"
 msgstr "Variants"
 
 msgid "Variantlar qadoq bo'yicha"
 msgstr "Variants by package"
+
+msgid "Variantlar — o'lcham × ta'm"
+msgstr "Variants — size × flavour"
 
 msgid "variantlarga biriktirilgan"
 msgstr "attached to variants"
@@ -4104,11 +4197,17 @@ msgstr "{0} assignments"
 msgid "{0} ta bot · Rich xabarlar (rasm, jadval, grafik, tugmalar) · tokenlar hech qachon ko'rsatilmaydi"
 msgstr "{0} bots · Rich messages (images, tables, charts, buttons) · tokens are never shown"
 
+msgid "{0} ta mahsulot bitta mahsulotga birlashadi — {1} ta variant. Har bir variantning o'lchami va ta'mini tekshiring."
+msgstr "{0} products become one product — {1} variants. Check each variant's size and flavour."
+
 msgid "{0} ta mahsulot tannarxdan arzon sotilyapti"
 msgstr "{0} products are selling below cost"
 
 msgid "{0} ta mahsulot zarariga sotilyapti"
 msgstr "{0} products are selling at a loss"
+
+msgid "{0} ta mahsulot · {1} ta variant"
+msgstr "{0} products · {1} variants"
 
 msgid "{0} ta mijoz · oxirgi xarid, chastota va summa (RFM) bo'yicha · onlayn + do'kon"
 msgstr "{0} customers · by recency, frequency and amount (RFM) · online + in store"
@@ -4166,6 +4265,9 @@ msgstr "{0} payments"
 
 msgid "{0} ta variant · narxlar barcha kanallarda (sayt, kassa) darhol yangilanadi"
 msgstr "{0} variants · prices update immediately in all channels (website, registers)"
+
+msgid "{0} ta variantning ta'mi aniqlanmadi — ro'yxatdan tanlang (ta'msiz mahsulotlar uchun bo'sh qoldiring)."
+msgstr "The flavour of {0} variants was not detected — choose it from the list (leave blank for unflavoured goods)."
 
 msgid "{0} ta viloyatda"
 msgstr "in {0} regions"
@@ -4319,6 +4421,9 @@ msgstr "— image, discount, size table, nutrition facts, add to cart / buy now"
 
 msgid "— Shaharni tanlang —"
 msgstr "— Choose a city —"
+
+msgid "— ta'msiz —"
+msgstr "— no flavour —"
 
 msgid "— yig'ilmoqda {0}, yo'lda {1}"
 msgstr "— packing {0}, on the way {1}"

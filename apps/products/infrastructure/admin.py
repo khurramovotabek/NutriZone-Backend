@@ -377,7 +377,7 @@ class ProductVariantInline(admin.TabularInline):
     # `ProductFlavourInline` below), not a per-variant attribute --
     # this table keeps only what actually varies per variant: identity,
     # weight/measure, real packaging type, and stock.
-    fields = ("sku", "barcode", "extra_codes", "status", "is_default", "weight_value", "weight_unit", "package", "stock")
+    fields = ("sku", "barcode", "extra_codes", "status", "is_default", "weight_value", "weight_unit", "flavour", "package", "stock")
     readonly_fields = ("id", "extra_codes", "wms_stock")
     ADD_PAGE_PRICE_FIELDS = ("base_cost_price", "price", "old_price")
 
@@ -428,6 +428,10 @@ class ProductVariantInline(admin.TabularInline):
     def formfield_for_foreignkey(self, db_field, request, **kwargs):
         if db_field.name == "package":
             return _package_formfield(db_field, request, **kwargs)
+        if db_field.name == "flavour":
+            # each variant is one size x one flavour; "Ta'msiz" for unflavoured goods (shakers, capsules...)
+            kwargs["queryset"] = orm.Flavour.objects.filter(is_active=True).prefetch_related("translations").order_by("sort_order", "slug")
+            kwargs["empty_label"] = "Ta'msiz"
         return super().formfield_for_foreignkey(db_field, request, **kwargs)
 
 
@@ -715,6 +719,9 @@ class ProductAdmin(ExcelExportMixin, CatalogFormMixin, CatalogAnalyticsMixin, ad
         from django.urls import reverse
 
         from apps.pricing.infrastructure.models import PriceListEntryModel
+        from apps.products.infrastructure.product_grouping import sync_product_flavours
+
+        sync_product_flavours(form.instance)  # the product's flavour tags follow its variants' flavours
 
         variants = list(orm.ProductVariant.objects.filter(product=form.instance).values_list("id", "sku"))
         priced = set(PriceListEntryModel.objects.filter(product_variant_id__in=[v for v, _s in variants]).values_list("product_variant_id", flat=True))
@@ -725,7 +732,7 @@ class ProductAdmin(ExcelExportMixin, CatalogFormMixin, CatalogAnalyticsMixin, ad
                 _("No selling price yet for:"), ", ".join(missing), _("Customers can't buy a variant without a price -- set it in the Pricing table or"),
                 reverse("admin:nz_price_list"), missing[0], _("the price list"),
             ))
-    actions = ["publish_selected", "hide_selected", "archive_selected", "restore_selected", "delete_selected_via_service"]
+    actions = ["group_selected", "publish_selected", "hide_selected", "archive_selected", "restore_selected", "delete_selected_via_service"]
 
     # Real, product-required organization: one semantic <fieldset> per
     # content type -- Supplement Facts, Warnings, Directions -- each with
@@ -1125,6 +1132,19 @@ class ProductAdmin(ExcelExportMixin, CatalogFormMixin, CatalogAnalyticsMixin, ad
         return format_html('<span class="nz-badge nz-badge-danger">{}</span>', "missing")
 
     seo_status_badge.short_description = "SEO"
+
+    @admin.action(description="Tanlanganlarni guruhlash (o'lcham × ta'm)")
+    def group_selected(self, request, queryset):
+        """Opens the grouping review screen for the ticked products (product_grouping.py)."""
+        from django.contrib import messages
+        from django.shortcuts import redirect
+        from django.urls import reverse
+
+        ids = list(queryset.values_list("id", flat=True))
+        if len(ids) < 2:
+            self.message_user(request, "Guruhlash uchun kamida 2 ta mahsulot belgilang.", level=messages.WARNING)
+            return None
+        return redirect(f"{reverse('admin:nz_product_grouping')}?ids={','.join(map(str, ids))}")
 
     @admin.action(description="Publish selected products")
     def publish_selected(self, request, queryset):

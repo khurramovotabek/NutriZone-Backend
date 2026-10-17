@@ -428,6 +428,12 @@ def report_section_excel_export(request, section: str):
 _original_get_urls = admin.site.get_urls
 
 
+def _grouping_view(request):
+    from apps.products.infrastructure.grouping_view import grouping_view
+
+    return grouping_view(request)
+
+
 def _get_urls_with_reports():
     from django.urls import path
 
@@ -435,6 +441,7 @@ def _get_urls_with_reports():
     from apps.products.infrastructure import price_list_view
 
     return [
+        path("products/grouping/", _grouping_view, name="nz_product_grouping"),
         path("products/price-list/", price_list_view.price_list_view, name="nz_price_list"),
         path("products/price-list/api/save/<str:variant_id>", price_list_view.price_list_api_save, name="nz_price_list_save"),
         path("products/price-list/api/history/<str:variant_id>", price_list_view.price_list_api_history, name="nz_price_list_history"),
