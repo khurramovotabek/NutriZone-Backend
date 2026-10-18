@@ -814,6 +814,191 @@ _TRANSLATIONS: dict[str, dict[str, str]] = {
         "ru": "\U0001F504 Повторить",
         "en": "\U0001F504 Retry",
     },
+    "menu_find": {
+        "uz": '🔎 Topib berish',
+        "ru": '🔎 Найдём товар',
+        "en": '🔎 Find a product',
+    },
+    "fp_prompt": {
+        "uz": '🔎 <b>Mahsulotni topib beramiz</b>\n\nSaytda topmagan sport ozuqangizni yuboring:\n📸 <b>rasmini</b> (izoh qismida nomini yozing),\n✍️ yoki <b>nomini</b> (masalan, «Mutant Mass 6.8 kg shokolad»),\n🔗 yoki <b>havolasini</b>.\n\nMutaxassislarimiz yetkazib beruvchilardan qidirib, narxi va muddatini shu chatga yozadi.',
+        "ru": '🔎 <b>Найдём товар для вас</b>\n\nПришлите спортивное питание, которого нет на сайте:\n📸 <b>фото</b> (название — в подписи),\n✍️ или <b>название</b> (например, «Mutant Mass 6,8 кг шоколад»),\n🔗 или <b>ссылку</b>.\n\nНаши специалисты найдут его у поставщиков и напишут цену и сроки в этот чат.',
+        "en": "🔎 <b>We'll find it for you</b>\n\nSend the sports nutrition you couldn't find on the site:\n📸 a <b>photo</b> (name in the caption),\n✍️ or its <b>name</b> (e.g. “Mutant Mass 6.8 kg chocolate”),\n🔗 or a <b>link</b>.\n\nOur team will check suppliers and reply here with the price and lead time.",
+    },
+    "fp_created": {
+        "uz": "✅ <b>So'rov qabul qilindi — {number}</b>\n\n🔎 {name}\n\nJavobni shu chatga yozamiz. Odatda 1 ish kuni ichida.",
+        "ru": '✅ <b>Запрос принят — {number}</b>\n\n🔎 {name}\n\nОтвет придёт в этот чат, обычно в течение 1 рабочего дня.',
+        "en": "✅ <b>Request received — {number}</b>\n\n🔎 {name}\n\nWe'll answer in this chat, usually within 1 business day.",
+    },
+    "fp_offer_photo": {
+        "uz": '📸 Shu mahsulotni topib beraylikmi?\n\nTasdiqlasangiz, mutaxassislarimiz uni qidirib, narxi va muddatini shu chatga yozadi.',
+        "ru": '📸 Найти этот товар для вас?\n\nПодтвердите — наши специалисты поищут его и напишут цену и сроки в этот чат.',
+        "en": '📸 Shall we find this product for you?\n\nConfirm and our team will look for it and reply here with the price and lead time.',
+    },
+    "fp_send_button": {
+        "uz": '✅ Ha, topib bering',
+        "ru": '✅ Да, найдите',
+        "en": '✅ Yes, find it',
+    },
+    "fp_cancel_button": {
+        "uz": '✖️ Bekor qilish',
+        "ru": '✖️ Отмена',
+        "en": '✖️ Cancel',
+    },
+    "fp_cancelled": {
+        "uz": 'Bekor qilindi.',
+        "ru": 'Отменено.',
+        "en": 'Cancelled.',
+    },
+    "fp_my_requests": {
+        "uz": "📋 So'rovlarim",
+        "ru": '📋 Мои запросы',
+        "en": '📋 My requests',
+    },
+    "fp_open_site": {
+        "uz": "🌐 Saytda ko'rish",
+        "ru": '🌐 Открыть на сайте',
+        "en": '🌐 View on the website',
+    },
+    "fp_need_more": {
+        "uz": '✍️ Mahsulot nomini yoki havolasini yozing (kamida 2 belgi).',
+        "ru": '✍️ Напишите название или ссылку на товар (минимум 2 символа).',
+        "en": '✍️ Send the product name or a link (at least 2 characters).',
+    },
+    "fp_too_many": {
+        "uz": "Ochiq so'rovlaringiz juda ko'p — avvalgilariga javobni kuting.",
+        "ru": 'Слишком много открытых запросов — дождитесь ответа на предыдущие.',
+        "en": 'Too many open requests — please wait for answers to the earlier ones.',
+    },
+    "fp_failed": {
+        "uz": "So'rovni yuborib bo'lmadi. Birozdan keyin qayta urinib ko'ring.",
+        "ru": 'Не удалось отправить запрос. Попробуйте чуть позже.',
+        "en": "Couldn't send the request. Please try again a bit later.",
+    },
+    "fp_photo_failed": {
+        "uz": "Rasmni yuklab bo'lmadi (5 MB dan oshmasin). Boshqa rasm yoki mahsulot nomini yuboring.",
+        "ru": 'Не удалось загрузить фото (до 5 МБ). Пришлите другое фото или название товара.',
+        "en": "Couldn't load the photo (5 MB max). Send another photo or the product name.",
+    },
+    "fp_name_from_photo": {
+        "uz": 'Rasmdagi mahsulot',
+        "ru": 'Товар с фото',
+        "en": 'Product in the photo',
+    },
+    "fp_name_from_link": {
+        "uz": '{host} dagi mahsulot',
+        "ru": 'Товар с {host}',
+        "en": 'Product from {host}',
+    },
+    "fp_list_title": {
+        "uz": "📋 <b>Mahsulot so'rovlaringiz</b>",
+        "ru": '📋 <b>Ваши запросы товаров</b>',
+        "en": '📋 <b>Your product requests</b>',
+    },
+    "fp_list_empty": {
+        "uz": "Hali so'rov yubormagansiz. Kerakli mahsulotni saytda topmasangiz — topib beramiz!",
+        "ru": 'Запросов пока нет. Не нашли товар на сайте — мы найдём!',
+        "en": "No requests yet. Can't find a product on the site? We'll find it!",
+    },
+    "fp_status_new": {
+        "uz": 'Yuborildi — navbatda',
+        "ru": 'Отправлен — в очереди',
+        "en": 'Sent — in the queue',
+    },
+    "fp_status_searching": {
+        "uz": 'Qidirilmoqda',
+        "ru": 'Ищем',
+        "en": 'Searching',
+    },
+    "fp_status_found": {
+        "uz": 'Topildi',
+        "ru": 'Найден',
+        "en": 'Found',
+    },
+    "fp_status_not_found": {
+        "uz": 'Topilmadi',
+        "ru": 'Не найден',
+        "en": 'Not found',
+    },
+    "fp_status_cancelled": {
+        "uz": 'Bekor qilingan',
+        "ru": 'Отменён',
+        "en": 'Cancelled',
+    },
+    "st_title": {
+        "uz": "📍 <b>NutriZone do'konlari</b>",
+        "ru": '📍 <b>Магазины NutriZone</b>',
+        "en": '📍 <b>NutriZone stores</b>',
+    },
+    "st_nearest_title": {
+        "uz": "📡 <b>Sizga eng yaqin do'konlar</b>",
+        "ru": '📡 <b>Ближайшие к вам магазины</b>',
+        "en": '📡 <b>Stores nearest to you</b>',
+    },
+    "st_none": {
+        "uz": "Hozircha ochiq do'kon yo'q.",
+        "ru": 'Пока нет открытых магазинов.',
+        "en": 'No stores are open yet.',
+    },
+    "st_open_now": {
+        "uz": '🟢 Hozir ochiq',
+        "ru": '🟢 Сейчас открыто',
+        "en": '🟢 Open now',
+    },
+    "st_closed_now": {
+        "uz": '🔴 Hozir yopiq',
+        "ru": '🔴 Сейчас закрыто',
+        "en": '🔴 Closed now',
+    },
+    "st_closed_today": {
+        "uz": '🔴 Bugun dam olish kuni',
+        "ru": '🔴 Сегодня выходной',
+        "en": '🔴 Closed today',
+    },
+    "st_near_button": {
+        "uz": "📡 Eng yaqin do'kon",
+        "ru": '📡 Ближайший магазин',
+        "en": '📡 Nearest store',
+    },
+    "st_ask_location": {
+        "uz": "📡 Eng yaqin do'konni topish uchun joylashuvingizni yuboring (pastdagi tugma).",
+        "ru": '📡 Отправьте геолокацию (кнопка ниже), чтобы найти ближайший магазин.',
+        "en": '📡 Share your location (button below) to find the nearest store.',
+    },
+    "st_open_page": {
+        "uz": "🌐 Do'kon sahifasi",
+        "ru": '🌐 Страница магазина',
+        "en": '🌐 Store page',
+    },
+    "legal_button": {
+        "uz": '📄 Oferta va maxfiylik',
+        "ru": '📄 Оферта и конфиденциальность',
+        "en": '📄 Terms & privacy',
+    },
+    "legal_terms": {
+        "uz": '📄 Ommaviy oferta',
+        "ru": '📄 Публичная оферта',
+        "en": '📄 Public offer',
+    },
+    "legal_privacy": {
+        "uz": '🔒 Maxfiylik siyosati',
+        "ru": '🔒 Политика конфиденциальности',
+        "en": '🔒 Privacy policy',
+    },
+    "legal_text": {
+        "uz": "📄 <b>Huquqiy ma'lumotlar</b>\n\nBuyurtma shartlari, qaytarish va to'lov tartibi — <b>Ommaviy oferta</b>da.\nQanday ma'lumot yig'ilishi va qanday himoyalanishi — <b>Maxfiylik siyosati</b>da.",
+        "ru": '📄 <b>Правовая информация</b>\n\nУсловия заказа, возврата и оплаты — в <b>Публичной оферте</b>.\nКакие данные мы собираем и как защищаем — в <b>Политике конфиденциальности</b>.',
+        "en": '📄 <b>Legal information</b>\n\nOrder, return and payment terms are in the <b>Public offer</b>.\nWhat data we collect and how we protect it is in the <b>Privacy policy</b>.',
+    },
+    "help_text": {
+        "uz": "ℹ️ <b>Yordam</b>\n\n🔎 Mahsulot nomini shunchaki yozing — qidirib beramiz\n🛒 /savat — savatcha · 📦 /buyurtmalar — buyurtmalarim\n🔎 /topish — saytda yo'q mahsulotni topib berish\n📍 /filiallar — do'konlar va eng yaqini\n💬 Savol bo'lsa — «Yordam / Chat»",
+        "ru": 'ℹ️ <b>Помощь</b>\n\n🔎 Просто напишите название товара — найдём\n🛒 /cart — корзина · 📦 /orders — мои заказы\n🔎 /find — найти товар, которого нет на сайте\n📍 /stores — магазины и ближайший к вам\n💬 Есть вопрос — «Помощь / Чат»',
+        "en": "ℹ️ <b>Help</b>\n\n🔎 Just type a product name to search\n🛒 /cart — cart · 📦 /orders — my orders\n🔎 /find — source a product we don't list\n📍 /stores — stores and the nearest one\n💬 Questions — “Help / Chat”",
+    },
+    "chat_photo_failed": {
+        "uz": "Rasmni yuborib bo'lmadi. Qayta urinib ko'ring yoki matn bilan yozing.",
+        "ru": 'Не удалось отправить фото. Попробуйте ещё раз или напишите текстом.',
+        "en": "Couldn't send the photo. Try again or write a text message.",
+    },
 }
 
 

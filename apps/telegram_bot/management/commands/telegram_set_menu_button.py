@@ -55,18 +55,21 @@ class Command(BaseCommand):
 
 PROFILE = {
     "uz": (
-        [("start", "🏠 Boshlash"), ("dokon", "🛍 Do'konni ochish"), ("menu", "☰ Asosiy menyu"), ("savat", "🛒 Savatcha"), ("buyurtmalar", "📦 Buyurtmalarim")],
-        "NutriZone — sport ovqatlanishining rasmiy do'koni.\n\n🛍 Mahsulotlarni bot yoki Mini App orqali tanlang\n⚡ Kod va parolsiz buyurtma\n🪙 Har xariddan NutriZone Coins\n📦 Buyurtma holati shu chatda",
+        [("start", "🏠 Boshlash"), ("dokon", "🛍 Do'konni ochish"), ("menu", "☰ Asosiy menyu"), ("savat", "🛒 Savatcha"), ("buyurtmalar", "📦 Buyurtmalarim"),
+         ("topish", "🔎 Mahsulotni topib berish"), ("filiallar", "📍 Do'konlar va eng yaqini"), ("yordam", "ℹ️ Yordam"), ("privacy", "📄 Oferta va maxfiylik")],
+        "NutriZone — sport ovqatlanishining rasmiy do'koni.\n\n🛍 Mahsulotlarni bot yoki Mini App orqali tanlang\n🔎 Saytda yo'q mahsulotni topib beramiz\n⚡ Kod va parolsiz buyurtma\n🪙 Har xariddan NutriZone Coins\n📦 Buyurtma holati shu chatda",
         "NutriZone — sport ovqatlanishi do'koni. Original mahsulotlar, tez yetkazib berish.",
     ),
     "ru": (
-        [("start", "🏠 Начать"), ("shop", "🛍 Открыть магазин"), ("menu", "☰ Главное меню"), ("cart", "🛒 Корзина"), ("orders", "📦 Мои заказы")],
-        "NutriZone — официальный магазин спортивного питания.\n\n🛍 Выбирайте товары в боте или в Mini App\n⚡ Заказ без кодов и паролей\n🪙 NutriZone Coins за каждую покупку\n📦 Статус заказа в этом чате",
+        [("start", "🏠 Начать"), ("shop", "🛍 Открыть магазин"), ("menu", "☰ Главное меню"), ("cart", "🛒 Корзина"), ("orders", "📦 Мои заказы"),
+         ("find", "🔎 Найти товар для меня"), ("stores", "📍 Магазины и ближайший"), ("help", "ℹ️ Помощь"), ("privacy", "📄 Оферта и конфиденциальность")],
+        "NutriZone — официальный магазин спортивного питания.\n\n🛍 Выбирайте товары в боте или в Mini App\n🔎 Найдём товар, которого нет на сайте\n⚡ Заказ без кодов и паролей\n🪙 NutriZone Coins за каждую покупку\n📦 Статус заказа в этом чате",
         "NutriZone — спортивное питание. Оригинальная продукция, быстрая доставка.",
     ),
     "en": (
-        [("start", "🏠 Start"), ("shop", "🛍 Open the shop"), ("menu", "☰ Main menu"), ("cart", "🛒 Cart"), ("orders", "📦 My orders")],
-        "NutriZone — the official sport nutrition store.\n\n🛍 Shop in the bot or the Mini App\n⚡ Order without codes or passwords\n🪙 NutriZone Coins on every purchase\n📦 Order updates in this chat",
+        [("start", "🏠 Start"), ("shop", "🛍 Open the shop"), ("menu", "☰ Main menu"), ("cart", "🛒 Cart"), ("orders", "📦 My orders"),
+         ("find", "🔎 Find a product for me"), ("stores", "📍 Stores and the nearest"), ("help", "ℹ️ Help"), ("privacy", "📄 Terms & privacy")],
+        "NutriZone — the official sport nutrition store.\n\n🛍 Shop in the bot or the Mini App\n🔎 We source products we don't list yet\n⚡ Order without codes or passwords\n🪙 NutriZone Coins on every purchase\n📦 Order updates in this chat",
         "NutriZone — sport nutrition. Original products, fast delivery.",
     ),
 }

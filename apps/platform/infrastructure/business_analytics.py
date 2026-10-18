@@ -669,6 +669,15 @@ def _alerts(r: dict) -> list[dict]:
         stuck = next((b for b in o["backlog"] if b["code"] == "pending_payment"), None)
         if stuck and stuck["count"] >= 5:
             out.append({"level": "warn", "icon": "💳", "text": f"To'lov kutayotgan buyurtmalar: {stuck['count']} ta"})
+    if r.get("store_ids") is None:  # company view only: requests aren't tied to a branch
+        try:
+            from apps.support.infrastructure.product_requests import open_count
+
+            waiting = open_count()
+        except Exception:  # noqa: BLE001 - an alert line never breaks the report
+            waiting = 0
+        if waiting:
+            out.append({"level": "warn", "icon": "🔎", "text": f"Mijozlar topib berishni so'ragan mahsulotlar: {waiting} ta javob kutmoqda"})
     failed = [name for name, ok in r["sections_ok"].items() if not ok]
     if failed:
         out.append({"level": "danger", "icon": "⚠️", "text": "Ma'lumot yuklanmadi: " + ", ".join(failed)})

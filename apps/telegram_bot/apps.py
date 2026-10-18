@@ -98,6 +98,16 @@ class TelegramBotConfig(AppConfig):
 
             time.sleep(2)  # let the app registry and DB connections finish settling first
             logger = logging.getLogger("nutrizone.telegram_bot")
+            # Several web containers / gunicorn workers start together on a deploy: one of them registers, the
+            # rest skip (parallel setChatMenuButton / setMyCommands calls were answered "Too Many Requests").
+            try:
+                from django.core.cache import cache
+
+                if not cache.add("telegram:startup-register", "1", timeout=120):
+                    logger.info("Telegram startup registration: another process is doing it -- skipped.")
+                    return
+            except Exception:  # noqa: BLE001 - no cache: register anyway (the old behaviour)
+                logger.info("Telegram startup registration: cache unavailable, registering without the lock.")
             if has_customer_bot:
                 try:
                     call_command("telegram_set_webhook", bot="customer")

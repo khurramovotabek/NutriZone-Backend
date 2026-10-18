@@ -4781,3 +4781,9 @@ msgstr "Отвечено"
 
 msgid "Mas'ul"
 msgstr "Ответственный"
+
+msgid "Mijozlar topib berishni so'ragan mahsulotlar: {0} ta javob kutmoqda"
+msgstr "Товары, которые клиенты просят найти: {0} ждут ответа"
+
+msgid "Katalog, savat, buyurtma, coins, mahsulot topib berish, do'konlar, yangiliklar, operator bilan chat"
+msgstr "Каталог, корзина, заказы, коины, поиск товара, магазины, новости, чат с оператором"

@@ -289,8 +289,9 @@ def _handle_chat_message(message: dict, conversation_id) -> None:
     user = identity_orm.User.objects.filter(telegram_user_id=from_user.get("id")).first()
     if user is None:
         chat_state.clear(chat["id"])
-        _reply_text(chat["id"], t("please_register", "uz"))
+        _reply_text(chat["id"], t("please_register", _tg_lang(from_user)))
         return
+    lang = getattr(user, "language", None) or _tg_lang(from_user)
 
     try:
         chat_composition.build_send_message(actor_id=user.id).execute(
@@ -298,10 +299,59 @@ def _handle_chat_message(message: dict, conversation_id) -> None:
         )
     except Exception:  # noqa: BLE001
         logger.exception("Telegram bot: failed to send chat message for conversation_id=%s", conversation_id)
+        _reply_text(chat["id"], t("technical_error", lang))
         return
 
     chat_state.refresh(chat["id"], conversation_id)
-    _reply_text(chat["id"], t("chat_message_sent", "uz"))
+    _reply_text(chat["id"], t("chat_message_sent", lang))
+
+
+def _tg_lang(from_user: dict) -> str:
+    """The shopper's Telegram app language (ru / en) before we know their NutriZone language; Uzbek otherwise."""
+    code = (from_user or {}).get("language_code") or ""
+    return code[:2] if code[:2] in ("ru", "en") else "uz"
+
+
+def _handle_chat_photo(message: dict, conversation_id) -> None:
+    """A photo sent while the support chat is open becomes an image message in the same Conversation."""
+    from apps.chat.domain.enums import AttachmentType, MessageType
+    from apps.chat.domain.value_objects import AttachmentMetadata
+    from apps.chat.infrastructure import composition as chat_composition
+    from apps.identity.infrastructure import models as identity_orm
+    from apps.products.infrastructure.composition import build_media_pipeline
+    from apps.telegram_bot.infrastructure import tg_files
+    from apps.telegram_bot.interfaces import chat_state
+    from apps.telegram_bot.interfaces.i18n import t
+    from core.media import MediaType, MediaUploadRequest
+
+    chat = message["chat"]
+    from_user = message.get("from", {})
+    user = identity_orm.User.objects.filter(telegram_user_id=from_user.get("id")).first()
+    if user is None:
+        chat_state.clear(chat["id"])
+        _reply_text(chat["id"], t("please_register", _tg_lang(from_user)))
+        return
+    lang = getattr(user, "language", None) or _tg_lang(from_user)
+    photo = tg_files.best_photo(message)
+    try:
+        f = tg_files.download(photo["file_id"])
+        result = build_media_pipeline().process(MediaUploadRequest(filename=f.filename, content=f.content, mime_type=f.mime_type, media_type=MediaType.IMAGE))
+        if result.is_failure:
+            raise tg_files.TelegramFileError(result.errors[0].message)
+        processed = result.value
+        base = (getattr(settings, "PUBLIC_BASE_URL", None) or "").rstrip("/")
+        attachment = AttachmentMetadata(attachment_type=AttachmentType.IMAGE, url=f"{base}{settings.MEDIA_URL}{processed.storage_path}",
+                                        filename=f.filename, size_bytes=len(f.content))
+        caption = (message.get("caption") or "").strip() or None
+        chat_composition.build_send_message(actor_id=user.id).execute(
+            conversation_id=conversation_id, sender_id=user.id, message_type=MessageType.ATTACHMENT, content=caption, attachment=attachment,
+        )
+    except Exception:  # noqa: BLE001 - the customer is told; the chat stays open
+        logger.exception("Telegram bot: chat photo failed for conversation_id=%s", conversation_id)
+        _reply_text(chat["id"], t("chat_photo_failed", lang))
+        return
+    chat_state.refresh(chat["id"], conversation_id)
+    _reply_text(chat["id"], t("chat_message_sent", lang))
 
 
 def _handle_location(message: dict) -> None:
@@ -323,7 +373,14 @@ def _handle_location(message: dict) -> None:
     latitude = location.get("latitude")
     longitude = location.get("longitude")
 
-    if not checkout_state.is_awaiting_location(chat["id"]) or latitude is None or longitude is None:
+    if latitude is None or longitude is None:
+        return
+    if not checkout_state.is_awaiting_location(chat["id"]):
+        if chat.get("type") == "private":  # any other shared location: the nearest stores
+            from apps.telegram_bot.interfaces import stores_menu
+
+            known = identity_orm.User.objects.filter(telegram_user_id=from_user.get("id")).first()
+            stores_menu.nearest(chat["id"], latitude, longitude, getattr(known, "language", None) or _tg_lang(from_user))
         return
 
     user = identity_orm.User.objects.filter(telegram_user_id=from_user.get("id")).first()
@@ -424,6 +481,45 @@ def _send_onboarding_confirmation(chat_id: int, language: str, full_name: str, p
     _send(chat_id, text, keyboard)
 
 
+def _is_photo(message: dict) -> bool:
+    from apps.telegram_bot.infrastructure.tg_files import best_photo
+
+    return best_photo(message) is not None
+
+
+def _handle_photo(message: dict) -> None:
+    """A photo in the private chat: into the open support chat, else a "find this product" request (or the offer to make one)."""
+    from apps.identity.infrastructure import models as identity_orm
+    from apps.telegram_bot.interfaces import chat_state, find_product
+    from apps.telegram_bot.interfaces.i18n import t
+
+    chat_id = message["chat"]["id"]
+    from_user = message.get("from", {})
+    conversation_id = chat_state.get_active_conversation(chat_id)
+    if conversation_id is not None:
+        _handle_chat_photo(message, conversation_id)
+        return
+    user = identity_orm.User.objects.filter(telegram_user_id=from_user.get("id")).first()
+    if user is None:
+        _reply_text(chat_id, t("please_register", _tg_lang(from_user)))
+        return
+    find_product.handle_message(user, message, getattr(user, "language", None) or _tg_lang(from_user))
+
+
+def _find_product_text(message: dict) -> bool:
+    """Typed text while the bot waits for a product request (name / link). True = handled."""
+    from apps.identity.infrastructure import models as identity_orm
+    from apps.telegram_bot.interfaces import find_product
+
+    chat_id = message["chat"]["id"]
+    if message["text"].startswith("/") or not find_product.is_awaiting(chat_id):
+        return False
+    user = identity_orm.User.objects.filter(telegram_user_id=message.get("from", {}).get("id")).first()
+    if user is None:
+        return False
+    return find_product.handle_message(user, message, getattr(user, "language", None) or "uz")
+
+
 def _bot_command(message: dict) -> bool:
     """/menu, /savat, /buyurtmalar, /dokon … (see callback_router.COMMANDS). False lets other handling continue."""
     from apps.telegram_bot.interfaces.callback_router import run_command
@@ -474,6 +570,8 @@ def telegram_webhook_view(request):
                 _handle_location(message)
             elif message.get("text", "").startswith("/start"):
                 _handle_start(message)
+            elif message.get("chat", {}).get("type") == "private" and not message.get("text") and _is_photo(message):
+                _handle_photo(message)
             elif message.get("text", "").startswith("/") and message.get("chat", {}).get("type") == "private" and _bot_command(message):
                 pass
             elif message.get("text"):
@@ -493,6 +591,8 @@ def telegram_webhook_view(request):
                     active_conversation_id = chat_state.get_active_conversation(message["chat"]["id"])
                     if active_conversation_id is not None:
                         _handle_chat_message(message, active_conversation_id)
+                    elif message.get("chat", {}).get("type") == "private" and _find_product_text(message):
+                        pass
                     elif message.get("chat", {}).get("type") == "private" and not message["text"].startswith("/"):
                         # Anything else typed in a private chat is a product search (never in groups/channels).
                         from apps.telegram_bot.interfaces.callback_router import search_text

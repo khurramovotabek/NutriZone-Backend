@@ -22,7 +22,7 @@ from django.utils import timezone
 
 BOTS = (
     {"key": "shop", "title": "Mijozlar boti", "icon": "fa-bag-shopping", "tone": "#0ea5e9", "token": "TELEGRAM_BOT_TOKEN", "username": "TELEGRAM_BOT_USERNAME",
-     "about": "Katalog, savat, buyurtma, coins, yangiliklar, operator bilan chat"},
+     "about": "Katalog, savat, buyurtma, coins, mahsulot topib berish, do'konlar, yangiliklar, operator bilan chat"},
     {"key": "orders", "title": "Orders bot", "icon": "fa-receipt", "tone": "#f59e0b", "token": "TELEGRAM_ORDERS_BOT_TOKEN", "username": "TELEGRAM_ORDERS_BOT_USERNAME",
      "about": "Onlayn buyurtma va kassa savdolari postlari, tasdiqlash tugmalari, filial egalariga"},
     {"key": "analytics", "title": "Analytics bot", "icon": "fa-chart-line", "tone": "#8b5cf6", "token": "TELEGRAM_ANALYTICS_BOT_TOKEN", "username": "TELEGRAM_ANALYTICS_BOT_USERNAME",

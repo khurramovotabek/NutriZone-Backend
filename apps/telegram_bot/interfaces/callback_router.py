@@ -47,6 +47,7 @@ def _main_menu_keyboard(lang: str) -> list:
         [{"text": t("menu_products", lang), "callback_data": "menu:products"}, {"text": t("menu_catalog", lang), "callback_data": "menu:catalog"}],
         [{"text": t("menu_brands", lang), "callback_data": "menu:brands"}, {"text": t("menu_cart", lang), "callback_data": "menu:cart"}],
         [{"text": t("menu_orders", lang), "callback_data": "menu:orders"}, {"text": t("menu_loyalty", lang), "callback_data": "menu:loyalty"}],
+        [{"text": t("menu_find", lang), "callback_data": "menu:find"}, {"text": t("menu_stores", lang), "callback_data": "menu:stores"}],
         [{"text": t("menu_chat", lang), "callback_data": "menu:chat"}, {"text": t("menu_news", lang), "callback_data": "menu:news"}],
         [{"text": t("menu_autologin", lang), "callback_data": "menu:autologin"}],
         [{"text": t("menu_getcode", lang), "callback_data": "menu:getcode"}],
@@ -103,7 +104,8 @@ def send_main_menu(chat_id: int, lang: str = "uz", user=None) -> None:
     set_chat_menu_button(chat_id, lang)
 
 
-COMMANDS = {"menu": "home", "menyu": "home", "savat": "cart", "cart": "cart", "buyurtmalar": "orders", "orders": "orders", "dokon": "shop", "shop": "shop"}
+COMMANDS = {"menu": "home", "menyu": "home", "savat": "cart", "cart": "cart", "buyurtmalar": "orders", "orders": "orders", "dokon": "shop", "shop": "shop",
+            "topish": "find", "find": "find", "filiallar": "stores", "stores": "stores", "privacy": "privacy", "yordam": "help", "help": "help"}
 
 
 def run_command(chat_id: int, telegram_user_id: int, command: str) -> bool:
@@ -112,11 +114,16 @@ def run_command(chat_id: int, telegram_user_id: int, command: str) -> bool:
     if action is None:
         return False
     user = _resolve_user(telegram_user_id)
+    if action == "privacy":  # works before sign-up too: Telegram asks every bot to answer /privacy
+        _show_legal(chat_id, _lang(user) if user else "uz")
+        return True
     if user is None:
         _send(chat_id, t("please_register", "uz"), [])
         return True
     lang = _lang(user)
-    if action == "home":
+    if action in ("find", "stores", "help"):
+        _handle_menu(user, chat_id, action, None, lang)
+    elif action == "home":
         send_main_menu(chat_id, lang, user=user)
     elif action == "cart":
         _show_cart(user, chat_id, lang)
@@ -269,6 +276,14 @@ def handle_callback(callback_query: dict) -> None:
             from apps.telegram_bot.interfaces import news_menu
 
             news_menu.handle(user, chat_id, action, lang)
+        elif namespace == "fp":
+            from apps.telegram_bot.interfaces import find_product
+
+            find_product.handle_callback(user, chat_id, action, lang)
+        elif namespace == "st":
+            from apps.telegram_bot.interfaces import stores_menu
+
+            stores_menu.handle_callback(chat_id, action, arg, lang)
         else:
             _send(chat_id, t("unknown_action", lang))
     except ResourceNotFound:
@@ -729,6 +744,18 @@ def _handle_menu(user, chat_id: int, action: str, arg: str | None, lang: str) ->
         _show_my_orders(user, chat_id, lang)
     elif action == "social":
         _show_social_links(chat_id, lang)
+    elif action == "find":
+        from apps.telegram_bot.interfaces import find_product
+
+        find_product.prompt(chat_id, lang)
+    elif action == "stores":
+        from apps.telegram_bot.interfaces import stores_menu
+
+        stores_menu.show(chat_id, lang)
+    elif action == "legal":
+        _show_legal(chat_id, lang)
+    elif action == "help":
+        _show_help(chat_id, lang)
     elif action == "chat":
         _start_chat_prompt(chat_id, lang, user)
     elif action == "endchat":
@@ -854,11 +881,35 @@ def _show_social_links(chat_id: int, lang: str) -> None:
     if settings_obj.instagram_url:
         links.append([{"text": "\U0001F4F7 Instagram", "url": settings_obj.instagram_url}])
 
-    if not links:
-        _send(chat_id, t("no_social_links_yet", lang), [[{"text": t("home_button", lang), "callback_data": "menu:home"}]])
-        return
+    links.append([{"text": t("legal_button", lang), "callback_data": "menu:legal"}])
     links.append([{"text": t("home_button", lang), "callback_data": "menu:home"}])
-    _send(chat_id, t("social_links_text", lang), links)
+    _send(chat_id, t("social_links_text", lang) if len(links) > 2 else t("no_social_links_yet", lang), links)
+
+
+def _site_page(path: str) -> str | None:
+    from django.conf import settings as django_settings
+
+    base = (getattr(django_settings, "FRONTEND_URL", None) or "").rstrip("/")
+    return f"{base}{path}" if base.startswith("https://") else None
+
+
+def _show_legal(chat_id: int, lang: str) -> None:
+    """/privacy and the shop's legal pages -- the public offer and the privacy policy on the website."""
+    keyboard = []
+    for key, path in (("legal_terms", "/terms"), ("legal_privacy", "/privacy")):
+        url = _site_page(path if lang == "uz" else f"/{lang}{path}")
+        if url:
+            keyboard.append([{"text": t(key, lang), "url": url}])
+    keyboard.append([{"text": t("home_button", lang), "callback_data": "menu:home"}])
+    _send(chat_id, t("legal_text", lang), keyboard)
+
+
+def _show_help(chat_id: int, lang: str) -> None:
+    _send(chat_id, t("help_text", lang), [
+        [{"text": t("menu_chat", lang), "callback_data": "menu:chat"}, {"text": t("menu_stores", lang), "callback_data": "menu:stores"}],
+        [{"text": t("menu_find", lang), "callback_data": "menu:find"}, {"text": t("legal_button", lang), "callback_data": "menu:legal"}],
+        [{"text": t("home_button", lang), "callback_data": "menu:home"}],
+    ])
 
 
 def _end_chat(chat_id: int, lang: str) -> None:

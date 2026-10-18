@@ -4742,3 +4742,9 @@ msgstr "Answered at"
 
 msgid "Mas'ul"
 msgstr "Handled by"
+
+msgid "Mijozlar topib berishni so'ragan mahsulotlar: {0} ta javob kutmoqda"
+msgstr "Products customers asked us to source: {0} awaiting a reply"
+
+msgid "Katalog, savat, buyurtma, coins, mahsulot topib berish, do'konlar, yangiliklar, operator bilan chat"
+msgstr "Catalog, cart, orders, coins, find-a-product, stores, news, chat with an operator"

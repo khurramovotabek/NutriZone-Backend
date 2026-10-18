@@ -56,7 +56,7 @@ def test_group_chats_and_commands_are_not_searched():
     customer = _make_customer()
     with patch("apps.telegram_bot.interfaces.callback_router._send") as mock_send:
         _text(Client(), customer.telegram_user_id, "protein", chat_type="group", chat_id=-100123)
-        _text(Client(), customer.telegram_user_id, "/help")
+        _text(Client(), customer.telegram_user_id, "/notacommand")  # /help is a real command now (help screen)
     assert mock_send.call_count == 0
 
 
