@@ -471,6 +471,7 @@ def _get_urls_with_reports():
         path("telegram/status/", _telegram("telegram_center_view"), name="nz_telegram_status"),
         path("telegram/preview/", _telegram("telegram_preview_view"), name="nz_telegram_preview"),
         path("telegram/check/", _telegram("telegram_check_view"), name="nz_telegram_check"),
+        path("telegram/invite-owner/", _telegram("telegram_invite_owner_view"), name="nz_telegram_invite_owner"),
         path("pos/terminal/", _pos2_terminal, name="nz_pos_terminal"),
         path("pos/terminal/api2/<str:action>", _pos2_api, name="nz_pos2_api"),
         path("pos/terminal/receipt/<uuid:sale_id>/", _pos2_receipt, name="nz_pos2_receipt"),

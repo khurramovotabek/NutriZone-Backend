@@ -170,3 +170,107 @@ class TestOrdersBotStart:
         orders_bot.handle_update({"message": {"chat": {"id": 700099, "type": "private"}, "from": {"id": 700099}, "text": "/start"}})
         (_t, method, payload), = [c for c in tg if c[1] == "sendRichMessage"]
         assert "700099" in payload["html"] and "so'm" not in payload["html"]
+
+
+class TestAnalyticsBotOwnerStart:
+    """A branch owner presses /start in NutriZoneAnalyticsBot → their own branch's report at once; strangers learn the next step."""
+
+    def _start(self, tg_id: int, text: str = "/start"):
+        from apps.telegram_bot.infrastructure import analytics_bot
+
+        analytics_bot.handle_update({"message": {"chat": {"id": tg_id, "type": "private"}, "from": {"id": tg_id, "first_name": "Ega"}, "text": text}})
+
+    def test_owner_start_sends_only_their_branch_report(self, tg):
+        from apps.telegram_bot.infrastructure.models import TelegramBotSubscriber
+
+        _user, mine = _owner(700201, "Chilonzor")
+        _other_user, other = _owner(700202, "Sergeli")
+        _sale(mine)
+        _sale(other)
+        _sale(other)
+        self._start(700201, "/start owner")
+        assert TelegramBotSubscriber.objects.filter(bot="analytics", chat_id=700201, is_active=True).exists()
+        htmls = [c[2]["html"] for c in tg if c[1] == "sendRichMessage" and str(c[2]["chat_id"]) == "700201"]
+        report = [h for h in htmls if "BUGUNGI PULS" in h.upper()]
+        assert report, htmls
+        assert "300 000" in report[0] and "600 000" not in report[0] and "Sergeli" not in report[0]
+
+    def test_menu_does_not_resend_the_report(self, tg):
+        _owner(700203, "Yakkasaroy")
+        self._start(700203, "/menu")
+        htmls = [c[2]["html"] for c in tg if c[1] == "sendRichMessage"]
+        assert not any("BUGUNGI PULS" in h.upper() for h in htmls)
+
+    def test_unregistered_telegram_is_sent_to_the_customer_bot(self, tg, settings):
+        settings.TELEGRAM_BOT_USERNAME = "nutrizonebot"
+        self._start(700204)
+        (_t, _m, payload), = [c for c in tg if c[1] == "sendRichMessage"]
+        assert "avval shu Telegram akkaunti bilan NutriZone botida" in payload["html"] and "so'm" not in payload["html"]
+        buttons = [b for row in json.loads(payload["reply_markup"])["inline_keyboard"] for b in row] if isinstance(payload["reply_markup"], str) else [b for row in payload["reply_markup"]["inline_keyboard"] for b in row]
+        assert any(b.get("url") == "https://t.me/nutrizonebot" for b in buttons) and any(b.get("callback_data") == "an:start" for b in buttons)
+
+    def test_registered_without_a_branch_is_told_so(self, tg):
+        from apps.identity.infrastructure.models import User
+
+        User.objects.create(phone_number="+998907002050", full_name="Kassir", telegram_user_id=700205, status="active")
+        self._start(700205)
+        (_t, _m, payload), = [c for c in tg if c[1] == "sendRichMessage"]
+        assert "filial biriktirilmagan" in payload["html"]
+
+    def test_scheduled_daily_report_is_scoped_per_owner(self, tg):
+        from apps.telegram_bot.infrastructure import analytics_bot
+
+        _user, store = _owner(700206, "Olmazor")
+        _subscribe("analytics", 700206)
+        targets = {t["chat_id"]: t for t in analytics_bot.audience()}
+        assert targets["700206"]["store_ids"] == [store.id] and targets["700206"]["all_access"] is False
+
+
+class TestOwnerInvite:
+    def test_assigning_an_owner_invites_them_to_the_analytics_bot_once(self, settings, django_capture_on_commit_callbacks):
+        from apps.identity.infrastructure.models import User
+        from apps.notifications.infrastructure.models import NotificationModel
+        from apps.stores.infrastructure.models import Store
+
+        settings.TELEGRAM_ANALYTICS_BOT_TOKEN = "2:analytics"
+        settings.TELEGRAM_ANALYTICS_BOT_USERNAME = "NutriZoneAnalyticsBot"
+        owner = User.objects.create(phone_number="+998907003000", full_name="Ega", telegram_user_id=700300, status="active")
+        store = Store.objects.create(name="Mirobod", slug=f"s-{uuid.uuid4().hex[:8]}", kind="store", status="active")
+        with django_capture_on_commit_callbacks(execute=True):
+            store.owner = owner
+            store.save()
+        with django_capture_on_commit_callbacks(execute=True):
+            store.name = "Mirobod filiali"
+            store.save()  # same owner: no second invite
+        rows = NotificationModel.objects.filter(recipient_id=owner.id, kind="store_owner_analytics")
+        assert rows.count() == 1 and rows.first().link == "https://t.me/NutriZoneAnalyticsBot?start=owner"
+
+    def test_absolute_link_becomes_the_telegram_button(self):
+        from types import SimpleNamespace
+
+        from apps.notifications.infrastructure.notify import telegram_keyboard
+
+        row = SimpleNamespace(link="https://t.me/NutriZoneAnalyticsBot?start=owner")
+        assert telegram_keyboard(row, "uz") == [[{"text": "🌐 Ochish", "url": "https://t.me/NutriZoneAnalyticsBot?start=owner"}]]
+
+
+class TestBotsCenterOwners:
+    def test_branch_owner_states_and_invite_button(self, settings, admin_client):
+        from apps.identity.infrastructure.models import User
+        from apps.notifications.infrastructure.models import NotificationModel
+        from apps.stores.infrastructure.models import Store
+
+        settings.TELEGRAM_ANALYTICS_BOT_TOKEN = "2:analytics"
+        settings.TELEGRAM_ANALYTICS_BOT_USERNAME = "NutriZoneAnalyticsBot"
+        _user, connected = _owner(700401, "Ulangan filial")
+        _subscribe("analytics", 700401)
+        _user2, waiting = _owner(700402, "Kutayotgan filial")
+        no_tg = User.objects.create(phone_number="+998907004030", full_name="Tg yo'q", status="active")
+        Store.objects.create(name="Telegramsiz filial", slug=f"s-{uuid.uuid4().hex[:8]}", kind="store", status="active", owner=no_tg)
+        page = admin_client.get("/django-admin/telegram/status/").content.decode()
+        assert "Ulangan filial" in page and "Botni ochmagan" in page and "Telegram ulanmagan" in page
+        assert page.count('name="store"') == 1  # only the owner who has Telegram but no bot yet gets the button
+        response = admin_client.post("/django-admin/telegram/invite-owner/", {"store": str(waiting.id)})
+        assert response.status_code == 302
+        assert NotificationModel.objects.filter(recipient_id=_user2.id, kind="store_owner_analytics").count() == 1
+        assert "da yuborilgan" in admin_client.get("/django-admin/telegram/status/").content.decode()

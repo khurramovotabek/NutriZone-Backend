@@ -117,6 +117,10 @@ KINDS: dict[str, Kind] = {
         ("Siz kassirsiz: {store}", "Sizni «{store}» kassasiga kassir qilib qo'shishdi. Profil → Mening do'konim → POS terminal orqali savdo qilasiz."),
         ("Вы кассир: {store}", "Вас добавили кассиром в кассу «{store}». Продажи — Профиль → Мой магазин → POS-терминал."),
         ("You're a cashier: {store}", "You were added as a cashier at «{store}». Sell from Profile → My store → POS terminal.")),
+    "store_owner_analytics": K("store", "success", "high",
+        ("{store}: analitika botingiz tayyor", "Siz «{store}» filiali egasisiz. NutriZone Analytics botini oching — /start bosishingiz bilan filialingiz bugungi hisobotini olasiz, har kuni kechqurun esa kunlik hisobot avtomatik keladi."),
+        ("{store}: ваш бот аналитики готов", "Вы владелец филиала «{store}». Откройте бот NutriZone Analytics — после /start сразу придёт сегодняшний отчёт филиала, а каждый вечер — ежедневный отчёт автоматически."),
+        ("{store}: your analytics bot is ready", "You own the «{store}» branch. Open the NutriZone Analytics bot — /start sends today's branch report right away, and the daily report arrives automatically every evening.")),
     "shift_closed": K("coins", "info", "normal",
         ("Smena yopildi: {store}", "{sales} ta savdo, tushum {revenue} so'm. Naqd farqi: {difference} so'm."),
         ("Смена закрыта: {store}", "{sales} продаж, выручка {revenue} сум. Расхождение по наличным: {difference} сум."),
@@ -345,10 +349,12 @@ def telegram_text(row, lang: str) -> str:
 def telegram_keyboard(row, lang: str) -> list:
     from django.conf import settings
 
+    label = {"uz": "🌐 Ochish", "ru": "🌐 Открыть", "en": "🌐 Open"}[lang]
+    if row.link.startswith("https://"):  # an absolute link (e.g. another bot, t.me/...) is used as is
+        return [[{"text": label, "url": row.link}]]
     base = (getattr(settings, "FRONTEND_URL", "") or "").rstrip("/")
     if not (row.link and base.startswith("https://")):  # Telegram only accepts https URL buttons
         return []
-    label = {"uz": "🌐 Ochish", "ru": "🌐 Открыть", "en": "🌐 Open"}[lang]
     return [[{"text": label, "url": f"{base}{row.link}"}]]
 
 

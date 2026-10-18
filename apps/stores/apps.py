@@ -26,3 +26,6 @@ class StoresConfig(AppConfig):
 
     def ready(self) -> None:
         from apps.stores.infrastructure import admin  # noqa: F401 -- registers admin.py, matching every other module's infrastructure/admin.py location
+        from apps.stores.infrastructure import owner_invite
+
+        owner_invite.install()

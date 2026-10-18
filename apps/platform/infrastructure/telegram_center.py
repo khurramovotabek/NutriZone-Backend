@@ -14,6 +14,7 @@ from __future__ import annotations
 import base64
 import re
 from datetime import timedelta
+from zoneinfo import ZoneInfo
 
 import requests
 from django.conf import settings
@@ -78,6 +79,8 @@ def bots() -> list[dict]:
                       ("Ruxsat ro'yxati", len(_allowlist()), "hamma filialni ko'radigan chatlar"),
                       ("Filial egalariga", TelegramStorePost.objects.filter(bot="analytics").count(), "yuborilgan hisobotlar")],
     }
+    owners = branch_owners()
+    stats["analytics"].append(("Ulangan filial egalari", f"{sum(1 for o in owners if o['tone'] == 'ok')} / {len(owners)}", "o'z filiali hisobotini oladi"))
     stats["orders"].append(("Obunachilar", subs.get("orders", {}).get("active", 0), f"jami {subs.get('orders', {}).get('total', 0)}"))
     out = []
     for b in BOTS:
@@ -120,6 +123,59 @@ def subscribers() -> list[dict]:
                     "username": r.username, "access": "Hamma filiallar" if everything else (", ".join(stores) if stores else "Ruxsat yo'q"),
                     "tone": "ok" if everything or stores else "bad", "active": r.is_active, "started": r.started_at, "seen": r.last_seen_at})
     return out
+
+
+def branch_owners() -> list[dict]:
+    """Every selling branch and whether its owner gets their own analytics: owner set → Telegram linked → bot started."""
+    from apps.identity.infrastructure.models import User
+    from apps.stores.infrastructure.models import Store
+    from apps.telegram_bot.infrastructure.models import TelegramBotSubscriber
+
+    stores = list(Store.objects.filter(kind="store").exclude(status="inactive").order_by("name").only("id", "name", "owner_id"))
+    users = {u.id: u for u in User.objects.filter(id__in=[s.owner_id for s in stores if s.owner_id]).only("id", "full_name", "phone_number", "telegram_user_id")}
+    started = dict(TelegramBotSubscriber.objects.filter(bot="analytics", telegram_user_id__in=[u.telegram_user_id for u in users.values() if u.telegram_user_id])
+                   .values_list("telegram_user_id", "is_active"))
+    from apps.notifications.infrastructure.models import NotificationModel
+
+    invited = {}
+    for uid, at in NotificationModel.objects.filter(kind="store_owner_analytics", recipient_id__in=list(users)).order_by("created_at").values_list("recipient_id", "created_at"):
+        invited[uid] = at
+    out = []
+    for s in stores:
+        u = users.get(s.owner_id)
+        if u is None:
+            state, tone, hint = "Ega tayinlanmagan", "bad", "Dashboard → Filiallar → Ega maydonini to'ldiring"
+        elif not u.telegram_user_id:
+            state, tone, hint = "Telegram ulanmagan", "bad", "Ega mijoz botida ro'yxatdan o'tishi kerak"
+        elif u.telegram_user_id not in started:
+            when = invited.get(u.id)
+            state, tone = "Botni ochmagan", "warn"
+            hint = f"Taklif {when.astimezone(ZoneInfo('Asia/Tashkent')).strftime('%d.%m %H:%M')} da yuborilgan — Analytics botda /start bossin" if when else "Taklif yuboring — ega Analytics botda /start bossin"
+        elif not started[u.telegram_user_id]:
+            state, tone, hint = "Botni bloklagan", "bad", "Ega botni qayta ochishi kerak"
+        else:
+            state, tone, hint = "Ulangan", "ok", "Har kuni filial hisobotini oladi"
+        out.append({"id": str(s.id), "store": s.name, "owner": (u.full_name or u.phone_number) if u else "—", "state": state, "tone": tone, "hint": hint,
+                    "can_invite": bool(u and u.telegram_user_id) and tone != "ok"})
+    return out
+
+
+def invite_owner(store_id: str) -> tuple[bool, str]:
+    """Dashboard button: send (again) the branch owner the inbox + Telegram invitation into NutriZoneAnalyticsBot."""
+    from apps.notifications.infrastructure.notify import create_now, send_telegram
+    from apps.stores.infrastructure.models import Store
+    from apps.stores.infrastructure.owner_invite import analytics_bot_link
+
+    store = Store.objects.filter(pk=store_id, kind="store").select_related("owner").first() if store_id else None
+    if store is None or store.owner is None:
+        return False, "Filial yoki uning egasi topilmadi."
+    link = analytics_bot_link()
+    if not link:
+        return False, "Analytics bot sozlanmagan (TELEGRAM_ANALYTICS_BOT_TOKEN / _USERNAME)."
+    row = create_now(store.owner_id, "store_owner_analytics", {"store": store.name}, link=link)
+    delivered = bool(row and store.owner.telegram_user_id and send_telegram(row))
+    who = store.owner.full_name or store.owner.phone_number
+    return True, f"{store.name}: taklif {who} ga yuborildi" + (" (Telegram + sayt)." if delivered else " (saytdagi bildirishnomalarda; Telegram'ga yetmadi).")
 
 
 def check(timeout: float = 8) -> dict:

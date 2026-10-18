@@ -1,7 +1,7 @@
 {% extends "admin/base_site.html" %}
 {% load i18n static %}
 {# Dashboard → Telegram botlar markazi (apps/platform/infrastructure/telegram_view.py, telegram_center.py). #}
-{% block extrastyle %}{{ block.super }}<link rel="stylesheet" href="{% static 'admin/css/nutrizone-analytics.css' %}?v=5"><link rel="stylesheet" href="{% static 'admin/css/nutrizone-telegram.css' %}?v=2">{% endblock %}
+{% block extrastyle %}{{ block.super }}<link rel="stylesheet" href="{% static 'admin/css/nutrizone-analytics.css' %}?v=5"><link rel="stylesheet" href="{% static 'admin/css/nutrizone-telegram.css' %}?v=4">{% endblock %}
 {% block breadcrumbs %}<ol class="breadcrumb"><li class="breadcrumb-item"><a href="{% url 'admin:index' %}">{% translate "Home" %}</a></li><li class="breadcrumb-item active">{{ title }}</li></ol>{% endblock %}
 {% block content_title %}{% endblock %}
 {% block content %}
@@ -70,6 +70,25 @@
     </div>
   </section>
 
+  {% if branch_owners is not None %}
+  <section class="nza-card" id="owners">
+    <div class="nza-card-head"><h3><i class="fas fa-store" aria-hidden="true"></i> Filial egalari — shaxsiy analitika <span class="nza-count">{{ branch_owners|length }}</span></h3></div>
+    {% if branch_owners %}
+    <div class="nzt-table nzt-owners" role="table">
+      <div class="nzt-tr nzt-th" role="row"><span>Filial</span><span>Ega</span><span>Holat</span><span>Keyingi qadam</span></div>
+      {% for o in branch_owners %}
+      <div class="nzt-tr" role="row">
+        <span><b>{{ o.store }}</b></span>
+        <span>{{ o.owner }}</span>
+        <span><em class="nzt-access is-{{ o.tone }}">{{ o.state }}</em></span>
+        <span><small>{{ o.hint }}</small>{% if o.can_invite %}<form method="post" action="{% url 'admin:nz_telegram_invite_owner' %}" class="nzt-invite">{% csrf_token %}<input type="hidden" name="store" value="{{ o.id }}"><button type="submit" class="nzt-invite-btn"><i class="fas fa-paper-plane" aria-hidden="true"></i> Taklif yuborish</button></form>{% endif %}</span>
+      </div>
+      {% endfor %}
+    </div>
+    {% else %}<p class="nza-empty">Hali faol filial yo'q.</p>{% endif %}
+    <p class="nza-note"><i class="fas fa-paper-plane" aria-hidden="true"></i> Filialga ega tayinlanganda unga avtomatik taklif boradi. Ega Analytics botda /start bosishi bilan filialining bugungi hisobotini oladi, har kuni 23:59 da esa kunlik hisobot faqat o'z filiali bo'yicha keladi.</p>
+  </section>
+  {% endif %}
   {% if subscribers is not None %}
   <section class="nza-card">
     <div class="nza-card-head"><h3><i class="fas fa-user-shield" aria-hidden="true"></i> Xodim botlari obunachilari <span class="nza-count">{{ subscribers|length }}</span></h3></div>

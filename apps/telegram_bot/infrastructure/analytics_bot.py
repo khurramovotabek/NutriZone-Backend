@@ -406,12 +406,44 @@ def _set_store(chat_id, sc, value: str) -> str:
     return next((st.name for st in sc.stores if st.id == pick), "Barcha filiallar")
 
 
-def _unauthorized(chat_id) -> None:
+def _start_report(chat_id, store_ids, label: str, keyboard) -> None:
+    """/start: today's report so far for this chat's view (one branch, the owner's branches, or the company)."""
+    with contextlib.suppress(BotApiError):
+        call("sendChatAction", {"chat_id": chat_id, "action": "upload_photo"})
+    try:
+        from apps.telegram_bot.infrastructure import rich as R
+
+        _rich_text(chat_id, [f"<p>🏪 Ko'rinish: <b>{escape(label)}</b> · bugungi hisobot 👇</p>"], f"🏪 {escape(label)}")
+        R.send(token(), chat_id, report_doc("bugun", store_ids), keyboard)
+    except Exception:  # noqa: BLE001 - the welcome already went out; the menu still works
+        logger.exception("analytics bot: start report failed for %s", mask_chat(chat_id))
+        send(chat_id, f"🏪 Ko'rinish: <b>{escape(label)}</b> · hisobotni tanlang 👇", keyboard)
+
+
+def _customer_bot_url() -> str:
+    name = (getattr(settings, "TELEGRAM_BOT_USERNAME", None) or "").lstrip("@")
+    return f"https://t.me/{name}" if name else ""
+
+
+def _unauthorized(chat_id, telegram_user_id=None) -> None:
+    """Why this chat sees nothing yet, and the one step that fixes it."""
+    from apps.identity.infrastructure.models import User
     from apps.telegram_bot.infrastructure import rich as R
 
-    _rich_text(chat_id, [R.h(2, "🔒 NutriZone Analytics"), R.p("Bu bot NutriZone rahbariyati va filial egalari uchun."), R.p(f"Sizning chat ID: {R.code(chat_id)}"),
-                         R.quote(R.e("Filial egasi bo'lsangiz — shu Telegram akkaunti bilan NutriZone'da ro'yxatdan o'tgan va filial sizga biriktirilgan bo'lishi kerak. Rahbariyat uchun: chat ID'ni administratorga yuboring."))],
-               _unauthorized_text(chat_id))
+    user = User.objects.filter(telegram_user_id=telegram_user_id or chat_id).first()
+    keyboard = None
+    if user is None:
+        hint = ("Filial egasi bo'lsangiz: avval shu Telegram akkaunti bilan NutriZone botida ro'yxatdan o'ting (telefon raqamingiz bilan), "
+                "so'ng administrator filialni sizga biriktiradi va bu yerda /start bosasiz.")
+        url = _customer_bot_url()
+        keyboard = [[{"text": "🛍 NutriZone botida ro'yxatdan o'tish", "url": url}], [{"text": "🔄 Qayta tekshirish", "callback_data": "an:start"}]] if url else None
+    else:
+        hint = (f"Akkauntingiz topildi ({user.phone_number or user.full_name}), lekin sizga hali filial biriktirilmagan. "
+                "Administrator Dashboard → Filiallar'da sizni filial egasi qilib belgilagach, /start bosing — filialingiz hisoboti darhol keladi.")
+        keyboard = [[{"text": "🔄 Qayta tekshirish", "callback_data": "an:start"}]]
+    _rich_text(chat_id, [R.h(2, "🔒 NutriZone Analytics"), R.p("Bu bot NutriZone rahbariyati va filial egalari uchun."), R.quote(R.e(hint)),
+                         R.p(f"Rahbariyat uchun chat ID: {R.code(chat_id)}")],
+               _unauthorized_text(chat_id) + "\n\n" + escape(hint), keyboard)
 
 
 def _store_chats(chat_id, store_ids, label: str, keyboard) -> None:
@@ -527,18 +559,22 @@ def _transfer_request(chat_id, sc, command: str, keyboard) -> None:
 
 
 def run_command(chat_id, command: str, telegram_user_id=None) -> None:
+    starting = command == "start"
     command = ALIASES.get(command, command)
     if command == "id":
         send(chat_id, f"🆔 Chat ID: <code>{escape(str(chat_id))}</code>")
         return
     sc = _scope(chat_id, telegram_user_id)
     if not sc.allowed:
-        _unauthorized(chat_id)
+        _unauthorized(chat_id, telegram_user_id)
         return
     store_ids, label = _view(sc, chat_id)
     keyboard = menu_keyboard(sc.all_access, label)
     if command == "menu":
         _welcome(chat_id, sc)
+        if starting:  # /start: the report for what this chat may see right away -- a branch owner gets their own branch
+            _start_report(chat_id, store_ids, label, keyboard)
+            return
         _rich_text(chat_id, [f"<p>🏪 Ko'rinish: <b>{escape(label)}</b> · hisobotni tanlang 👇</p>"], f"🏪 {escape(label)}", keyboard)
         return
     if command == "store" or command.startswith("store:"):

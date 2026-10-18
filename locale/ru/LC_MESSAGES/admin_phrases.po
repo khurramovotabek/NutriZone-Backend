@@ -4787,3 +4787,60 @@ msgstr "Товары, которые клиенты просят найти: {0}
 
 msgid "Katalog, savat, buyurtma, coins, mahsulot topib berish, do'konlar, yangiliklar, operator bilan chat"
 msgstr "Каталог, корзина, заказы, коины, поиск товара, магазины, новости, чат с оператором"
+
+msgid "Filial egalari — shaxsiy analitika"
+msgstr "Владельцы филиалов — личная аналитика"
+
+msgid "Ega"
+msgstr "Владелец"
+
+msgid "Keyingi qadam"
+msgstr "Следующий шаг"
+
+msgid "Ega tayinlanmagan"
+msgstr "Владелец не назначен"
+
+msgid "Dashboard → Filiallar → Ega maydonini to'ldiring"
+msgstr "Dashboard → Филиалы → заполните поле «Владелец»"
+
+msgid "Telegram ulanmagan"
+msgstr "Telegram не привязан"
+
+msgid "Ega mijoz botida ro'yxatdan o'tishi kerak"
+msgstr "Владелец должен зарегистрироваться в клиентском боте"
+
+msgid "Botni ochmagan"
+msgstr "Не открыл бота"
+
+msgid "Botni bloklagan"
+msgstr "Заблокировал бота"
+
+msgid "Ega botni qayta ochishi kerak"
+msgstr "Владелец должен снова открыть бота"
+
+msgid "Ulangan"
+msgstr "Подключён"
+
+msgid "Har kuni filial hisobotini oladi"
+msgstr "Получает отчёт филиала ежедневно"
+
+msgid "Taklif yuboring — ega Analytics botda /start bossin"
+msgstr "Отправьте приглашение — владелец нажимает /start в боте аналитики"
+
+msgid "Taklif {0} {1} da yuborilgan — Analytics botda /start bossin"
+msgstr "Приглашение отправлено {0} {1} — ждём /start в боте аналитики"
+
+msgid "Taklif yuborish"
+msgstr "Отправить приглашение"
+
+msgid "Filialga ega tayinlanganda unga avtomatik taklif boradi. Ega Analytics botda /start bosishi bilan filialining bugungi hisobotini oladi, har kuni 23:59 da esa kunlik hisobot faqat o'z filiali bo'yicha keladi."
+msgstr "Когда у филиала появляется владелец, ему автоматически приходит приглашение. После /start в боте аналитики владелец сразу получает сегодняшний отчёт филиала, а каждый день в 23:59 — ежедневный отчёт только по своему филиалу."
+
+msgid "Ulangan filial egalari"
+msgstr "Подключённые владельцы"
+
+msgid "o'z filiali hisobotini oladi"
+msgstr "получают отчёт своего филиала"
+
+msgid "Hali faol filial yo'q."
+msgstr "Активных филиалов пока нет."

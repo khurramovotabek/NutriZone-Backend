@@ -4748,3 +4748,60 @@ msgstr "Products customers asked us to source: {0} awaiting a reply"
 
 msgid "Katalog, savat, buyurtma, coins, mahsulot topib berish, do'konlar, yangiliklar, operator bilan chat"
 msgstr "Catalog, cart, orders, coins, find-a-product, stores, news, chat with an operator"
+
+msgid "Filial egalari — shaxsiy analitika"
+msgstr "Branch owners — personal analytics"
+
+msgid "Ega"
+msgstr "Owner"
+
+msgid "Keyingi qadam"
+msgstr "Next step"
+
+msgid "Ega tayinlanmagan"
+msgstr "No owner"
+
+msgid "Dashboard → Filiallar → Ega maydonini to'ldiring"
+msgstr "Dashboard → Stores → fill in the Owner field"
+
+msgid "Telegram ulanmagan"
+msgstr "Telegram not linked"
+
+msgid "Ega mijoz botida ro'yxatdan o'tishi kerak"
+msgstr "The owner must sign up in the customer bot"
+
+msgid "Botni ochmagan"
+msgstr "Hasn't opened the bot"
+
+msgid "Botni bloklagan"
+msgstr "Blocked the bot"
+
+msgid "Ega botni qayta ochishi kerak"
+msgstr "The owner has to reopen the bot"
+
+msgid "Ulangan"
+msgstr "Connected"
+
+msgid "Har kuni filial hisobotini oladi"
+msgstr "Gets the branch report daily"
+
+msgid "Taklif yuboring — ega Analytics botda /start bossin"
+msgstr "Send an invite — the owner presses /start in the Analytics bot"
+
+msgid "Taklif {0} {1} da yuborilgan — Analytics botda /start bossin"
+msgstr "Invite sent {0} {1} — waiting for /start in the Analytics bot"
+
+msgid "Taklif yuborish"
+msgstr "Send invite"
+
+msgid "Filialga ega tayinlanganda unga avtomatik taklif boradi. Ega Analytics botda /start bosishi bilan filialining bugungi hisobotini oladi, har kuni 23:59 da esa kunlik hisobot faqat o'z filiali bo'yicha keladi."
+msgstr "When a branch gets an owner, they're invited automatically. On /start in the Analytics bot the owner gets today's branch report at once, and every day at 23:59 the daily report for their branch only."
+
+msgid "Ulangan filial egalari"
+msgstr "Connected branch owners"
+
+msgid "o'z filiali hisobotini oladi"
+msgstr "get their own branch report"
+
+msgid "Hali faol filial yo'q."
+msgstr "No active branches yet."

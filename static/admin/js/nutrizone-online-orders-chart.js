@@ -48,7 +48,7 @@
     root.querySelector("[data-nzoo-period]").textContent = fmt(d.from) + " — " + fmt(d.to);
     set("revenue", money(s.revenue) + " so'm");
     var ch = root.querySelector('[data-k="change"]');
-    ch.textContent = s.change_pct === null ? "Oldingi davrda yetkazilgan buyurtma yo'q" : (s.change_pct >= 0 ? "▲ +" : "▼ ") + s.change_pct + "% oldingi davrga";
+    ch.textContent = s.change_pct === null ? "Oldingi davrda yetkazilgan buyurtma yo'q" : (s.change_pct >= 0 ? "▲ +" : "▼ −") + Math.abs(s.change_pct) + "% oldingi davrga";
     ch.style.color = s.change_pct === null ? "" : s.change_pct >= 0 ? "#16a34a" : "#dc2626";
     set("orders", String(s.orders));
     set("customers", s.earned_orders + " ta yetkazilgan · " + s.customers + " mijoz");

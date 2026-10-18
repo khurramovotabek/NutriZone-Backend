@@ -5,6 +5,7 @@ Dashboard → Telegram botlar markazi (telegram_center.py):
   /django-admin/telegram/preview/?kind=…   one bot message rendered as it is sent now (order / sale / report previews
                                            carry customer and sales data: Analitika viewers only)
   /django-admin/telegram/check/  (POST)    live getMe for every configured bot (superusers)
+  /django-admin/telegram/invite-owner/ (POST store=<id>)  (re)send a branch owner the Analytics bot invitation
 """
 from __future__ import annotations
 
@@ -32,6 +33,7 @@ def telegram_center_view(request):
         "gateway_live": tc.gateway_live(),
         "bots": tc.bots(),
         "subscribers": tc.subscribers() if can_view(request.user) else None,
+        "branch_owners": tc.branch_owners() if can_view(request.user) else None,
         "previews": previews,
         "can_check": request.user.is_superuser,
     }
@@ -55,3 +57,17 @@ def telegram_check_view(request):
     if not request.user.is_superuser:
         raise PermissionDenied
     return JsonResponse({"ok": True, "bots": tc.check()})
+
+
+@staff_member_required
+@require_POST
+def telegram_invite_owner_view(request):
+    from django.contrib import messages
+    from django.http import HttpResponseRedirect
+    from django.urls import reverse
+
+    if not request.user.has_perm("stores.change_store"):
+        raise PermissionDenied
+    ok, text = tc.invite_owner(request.POST.get("store", ""))
+    (messages.success if ok else messages.warning)(request, text)
+    return HttpResponseRedirect(reverse("admin:nz_telegram_status") + "#owners")

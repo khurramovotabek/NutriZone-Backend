@@ -81,13 +81,21 @@
 .nzt-tr span { min-width: 0; overflow-wrap: anywhere; }
 .nzt-tr small { display: block; color: var(--nz-text-muted); font-size: 11px; }
 .nzt-tr.is-off { opacity: .6; }
+.nzt-invite { margin-top: 6px; }
+.nzt-invite-btn { display: inline-flex; align-items: center; gap: 6px; padding: 5px 10px; border-radius: 8px; border: 1px solid color-mix(in srgb, #8b5cf6 40%, transparent); background: color-mix(in srgb, #8b5cf6 12%, transparent); color: #7c3aed; font-weight: 700; font-size: 12px; cursor: pointer; }
+.nzt-invite-btn:hover { background: color-mix(in srgb, #8b5cf6 22%, transparent); }
+.nzt-owners .nzt-tr { grid-template-columns: minmax(0, 1.2fr) minmax(0, 1.2fr) 150px minmax(0, 2fr); }
 .nzt-th { font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: .04em; color: var(--nz-text-muted); }
 .nzt-blocked { color: #dc2626 !important; }
 .nzt-access { font-style: normal; font-weight: 700; padding: 2px 8px; border-radius: 8px; }
 .nzt-access.is-ok { color: #15803d; background: color-mix(in srgb, #22c55e 12%, transparent); }
-.nzt-access.is-bad { color: #b45309; background: color-mix(in srgb, #f59e0b 14%, transparent); }
+.nzt-access.is-bad { color: #b91c1c; background: color-mix(in srgb, #ef4444 12%, transparent); }
+.nzt-access.is-warn { color: #b45309; background: color-mix(in srgb, #f59e0b 14%, transparent); }
 @media (max-width: 980px) { .nzt-preview-wrap { grid-template-columns: minmax(0, 1fr); } }
 @media (max-width: 640px) {
-  .nzt-tr { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
+  .nzt-tr, .nzt-invite { margin-top: 6px; }
+.nzt-invite-btn { display: inline-flex; align-items: center; gap: 6px; padding: 5px 10px; border-radius: 8px; border: 1px solid color-mix(in srgb, #8b5cf6 40%, transparent); background: color-mix(in srgb, #8b5cf6 12%, transparent); color: #7c3aed; font-weight: 700; font-size: 12px; cursor: pointer; }
+.nzt-invite-btn:hover { background: color-mix(in srgb, #8b5cf6 22%, transparent); }
+.nzt-owners .nzt-tr { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
   .nzt-tr > span:nth-child(4), .nzt-tr > span:nth-child(5), .nzt-th > span:nth-child(4), .nzt-th > span:nth-child(5) { display: none; }
 }
