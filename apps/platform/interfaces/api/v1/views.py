@@ -54,6 +54,7 @@ class SiteSettingsPublicView(APIView):
             "instagram_url": settings_obj.instagram_url,
             "primary_color": settings_obj.primary_color,
             "verification": _verification_codes(),
+            "requisites": _seller_requisites(),
             **_brand_payload(request),
         })
 
@@ -64,6 +65,17 @@ def _verification_codes() -> dict:
 
     row = SiteSettings.objects.filter(pk=1).values("google_site_verification", "yandex_verification", "bing_verification").first() or {}
     return {"google": row.get("google_site_verification", ""), "yandex": row.get("yandex_verification", ""), "bing": row.get("bing_verification", "")}
+
+
+def _seller_requisites() -> dict:
+    """The seller's legal details (Dashboard → Chek sozlamalari) -- printed on every receipt, shown in the public offer."""
+    from apps.receipts.infrastructure.models import ReceiptSettings
+
+    try:
+        r = ReceiptSettings.get()
+    except Exception:  # noqa: BLE001 - the public settings must load even without the receipts table
+        return {"legal_name": "", "tin": "", "address": "", "phone": ""}
+    return {"legal_name": r.legal_name, "tin": r.tin, "address": r.address, "phone": r.phone}
 
 
 def _brand_payload(request) -> dict:
