@@ -80,6 +80,13 @@ def _contact() -> list[Task]:
     return [Task("contact", "Yangi murojaatlar", n, "kontakt formasi orqali", reverse("admin:platform_contactmessage_changelist") + "?status__exact=new", "fa-envelope", "#0891b2")] if n else []
 
 
+def _product_requests() -> list[Task]:
+    from apps.support.infrastructure.product_requests import open_count
+
+    n = open_count()
+    return [Task("product_requests", "Mahsulot so'rovlari", n, "mijoz topib berishni so'radi", reverse("admin:support_productrequest_changelist") + "?status__exact=new", "fa-magnifying-glass-plus", "#7c3aed")] if n else []
+
+
 def _stock() -> list[Task]:
     from apps.platform.infrastructure.dashboard_home import wms_low_stock
 
@@ -122,7 +129,7 @@ def _missed_searches() -> list[Task]:
     return [Task("missed_searches", "Topilmagan qidiruvlar", n, ", ".join(f"«{r}»" for r in rows), reverse("admin:search_searchterm_changelist") + "?nz=missing", "fa-magnifying-glass-minus", "#0891b2")]
 
 
-SOURCES = (_orders, _chats, _after_sales, _payments, _stock, _expiry, _reviews, _contact, _missed_searches)
+SOURCES = (_orders, _chats, _after_sales, _payments, _stock, _expiry, _reviews, _contact, _product_requests, _missed_searches)
 
 
 def build() -> dict:

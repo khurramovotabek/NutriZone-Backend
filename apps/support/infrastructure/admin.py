@@ -258,3 +258,119 @@ class SupportCaseAdmin(ExcelExportMixin, PremiumListMixin, PremiumFormMixin, adm
     def response_add(self, request, obj, post_url_continue=None):
         messages.success(request, f"{obj.number} murojaat yozildi.")
         return HttpResponseRedirect(reverse("admin:support_supportcase_change", args=[obj.pk]))
+
+
+# ================================================================ "Find this product for me" requests
+
+from apps.support.infrastructure import product_requests as preq  # noqa: E402
+from apps.support.infrastructure.models import PRODUCT_REQUEST_OPEN, ProductRequest, ProductRequestStatus  # noqa: E402
+
+PREQ_TONE = {"new": "#2563eb", "searching": "#f59e0b", "found": "#16a34a", "not_found": "#94a3b8", "cancelled": "#64748b"}
+PREQ_ICON = {"new": "fa-inbox", "searching": "fa-magnifying-glass", "found": "fa-circle-check", "not_found": "fa-circle-xmark", "cancelled": "fa-ban"}
+
+
+class ProductRequestForm(forms.ModelForm):
+    class Meta:
+        model = ProductRequest
+        fields = ("status", "staff_reply", "offered_product", "offered_price", "internal_note")
+        widgets = {"staff_reply": forms.Textarea(attrs={"rows": 3, "placeholder": "Masalan: Topdik! 5–7 kunda keladi, narxi taxminan 450 000 so'm. Buyurtma qilasizmi?"}),
+                   "internal_note": forms.Textarea(attrs={"rows": 2, "placeholder": "Yetkazib beruvchi, tannarx, muddat…"})}
+
+
+@admin.register(ProductRequest)
+class ProductRequestAdmin(ExcelExportMixin, PremiumListMixin, PremiumFormMixin, admin.ModelAdmin):
+    form = ProductRequestForm
+    list_display = ("number", "created_at")
+    search_fields = ("number", "product_name", "brand", "description", "customer__full_name", "customer__phone_number")
+    ordering = ("-created_at",)
+    list_per_page = 40
+    autocomplete_fields = ("offered_product",)
+    readonly_fields = ("request_panel",)
+    fieldsets = (
+        ("Javob", {"fields": ("status", "staff_reply", "offered_product", "offered_price")}),
+        ("Ichki", {"fields": ("internal_note",)}),
+    )
+    excel_title = "Mahsulot so'rovlari"
+    excel_columns = [Col("Raqam", "number", 12), Col("Sana", "created_at", 17), Col("Mijoz", lambda r: r.customer.full_name or "", 22),
+                     Col("Telefon", lambda r: r.customer.phone_number or "", 15), Col("Mahsulot", "product_name", 32), Col("Brend", "brand", 16),
+                     Col("Soni", "quantity", 8), Col("Havola", "url", 40), Col("Holat", lambda r: r.get_status_display(), 14),
+                     Col("Javob", "staff_reply", 50), Col("Mas'ul", "handled_by", 18)]
+
+    nz_icon, nz_tone, nz_title = "fa-magnifying-glass-plus", "#7c3aed", "Mahsulot so'rovlari"
+    nz_subtitle = "Mijozlar saytda topmagan mahsulotlarni so'raydi: nomi, rasmi, havolasi. Toping, javob yozing — mijozga bildirishnoma boradi."
+    nz_columns = (("So'rov", ""), ("Mijoz", ""), ("Havola / rasm", ""), ("Yangilangan", ""), ("Holat", "r"))
+    nz_grid = "minmax(260px,2.4fr) minmax(170px,1.2fr) 150px 140px 130px"
+    nz_search = "Raqam, mahsulot, brend yoki mijoz…"
+    nz_empty = ("So'rov yo'q", "Mijozlar Profil → Mahsulot so'rovlari bo'limidan yuborgan so'rovlar shu yerda chiqadi.")
+    hero_icon, hero_tone, hero_noun = "fa-magnifying-glass-plus", "#7c3aed", "so'rov"
+
+    def has_add_permission(self, request):
+        return False  # customers create requests; staff answer them
+
+    def lookup_allowed(self, lookup, value, request=None):
+        return lookup == "status__exact" or super().lookup_allowed(lookup, value, request)
+
+    def get_queryset(self, request):
+        return super().get_queryset(request).select_related("customer", "offered_product")
+
+    def get_fieldsets(self, request, obj=None):
+        return [("So'rov", {"classes": ("nzi-panel",), "fields": ("request_panel",)}), *super().get_fieldsets(request, obj)]
+
+    def nz_stats(self, request):
+        k = ProductRequest.objects.aggregate(new=Count("id", filter=Q(status="new")), searching=Count("id", filter=Q(status="searching")),
+                                            found=Count("id", filter=Q(status="found")), answered=Count("id", filter=Q(status__in=("found", "not_found"))))
+        rate = round(k["found"] * 100 / k["answered"]) if k["answered"] else 0
+        base = reverse("admin:support_productrequest_changelist")
+        return [ui.stat_card("Yangi", k["new"], "#2563eb", "fa-inbox", "javob kutmoqda", base + "?status__exact=new"),
+                ui.stat_card("Qidirilmoqda", k["searching"], "#f59e0b", "fa-magnifying-glass", "jarayonda", base + "?status__exact=searching"),
+                ui.stat_card("Topildi", k["found"], "#16a34a", "fa-circle-check", "mijozga taklif qilindi", base + "?status__exact=found"),
+                ui.stat_card("Topish darajasi", f"{rate}%", "#7c3aed", "fa-chart-simple", f"{k['answered']} ta javobdan")]
+
+    def nz_tabs(self, request):
+        counts = dict(ProductRequest.objects.values_list("status").annotate(n=Count("id")))
+        return ui.tabs_for(request, "status__exact", [("", "Hammasi", sum(counts.values()))] + [(v, label, counts.get(v, 0)) for v, label in ProductRequestStatus.choices], PREQ_TONE)
+
+    def nz_row(self, r):
+        text = r.description if len(r.description) <= 80 else r.description[:77] + "…"
+        name = r.product_name + (f" · {r.brand}" if r.brand else "")
+        media = []
+        if r.image:
+            media.append(format_html('<a href="{}" target="_blank" rel="noopener"><img src="{}" alt="" style="width:40px;height:40px;object-fit:cover;border-radius:8px"></a>', r.image.url, r.image.url))
+        if r.url:
+            host = r.url.split("//", 1)[-1].split("/", 1)[0][:28]
+            media.append(format_html('<a href="{}" target="_blank" rel="noopener noreferrer"><i class="fas fa-link" aria-hidden="true"></i> {}</a>', r.url, host))
+        u = r.customer
+        return [format_html("<b>{}</b><small>{} · {} dona{}</small>", name, r.number, r.quantity, (" · " + text) if text else ""),
+                format_html("<b>{}</b><small>{}</small>", u.full_name or "Mijoz", u.phone_number or ""),
+                format_html_join(" ", "{}", ((m,) for m in media)) if media else ui.muted(),
+                format_html("{}<small>{}</small>", ui.local(r.updated_at, "%d.%m %H:%M"), r.handled_by or ui.ago(r.created_at)),
+                format_html('<span class="nzi-pill" style="--t:{}">{}</span>', PREQ_TONE[r.status], r.get_status_display())]
+
+    def form_hero(self, request, obj):
+        if obj is None:
+            return {"title": "Mahsulot so'rovi"}
+        return {"title": f"{obj.number} · {obj.product_name}", "subtitle": f"{obj.customer.full_name or 'Mijoz'} · {obj.customer.phone_number or ''} · {ui.local(obj.created_at)}",
+                "icon": PREQ_ICON[obj.status], "tone": PREQ_TONE[obj.status],
+                "chips": [format_html('<span class="nzi-pill" style="--t:{}">{}</span>', PREQ_TONE[obj.status], obj.get_status_display())],
+                "links": [{"label": "Mijoz kartasi", "url": reverse("admin:identity_user_change", args=[obj.customer_id]), "icon": "fa-user"}]
+                + ([{"label": "Havolani ochish", "url": obj.url, "icon": "fa-arrow-up-right-from-square", "primary": True}] if obj.url else [])}
+
+    @admin.display(description="")
+    def request_panel(self, obj):
+        img = format_html('<a href="{}" target="_blank" rel="noopener"><img src="{}" alt="" style="max-width:220px;max-height:220px;border-radius:12px;object-fit:contain"></a>',
+                          obj.image.url, obj.image.url) if obj.image else ui.muted("Rasm yuklanmagan")
+        link = format_html('<a href="{}" target="_blank" rel="noopener noreferrer">{}</a>', obj.url, obj.url) if obj.url else ui.muted()
+        return format_html('<div class="nzi-panel-body" style="display:flex;gap:20px;flex-wrap:wrap"><div>{}</div><div style="flex:1;min-width:240px">'
+                           '<p><b>{}</b>{}</p><p>Soni: <b>{}</b> dona</p><p style="white-space:pre-line">{}</p><p>Havola: {}</p>'
+                           '<p class="nzi-muted">Javobni o\'zgartirib saqlasangiz, mijozga sayt va Telegram orqali bildirishnoma boradi.</p></div></div>',
+                           img, obj.product_name, f" · {obj.brand}" if obj.brand else "", obj.quantity, obj.description or "—", link)
+
+    def save_model(self, request, obj, form, change):
+        old = ProductRequest.objects.filter(pk=obj.pk).values("status", "staff_reply").first() or {"status": "", "staff_reply": ""}
+        if obj.status == "new" and (obj.staff_reply or "").strip() and old["status"] == "new":
+            obj.status = "searching"  # a written answer moves a new request into work
+        super().save_model(request, obj, form, change)
+        preq.answer(obj, previous_status=old["status"], previous_reply=old["staff_reply"], staff=_staff(request))
+        if obj.status in PRODUCT_REQUEST_OPEN or old["status"] == obj.status:
+            return
+        messages.success(request, f"{obj.number}: mijozga bildirishnoma yuborildi.")

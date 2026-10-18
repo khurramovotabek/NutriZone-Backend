@@ -3,6 +3,8 @@
 #   * HTTP/2 on the TLS listeners (nginx 1.24 syntax: "listen 443 ssl http2"): the home page loads ~40 images and
 #     a dozen scripts, which HTTP/1.1 fetches over a handful of connections one after another.
 #   * www.nutrizone.uz → nutrizone.uz (301): one host, so search engines never index the same page twice.
+#   * Upload size on the storefront host: uploads (avatar, review/chat media, store gallery, product-request photos)
+#     go through Next's /api routes on nutrizone.uz, where nginx's 1 MB default answered 413 to ordinary photos.
 # The site file stays certbot-compatible. A copy is kept and nginx is reloaded only when `nginx -t` passes;
 # otherwise the copy is restored.
 set -euo pipefail
@@ -42,4 +44,21 @@ if ! grep -q 'nz-www-redirect' "$SITE"; then
   fi
 else
   echo "www → apex redirect already enabled"
+fi
+
+# Storefront uploads pass through nutrizone.uz (Next /api routes) -- same ceiling as api.nutrizone.uz.
+if ! grep -q 'nz-upload-size' "$SITE"; then
+  cp -a "$SITE" "$BACKUP.upload"
+  sed -i -E '0,/^(\s*)server_name nutrizone\.uz www\.nutrizone\.uz;/s//\1server_name nutrizone.uz www.nutrizone.uz;\n\1client_max_body_size 50M;  # nz-upload-size/' "$SITE"
+  if nginx -t 2>/dev/null; then
+    systemctl reload nginx
+    echo "storefront upload limit 50M (backup: $BACKUP.upload)"
+  else
+    cp -a "$BACKUP.upload" "$SITE"
+    nginx -t
+    echo "nginx -t failed -- restored $BACKUP.upload" >&2
+    exit 1
+  fi
+else
+  echo "storefront upload limit already set"
 fi

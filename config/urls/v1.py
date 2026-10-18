@@ -38,6 +38,7 @@ urlpatterns: list = [
     path("", include("apps.platform.interfaces.api.v1.urls")),
     path("", include("apps.audit.interfaces.api.v1.urls")),
     path("assistant/", include("apps.assistant.interfaces.urls")),
+    path("", include("apps.support.interfaces.api.v1.urls")),
     # path("catalog/", include("apps.catalog.interfaces.api.v1.urls")),
     # ... one entry per module, added when that module ships its API layer
     # (Universal Module Implementation Contract §1, step 14).

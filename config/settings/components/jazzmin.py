@@ -102,6 +102,7 @@ JAZZMIN_SETTINGS = {
         "receipts": "fas fa-receipt",
         "receipts.Receipt": "fas fa-receipt",
         "support.SupportCase": "fas fa-phone-volume",
+        "support.ProductRequest": "fas fa-magnifying-glass-plus",
         "Telegram": "fab fa-telegram",
         "assistant": "fas fa-robot",
         "assistant.assistantconversation": "fas fa-comments",

@@ -4625,3 +4625,120 @@ msgstr "Print"
 
 msgid "Kiriting"
 msgstr "Enter"
+
+msgid "Mahsulot so'rovlari"
+msgstr "Product requests"
+
+msgid "Mahsulot so'rovi"
+msgstr "Product request"
+
+msgid "Mijozlar saytda topmagan mahsulotlarni so'raydi: nomi, rasmi, havolasi. Toping, javob yozing — mijozga bildirishnoma boradi."
+msgstr "Customers ask for products they couldn't find on the site: name, photo, link. Source it, write an answer — the customer is notified."
+
+msgid "Qidirilmoqda"
+msgstr "Searching"
+
+msgid "Topildi"
+msgstr "Found"
+
+msgid "Bekor qilindi"
+msgstr "Cancelled"
+
+msgid "mijozga taklif qilindi"
+msgstr "offered to the customer"
+
+msgid "Topish darajasi"
+msgstr "Find rate"
+
+msgid "{0} ta javobdan"
+msgstr "of {0} answers"
+
+msgid "So'rov"
+msgstr "Request"
+
+msgid "Havola / rasm"
+msgstr "Link / photo"
+
+msgid "Yangilangan"
+msgstr "Updated"
+
+msgid "Raqam, mahsulot, brend yoki mijoz…"
+msgstr "Number, product, brand or customer…"
+
+msgid "So'rov yo'q"
+msgstr "No requests"
+
+msgid "Mijozlar Profil → Mahsulot so'rovlari bo'limidan yuborgan so'rovlar shu yerda chiqadi."
+msgstr "Requests customers send from Profile → Product requests appear here."
+
+msgid "Mijozga javob"
+msgstr "Reply to customer"
+
+msgid "Taklif qilingan mahsulot"
+msgstr "Offered product"
+
+msgid "Taxminiy narx (so'm)"
+msgstr "Estimated price (so'm)"
+
+msgid "Ichki izoh"
+msgstr "Internal note"
+
+msgid "Ichki"
+msgstr "Internal"
+
+msgid "Javob"
+msgstr "Reply"
+
+msgid "Havolani ochish"
+msgstr "Open link"
+
+msgid "Rasm yuklanmagan"
+msgstr "No photo uploaded"
+
+msgid "Soni:"
+msgstr "Qty:"
+
+msgid "Havola:"
+msgstr "Link:"
+
+msgid "Javobni o'zgartirib saqlasangiz, mijozga sayt va Telegram orqali bildirishnoma boradi."
+msgstr "When you change the answer and save, the customer is notified on the site and in Telegram."
+
+msgid "{0}: mijozga bildirishnoma yuborildi."
+msgstr "{0}: the customer has been notified."
+
+msgid "mijoz topib berishni so'radi"
+msgstr "customers asked us to source a product"
+
+msgid "Faqat xodimlar uchun."
+msgstr "Staff only."
+
+msgid "Mijoz profilida va bildirishnomada ko'rinadi."
+msgstr "Shown in the customer's profile and notification."
+
+msgid "Masalan: Topdik! 5–7 kunda keladi, narxi taxminan 450 000 so'm. Buyurtma qilasizmi?"
+msgstr "e.g. Found it! Arrives in 5–7 days, about 450 000 so'm. Shall we order it?"
+
+msgid "Yetkazib beruvchi, tannarx, muddat…"
+msgstr "Supplier, cost, lead time…"
+
+msgid "Mahsulot nomi"
+msgstr "Product name"
+
+msgid "Brend"
+msgstr "Brand"
+
+msgid "Tavsif"
+msgstr "Description"
+
+msgid "Havola"
+msgstr "Link"
+
+msgid "Soni"
+msgstr "Quantity"
+
+msgid "Javob berilgan"
+msgstr "Answered at"
+
+msgid "Mas'ul"
+msgstr "Handled by"

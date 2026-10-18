@@ -106,3 +106,60 @@ class SupportProfile(models.Model):
 
     class Meta:
         db_table = "support_profiles"
+
+
+# ---------------------------------------------------------------- "Find this product for me"
+
+
+class ProductRequestStatus(models.TextChoices):
+    NEW = "new", "Yangi"
+    SEARCHING = "searching", "Qidirilmoqda"
+    FOUND = "found", "Topildi"
+    NOT_FOUND = "not_found", "Topilmadi"
+    CANCELLED = "cancelled", "Bekor qilindi"
+
+
+PRODUCT_REQUEST_OPEN = (ProductRequestStatus.NEW, ProductRequestStatus.SEARCHING)
+
+
+def _request_image_path(instance, filename: str) -> str:
+    ext = (filename.rsplit(".", 1)[-1] if "." in filename else "jpg").lower()[:5]
+    from django.utils import timezone
+
+    return f"product-requests/{timezone.now():%Y/%m}/{uuid.uuid4().hex}.{ext}"
+
+
+class ProductRequest(models.Model):
+    """
+    A customer asks the shop to source a product it doesn't sell yet: name, optional brand, description, a link
+    (a shop / the maker's page) and a photo. Staff search, answer in the dashboard, and the customer follows the
+    request in Profile → Mahsulot so'rovlari and gets a notification on every answer.
+    """
+
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    number = models.CharField("Raqam", max_length=16, unique=True, editable=False)
+    customer = models.ForeignKey("identity.User", on_delete=models.CASCADE, related_name="product_requests", verbose_name="Mijoz")
+    product_name = models.CharField("Mahsulot nomi", max_length=200)
+    brand = models.CharField("Brend", max_length=120, blank=True, default="")
+    description = models.TextField("Tavsif", blank=True, default="", help_text="Hajmi, ta'mi, nima uchun kerak…")
+    url = models.URLField("Havola", max_length=500, blank=True, default="")
+    image = models.ImageField("Rasm", upload_to=_request_image_path, blank=True, null=True)
+    quantity = models.PositiveSmallIntegerField("Soni", default=1)
+    status = models.CharField("Holat", max_length=12, choices=ProductRequestStatus.choices, default=ProductRequestStatus.NEW, db_index=True)
+    staff_reply = models.TextField("Mijozga javob", blank=True, default="", help_text="Mijoz profilida va bildirishnomada ko'rinadi.")
+    offered_product = models.ForeignKey("products.Product", on_delete=models.SET_NULL, null=True, blank=True, related_name="+", verbose_name="Taklif qilingan mahsulot")
+    offered_price = models.DecimalField("Taxminiy narx (so'm)", max_digits=14, decimal_places=0, null=True, blank=True)
+    internal_note = models.TextField("Ichki izoh", blank=True, default="", help_text="Faqat xodimlar uchun.")
+    handled_by = models.CharField("Mas'ul", max_length=150, blank=True, default="")
+    created_at = models.DateTimeField("Yaratilgan", auto_now_add=True, db_index=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    answered_at = models.DateTimeField("Javob berilgan", null=True, blank=True)
+
+    class Meta:
+        db_table = "support_product_requests"
+        ordering = ("-created_at",)
+        verbose_name = "Mahsulot so'rovi"
+        verbose_name_plural = "Mahsulot so'rovlari"
+
+    def __str__(self) -> str:
+        return f"{self.number} · {self.product_name}"
