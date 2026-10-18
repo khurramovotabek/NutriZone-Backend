@@ -30,6 +30,7 @@ urlpatterns = [
     path("products/<str:slug>/recommendations", views.ProductRecommendationsView.as_view(), name="products-recommendations"),
     path("categories", views.CategoryListView.as_view(), name="categories-list"),
     path("categories/tree", views.CategoryTreeView.as_view(), name="categories-tree"),
+    path("categories/<uuid:category_id>", views.CategoryDetailView.as_view(), name="categories-detail"),
     path("brands", views.BrandListView.as_view(), name="brands-list"),
     path("flavours", views.FlavourListView.as_view(), name="flavours-list"),
     path("packages", views.PackageListView.as_view(), name="packages-list"),

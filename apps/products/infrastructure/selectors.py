@@ -21,6 +21,7 @@ from __future__ import annotations
 import uuid
 
 from django.contrib.postgres.search import SearchQuery, SearchRank
+from django.core.exceptions import ValidationError
 from django.db.models import Count, Q, Sum
 
 from apps.products.domain.enums import ProductStatus
@@ -277,6 +278,18 @@ class CategoryTreeSelector:
                 "name": _translated_name(r, locale), "sort_order": r.sort_order, "image_url": image_url,
             })
         return result
+
+    def description(self, category_id, locale: str | None = None) -> dict | None:
+        """One active category's long description in `locale` (falling back to uz, then any filled one); None if unknown."""
+        try:
+            row = orm.Category.objects.filter(pk=category_id, is_active=True).prefetch_related("translations").first()
+        except (ValueError, ValidationError):
+            return None
+        if row is None:
+            return None
+        texts = {t.locale_code: (t.description or "").strip() for t in row.translations.all()}
+        text = texts.get(locale or "") or texts.get("uz") or next((v for v in texts.values() if v), "")
+        return {"id": str(row.id), "name": _translated_name(row, locale), "description": text}
 
 
 class BrandSelector:

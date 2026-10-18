@@ -70,7 +70,7 @@ from apps.products.interfaces.api.v1.serializers import (
     UpdateWarningsSerializer,
     UploadMediaSerializer,
 )
-from common.exceptions import ValidationFailed
+from common.exceptions import ResourceNotFound, ValidationFailed
 from common.responses import paginated_response, success_response
 from common.utils.localization import resolve_locale
 from core.metrics import default_collector
@@ -345,6 +345,19 @@ class CategoryListView(APIView):
     @extend_schema(tags=["Products"], summary="List categories (flat)")
     def get(self, request):
         return success_response(data=CategoryTreeSelector().tree(locale=_explicit_locale(request)))
+
+
+class CategoryDetailView(APIView):
+    """`GET /categories/<id>?locale=` -- one category's long description (kept out of the list: the menu loads that everywhere)."""
+
+    permission_classes = [AllowAny]
+
+    @extend_schema(tags=["Products"], summary="Category description")
+    def get(self, request, category_id: str):
+        data = CategoryTreeSelector().description(category_id, locale=_explicit_locale(request))
+        if data is None:
+            raise ResourceNotFound("Category not found.")
+        return success_response(data=data)
 
 
 class CategoryTreeView(APIView):
