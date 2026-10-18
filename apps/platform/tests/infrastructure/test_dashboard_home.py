@@ -118,7 +118,7 @@ class TestDashboardHomeRealData:
         client.force_login(user)
         response = client.get("/django-admin/")
         assert response.status_code == 200
-        assert "75000" in response.content.decode()
+        assert "75 000" in response.content.decode()
 
     def test_recent_orders_shows_translated_status_not_raw_enum_value(self):
         """

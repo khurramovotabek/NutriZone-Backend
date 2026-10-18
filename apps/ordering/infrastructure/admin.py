@@ -463,7 +463,7 @@ class OrderAdmin(ExcelExportMixin, admin.ModelAdmin):
         spend = (earned.filter(customer_id__isnull=False, lines__status="active").values("customer_id").annotate(t=Sum(line_value), n=Count("id", distinct=True)).order_by("-t")[:5])
         names = {u.id: u.full_name or u.phone_number for u in User.objects.filter(id__in=[r["customer_id"] for r in spend])}
         lead = spend[0]["t"] if spend else 1
-        ranking = [{"label": names.get(r["customer_id"], "Mijoz"), "revenue": ca.compact(r["t"]), "units": f"{r['n']} ta buyurtma", "pct": max(int(r["t"] * 100 / lead), 3), "color": ca.PALETTE[i], "change": None} for i, r in enumerate(spend)]
+        ranking = [{"label": names.get(r["customer_id"], "Mijoz"), "revenue": ca.compact(r["t"]), "units": r["n"], "units_text": f"{r['n']} ta buyurtma", "pct": max(int(r["t"] * 100 / lead), 3), "color": ca.PALETTE[i], "change": None} for i, r in enumerate(spend)]
 
         donut = ca.donut([(str(_ORDER_STATUS_LABELS.get(k, k)), v) for k, v in month.values_list("status").annotate(n=Count("id"))], limit=8)
         colors = {str(_ORDER_STATUS_LABELS[k]): v[0] for k, v in _STATUS_STYLE.items()}

@@ -43,7 +43,23 @@ def _orders(start, end):
     )
 
 
-def report(first_day, last_day) -> dict:
+def _city_names(lang: str) -> dict[str, str]:
+    """Any language's name of a reference city (lower-case) -> its name in `lang`: the shop records the city as the
+    customer typed / picked it, so "Toshkent", "Tashkent" and "Ташкент" are one city in the report."""
+    from apps.geo.infrastructure.models import CityTranslation
+
+    by_city: dict = defaultdict(dict)
+    for city_id, code, name in CityTranslation.objects.values_list("city_id", "locale_code", "name"):
+        by_city[city_id][code] = name
+    out: dict[str, str] = {}
+    for names in by_city.values():
+        shown = names.get(lang) or names.get("uz") or next(iter(names.values()))
+        for name in names.values():
+            out.setdefault(name.strip().lower(), shown)
+    return out
+
+
+def report(first_day, last_day, lang: str = "uz") -> dict:
     start = datetime.combine(first_day, time.min, tzinfo=TZ)
     end = datetime.combine(last_day + timedelta(days=1), time.min, tzinfo=TZ)
     rows = _orders(start, end)
@@ -53,6 +69,7 @@ def report(first_day, last_day) -> dict:
     earned, pipeline, lost, count = ([0.0] * days for _ in range(4))
     by_status: dict = defaultdict(int)
     cities: dict = defaultdict(lambda: [0, ZERO])
+    city_names = _city_names(lang)
     for r in rows:
         amount = r["amount"] or ZERO
         by_status[r["status"]] += 1
@@ -62,7 +79,8 @@ def report(first_day, last_day) -> dict:
         count[i] += 1
         if r["status"] in EARNED:
             earned[i] += float(amount)
-            city = (r["shipping_city"] or "—").strip() or "—"
+            typed = (r["shipping_city"] or "").strip()
+            city = city_names.get(typed.lower(), typed) or "—"
             cities[city][0] += 1
             cities[city][1] += amount
         elif r["status"] in PIPELINE:
@@ -72,7 +90,8 @@ def report(first_day, last_day) -> dict:
 
     earned_rows = [r for r in rows if r["status"] in EARNED]
     revenue = sum((r["amount"] or ZERO for r in earned_rows), ZERO)
-    prev = _orders(start - (end - start), start)
+    span = min(end, timezone.now()) - start  # a running period is compared with the same elapsed span before it
+    prev = _orders(start - span, start) if span.total_seconds() > 0 else []
     prev_revenue = sum((r["amount"] or ZERO for r in prev if r["status"] in EARNED), ZERO)
     placed = len(rows)
     lost_count = sum(1 for r in rows if r["status"] in LOST)
@@ -103,4 +122,6 @@ def online_orders_json(request):
     key, first, last = resolve_range(request.GET.get("range", "30d"), request.GET.get("from"), request.GET.get("to"))
     if key in ("today", "yesterday"):  # a one-day chart of online orders says little -- widen to the week ending that day
         first = last - timedelta(days=6)
-    return JsonResponse({"range": key, **report(first, last)})
+    from django.utils.translation import get_language
+
+    return JsonResponse({"range": key, **report(first, last, (get_language() or "uz")[:2])})

@@ -110,6 +110,29 @@ def catalog(lang: str) -> tuple[dict[str, str], str]:
     return _load(lang, mtime)
 
 
+def _mtime(path: pathlib.Path) -> float:
+    try:
+        return path.stat().st_mtime
+    except OSError:
+        return 0.0
+
+
+@lru_cache(maxsize=8)
+def _load_js(lang: str, phrases_mtime: float, django_mtime: float) -> tuple[dict[str, str], str]:
+    # Scripts can't reach gettext, so the browser also gets the project's own django.po (gettext msgids that
+    # charts and desks print as plain text, e.g. order statuses); admin_phrases wins where both have a phrase.
+    gettext_entries = parse_po(_LOCALE_DIR / lang / "LC_MESSAGES" / "django.po")
+    table = {_norm(k): v for k, v in gettext_entries.items() if "%" not in k}
+    phrases, version = catalog(lang)
+    table.update(phrases)
+    return table, f"{version}-{int(django_mtime)}-{len(table)}"
+
+
+def js_catalog(lang: str) -> tuple[dict[str, str], str]:
+    """The catalog served to nutrizone-i18n.js: admin_phrases.po plus the project's django.po."""
+    return _load_js(lang, _mtime(_catalog_path(lang)), _mtime(_LOCALE_DIR / lang / "LC_MESSAGES" / "django.po"))
+
+
 # ---------------------------------------------------------------------------------------------- phrases
 
 _APOS = re.compile(r"[‘’ʻʼ`´]")
@@ -306,7 +329,7 @@ def phrases_js_view(request, lang: str):
     """The phrase catalog for nutrizone-i18n.js (dynamic dashboard text). Cached by the browser per version."""
     if lang not in {code for code, _ in settings.LANGUAGES}:
         lang = settings.LANGUAGE_CODE
-    table, version = catalog(lang)
+    table, version = js_catalog(lang)
     body = "window.NZ_PHRASES=" + json.dumps({"lang": lang, "v": version, "t": table}, ensure_ascii=False, separators=(",", ":")) + ";"
     resp = HttpResponse(body, content_type="application/javascript; charset=utf-8")
     resp["Cache-Control"] = "public, max-age=31536000, immutable" if request.GET.get("v") == version else "no-cache"
@@ -314,4 +337,4 @@ def phrases_js_view(request, lang: str):
 
 
 def phrases_version(lang: str) -> str:
-    return catalog(lang)[1]
+    return js_catalog(lang)[1]

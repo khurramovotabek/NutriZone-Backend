@@ -4499,3 +4499,168 @@ msgstr "−{0} сум"
 
 msgid "✓ — rol shu amalga ruxsat beradi. Sariq qatorlar hech bir rolda yo'q."
 msgstr "✓ — роль разрешает это действие. Жёлтые строки не входят ни в одну роль."
+
+msgid "{0} tasi shoshilinch"
+msgstr "{0} срочных"
+
+msgid "{0} navbat sizni kutyapti"
+msgstr "Ожидают вас: {0}"
+
+msgid "{0}% oldingi davrga"
+msgstr "{0}% к прошлому периоду"
+
+msgid "{0} kun harakatsiz"
+msgstr "без движения {0} дн."
+
+msgid "Smena yopilmagan"
+msgstr "Смена не закрыта"
+
+msgid "Ochgan"
+msgstr "Открыл"
+
+msgid "ta / kun"
+msgstr "в день"
+
+msgid "Smena ochilmagan"
+msgstr "Смена не открыта"
+
+msgid "Smena ochiq qolgan"
+msgstr "Смена осталась открытой"
+
+msgid "Oldingi davr"
+msgstr "Прошлый период"
+
+msgid "Bu davrda mahsulot sotilmagan."
+msgstr "За этот период товары не продавались."
+
+msgid "Bu davrda mahsulot sotilmagan"
+msgstr "За этот период товары не продавались"
+
+msgid "Kam qolgan"
+msgstr "Заканчивается"
+
+msgid "tugagan"
+msgstr "нет в наличии"
+
+msgid "Bot tokeni ulangan"
+msgstr "Токен бота подключён"
+
+msgid "Bu davrda hali birorta savdo qayd etilmagan"
+msgstr "За этот период ещё нет продаж"
+
+msgid "{0} kun"
+msgstr "{0} дн."
+
+msgid "reja kiritilmagan"
+msgstr "план не задан"
+
+msgid "{0} tasi olib ketish"
+msgstr "из них самовывоз: {0}"
+
+msgid "Xarid qilmagan"
+msgstr "Без покупок"
+
+msgid "Natijalar"
+msgstr "Результаты"
+
+msgid "{0} soat"
+msgstr "{0} ч"
+
+msgid "Javob bergan"
+msgstr "Ответил"
+
+msgid "Yopgan"
+msgstr "Закрыл"
+
+msgid "Sozlangan"
+msgstr "Настроено"
+
+msgid "{0} ta buyurtma"
+msgstr "{0} заказов"
+
+msgid "{0} ta mahsulot"
+msgstr "{0} товаров"
+
+msgid "{0} ta ombor"
+msgstr "{0} складов"
+
+msgid "Eng yaqin do'kongacha"
+msgstr "До ближайшего магазина"
+
+msgid "xabar / 24 soat"
+msgstr "сообщений / 24 ч"
+
+msgid "Qo'lda"
+msgstr "Вручную"
+
+msgid "jarayonda"
+msgstr "в работе"
+
+msgid "Tushum"
+msgstr "Выручка"
+
+msgid "Onlayn"
+msgstr "Онлайн"
+
+msgid "Kassa"
+msgstr "Касса"
+
+msgid "tasdiqlangan — yig'ishni boshlang"
+msgstr "подтверждены — начните сборку"
+
+msgid "{0} soatdan beri harakatsiz"
+msgstr "без движения {0} ч"
+
+msgid "mijoz javob kutyapti"
+msgstr "клиент ждёт ответа"
+
+msgid "ko'rib chiqilmagan"
+msgstr "не рассмотрены"
+
+msgid "tasdiqlansa saytda chiqadi"
+msgstr "после одобрения появятся на сайте"
+
+msgid "kontakt formasi orqali"
+msgstr "через форму обратной связи"
+
+msgid "{0} kun ichida tugaydi — chegirma bilan soting"
+msgstr "истекают в течение {0} дн. — продайте со скидкой"
+
+msgid "provayder bilan solishtirish kerak"
+msgstr "нужно сверить с провайдером"
+
+msgid "So'nggi 7 kun"
+msgstr "Последние 7 дней"
+
+msgid "So'nggi 30 kun"
+msgstr "Последние 30 дней"
+
+msgid "hisobdan chiqarildi"
+msgstr "списано"
+
+msgid "manbaga qaytarildi"
+msgstr "возвращено отправителю"
+
+msgid "manbadan ayirildi"
+msgstr "списано у отправителя"
+
+msgid "qabul qilindi"
+msgstr "принято"
+
+msgid "Tarix"
+msgstr "История"
+
+msgid "Reja"
+msgstr "План"
+
+msgid "Qiymati (tannarx)"
+msgstr "Стоимость (себестоимость)"
+
+msgid "Excel nakladnoy"
+msgstr "Накладная Excel"
+
+msgid "Chop etish"
+msgstr "Печать"
+
+msgid "Kiriting"
+msgstr "Введите"

@@ -50,11 +50,8 @@ def _nz_dashboard_index(self, request, extra_context=None):
             "period_label": period.label,
             "last_updated": timezone.now(),
             "kpis": _safe("kpis", aggregator.kpis),
-            "revenue_series": _safe("revenue_series", aggregator.revenue_series),
-            "top_products": _safe("top_products", aggregator.top_products),
             "recent_orders": _safe("recent_orders", aggregator.recent_orders),
             "low_stock_alerts": _safe("low_stock_alerts", aggregator.low_stock_alerts),
-            "order_status_distribution": _safe("order_status_distribution", aggregator.order_status_distribution),
         }
         from apps.platform.infrastructure import dashboard_tasks
 

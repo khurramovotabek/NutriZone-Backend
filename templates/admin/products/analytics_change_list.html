@@ -31,7 +31,7 @@
           <span class="name" title="{{ r.label }}">{{ r.label }}</span>
           <span class="track"><span style="width:{{ r.pct }}%"></span></span>
           <b>{{ r.revenue }}</b>
-          <small>{{ r.units }} dona{% if r.change is not None %} · <em class="nzc-trend {% if r.change >= 0 %}up{% else %}down{% endif %}">{% if r.change >= 0 %}+{% endif %}{{ r.change }}%</em>{% endif %}</small>
+          <small>{% if r.units_text %}{{ r.units_text }}{% else %}{{ r.units }} dona{% endif %}{% if r.change is not None %} · <em class="nzc-trend {% if r.change >= 0 %}up{% else %}down{% endif %}">{% if r.change >= 0 %}+{% endif %}{{ r.change }}%</em>{% endif %}</small>
         </li>
         {% endfor %}
       </ol>

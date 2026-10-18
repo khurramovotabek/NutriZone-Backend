@@ -1375,7 +1375,7 @@ msgid "Nusxalash"
 msgstr "Copy"
 
 msgid "O'chirilgan"
-msgstr "Deleted"
+msgstr "Disabled"
 
 msgid "O'chirilgan bo'lsa mijozga «Tez kunda»."
 msgstr "If disabled, customers see «Coming soon»."

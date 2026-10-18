@@ -36,6 +36,7 @@ from apps.stores.infrastructure.models import (
     StockReceipt,
     StockReceiptItem,
     StockTransfer,
+    StockTransferItem,
     Store,
     StoreKind,
     StoreProductStock,
@@ -211,6 +212,13 @@ class StockTransferAdmin(admin.ModelAdmin):
     def get_changelist_instance(self, request):
         cl = super().get_changelist_instance(request)
         now = timezone.now()
+        # How settled shortages / excesses ended, so "1 / 60" on a completed transfer reads "59 returned to source", not a loss.
+        settled: dict = {}
+        for tid, res, disp, recv_q in StockTransferItem.objects.filter(transfer__in=list(cl.result_list), resolution__gt="").values_list(
+                "transfer_id", "resolution", "dispatched_quantity", "received_quantity"):
+            settled.setdefault(tid, {}).setdefault(res, 0)
+            settled[tid][res] += abs(recv_q - disp)
+        labels = {"write_off": _("hisobdan chiqarildi"), "return_to_source": _("manbaga qaytarildi"), "deduct_source": _("manbadan ayirildi"), "accept": _("qabul qilindi")}
         for t in cl.result_list:
             sent, recv = t._sent or 0, t._recv or 0
             t.nz = {
@@ -219,6 +227,7 @@ class StockTransferAdmin(admin.ModelAdmin):
                 "received_at": _local(t.received_at), "age_days": (now - t.created_at).days,
                 "stuck": t.status == "in_transit" and t.dispatched_at and (now - t.dispatched_at).days >= 2,
                 "value": _som(t._value) if t._value else "",
+                "settled": [{"units": n, "label": labels.get(r, r), "loss": r == "write_off"} for r, n in settled.get(t.pk, {}).items() if n],
             }
         return cl
 

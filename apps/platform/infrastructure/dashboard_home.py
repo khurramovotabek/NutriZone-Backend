@@ -86,41 +86,45 @@ class DashboardHomeAggregator:
         return self._low_stock_cache
 
     def kpis(self) -> dict:
-        from apps.ordering.infrastructure.selectors import OrderStatisticsSelector
+        """
+        Sales KPIs with the Analitika formula (business_analytics): Tashkent calendar days, till receipts +
+        delivered/completed online orders by placed_at, a running period compared with the same elapsed span
+        before it -- so the home page, the Analitika page and the analytics bot show the same numbers.
+        """
         from apps.identity.infrastructure.selectors import UserStatisticsSelector
+        from apps.platform.infrastructure import business_analytics as ba
         from apps.products.infrastructure.selectors import StatisticsSelector as ProductStatisticsSelector
-        from apps.inventory.infrastructure.selectors import StockSelector
 
-        order_stats = OrderStatisticsSelector()
         p = self._period
+        days = max(1, round((p.current_end - p.current_start).total_seconds() / 86400))
+        bp = ba.period("7d" if days <= 7 else "30d")
+        cur, prev = ba._base(bp.start, bp.end), ba._base(bp.prev_start, bp.prev_end)
 
-        # Earned online revenue = delivered + completed orders (real orders stop at "delivered" unless staff close them).
-        earned = ("completed", "delivered")
-        current_revenue = sum((Decimal(order_stats.total_revenue_by_status(st, date_from=p.current_start, date_to=p.current_end).get("UZS", "0")) for st in earned), Decimal("0"))
-        previous_revenue = sum((Decimal(order_stats.total_revenue_by_status(st, date_from=p.previous_start, date_to=p.previous_end).get("UZS", "0")) for st in earned), Decimal("0"))
-
-        from apps.ordering.infrastructure import models as ordering_orm
-
-        current_order_count = ordering_orm.OrderModel.objects.filter(status__in=earned, created_at__gte=p.current_start, created_at__lt=p.current_end).count()
-        previous_order_count = ordering_orm.OrderModel.objects.filter(status__in=earned, created_at__gte=p.previous_start, created_at__lt=p.previous_end).count()
-
+        current_revenue, previous_revenue = cur["revenue"], prev["revenue"]
+        current_order_count, previous_order_count = cur["purchases"], prev["purchases"]
         avg_order_value = (current_revenue / current_order_count) if current_order_count else Decimal("0")
+        previous_avg = (previous_revenue / previous_order_count) if previous_order_count else Decimal("0")
 
-        user_stats = UserStatisticsSelector()
-        product_stats = ProductStatisticsSelector()
-        product_counts = product_stats.counts_by_status()
-
+        product_counts = ProductStatisticsSelector().counts_by_status()
         low_stock_items, low_stock_total = self._low_stock()
         out_of_stock_total = sum(1 for item in low_stock_items if item["available_quantity"] == 0)
 
         return {
+            "range": bp.title,
             "revenue": {"current": current_revenue, "change": _percentage_change(current_revenue, previous_revenue)},
+            "online_revenue": cur["online_revenue"],
+            "pos_revenue": cur["pos_revenue"],
             "orders": {"current": current_order_count, "change": _percentage_change(Decimal(current_order_count), Decimal(previous_order_count))},
-            "customers_total": user_stats.total_customers(),
+            "online_orders": len(cur["earned"]),
+            "pos_sales": current_order_count - len(cur["earned"]),
+            "pipeline_orders": cur["pipeline_orders"],
+            "pipeline_value": cur["pipeline_value"],
+            "customers_total": UserStatisticsSelector().total_customers(),
             "products_total": sum(product_counts.values()),
             "products_active": product_counts.get("published", 0),
             "products_inactive": sum(v for k, v in product_counts.items() if k != "published"),
             "average_order_value": avg_order_value,
+            "average_change": _percentage_change(avg_order_value, previous_avg),
             "low_stock_total": low_stock_total,
             "out_of_stock_total": out_of_stock_total,
         }

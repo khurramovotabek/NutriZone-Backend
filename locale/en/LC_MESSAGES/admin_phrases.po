@@ -4460,3 +4460,168 @@ msgstr "−{0} so'm"
 
 msgid "✓ — rol shu amalga ruxsat beradi. Sariq qatorlar hech bir rolda yo'q."
 msgstr "✓ — the role allows this action. Yellow rows are not in any role."
+
+msgid "{0} tasi shoshilinch"
+msgstr "{0} urgent"
+
+msgid "{0} navbat sizni kutyapti"
+msgstr "{0} queues waiting for you"
+
+msgid "{0}% oldingi davrga"
+msgstr "{0}% vs previous period"
+
+msgid "{0} kun harakatsiz"
+msgstr "inactive for {0} days"
+
+msgid "Smena yopilmagan"
+msgstr "Shift not closed"
+
+msgid "Ochgan"
+msgstr "Opened by"
+
+msgid "ta / kun"
+msgstr "per day"
+
+msgid "Smena ochilmagan"
+msgstr "Shift not opened"
+
+msgid "Smena ochiq qolgan"
+msgstr "Shift left open"
+
+msgid "Oldingi davr"
+msgstr "Previous period"
+
+msgid "Bu davrda mahsulot sotilmagan."
+msgstr "No products sold in this period."
+
+msgid "Bu davrda mahsulot sotilmagan"
+msgstr "No products sold in this period"
+
+msgid "Kam qolgan"
+msgstr "Running low"
+
+msgid "tugagan"
+msgstr "out of stock"
+
+msgid "Bot tokeni ulangan"
+msgstr "Bot token connected"
+
+msgid "Bu davrda hali birorta savdo qayd etilmagan"
+msgstr "No sales recorded yet in this period"
+
+msgid "{0} kun"
+msgstr "{0} days"
+
+msgid "reja kiritilmagan"
+msgstr "no plan set"
+
+msgid "{0} tasi olib ketish"
+msgstr "{0} of them pickup"
+
+msgid "Xarid qilmagan"
+msgstr "No purchases"
+
+msgid "Natijalar"
+msgstr "Results"
+
+msgid "{0} soat"
+msgstr "{0} h"
+
+msgid "Javob bergan"
+msgstr "Answered"
+
+msgid "Yopgan"
+msgstr "Closed"
+
+msgid "Sozlangan"
+msgstr "Configured"
+
+msgid "{0} ta buyurtma"
+msgstr "{0} orders"
+
+msgid "{0} ta mahsulot"
+msgstr "{0} items"
+
+msgid "{0} ta ombor"
+msgstr "{0} warehouses"
+
+msgid "Eng yaqin do'kongacha"
+msgstr "To the nearest store"
+
+msgid "xabar / 24 soat"
+msgstr "messages / 24 h"
+
+msgid "Qo'lda"
+msgstr "Manual"
+
+msgid "jarayonda"
+msgstr "in progress"
+
+msgid "Tushum"
+msgstr "Revenue"
+
+msgid "Onlayn"
+msgstr "Online"
+
+msgid "Kassa"
+msgstr "Till"
+
+msgid "tasdiqlangan — yig'ishni boshlang"
+msgstr "confirmed — start picking"
+
+msgid "{0} soatdan beri harakatsiz"
+msgstr "no movement for {0} h"
+
+msgid "mijoz javob kutyapti"
+msgstr "customer is waiting"
+
+msgid "ko'rib chiqilmagan"
+msgstr "not reviewed"
+
+msgid "tasdiqlansa saytda chiqadi"
+msgstr "shown on the site once approved"
+
+msgid "kontakt formasi orqali"
+msgstr "via the contact form"
+
+msgid "{0} kun ichida tugaydi — chegirma bilan soting"
+msgstr "expire within {0} days — sell at a discount"
+
+msgid "provayder bilan solishtirish kerak"
+msgstr "needs reconciliation with the provider"
+
+msgid "So'nggi 7 kun"
+msgstr "Last 7 days"
+
+msgid "So'nggi 30 kun"
+msgstr "Last 30 days"
+
+msgid "hisobdan chiqarildi"
+msgstr "written off"
+
+msgid "manbaga qaytarildi"
+msgstr "returned to source"
+
+msgid "manbadan ayirildi"
+msgstr "deducted from source"
+
+msgid "qabul qilindi"
+msgstr "accepted"
+
+msgid "Tarix"
+msgstr "History"
+
+msgid "Reja"
+msgstr "Planned"
+
+msgid "Qiymati (tannarx)"
+msgstr "Value (cost)"
+
+msgid "Excel nakladnoy"
+msgstr "Excel waybill"
+
+msgid "Chop etish"
+msgstr "Print"
+
+msgid "Kiriting"
+msgstr "Enter"

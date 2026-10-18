@@ -1,5 +1,5 @@
 {% extends "admin/index.html" %}
-{% load i18n static nutrizone_dashboard %}
+{% load i18n static nutrizone_dashboard nza %}
 
 {% block content %}
 {% if nz_dashboard %}
@@ -45,8 +45,8 @@
     {% if nz_dashboard.kpis.ok %}
       {% with k=nz_dashboard.kpis.data %}
       <div class="nz-card nz-kpi-card">
-        <div class="nz-kpi-label">{% translate "Online revenue" %}</div>
-        <div class="nz-stat-number">{{ k.revenue.current|floatformat:0 }} UZS</div>
+        <div class="nz-kpi-label">{% translate "Tushum" %} · {{ k.range }}</div>
+        <div class="nz-stat-number">{{ k.revenue.current|som }}</div>
         {% if k.revenue.change.value is not None %}
         <div class="nz-kpi-trend nz-trend-{{ k.revenue.change.direction }}">
           {% if k.revenue.change.direction == "up" %}&#8593;{% elif k.revenue.change.direction == "down" %}&#8595;{% endif %}
@@ -55,11 +55,12 @@
         {% else %}
         <div class="nz-kpi-trend nz-trend-muted">{% translate "No previous data" %}</div>
         {% endif %}
+        <div class="nz-kpi-trend nz-trend-muted">{% translate "Onlayn" %} {{ k.online_revenue|compact }} · {% translate "Kassa" %} {{ k.pos_revenue|compact }}</div>
       </div>
 
       <div class="nz-card nz-kpi-card">
-        <div class="nz-kpi-label">{% translate "Online orders" %}</div>
-        <div class="nz-stat-number">{{ k.orders.current }}</div>
+        <div class="nz-kpi-label">{% translate "Xaridlar" %}</div>
+        <div class="nz-stat-number">{{ k.orders.current|num }}</div>
         {% if k.orders.change.value is not None %}
         <div class="nz-kpi-trend nz-trend-{{ k.orders.change.direction }}">
           {% if k.orders.change.direction == "up" %}&#8593;{% elif k.orders.change.direction == "down" %}&#8595;{% endif %}
@@ -68,29 +69,36 @@
         {% else %}
         <div class="nz-kpi-trend nz-trend-muted">{% translate "No previous data" %}</div>
         {% endif %}
+        <div class="nz-kpi-trend nz-trend-muted">{% translate "Onlayn" %} {{ k.online_orders }} · {% translate "Kassa" %} {{ k.pos_sales }}{% if k.pipeline_orders %} · {% translate "jarayonda" %} {{ k.pipeline_orders }}{% endif %}</div>
+      </div>
+
+      <div class="nz-card nz-kpi-card">
+        <div class="nz-kpi-label">{% translate "O'rtacha chek" %}</div>
+        <div class="nz-stat-number">{{ k.average_order_value|som }}</div>
+        {% if k.average_change.value is not None %}
+        <div class="nz-kpi-trend nz-trend-{{ k.average_change.direction }}">
+          {% if k.average_change.direction == "up" %}&#8593;{% elif k.average_change.direction == "down" %}&#8595;{% endif %}
+          {{ k.average_change.value }}% {% translate "vs previous period" %}
+        </div>
+        {% endif %}
       </div>
 
       <div class="nz-card nz-kpi-card">
         <div class="nz-kpi-label">{% translate "Customers" %}</div>
-        <div class="nz-stat-number">{{ k.customers_total }}</div>
+        <div class="nz-stat-number">{{ k.customers_total|num }}</div>
       </div>
 
       <div class="nz-card nz-kpi-card">
         <div class="nz-kpi-label">{% translate "Products" %}</div>
-        <div class="nz-stat-number">{{ k.products_total }}</div>
+        <div class="nz-stat-number">{{ k.products_total|num }}</div>
         <div class="nz-kpi-trend nz-trend-muted">{{ k.products_active }} {% translate "active" %} &middot; {{ k.products_inactive }} {% translate "inactive" %}</div>
       </div>
 
-      <div class="nz-card nz-kpi-card">
-        <div class="nz-kpi-label">{% translate "Average Order Value" %}</div>
-        <div class="nz-stat-number">{{ k.average_order_value|floatformat:0 }} UZS</div>
-      </div>
-
-      <div class="nz-card nz-kpi-card">
+      <a class="nz-card nz-kpi-card" href="{% url 'admin:stores_reorderrule_changelist' %}">
         <div class="nz-kpi-label">{% translate "Low Stock" %}</div>
         <div class="nz-stat-number">{{ k.low_stock_total }}</div>
         <div class="nz-kpi-trend nz-trend-muted">{{ k.out_of_stock_total }} {% translate "out of stock" %}</div>
-      </div>
+      </a>
       {% endwith %}
     {% else %}
       <div class="nz-card nz-error-state">
@@ -293,7 +301,7 @@
 <script src="{% static 'admin/js/nutrizone-dashboard-charts.js' %}"></script>
 <link rel="stylesheet" href="{% static 'admin/css/nutrizone-store-sales.css' %}?v=2">
 <script src="{% static 'admin/js/nutrizone-store-sales-chart.js' %}?v=1"></script>
-<script src="{% static 'admin/js/nutrizone-online-orders-chart.js' %}?v=1"></script>
+<script src="{% static 'admin/js/nutrizone-online-orders-chart.js' %}?v=2"></script>
 <link rel="stylesheet" href="{% static 'admin/css/nutrizone-home.css' %}?v=5">
 <script src="{% static 'admin/js/nutrizone-home.js' %}?v=1"></script>
 {% include "admin/includes/nz_home_sections.html" %}

@@ -438,7 +438,7 @@ class StoreAdmin(ExcelExportMixin, admin.ModelAdmin):
         rank = ca.ranking(rank_rows)
         for r in rank:
             r["color"] = next((colors[x.id] for x in stores if x.name == r["label"]), r["color"])
-            r["units"] = f"{r['units']} ta savdo"
+            r["units_text"] = f"{r['units']} ta savdo"
         by_city = Counter((x.city or "Shahar yo'q") for x in branches)
         top = rank[0]["label"] if rank else "—"
         nzc = {
