@@ -107,19 +107,60 @@ FAQ = {
 }
 
 
-def stores_text(locale: str) -> str:
+def _place_in(text: str, branches: list) -> str:
+    """The city / district the shopper named, if a branch is there ("Samarqandda do'kon bormi?" -> "Samarqand")."""
+    from apps.assistant.infrastructure.tools import _norm_place
+
+    said = _norm_place(text)
+    places = {p for b in branches for p in (b.get("address") or "").split(", ") if p}
+    for place in sorted(places, key=len, reverse=True):
+        stem = _norm_place(place)[:6]
+        if len(stem) >= 4 and stem in said:
+            return place
+    return ""
+
+
+def stores_text(locale: str, text: str = "") -> str:
     from apps.assistant.infrastructure.tools import get_store_info
 
     branches = get_store_info({}, locale).get("branches", [])
     head = {"uz": "🏪 **Do'konlarimiz**", "ru": "🏪 **Наши магазины**", "en": "🏪 **Our stores**"}[locale]
     if not branches:
         return head + "\n" + {"uz": "Hozircha filial ma'lumoti yo'q.", "ru": "Пока нет данных о филиалах.", "en": "No branch details yet."}[locale]
+    place = _place_in(text, branches)
+    if place:
+        branches = [b for b in branches if place in (b.get("address") or "")] or branches
+        head = {"uz": f"🏪 **{place}dagi do'konlarimiz**", "ru": f"🏪 **Наши магазины: {place}**", "en": f"🏪 **Our stores in {place}**"}[locale]
     lines = []
-    for b in branches[:6]:
-        extra = " · ".join(x for x in (b.get("landmark"), ", ".join(b.get("phones") or []), "🛍 " + {"uz": "olib ketish mumkin", "ru": "есть самовывоз", "en": "pickup available"}[locale] if b.get("pickup") else "") if x)
+    for b in branches[: 6 if place else 14]:
+        bits = [", ".join(b.get("phones") or [])]
+        if place or len(branches) <= 6:
+            bits.append(b.get("landmark") or "")
+            if b.get("map_url"):
+                bits.append("📍 " + b["map_url"])
+        extra = " · ".join(x for x in bits if x)
         lines.append(f"• **{b['name']}** — {b.get('address', '')}" + (f"\n  {extra}" if extra else ""))
-    tail = {"uz": "\n\nXaritada ko'rish: **Do'konlar** sahifasi.", "ru": "\n\nНа карте: страница **Магазины**.", "en": "\n\nOn the map: the **Stores** page."}[locale]
-    return head + "\n" + "\n".join(lines) + tail
+    tail = {"uz": "\n\nShahar yoki tuman nomini yozing — o'sha yerdagi filial manzili va xaritasini yuboraman. Barchasi xaritada: **Do'konlar** sahifasi.",
+            "ru": "\n\nНапишите город или район — пришлю адрес и карту ближайшего филиала. Все на карте: страница **Магазины**.",
+            "en": "\n\nTell me your city or district and I'll send the nearest branch with a map link. All on the map: the **Stores** page."}[locale]
+    return head + "\n" + "\n".join(lines) + ("" if place else tail)
+
+
+def catalog_text(kind: str, locale: str) -> str:
+    """Brands / flavours the shop actually carries (with product counts), straight from the catalogue."""
+    from apps.assistant.infrastructure.tools import browse_catalog
+
+    items = [i for i in browse_catalog({"kind": kind}, locale)["items"] if i["products"]]
+    head = {
+        "brands": {"uz": "🏷 **Bizdagi brendlar**", "ru": "🏷 **Бренды в наличии**", "en": "🏷 **Brands we carry**"},
+        "flavours": {"uz": "🍫 **Mavjud ta'mlar**", "ru": "🍫 **Доступные вкусы**", "en": "🍫 **Flavours available**"},
+    }[kind][locale]
+    if not items:
+        return head + "\n" + {"uz": "Hozircha ro'yxat bo'sh.", "ru": "Пока пусто.", "en": "Nothing yet."}[locale]
+    body = "\n".join(f"• {i['name']} — {i['products']}" for i in items[:20])
+    tail = {"uz": "\n\nQaysi biri qiziq? Nomini yozing — mahsulotlarni ko'rsataman.", "ru": "\n\nЧто интересно? Напишите название — покажу товары.",
+            "en": "\n\nWhich one? Type its name and I'll show the products."}[locale]
+    return head + "\n" + body + tail
 
 
 def payment_text(locale: str) -> str:

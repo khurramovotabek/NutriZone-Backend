@@ -122,7 +122,10 @@ def answer(conv_meta: dict, text: str, loc: str) -> tuple[str, list[str], list[s
         return kb.FAQ[p.intent][loc], [], CHIPS["faq"][loc], meta
     if p.intent == "faq_stores":
         meta["last"] = p.intent
-        return kb.stores_text(loc), [], CHIPS["faq"][loc], meta
+        return kb.stores_text(loc, text), [], CHIPS["faq"][loc], meta
+    if p.intent in ("faq_brands", "faq_flavours"):
+        meta["last"] = p.intent
+        return kb.catalog_text("brands" if p.intent == "faq_brands" else "flavours", loc), [], CHIPS["faq"][loc], meta
     if p.intent == "faq_payment":
         return kb.payment_text(loc), [], CHIPS["faq"][loc], meta
     if p.intent == "faq_loyalty":

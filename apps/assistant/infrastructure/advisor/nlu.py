@@ -20,6 +20,8 @@ INTENTS: dict[str, tuple[str, ...]] = {
     "faq_delivery": ("yetkaz", "dostav", "kuryer", "kurer", "достав", "курьер", "delivery", "deliver", "shipping", "етказ"),
     "faq_payment": ("to'lov", "tolov", "payme", "click", "uzum", "karta", "naqd", "оплат", "карт", "налич", "payment", "pay ", "card", "cash", "тўлов"),
     "faq_stores": ("do'kon", "dokon", "filial", "manzil", "qayerda", "joylash", "адрес", "магазин", "филиал", "где наход", "store", "shop location", "address", "where are you", "дўкон"),
+    "faq_brands": ("brendlar", "qaysi brend", "brendingiz", "бренды", "какие бренды", "brands", "which brand"),
+    "faq_flavours": ("ta'mlar", "qanday ta'm", "qaysi ta'm", "вкусы", "какие вкусы", "каком вкус", "flavours", "flavors", "which flavour", "which flavor"),
     "faq_loyalty": ("coin", "bonus", "keshbek", "cashback", "кешбэк", "бонус", "баллы", "loyalty", "points", "коин"),
     "faq_original": ("original", "sertifikat", "qalbaki", "soxta", "оригинал", "подделк", "сертификат", "fake", "genuine", "authentic", "certificate"),
     "faq_returns": ("qaytar", "almashtir", "vozvrat", "возврат", "обмен", "return", "refund", "exchange"),
@@ -132,7 +134,7 @@ def parse(text: str) -> Parsed:
     p = Parsed(text=t, facts=extract_facts(t))
     p.goal = next((g for g, stems in GOALS.items() if _has(both, stems)), None)
     p.concept = next((c for c, stems in CONCEPT_WORDS.items() if _has(both, stems)), None)
-    for intent in ("operator", "faq_order", "faq_returns", "faq_original", "faq_loyalty", "faq_payment", "faq_delivery", "faq_stores", "usage", "recommend"):
+    for intent in ("operator", "faq_order", "faq_returns", "faq_original", "faq_loyalty", "faq_payment", "faq_delivery", "faq_stores", "faq_brands", "faq_flavours", "usage", "recommend"):
         if _has(both, INTENTS[intent]):
             p.intent = intent
             break
