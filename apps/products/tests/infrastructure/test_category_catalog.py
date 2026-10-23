@@ -70,4 +70,4 @@ def test_product_form_lists_categories_with_their_full_path():
     client.force_login(user)
     html = client.get("/django-admin/products/product/add/", HTTP_ACCEPT_LANGUAGE="uz").content.decode()
     assert "Sport ozuqalari › Proteinlar › Whey protein" in html
-    assert "Vitaminlar › Vitaminlar › Vitamin D3" in html
+    assert "Vitaminlar › Alohida vitaminlar › Vitamin D3" in html

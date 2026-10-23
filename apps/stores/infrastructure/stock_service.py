@@ -18,7 +18,7 @@ from __future__ import annotations
 import logging
 import uuid
 from dataclasses import dataclass
-from datetime import date, timedelta
+from datetime import date, datetime, timedelta
 from decimal import Decimal
 
 from django.db import connection, transaction
@@ -315,15 +315,49 @@ def available_map(store: Store, variant_ids) -> dict:
 # ---------------------------------------------------------------- goods receipt (Kirim)
 
 
+_DATE_FORMATS = (
+    # (regex, has_day): labels print "EXP 03/2027", Excel cells hold "15.03.2027", the date picker sends ISO
+    (r"(\d{4})-(\d{1,2})-(\d{1,2})", "ymd"),
+    (r"(\d{1,2})[./-](\d{1,2})[./-](\d{4})", "dmy"),
+    (r"(\d{1,2})[./-](\d{1,2})[./-](\d{2})", "dmy2"),
+    (r"(\d{4})[./-](\d{1,2})", "ym"),
+    (r"(\d{1,2})[./-](\d{4})", "my"),
+    (r"(\d{1,2})[./-](\d{2})", "my2"),
+)
+
+
 def _parse_date(value) -> date | None:
+    """
+    A date from a picker, a typed label or an Excel cell. A month-only expiry (03/2027, 2027-03) means the
+    end of that month -- that is how supplement labels are read.
+    """
     if not value:
         return None
+    if isinstance(value, datetime):
+        return value.date()
     if isinstance(value, date):
         return value
-    try:
-        return date.fromisoformat(str(value)[:10])
-    except ValueError as exc:
-        raise ValidationFailed(f"Invalid date: {value}") from exc
+    import calendar
+    import re
+
+    text = str(value).strip().upper().removeprefix("EXP").strip(" :.")
+    if not text:
+        return None
+    for pattern, kind in _DATE_FORMATS:
+        m = re.fullmatch(pattern, text[:10] if kind == "ymd" else text)
+        if not m:
+            continue
+        a, b, *rest = (int(g) for g in m.groups())
+        try:
+            if kind == "ymd":
+                return date(a, b, rest[0])
+            if kind in ("dmy", "dmy2"):
+                return date(rest[0] + (2000 if kind == "dmy2" else 0), b, a)
+            year, month = (a, b) if kind == "ym" else (b + (2000 if kind == "my2" else 0), a)
+            return date(year, month, calendar.monthrange(year, month)[1])
+        except ValueError:
+            break
+    raise ValidationFailed(f"Sana noto'g'ri: {value} (masalan 15.03.2027 yoki 03/2027).")
 
 
 EXPIRY_PAST_DAYS = 365 * 2  # goods are not received with an expiry years ago -- that is a typo (e.g. 0002-05-01 for 2027-05-01)
@@ -358,7 +392,9 @@ def post_receipt(store: Store, lines: list[dict], actor: str, supplier: str = ""
         if qty <= 0 or qty > MAX_UNITS_PER_LINE:
             raise ValidationFailed(f"Quantity must be between 1 and {MAX_UNITS_PER_LINE}.")
         batch = str(raw.get("batch") or "").strip()[:48]
-        key = (vid, batch)
+        expiry = expiry_on_receipt(raw.get("expiry"))
+        # a batch is (LOT, expiry): the same LOT-less product with two expiry dates is two batches, not one
+        key = (vid, batch, expiry)
         cost = raw.get("unit_cost")
         try:
             cost = Decimal(str(cost).replace(" ", "").replace(",", ".")) if cost not in (None, "") else None
@@ -366,7 +402,7 @@ def post_receipt(store: Store, lines: list[dict], actor: str, supplier: str = ""
             raise ValidationFailed("The unit cost must be a number.") from exc
         if cost is not None and (cost < 0 or cost >= Decimal("1e12")):
             raise ValidationFailed("The unit cost must be zero or positive.")
-        line = merged.setdefault(key, {"variant_id": vid, "quantity": 0, "batch": batch, "expiry": expiry_on_receipt(raw.get("expiry")), "unit_cost": cost})
+        line = merged.setdefault(key, {"variant_id": vid, "quantity": 0, "batch": batch, "expiry": expiry, "unit_cost": cost})
         if line["unit_cost"] is None:
             line["unit_cost"] = cost
         line["quantity"] += qty
@@ -448,10 +484,15 @@ def parse_receipt_excel(file) -> tuple[list[dict], list[str]]:
             problems.append(f"{n}-qator: '{code}' shtrix-kodli mahsulot topilmadi.")
             continue
         expiry = row[c_exp] if c_exp is not None else None
+        try:
+            expiry = expiry_on_receipt(expiry)
+        except ValidationFailed as exc:
+            problems.append(f"{n}-qator: {exc}")
+            continue
         lines.append({
             "variant_id": str(variant.id), "quantity": qty,
             "unit_cost": row[c_cost] if c_cost is not None and row[c_cost] not in (None, "") else None,
             "batch": str(row[c_batch] or "").strip() if c_batch is not None else "",
-            "expiry": expiry.isoformat()[:10] if hasattr(expiry, "isoformat") else (str(expiry)[:10] if expiry else None),
+            "expiry": expiry.isoformat() if expiry else None,
         })
     return lines, problems

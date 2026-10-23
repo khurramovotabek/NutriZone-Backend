@@ -598,6 +598,11 @@ def telegram_webhook_view(request):
                         from apps.telegram_bot.interfaces.callback_router import search_text
 
                         search_text(message["chat"]["id"], message["from"]["id"], message["text"])
+                    elif message.get("chat", {}).get("type") in ("group", "supergroup"):
+                        # In groups the assistant answers questions addressed to the bot (mention or reply)
+                        from apps.telegram_bot.interfaces.callback_router import group_question
+
+                        group_question(message)
     except Exception:  # noqa: BLE001
         logger.exception("Telegram webhook: unexpected failure processing update.")
 

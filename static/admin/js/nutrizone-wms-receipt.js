@@ -55,6 +55,34 @@
   function location() { return cfg.locations.filter(function (l) { return l.id === S.location; })[0]; }
   function supplier() { return (cfg.suppliers || []).filter(function (s) { return s.name.toLowerCase() === (S.supplier || "").trim().toLowerCase(); })[0]; }
   function daysLeft(iso) { if (!iso) return null; var d = new Date(iso + "T00:00:00"); return isNaN(d) ? null : Math.round((d - today) / 864e5); }
+  // Yorliqdagi muddat: "03/2027", "03.27", "2027-03" -> oy oxiri; "15.03.2027", "15/03/27", ISO -> o'sha kun.
+  // Server (stock_service._parse_date) aynan shu qoidalar bilan o'qiydi.
+  function lastDay(y, m) { return new Date(y, m, 0).getDate(); }
+  function iso(y, m, d) {
+    if (m < 1 || m > 12 || d < 1 || d > lastDay(y, m)) return null;
+    return y + "-" + String(m).padStart(2, "0") + "-" + String(d).padStart(2, "0");
+  }
+  function parseExpiry(raw) {
+    var t = String(raw || "").trim().toUpperCase().replace(/^EXP[\s:.]*/, "").replace(/\s+/g, "");
+    if (!t) return "";
+    var m;
+    if ((m = t.match(/^(\d{4})-(\d{1,2})-(\d{1,2})$/))) return iso(+m[1], +m[2], +m[3]);
+    if ((m = t.match(/^(\d{1,2})[./-](\d{1,2})[./-](\d{4}|\d{2})$/))) return iso(+m[3] < 100 ? 2000 + +m[3] : +m[3], +m[2], +m[1]);
+    if ((m = t.match(/^(\d{4})[./-](\d{1,2})$/))) return iso(+m[1], +m[2], lastDay(+m[1], +m[2]));
+    if ((m = t.match(/^(\d{1,2})[./-](\d{4}|\d{2})$/))) { var y = +m[2] < 100 ? 2000 + +m[2] : +m[2]; return iso(y, +m[1], lastDay(y, +m[1])); }
+    if ((m = t.match(/^(\d{2})(\d{2})(\d{4})$/))) return iso(+m[3], +m[2], +m[1]);   // 15032027
+    if ((m = t.match(/^(\d{2})(\d{4})$/))) return iso(+m[2], +m[1], lastDay(+m[2], +m[1])); // 032027
+    return null;
+  }
+  // server bilan bir xil chegaralar: 2 yildan eski yoki 15 yildan uzoq sana — xato yozilgan yil
+  function expiryProblem(isoDate) {
+    var d = daysLeft(isoDate);
+    if (d === null) return "";
+    if (d < -730 || new Date(isoDate).getFullYear() > today.getFullYear() + 15) return "Yilni tekshiring";
+    return "";
+  }
+  function showDate(isoDate) { var p = (isoDate || "").split("-"); return p.length === 3 ? p[2] + "." + p[1] + "." + p[0] : ""; }
+
   function margin(l) { var c = num(l.unit_cost), p = num(l.price); return c > 0 && p > 0 ? Math.round((p - c) * 1000 / p) / 10 : null; }
 
   function totals() {
@@ -77,6 +105,9 @@
     return '<span class="nzf-chip ' + tone + '">' + (m < 0 ? "zarar " : "") + m + "%</span>";
   }
   function expiryChip(l) {
+    if (l.expiry_bad) return '<span class="nzf-chip bad">sana noto\'g\'ri</span>';
+    var problem = expiryProblem(l.expiry);
+    if (problem) return '<span class="nzf-chip bad">' + problem + "</span>";
     var d = daysLeft(l.expiry);
     if (d === null) return "";
     if (d < 0) return '<span class="nzf-chip bad">muddati o\'tgan</span>';
@@ -91,7 +122,7 @@
       '<td><div class="nzf-stepper"><button type="button" data-dec aria-label="Kamaytirish">−</button><input data-q inputmode="numeric" value="' + esc(l.quantity) + '" aria-label="Soni"><button type="button" data-inc aria-label="Ko\'paytirish">+</button></div></td>' +
       '<td><div class="nzf-cost' + (num(l.unit_cost) > 0 ? "" : " empty") + '"><input data-c inputmode="decimal" value="' + esc(l.unit_cost ? money(l.unit_cost) : "") + '" placeholder="tannarx" aria-label="Tannarx">' + costHint + "</div></td>" +
       '<td class="num">' + (num(l.price) > 0 ? money(l.price) : "—") + "<div>" + marginChip(l) + "</div></td>" +
-      '<td><div class="nzf-batch"><input class="nzf-in" data-b value="' + esc(l.batch || "") + '" placeholder="LOT-…" aria-label="Partiya"><input class="nzf-in" type="date" data-e value="' + esc(l.expiry || "") + '" aria-label="Yaroqlilik muddati"></div>' + expiryChip(l) + "</td>" +
+      '<td><div class="nzf-batch"><input class="nzf-in" data-b value="' + esc(l.batch || "") + '" placeholder="LOT-…" aria-label="Partiya"><input class="nzf-in nzf-exp' + (l.expiry_bad || expiryProblem(l.expiry) ? " bad" : "") + '" data-e inputmode="numeric" autocomplete="off" value="' + esc(l.expiry_bad || showDate(l.expiry)) + '" placeholder="03/2027" title="Muddat: 03/2027 (oy oxiri), 15.03.2027 yoki 2027-03-15" aria-label="Yaroqlilik muddati"></div><span data-chip>' + expiryChip(l) + "</span></td>" +
       '<td class="num"><b>' + (num(l.unit_cost) > 0 ? money(num(l.unit_cost) * num(l.quantity)) : "—") + "</b></td>" +
       '<td><button type="button" class="nzf-x" data-rm aria-label="O\'chirish"><i class="fas fa-xmark" aria-hidden="true"></i></button></td></tr>';
   }
@@ -167,8 +198,9 @@
     qty = qty || 1;
     if (!p.active) { flash(false); toast("err", p.name + " — faol emas"); return; }
     // one row per product + batch: a batch barcode (partiya kodi) brings its own batch number / expiry
-    var batch = p.batch || "";
-    var line = S.lines.filter(function (l) { return l.variant_id === p.variant_id && (l.batch || "") === batch; })[0];
+    var batch = p.batch || "", expiry = p.expiry || "";
+    // partiya = LOT + muddat (serverdagi StockBatch kabi)
+    var line = S.lines.filter(function (l) { return l.variant_id === p.variant_id && (l.batch || "") === batch && (!expiry || (l.expiry || "") === expiry); })[0];
     if (line) line.quantity = num(line.quantity) + qty;
     else S.lines.unshift(fromProduct(p, qty));
     flash(true);
@@ -283,7 +315,19 @@
       row.querySelector("[data-q]").onchange = function (e) { l.quantity = Math.max(1, parseInt(e.target.value, 10) || 1); render(); };
       row.querySelector("[data-c]").onchange = function (e) { var v = num(e.target.value); l.unit_cost = v > 0 ? String(v) : ""; l.cost_origin = "typed"; render(); };
       row.querySelector("[data-b]").onchange = function (e) { l.batch = e.target.value.trim(); persist(); };
-      row.querySelector("[data-e]").onchange = function (e) { l.expiry = e.target.value; render(); };
+      var exp = row.querySelector("[data-e]");
+      // yozish paytida jadval qayta chizilmaydi (fokus va kiritilgan raqamlar yo'qolmasin) — faqat chip yangilanadi
+      exp.oninput = function () {
+        var v = parseExpiry(exp.value);
+        exp.classList.toggle("bad", v === null && exp.value.trim().length >= 5);
+      };
+      exp.onchange = function () {
+        var v = parseExpiry(exp.value);
+        if (v === null) { l.expiry = ""; l.expiry_bad = exp.value.trim(); }
+        else { l.expiry = v; l.expiry_bad = ""; }
+        render();
+      };
+      exp.onkeydown = function (e) { if (e.key === "Enter") { e.preventDefault(); exp.blur(); } };
       row.querySelector("[data-rm]").onclick = function () { S.lines.splice(S.lines.indexOf(l), 1); render(); };
     });
     var clear = document.getElementById("r-clear");
@@ -318,9 +362,18 @@
 
   function post() {
     var t = totals(), loc = location();
-    var warn = (t.nocost ? "<li>" + t.nocost + " qatorda tannarx kiritilmagan</li>" : "") + (t.loss ? "<li>" + t.loss + " ta mahsulot zarariga sotilyapti</li>" : "") + (!S.supplier ? "<li>Yetkazib beruvchi ko'rsatilmagan — qarz kuzatilmaydi</li>" : "");
+    var bad = S.lines.filter(function (l) { return l.expiry_bad || expiryProblem(l.expiry); });
+    if (bad.length) {
+      toast("err", bad.length + " qatorda yaroqlilik muddati noto'g'ri — qizil maydonlarni tuzating");
+      var first = root.querySelector(".nzf-exp.bad"); if (first) { first.focus(); first.scrollIntoView({ block: "center" }); }
+      return;
+    }
+    var expired = S.lines.filter(function (l) { var d = daysLeft(l.expiry); return d !== null && d < 0; }).length;
+    var undated = S.lines.filter(function (l) { return !l.expiry; }).length;
+    var warn = (expired ? '<li class="bad">' + expired + " ta partiyaning muddati allaqachon o'tgan — rostdan qabul qilasizmi?</li>" : "") +
+      (undated ? "<li>" + undated + " qatorda yaroqlilik muddati kiritilmagan — FEFO va muddat ogohlantirishlari ishlamaydi</li>" : "") + (t.nocost ? "<li>" + t.nocost + " qatorda tannarx kiritilmagan</li>" : "") + (t.loss ? "<li>" + t.loss + " ta mahsulot zarariga sotilyapti</li>" : "") + (!S.supplier ? "<li>Yetkazib beruvchi ko'rsatilmagan — qarz kuzatilmaydi</li>" : "");
     dialog("Kirimni tasdiqlash", "<p><b>" + esc(loc.name) + "</b> qoldig'iga " + S.lines.length + " xil mahsulot, jami <b>" + t.units + "</b> dona" + (t.value ? " (" + money(t.value) + " so'm)" : "") + " qo'shiladi.</p>" +
-      (warn ? '<ul class="nzf-dlg-warn">' + warn + "</ul>" : ""), "Tasdiqlash").then(function (ok) {
+      (warn ? '<ul class="nzf-dlg-warn">' + warn + "</ul>" : ""), expired ? "Baribir qabul qilish" : "Tasdiqlash").then(function (ok) {
       if (!ok) return;
       var btn = document.getElementById("r-post");
       btn.disabled = true; btn.innerHTML = '<i class="fas fa-circle-notch fa-spin" aria-hidden="true"></i> Saqlanmoqda…';

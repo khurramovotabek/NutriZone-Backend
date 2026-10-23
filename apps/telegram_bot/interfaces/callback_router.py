@@ -16,6 +16,7 @@ instead of hardcoded Uzbek text.
 from __future__ import annotations
 
 import html
+import re
 import logging
 import uuid
 
@@ -1446,6 +1447,26 @@ def _md_to_html(text: str) -> str:
     return re.sub(r"(?<![\w])_(.+?)_(?![\w])", r"<i>\1</i>", out, flags=re.S)
 
 
+def claude_reply(conversation_id, text: str) -> dict:
+    """One Claude assistant turn collected from the stream (the website widget's brain, with all the shop's tools)."""
+    from asgiref.sync import async_to_sync
+
+    from apps.assistant.infrastructure import engine as ai
+
+    async def collect():
+        out = {"reply": "", "cards": []}
+        async for event in ai.run_turn(conversation_id, text):
+            if event["type"] == "text":
+                out["reply"] += event["delta"]
+            elif event["type"] == "products":
+                out["cards"] += event["items"]
+            elif event["type"] == "error":
+                out["reply"] = event.get("message") or out["reply"]
+        return out
+
+    return async_to_sync(collect)()
+
+
 def _advisor_reply(user, chat_id: int, telegram_user_id: int, text: str, lang: str) -> bool:
     """Free text that is a question, a goal or profile facts goes to the local advisor (same brain as the website
     widget, its memory kept per Telegram user for 24 h); plain product words stay a catalogue search."""
@@ -1457,16 +1478,22 @@ def _advisor_reply(user, chat_id: int, telegram_user_id: int, text: str, lang: s
     from apps.assistant.infrastructure.advisor.engine import _turn_sync
     from apps.assistant.infrastructure.models import AssistantConversation
 
-    if nlu.parse(text).intent == "search":
+    from apps.assistant.infrastructure import engine as ai
+
+    smart = ai.uses_claude()
+    if not smart and nlu.parse(text).intent == "search":
         return False
     try:
         key = f"tg:{telegram_user_id}"
         conv = AssistantConversation.objects.filter(client_key=key, updated_at__gte=timezone.now() - timedelta(hours=24)).order_by("-updated_at").first()
         if conv is None or conv.turns >= 30:
-            conv = AssistantConversation.objects.create(client_key=key, customer_id=user.id, channel="telegram", locale=lang if lang in ("uz", "ru", "en") else "uz", engine="local")
-        result = _turn_sync(conv.id, text[:800])
+            conv = AssistantConversation.objects.create(client_key=key, customer_id=user.id, channel="telegram", locale=lang if lang in ("uz", "ru", "en") else "uz",
+                                                        engine="claude" if smart else "local")
+        result = claude_reply(conv.id, text[:800]) if smart else _turn_sync(conv.id, text[:800])
     except Exception:  # noqa: BLE001 -- the bot falls back to the plain search
         logger.exception("advisor reply failed")
+        return False
+    if not result.get("reply"):
         return False
     rows = []
     for c in result["cards"][:4]:
@@ -1474,6 +1501,54 @@ def _advisor_reply(user, chat_id: int, telegram_user_id: int, text: str, lang: s
         rows.append([{"text": f"🛒 {c['name'][:34]}{price}", "callback_data": f"po:open:{c['id']}"}])
     rows.append([{"text": t("home_button", lang), "callback_data": "menu:home"}])
     _send(chat_id, _md_to_html(result["reply"])[:4000], rows)
+    return True
+
+
+def group_question(message: dict) -> bool:
+    """
+    The assistant in a Telegram group: answers when the bot is @mentioned or someone replies to one of its
+    messages (with privacy mode on, those are the only group texts Telegram delivers anyway). Each member gets their
+    own short memory per group; product suggestions open on the website (buttons can't open a private card in a group).
+    """
+    from datetime import timedelta
+
+    from django.conf import settings
+    from django.utils import timezone
+
+    from apps.assistant.infrastructure import engine as ai
+    from apps.assistant.infrastructure.advisor.engine import _turn_sync
+    from apps.assistant.infrastructure.models import AssistantConversation
+
+    bot = (settings.TELEGRAM_BOT_USERNAME or "").lstrip("@")
+    text = message.get("text") or ""
+    reply_to = (message.get("reply_to_message") or {}).get("from") or {}
+    mentioned = bool(bot) and f"@{bot.lower()}" in text.lower()
+    if not (mentioned or (reply_to.get("is_bot") and (reply_to.get("username") or "").lower() == bot.lower())):
+        return False
+    question = re.sub(rf"@{re.escape(bot)}\b", "", text, flags=re.I).strip() if bot else text.strip()
+    if len(question) < 2 or not ai.is_configured():
+        return False
+    sender = message.get("from") or {}
+    chat_id = message["chat"]["id"]
+    code = (sender.get("language_code") or "uz")[:2]
+    lang = code if code in ("uz", "ru", "en") else "uz"
+    try:
+        key = f"tgg:{chat_id}:{sender.get('id')}"
+        conv = AssistantConversation.objects.filter(client_key=key, updated_at__gte=timezone.now() - timedelta(hours=6)).order_by("-updated_at").first()
+        if conv is None or conv.turns >= 20:
+            conv = AssistantConversation.objects.create(client_key=key, channel="telegram", locale=lang, engine="claude" if ai.uses_claude() else "local")
+        result = claude_reply(conv.id, question[:800]) if ai.uses_claude() else _turn_sync(conv.id, question[:800])
+    except Exception:  # noqa: BLE001 -- silence beats a broken answer in a group
+        logger.exception("group assistant failed")
+        return False
+    if not result.get("reply"):
+        return False
+    site = (settings.FRONTEND_URL or "https://nutrizone.uz").rstrip("/")
+    rows = [[{"text": f"🛒 {c['name'][:40]}", "url": f"{site}/products/{c['slug']}"}] for c in result["cards"][:3] if c.get("slug")]
+    if bot:
+        rows.append([{"text": "💬 NutriZone bot", "url": f"https://t.me/{bot}"}])
+    name = html.escape(sender.get("first_name") or "")
+    _send(chat_id, (f"{name}, " if name else "") + _md_to_html(result["reply"])[:3900], rows)
     return True
 
 

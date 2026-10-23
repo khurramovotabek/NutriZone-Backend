@@ -244,3 +244,7 @@ td:not(.num) .nzf-chip { margin-left: 0; }
   .nzf-loc-num small { display: none; }
   .nzf-kbd { display: none; }
 }
+/* Kirim: yaroqlilik muddati (03/2027, 15.03.2027) */
+.nzf-exp { width: 110px; font-variant-numeric: tabular-nums; }
+.nzf-exp.bad { border-color: #ef4444 !important; box-shadow: 0 0 0 3px rgba(239, 68, 68, .18); }
+.nzf-dlg-warn li.bad { color: #dc2626; font-weight: 600; }

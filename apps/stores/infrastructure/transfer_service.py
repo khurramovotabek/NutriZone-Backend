@@ -124,8 +124,9 @@ def update_draft(transfer_id, actor: str, lines: list[dict], notes: str | None =
             if qty > stock.MAX_UNITS_PER_LINE:
                 raise ValidationFailed("Quantity is too large.")
             batch = str(raw.get("batch") or "").strip()[:48]
-            key = (vid, batch)
-            entry = wanted.setdefault(key, {"quantity": 0, "expiry": stock._parse_date(raw.get("expiry"))})
+            expiry = stock._parse_date(raw.get("expiry"))
+            # a batch is (LOT, expiry) -- the same as StockBatch's identity
+            entry = wanted.setdefault((vid, batch, expiry), {"quantity": 0, "expiry": expiry})
             entry["quantity"] += qty
         infos = stock.variant_infos({k[0] for k in wanted})
         inactive = [infos[k[0]].name for k in wanted if k[0] in infos and not infos[k[0]].active]
@@ -135,26 +136,43 @@ def update_draft(transfer_id, actor: str, lines: list[dict], notes: str | None =
             raise stock.conflict("PRODUCT_INACTIVE", f"Inactive product: {', '.join(inactive)}", products=inactive)
         available = stock.available_map(t.source, {k[0] for k in wanted})
         needed: dict = {}
-        for (vid, _b), e in wanted.items():
+        for (vid, _b, _e), e in wanted.items():
             needed[vid] = needed.get(vid, 0) + e["quantity"]
         short = [{"variant_id": str(v), "name": infos[v].name, "requested": q, "available": available.get(v, 0)} for v, q in needed.items() if q > available.get(v, 0)]
         if short:
             raise stock.conflict("INSUFFICIENT_STOCK", "Not enough stock at the source for some products.", shortages=short)
+        # a line pinned to a batch the source holds can't ask for more than that batch has (an unknown batch is only a label)
+        from apps.stores.infrastructure import transfer_read
+
+        pinned = [k for k in wanted if k[1] or k[2]]
+        if pinned:
+            held = {
+                (vid, b["batch"], b["expiry"]): b["quantity"]
+                for vid, rows in transfer_read.batches(t.source, {k[0] for k in pinned}).items() for b in rows
+            }
+            short = []
+            for vid, batch, expiry in pinned:
+                have = held.get((vid, batch, expiry.isoformat() if expiry else ""))
+                if have is not None and wanted[(vid, batch, expiry)]["quantity"] > have:
+                    label = " · ".join(x for x in (batch, expiry.strftime("%d.%m.%Y") if expiry else "") if x)
+                    short.append({"variant_id": str(vid), "name": f"{infos[vid].name} ({label})", "requested": wanted[(vid, batch, expiry)]["quantity"], "available": have})
+            if short:
+                raise stock.conflict("INSUFFICIENT_BATCH_STOCK", "Not enough stock in the chosen batch at the source.", shortages=short)
 
         from apps.stores.infrastructure.count_service import cost_map
 
         costs = cost_map({k[0] for k in wanted})  # value the transfer at cost (latest receipt), not at the selling price
-        before = {(i.product_variant_id, i.batch_number): i.expected_quantity for i in t.items.all()}
+        before = {(i.product_variant_id, i.batch_number, i.expiry_date): i.expected_quantity for i in t.items.all()}
         t.items.all().delete()
-        for (vid, batch), e in wanted.items():
+        for (vid, batch, _exp), e in wanted.items():
             info = infos[vid]
             StockTransferItem.objects.create(
                 transfer=t, product_variant_id=vid, name=info.name[:255], sku=info.sku[:64], barcode=info.barcode[:64],
                 expected_quantity=e["quantity"], unit_cost=costs.get(vid) or 0, batch_number=batch, expiry_date=e["expiry"],
             )
-        after = {(vid, b): e["quantity"] for (vid, b), e in wanted.items()}
+        after = {k: e["quantity"] for k, e in wanted.items()}
         if before != after:
-            changes = [f"{infos[v].name} ×{q}" for (v, _b), q in after.items() if before.get((v, _b)) != q]
+            changes = [f"{infos[k[0]].name} ×{q}" for k, q in after.items() if before.get(k) != q]
             removed = len(set(before) - set(after))
             _event(t, "items", ("Mahsulotlar yangilandi: " + ", ".join(changes[:6]) + (" …" if len(changes) > 6 else "") + (f"; {removed} ta olib tashlandi" if removed else "")).strip(), actor,
                    {"lines": len(before), "units": sum(before.values())}, {"lines": len(after), "units": sum(after.values())})

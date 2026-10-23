@@ -30,7 +30,7 @@
   var ORDER = { draft: 0, ready: 1, in_transit: 2, receiving: 3, partial: 3, received: 4, completed: 5, cancelled: -1 };
   var TONE = { draft: "#64748b", ready: "#0ea5e9", in_transit: "#6366f1", receiving: "#f59e0b", partial: "#f97316", received: "#10b981", completed: "#16a34a", cancelled: "#ef4444" };
   var ERR = {
-    INSUFFICIENT_STOCK: "Manbada yetarli qoldiq yo'q.", SAME_LOCATION: "Manba va qabul qiluvchi bir xil bo'lishi mumkin emas.",
+    INSUFFICIENT_STOCK: "Manbada yetarli qoldiq yo'q.", INSUFFICIENT_BATCH_STOCK: "Tanlangan partiyada yetarli qoldiq yo'q — boshqa partiyani tanlang yoki sonini kamaytiring.", SAME_LOCATION: "Manba va qabul qiluvchi bir xil bo'lishi mumkin emas.",
     EMPTY_TRANSFER: "Kamida bitta mahsulot qo'shing (yoki skanerlang).", PICK_MISMATCH: "Skanerlangan soni rejadan farq qiladi.",
     PICK_ABOVE_PLANNED: "Rejadagidan ko'p olib bo'lmaydi (faqat band qilingan miqdor).", EXPIRED_BATCH: "Muddati o'tgan partiyani jo'natib bo'lmaydi.",
     DISCREPANCY_REASON_REQUIRED: "Har bir kamomad / ortiqcha uchun sababni tanlang.", NOT_RECEIVABLE: "Bu transfer hozir qabul qilinmaydi.",
@@ -458,7 +458,7 @@
         if (!app.querySelector(".wms-banner.err")) render();
       } else {
         toast("err", explain(e));
-        if (kind === "draft" && e.code === "INSUFFICIENT_STOCK") markShortages(e.details.shortages || []);
+        if (kind === "draft" && (e.code === "INSUFFICIENT_STOCK" || e.code === "INSUFFICIENT_BATCH_STOCK")) markShortages(e.details.shortages || []);
         if (e.code === "NOT_EDITABLE" || e.code === "NOT_READY" || e.code === "NOT_RECEIVABLE" || e.code === "INVALID_TRANSITION") { toast("info", "Transfer holati o'zgargan — yangilanmoqda"); load(); }
       }
       throw e;
@@ -705,7 +705,7 @@
     busy(btn, true);
     return promise.then(function (data) { toast("ok", okText); S.last = null; S.wrong = []; adopt(data); }).catch(function (e) {
       busy(btn, false);
-      if (e.code === "INSUFFICIENT_STOCK" && e.details.shortages) markShortages(e.details.shortages); else toast("err", explain(e));
+      if ((e.code === "INSUFFICIENT_STOCK" || e.code === "INSUFFICIENT_BATCH_STOCK") && e.details.shortages) markShortages(e.details.shortages); else toast("err", explain(e));
       throw e;
     });
   }

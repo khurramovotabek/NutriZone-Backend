@@ -72,8 +72,35 @@ TOOLS = [
     },
     {
         "name": "get_store_info",
-        "description": "NutriZone's branches (address, phone, opening hours) and the shop's contact details. Use for questions about where to buy, pickup or contacting the shop.",
-        "input_schema": {"type": "object", "properties": {}, "additionalProperties": False},
+        "description": (
+            "NutriZone's branches (address, district, phones, opening hours, map link) and the shop's contact details. "
+            "Use for questions about where to buy, the nearest branch, a branch's location or phone, pickup or contacting "
+            "the shop. Pass `city` (e.g. 'Samarqand') or the customer's coordinates to get the closest branches first "
+            "with their distance. Give the branch's map_url when the customer asks where it is."
+        ),
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "city": {"type": "string", "description": "City or district to filter by, any spelling (Toshkent, Chilonzor, Samarkand...)."},
+                "latitude": {"type": "number", "description": "Customer latitude, when known."},
+                "longitude": {"type": "number", "description": "Customer longitude, when known."},
+            },
+            "additionalProperties": False,
+        },
+    },
+    {
+        "name": "browse_catalog",
+        "description": (
+            "Lists what the catalogue has: `brands`, `categories` or `flavours` (taste options such as Gourmet Chocolate, "
+            "French Vanilla), each with how many published products carry it. Use for questions like 'which brands do you "
+            "have', 'what flavours does protein come in', or to find the right word before search_products."
+        ),
+        "input_schema": {
+            "type": "object",
+            "properties": {"kind": {"type": "string", "enum": ["brands", "categories", "flavours"]}},
+            "required": ["kind"],
+            "additionalProperties": False,
+        },
     },
 ]
 
@@ -246,15 +273,50 @@ def get_product_details(args: dict, locale: str) -> dict:
     }
 
 
+def _norm_place(text: str) -> str:
+    import unicodedata
+
+    text = unicodedata.normalize("NFKD", str(text or "").lower())
+    text = "".join(ch for ch in text if ch.isalnum())
+    # common Latin/Russian spellings of the same place
+    for a, b in (("tashkent", "toshkent"), ("ташкент", "toshkent"), ("samarkand", "samarqand"), ("самарканд", "samarqand"),
+                 ("andijan", "andijon"), ("андижан", "andijon"), ("termez", "termiz"), ("термиз", "termiz"), ("chirchik", "chirchiq"),
+                 ("чирчик", "chirchiq"), ("chilanzar", "chilonzor"), ("чиланзар", "chilonzor"), ("yunusabad", "yunusobod"),
+                 ("юнусабад", "yunusobod"), ("sergeli", "sergeli"), ("сергели", "sergeli"), ("almazar", "olmazor"), ("алмазар", "olmazor")):
+        text = text.replace(a, b)
+    return text
+
+
+def _distance_km(lat1, lon1, lat2, lon2) -> float:
+    from math import asin, cos, radians, sin, sqrt
+
+    dlat, dlon = radians(lat2 - lat1), radians(lon2 - lon1)
+    a = sin(dlat / 2) ** 2 + cos(radians(lat1)) * cos(radians(lat2)) * sin(dlon / 2) ** 2
+    return 2 * 6371 * asin(sqrt(a))
+
+
 def get_store_info(args: dict, locale: str) -> dict:
     from apps.stores.infrastructure.models import Store
 
+    lat, lon = args.get("latitude"), args.get("longitude")
+    near = isinstance(lat, (int, float)) and isinstance(lon, (int, float)) and -90 <= lat <= 90 and -180 <= lon <= 180
+    place = _norm_place(args.get("city") or "")
     out = []
-    for s in Store.objects.filter(kind="store", status="active").order_by("name")[:12]:
+    for s in Store.objects.filter(kind="store", status="active").order_by("name")[:60]:
+        if place and place not in _norm_place(f"{s.city} {s.district} {s.name} {s.address}"):
+            continue
         hours = {day: ("closed" if h.get("closed") else f"{h['open']}-{h['close']}") for day, h in (s.working_hours or {}).items()
                  if isinstance(h, dict) and (h.get("closed") or (h.get("open") and h.get("close")))}
-        out.append({"name": s.name, "address": ", ".join(x for x in (s.city, s.district, s.address) if x), "landmark": s.landmark,
-                    "phones": s.phone_numbers[:2], "hours": hours, "pickup": s.pickup_enabled})
+        row = {"name": s.name, "address": ", ".join(x for x in (s.city, s.district, s.address) if x), "landmark": s.landmark,
+               "phones": s.phone_numbers[:2], "hours": hours, "pickup": s.pickup_enabled}
+        if s.latitude is not None and s.longitude is not None:
+            row["map_url"] = f"https://maps.google.com/?q={s.latitude:.6f},{s.longitude:.6f}"
+            if near:
+                row["distance_km"] = round(_distance_km(lat, lon, s.latitude, s.longitude), 1)
+        out.append(row)
+    if near:
+        out.sort(key=lambda r: r.get("distance_km", 1e9))
+        out = out[:5]
     contact = {}
     try:
         from apps.platform.infrastructure.models import SiteSettings
@@ -264,7 +326,39 @@ def get_store_info(args: dict, locale: str) -> dict:
             contact = {k: getattr(site, k) for k in ("support_phone", "support_email", "address", "working_hours", "telegram_username", "telegram_channel_url", "instagram_url") if getattr(site, k, "")}
     except Exception:  # noqa: BLE001 - contact details are a nice-to-have
         contact = {}
-    return {"branches": out, "contact": contact, "online": "Delivery across Uzbekistan from the website; payment by Payme, Click, Uzum, card or cash on delivery."}
+    result = {"branches": out, "contact": contact, "online": "Delivery across Uzbekistan from the website; payment by Payme, Click, Uzum, card or cash on delivery."}
+    if place and not out:
+        result["note"] = "No branch in that place -- offer delivery or the closest city's branches."
+    return result
+
+
+def browse_catalog(args: dict, locale: str) -> dict:
+    from django.db.models import Count, Q
+
+    from apps.products.infrastructure import models as orm
+
+    kind = args.get("kind")
+    published = Q(products__status="published")
+    if kind == "brands":
+        rows = orm.Brand.objects.annotate(n=Count("products", filter=published, distinct=True)).filter(n__gt=0).values_list("id", "n")
+        names = _names("brand", [r[0] for r in rows], locale)
+    elif kind == "categories":
+        rows = orm.Category.objects.annotate(n=Count("products", filter=published, distinct=True)).filter(n__gt=0).values_list("id", "n")
+        names = _names("category", [r[0] for r in rows], locale)
+    elif kind == "flavours":
+        rows = orm.Flavour.objects.filter(is_active=True).annotate(n=Count("products", filter=published, distinct=True)).values_list("id", "n")
+        # the customer's language first, then the name printed on the tub (en), then anything
+        rank = {locale: 0, "en": 1}
+        best: dict = {}
+        for t in orm.FlavourTranslation.objects.filter(flavour_id__in=[r[0] for r in rows]).values("flavour_id", "locale_code", "name"):
+            r = rank.get(t["locale_code"], 2)
+            if t["flavour_id"] not in best or r < best[t["flavour_id"]][0]:
+                best[t["flavour_id"]] = (r, t["name"])
+        names = {k: v[1] for k, v in best.items()}
+    else:
+        raise ToolError("kind must be brands, categories or flavours.")
+    items = sorted(({"name": names.get(i, ""), "products": n} for i, n in rows if names.get(i)), key=lambda r: (-r["products"], r["name"]))
+    return {"kind": kind, "items": items[:80], "total": len(items)}
 
 
 def show_products(args: dict, locale: str) -> dict:
@@ -282,7 +376,10 @@ def show_products(args: dict, locale: str) -> dict:
     return {"shown": [c["name"] for c in shown], "cards": shown}
 
 
-HANDLERS = {"search_products": search_products, "get_product_details": get_product_details, "show_products": show_products, "get_store_info": get_store_info}
+HANDLERS = {
+    "search_products": search_products, "get_product_details": get_product_details, "show_products": show_products,
+    "get_store_info": get_store_info, "browse_catalog": browse_catalog,
+}
 
 
 def run(name: str, args, locale: str) -> tuple[dict, bool]:

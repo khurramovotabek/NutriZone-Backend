@@ -1,5 +1,5 @@
 """
-NutriZone's category tree (owner-approved structure, 2026-10-17): 3 top sections → short sections → product types.
+NutriZone's category tree (owner-approved structure, 2026-10-17; Vitamins revised 2026-10-19): 3 top sections → short sections → product types.
 
 Intra-Workout is not a category of its own: BCAA / EAA live under Aminokislotalar, isotonic and electrolytes in the
 Hydration section next to it, and HMB / Glutamine / Beef Amino / Carbohydrates under Recovery.
@@ -82,9 +82,9 @@ _SPORT = (
 _VITAMINS = (
     "Vitaminlar", "Витамины", "Vitamins",
     (
-        "Sog'liq va energiya uchun vitaminlar, minerallar, omega-3, bo'g'imlar va uyqu uchun komplekslar.",
-        "Витамины, минералы, омега-3, комплексы для суставов и сна — для здоровья и энергии.",
-        "Vitamins, minerals, omega-3, joint and sleep support — for health and energy.",
+        "Sog'liq va energiya uchun vitaminlar, minerallar, omega-3, bo'g'imlar, uyqu va testosteron uchun komplekslar hamda bolalar vitaminlari.",
+        "Витамины, минералы, омега-3, комплексы для суставов, сна и тестостерона, а также детские витамины — для здоровья и энергии.",
+        "Vitamins, minerals, omega-3, joint, sleep and testosterone support, plus kids' vitamins — for health and energy.",
     ),
     [
         ("Multivitaminlar", "Мультивитамины", "Multivitamins",
@@ -93,7 +93,7 @@ _VITAMINS = (
           "Multivitamin formulas for every day, for athletes, for men and for women."),
          [("Kundalik", "На каждый день", "Daily"), ("Sport uchun", "Для спортсменов", "Sport"),
           ("Erkaklar uchun", "Для мужчин", "Men's"), ("Ayollar uchun", "Для женщин", "Women's")]),
-        ("Vitaminlar", "Витамины", "Single Vitamins",
+        ("Alohida vitaminlar", "Отдельные витамины", "Single Vitamins",
          ("Alohida vitaminlar: D3, C, B-kompleks, E va K2.",
           "Отдельные витамины: D3, C, B-комплекс, E и K2.",
           "Single vitamins: D3, C, B-complex, E and K2."),
@@ -106,10 +106,11 @@ _VITAMINS = (
          [("Magniy", "Магний", "Magnesium"), ("Rux", "Цинк", "Zinc"), ("Kalsiy", "Кальций", "Calcium"),
           ("Temir", "Железо", "Iron"), ("Selen", "Селен", "Selenium")]),
         ("Omega", "Омега", "Omega",
-         ("Yurak, miya va bo'g'imlar uchun omega-3, baliq yog'i va krill yog'i.",
-          "Омега-3, рыбий жир и масло криля для сердца, мозга и суставов.",
-          "Omega-3, fish oil and krill oil for heart, brain and joints."),
-         [("Omega-3", "Омега-3", "Omega-3"), ("Baliq yog'i", "Рыбий жир", "Fish Oil"), ("Krill yog'i", "Масло криля", "Krill Oil")]),
+         ("Yurak, miya va bo'g'imlar uchun omega-3, yuqori konsentratli Ultra Omega va D3 + K2 qo'shilgan omega komplekslari.",
+          "Омега-3, высококонцентрированная Ultra Omega и комплексы омеги с D3 + K2 для сердца, мозга и суставов.",
+          "Omega-3, high-strength Ultra Omega and omega formulas with D3 + K2 for heart, brain and joints."),
+         [("Omega-3", "Омега-3", "Omega-3"), ("Ultra Omega", "Ультра Омега", "Ultra Omega"),
+          ("Omega + D3 + K2", "Омега + D3 + K2", "Omega + D3 + K2")]),
         ("Bo'g'imlar salomatligi", "Здоровье суставов", "Joint Support",
          ("Bo'g'im va paylar uchun kollagen, glyukozamin va xondroitin.",
           "Коллаген, глюкозамин и хондроитин для суставов и связок.",
@@ -120,6 +121,17 @@ _VITAMINS = (
           "Мелатонин и комплексы для качественного сна и восстановления.",
           "Melatonin and sleep formulas for quality sleep and recovery."),
          [("Melatonin", "Мелатонин", "Melatonin"), ("Uyqu kompleksi", "Комплекс для сна", "Sleep Complex")]),
+        ("Testosteron", "Тестостерон", "Testosterone Support",
+         ("Erkaklar uchun tribulus va testosteron boosterlari — tabiiy testosteron, kuch va libidoni qo'llab-quvvatlash uchun.",
+          "Трибулус и тестостероновые бустеры для мужчин — поддержка естественного тестостерона, силы и либидо.",
+          "Tribulus and testosterone boosters for men — support for natural testosterone, strength and libido."),
+         [("Tribulus", "Трибулус", "Tribulus"), ("Testosteron boosterlar", "Тестостероновые бустеры", "Testosterone Boosters")]),
+        ("Bolalar uchun vitaminlar", "Витамины для детей", "Kids' Vitamins",
+         ("Bolalar uchun multivitaminlar, omega-3, D3 va immunitet vositalari — yoshga mos dozalarda, chaynaladigan va suyuq shakllarda.",
+          "Мультивитамины, омега-3, D3 и средства для иммунитета для детей — в детских дозировках, жевательных и жидких формах.",
+          "Multivitamins, omega-3, D3 and immune support for children — in age-appropriate doses, chewable and liquid forms."),
+         [("Bolalar multivitaminlari", "Детские мультивитамины", "Kids' Multivitamins"), ("Bolalar uchun omega-3", "Омега-3 для детей", "Kids' Omega-3"),
+          ("Bolalar uchun vitamin D3", "Витамин D3 для детей", "Kids' Vitamin D3"), ("Bolalar immuniteti", "Иммунитет для детей", "Kids' Immune Support")]),
     ],
 )
 
