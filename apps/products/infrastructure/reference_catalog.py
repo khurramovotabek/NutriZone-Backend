@@ -98,6 +98,9 @@ FLAVOURS = [
     ("passion-fruit", "Passion Fruit", "Marakuyya", "Маракуйя", "#e2733a"),
     ("kiwi-strawberry", "Kiwi Strawberry", "Kivi va qulupnay", "Киви-клубника", "#d94f5c"),
     ("pomegranate", "Pomegranate", "Anor", "Гранат", "#b3203b"),
+    ("turbo-chocolate", "Turbo Chocolate", "Turbo shokolad", "Турбо шоколад", "#3b2314"),
+    ("velocity-vanilla", "Velocity Vanilla", "Velocity vanil", "Велосити ваниль", "#e6cf8f"),
+    ("supercharged-strawberry", "Supercharged Strawberry", "Supercharged qulupnay", "Суперчардж клубника", "#d9304a"),
     ("unflavoured", "Unflavoured", "Ta'msiz", "Без вкуса", "#e5e7eb"),
 ]
 
