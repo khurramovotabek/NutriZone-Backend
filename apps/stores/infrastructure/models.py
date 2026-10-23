@@ -211,7 +211,10 @@ class Store(models.Model):
             if entry.get("date") == today:
                 return {"open": entry.get("open") or "", "close": entry.get("close") or "", "closed": bool(entry.get("closed")), "special": True, "note": entry.get("note") or ""}
         day = (self.working_hours or {}).get(["mon", "tue", "wed", "thu", "fri", "sat", "sun"][now.weekday()], {})
-        return {"open": day.get("open") or "", "close": day.get("close") or "", "closed": bool(day.get("closed")) or not day.get("open"), "special": False, "note": ""}
+        # `unknown`: the owner hasn't entered this day's hours yet -- show "hours not set", not "closed"
+        unknown = not day.get("closed") and not (day.get("open") and day.get("close"))
+        return {"open": day.get("open") or "", "close": day.get("close") or "", "closed": bool(day.get("closed")) or not day.get("open"), "special": False, "note": "",
+                "unknown": unknown}
 
     def upcoming_special_days(self, days: int = 45) -> list[dict]:
         from datetime import timedelta
