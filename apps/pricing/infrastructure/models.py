@@ -243,3 +243,55 @@ class PricingOutboxEvent(AbstractOutboxEvent):
     class Meta:
         db_table = "pricing_outbox_events"
         ordering = ["created_at"]
+
+
+# ---------------------------------------------------------------------------
+# Repricing documents (Narxlarni qayta baholash -- apps/pricing/infrastructure/repricing.py)
+# ---------------------------------------------------------------------------
+
+
+class RepricingModel(models.Model):
+    """A batch price change: which variants, the rule used, every old -> new price; applied now or at a set time, revertible."""
+
+    STATUS_CHOICES = (("draft", _("Qoralama")), ("scheduled", _("Rejalashtirilgan")), ("applied", _("Qo'llangan")), ("cancelled", _("Bekor qilingan")))
+
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    number = models.CharField(_("Raqam"), max_length=20, unique=True)
+    title = models.CharField(_("Nomi"), max_length=160)
+    note = models.CharField(_("Izoh"), max_length=255, blank=True, default="")
+    status = models.CharField(_("Holat"), max_length=10, choices=STATUS_CHOICES, default="draft", db_index=True)
+    rule = models.JSONField(default=dict, blank=True)  # {"mode", "value", "rounding", "compare", "filters"} as the builder had it
+    scheduled_for = models.DateTimeField(_("Kuchga kirish vaqti"), null=True, blank=True, db_index=True)
+    reverts = models.ForeignKey("self", on_delete=models.PROTECT, null=True, blank=True, related_name="reverted_by", verbose_name=_("Qaytariladigan hujjat"))
+    created_by = models.CharField(max_length=150, blank=True, default="")
+    created_at = models.DateTimeField(auto_now_add=True, db_index=True)
+    applied_by = models.CharField(max_length=150, blank=True, default="")
+    applied_at = models.DateTimeField(null=True, blank=True)
+    lines_count = models.PositiveIntegerField(default=0)
+
+    class Meta:
+        db_table = "pricing_repricings"
+        ordering = ("-created_at",)
+        verbose_name = _("Narxlarni qayta baholash")
+        verbose_name_plural = _("Narxlarni qayta baholash")
+        permissions = [("apply_repricing", "Can apply repricing documents")]
+
+    def __str__(self) -> str:
+        return f"{self.number} · {self.title}"
+
+
+class RepricingLineModel(models.Model):
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    repricing = models.ForeignKey(RepricingModel, on_delete=models.CASCADE, related_name="lines")
+    product_variant_id = models.UUIDField(db_index=True)
+    old_price = models.DecimalField(max_digits=14, decimal_places=2, null=True, blank=True)
+    new_price = models.DecimalField(max_digits=14, decimal_places=2)
+    old_compare_at = models.DecimalField(max_digits=14, decimal_places=2, null=True, blank=True)
+    new_compare_at = models.DecimalField(max_digits=14, decimal_places=2, null=True, blank=True)
+    cost = models.DecimalField(max_digits=14, decimal_places=2, null=True, blank=True)
+    applied = models.BooleanField(default=False)
+    error = models.CharField(max_length=255, blank=True, default="")
+
+    class Meta:
+        db_table = "pricing_repricing_lines"
+        constraints = [models.UniqueConstraint(fields=["repricing", "product_variant_id"], name="uniq_repricing_line_variant")]

@@ -18,7 +18,7 @@ class PricingConfig(AppConfig):
         module's `ready()` pattern.
         """
 
-        from apps.pricing.infrastructure import admin  # noqa: F401 -- registers admin.py, which Django default discovery cannot reach at this project's infrastructure/admin.py location
+        from apps.pricing.infrastructure import admin, repricing_admin  # noqa: F401 -- registers admin.py, which Django default discovery cannot reach at this project's infrastructure/admin.py location
         from shared.event_contracts import pricing as pricing_event_contracts  # noqa: F401
 
         from apps.pricing.infrastructure.health import (

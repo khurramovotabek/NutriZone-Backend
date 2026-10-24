@@ -1,0 +1,78 @@
+{% extends "admin/base_site.html" %}
+{% load static %}
+{# One repricing document (RepricingAdmin.doc_view): lines old -> new, apply / cancel / revert, Excel. #}
+{% block extrastyle %}
+{{ block.super }}
+<link rel="stylesheet" href="{% static 'admin/css/nutrizone-platform.css' %}?v=5">
+<link rel="stylesheet" href="{% static 'admin/css/nutrizone-repricing.css' %}?v=1">
+{% endblock %}
+{% block breadcrumbs %}
+<ol class="breadcrumb">
+  <li class="breadcrumb-item"><a href="{% url 'admin:index' %}">Bosh sahifa</a></li>
+  <li class="breadcrumb-item"><a href="{% url 'admin:pricing_repricingmodel_changelist' %}">Narxlarni qayta baholash</a></li>
+  <li class="breadcrumb-item active">{{ doc.number }}</li>
+</ol>
+{% endblock %}
+{% block content_title %}{% endblock %}
+{% block content %}
+<div class="nzp nzr">
+  <header class="nzp-hero">
+    <div class="nzp-hero-main">
+      <span class="nzp-hero-icon" style="--c:{{ style.0 }}"><i class="fas {{ style.1 }}" aria-hidden="true"></i></span>
+      <div><h2>{{ doc.title }}</h2>
+        <p>{{ doc.number }} · <b>{{ doc.get_status_display }}</b>{% if doc.status == "scheduled" %} · {{ doc.scheduled_for|date:"d.m.Y H:i" }} da kuchga kiradi{% endif %}{% if doc.applied_at %} · {{ doc.applied_at|date:"d.m.Y H:i" }} · {{ doc.applied_by }}{% endif %} · {{ rule_text }}</p></div>
+    </div>
+    <div class="nzp-hero-actions">
+      <a class="nzp-btn nzp-btn-ghost" href="{% url 'admin:nz_repricing_export' doc.pk %}"><i class="fas fa-file-excel" aria-hidden="true"></i> Excel</a>
+      {% if can_apply %}
+      <form method="post" action="{% url 'admin:nz_repricing_act' doc.pk %}" class="nzr-acts">{% csrf_token %}
+        {% if doc.status == "draft" or doc.status == "scheduled" %}
+          <button class="nzp-btn nzp-btn-ghost" name="action" value="cancel" data-nzr-ask="Hujjatni bekor qilasizmi?"><i class="fas fa-ban" aria-hidden="true"></i> Bekor qilish</button>
+          <button class="nzp-btn" name="action" value="apply" data-nzr-ask="{{ doc.lines_count }} ta narxni hozir o'zgartirasizmi?"><i class="fas fa-check" aria-hidden="true"></i> Hozir qo'llash</button>
+        {% elif doc.status == "applied" and not reverted and doc.rule.mode != "revert" %}
+          <button class="nzp-btn nzp-btn-ghost" name="action" value="revert" data-nzr-ask="Narxlarni shu hujjatdan oldingi holatiga qaytarasizmi?"><i class="fas fa-rotate-left" aria-hidden="true"></i> Oldingi narxlarga qaytarish</button>
+        {% endif %}
+      </form>
+      {% endif %}
+    </div>
+  </header>
+  {% if messages %}<div class="nzr-msgs">{% for m in messages %}<div class="nzr-msg is-{{ m.tags }}">{{ m }}</div>{% endfor %}</div>{% endif %}
+  {% if reverted %}<p class="nzr-warn"><i class="fas fa-rotate-left" aria-hidden="true"></i> Bu hujjat <a href="{% url 'admin:nz_repricing_doc' reverted.pk %}">{{ reverted.number }}</a> bilan qaytarilgan.</p>{% endif %}
+  {% if doc.reverts %}<p class="nzr-warn"><i class="fas fa-rotate-left" aria-hidden="true"></i> <a href="{% url 'admin:nz_repricing_doc' doc.reverts.pk %}">{{ doc.reverts.number }}</a> narxlarini qaytargan hujjat.</p>{% endif %}
+  {% if doc.note %}<p class="nzr-note"><i class="fas fa-note-sticky" aria-hidden="true"></i> {{ doc.note }}</p>{% endif %}
+
+  <div class="nzr-summary">
+    <div><b>{{ doc.lines_count }}</b><span>mahsulot</span></div>
+    <div class="is-up"><b>{{ ups }}</b><span>qimmatladi</span></div>
+    <div class="is-ok"><b>{{ downs }}</b><span>arzonladi</span></div>
+    <div><b>{% if avg is not None %}{% if avg > 0 %}+{% endif %}{{ avg }}%{% else %}—{% endif %}</b><span>o'rtacha o'zgarish</span></div>
+    <div class="{% if below_cost %}is-bad{% endif %}"><b>{{ below_cost }}</b><span>tannarxdan past</span></div>
+    {% if errors %}<div class="is-bad"><b>{{ errors }}</b><span>xato</span></div>{% endif %}
+  </div>
+
+  <div class="nzr-table-wrap">
+    <table class="nzr-table">
+      <thead><tr><th></th><th>Mahsulot</th><th class="r">Tannarx</th><th class="r">Eski narx</th><th class="r">Yangi narx</th><th class="r">O'zgarish</th><th class="r">Marja</th><th class="r">Chizilgan narx</th><th></th></tr></thead>
+      <tbody>
+        {% for r in lines %}
+        <tr class="{% if r.below_cost %}is-below{% endif %}">
+          <td class="nzr-img">{% if r.image %}<img src="{{ r.image }}" alt="">{% else %}<i class="fas fa-box" aria-hidden="true"></i>{% endif %}</td>
+          <td><b>{{ r.name }}</b><small>{% if r.size %}{{ r.size }} · {% endif %}{{ r.sku }}</small>{% if r.l.error %}<em class="nzr-flag is-bad">{{ r.l.error }}</em>{% endif %}</td>
+          <td class="r">{{ r.cost_fmt }}</td>
+          <td class="r">{{ r.old_fmt }}</td>
+          <td class="r"><b>{{ r.new_fmt }}</b></td>
+          <td class="r nzr-delta {% if r.delta and r.delta > 0 %}is-up{% elif r.delta and r.delta < 0 %}is-down{% endif %}">{% if r.delta is not None %}{% if r.delta > 0 %}+{% endif %}{{ r.delta }}%{% else %}—{% endif %}</td>
+          <td class="r">{% if r.margin is not None %}{{ r.margin }}%{% else %}—{% endif %}</td>
+          <td class="r">{% if r.l.new_compare_at %}<s>{{ r.nc_fmt }}</s>{% else %}—{% endif %}</td>
+          <td class="r">{% if r.l.applied %}<i class="fas fa-circle-check nzr-ok" title="Qo'llangan" aria-label="Qo'llangan"></i>{% endif %}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}
+{% block extrajs %}
+{{ block.super }}
+<script src="{% static 'admin/js/nutrizone-repricing.js' %}?v=1"></script>
+{% endblock %}

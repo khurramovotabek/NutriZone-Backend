@@ -5429,3 +5429,279 @@ msgstr "Главная"
 
 msgid "savdo yo'q"
 msgstr "нет продаж"
+
+msgid "Narxlarni qayta baholash"
+msgstr "Переоценка"
+
+msgid "Yangi qayta baholash"
+msgstr "Новая переоценка"
+
+msgid "Ko'p mahsulot narxini bir martada o'zgartirish: brend, kategoriya yoki ro'yxat bo'yicha tanlang, qoidani bering, ko'rib chiqing va qo'llang — hozir yoki belgilangan vaqtda."
+msgstr "Изменение многих цен сразу: выберите по бренду, категории или списку, задайте правило, проверьте и примените — сейчас или в назначенное время."
+
+msgid "1) Mahsulotlarni tanlang · 2) Qoidani bering · 3) Natijani tekshiring · 4) Hozir qo'llang yoki vaqtini belgilang."
+msgstr "1) Выберите товары · 2) Задайте правило · 3) Проверьте результат · 4) Примените сейчас или по расписанию."
+
+msgid "Qaysi mahsulotlar"
+msgstr "Какие товары"
+
+msgid "Nom, SKU yoki shtrix-kod"
+msgstr "Название, SKU или штрихкод"
+
+msgid "masalan: whey, creatine…"
+msgstr "например: whey, creatine…"
+
+msgid "Brendni qidirish…"
+msgstr "Поиск бренда…"
+
+msgid "(ichki bo'limlari bilan)"
+msgstr "(с подкатегориями)"
+
+msgid "Kategoriyani qidirish…"
+msgstr "Поиск категории…"
+
+msgid "Narx, dan"
+msgstr "Цена от"
+
+msgid "gacha"
+msgstr "до"
+
+msgid "Qoldiq"
+msgstr "Остаток"
+
+msgid "Faqat bor"
+msgstr "Только в наличии"
+
+msgid "Faqat tugagan"
+msgstr "Только закончившиеся"
+
+msgid "SKU / shtrix-kodlar ro'yxati"
+msgstr "Список SKU / штрихкодов"
+
+msgid "Har qatorda bitta SKU yoki shtrix-kod"
+msgstr "Один SKU или штрихкод в строке"
+
+msgid "Qoida"
+msgstr "Правило"
+
+msgid "Qiymat"
+msgstr "Значение"
+
+msgid "masalan: 10 yoki -5"
+msgstr "например: 10 или -5"
+
+msgid "Yaxlitlash"
+msgstr "Округление"
+
+msgid "Chizilgan «eski narx»"
+msgstr "Зачёркнутая «старая цена»"
+
+msgid "Hisoblash"
+msgstr "Рассчитать"
+
+msgid "Foizga o'zgartirish"
+msgstr "Изменить на процент"
+
+msgid "Summaga o'zgartirish"
+msgstr "Изменить на сумму"
+
+msgid "Tannarxga ustama (%)"
+msgstr "Наценка на себестоимость (%)"
+
+msgid "Aniq narx"
+msgstr "Точная цена"
+
+msgid "Yaxlitlamaslik"
+msgstr "Без округления"
+
+msgid "100 so'mgacha"
+msgstr "До 100 сум"
+
+msgid "1 000 so'mgacha"
+msgstr "До 1 000 сум"
+
+msgid "5 000 so'mgacha"
+msgstr "До 5 000 сум"
+
+msgid "10 000 so'mgacha"
+msgstr "До 10 000 сум"
+
+msgid "…900 bilan tugasin (149 900)"
+msgstr "Заканчивать на …900 (149 900)"
+
+msgid "Eski narxni o'zgartirmaslik"
+msgstr "Не менять старую цену"
+
+msgid "Eski narxni olib tashlash"
+msgstr "Убрать старую цену"
+
+msgid "Joriy narxni «eski narx» qilib ko'rsatish (chegirma)"
+msgstr "Показать текущую цену как «старую» (скидка)"
+
+msgid "Foiz (+ oshirish, − kamaytirish)"
+msgstr "Процент (+ повысить, − снизить)"
+
+msgid "10 → hamma narx 10% qimmat; −15 → 15% arzon."
+msgstr "10 → все цены на 10% выше; −15 → на 15% ниже."
+
+msgid "Summa, so'm (+ / −)"
+msgstr "Сумма, сум (+ / −)"
+
+msgid "20000 → har bir narxga 20 000 so'm qo'shiladi; −10000 → kamayadi."
+msgstr "20000 → к каждой цене +20 000 сум; −10000 → снижает."
+
+msgid "Ustama, %"
+msgstr "Наценка, %"
+
+msgid "30 → yangi narx = tannarx × 1,3. Tannarxi kiritilmagan mahsulotlar o'tkazib yuboriladi."
+msgstr "30 → новая цена = себестоимость × 1,3. Товары без себестоимости пропускаются."
+
+msgid "Yangi narx, so'm"
+msgstr "Новая цена, сум"
+
+msgid "Tanlangan hamma variantga bir xil narx qo'yiladi."
+msgstr "Всем выбранным вариантам ставится одна цена."
+
+msgid "Mahsulotlarni tanlang"
+msgstr "Выберите товары"
+
+msgid "Chapda brend, kategoriya yoki nom bo'yicha tanlang, qoidani kiriting va «Hisoblash»ni bosing."
+msgstr "Выберите слева бренд, категорию или название, задайте правило и нажмите «Рассчитать»."
+
+msgid "tanlandi"
+msgstr "выбрано"
+
+msgid "narxi o'zgaradi"
+msgstr "цена изменится"
+
+msgid "tannarxdan past"
+msgstr "ниже себестоимости"
+
+msgid "o'tkazib yuboriladi"
+msgstr "пропускается"
+
+msgid "Tannarx"
+msgstr "Себестоимость"
+
+msgid "Joriy narx"
+msgstr "Текущая цена"
+
+msgid "Yangi narx"
+msgstr "Новая цена"
+
+msgid "O'zgarish"
+msgstr "Изменение"
+
+msgid "Marja"
+msgstr "Маржа"
+
+msgid "Chizilgan narx"
+msgstr "Старая цена"
+
+msgid "tannarx yo'q"
+msgstr "нет себестоимости"
+
+msgid "qoldiq {0}"
+msgstr "остаток {0}"
+
+msgid "Saqlash va qo'llash"
+msgstr "Сохранить и применить"
+
+msgid "Hujjat nomi"
+msgstr "Название документа"
+
+msgid "masalan: Oktabr — protein narxlari +7%"
+msgstr "например: Октябрь — цены на протеин +7%"
+
+msgid "Sabab: yetkazib beruvchi narxi oshdi…"
+msgstr "Причина: поставщик поднял цены…"
+
+msgid "Hozir qo'llash"
+msgstr "Применить сейчас"
+
+msgid "Belgilangan vaqtda"
+msgstr "В назначенное время"
+
+msgid "Qoralama"
+msgstr "Черновик"
+
+msgid "(keyin tekshirib qo'llanadi)"
+msgstr "(проверить и применить позже)"
+
+msgid "Rejalashtirilgan"
+msgstr "Запланирован"
+
+msgid "Qo'llangan"
+msgstr "Применён"
+
+msgid "Bekor qilingan"
+msgstr "Отменён"
+
+msgid "Qoralamalar"
+msgstr "Черновики"
+
+msgid "Bu oy qo'llangan"
+msgstr "Применено за месяц"
+
+msgid "Hali hujjat yo'q"
+msgstr "Документов пока нет"
+
+msgid "«Yangi qayta baholash» bilan birinchi ommaviy narx o'zgarishini yarating."
+msgstr "Создайте первое массовое изменение цен кнопкой «Новая переоценка»."
+
+msgid "Raqam yoki nom…"
+msgstr "Номер или название…"
+
+msgid "Hujjat"
+msgstr "Документ"
+
+msgid "Kim / qachon"
+msgstr "Кто / когда"
+
+msgid "Narxlar ro'yxati"
+msgstr "Прайс-лист"
+
+msgid "Oldingi narxlarga qaytarish"
+msgstr "Вернуть прежние цены"
+
+msgid "mahsulot"
+msgstr "товаров"
+
+msgid "qimmatladi"
+msgstr "подорожало"
+
+msgid "arzonladi"
+msgstr "подешевело"
+
+msgid "o'rtacha o'zgarish"
+msgstr "среднее изменение"
+
+msgid "xato"
+msgstr "ошибок"
+
+msgid "Eski narx"
+msgstr "Старая цена"
+
+msgid "Hujjatni bekor qilasizmi?"
+msgstr "Отменить документ?"
+
+msgid "Narxlarni shu hujjatdan oldingi holatiga qaytarasizmi?"
+msgstr "Вернуть цены к состоянию до этого документа?"
+
+msgid "{0} ta narxni hozir o'zgartirasizmi?"
+msgstr "Изменить {0} цен сейчас?"
+
+msgid "{0} ta narx hozir o'zgaradi. Davom etasizmi?"
+msgstr "{0} цен изменится сейчас. Продолжить?"
+
+msgid "Kuchga kirish vaqti"
+msgstr "Время вступления в силу"
+
+msgid "Bir hujjatda ko'pi bilan {0} ta variant — tanlovni toraytiring."
+msgstr "Не более {0} вариантов в документе — сузьте выбор."
+
+msgid "Belgilash"
+msgstr "Отметить"
+
+msgid "Hammasini belgilash"
+msgstr "Отметить все"

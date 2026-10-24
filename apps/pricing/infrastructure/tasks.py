@@ -105,3 +105,11 @@ def relay_outbox_events() -> dict:
 
     relay = OutboxRelay(orm.PricingOutboxEvent, max_attempts=5, batch_size=100)
     return relay.relay_pending(publish_fn=_publish)
+
+
+@shared_task(queue="default", name="pricing.apply_scheduled_repricings")
+def apply_scheduled_repricings() -> int:
+    """Repricing documents whose time has come (the "scheduled" queue has no worker, so this runs on default)."""
+    from apps.pricing.infrastructure import repricing
+
+    return repricing.apply_due()

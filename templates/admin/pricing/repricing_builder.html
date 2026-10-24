@@ -1,0 +1,123 @@
+{% extends "admin/base_site.html" %}
+{% load static %}
+{# Repricing builder (RepricingAdmin.add_view): one POST form -- "Hisoblash" re-renders the preview, "save" creates the document. #}
+{% block extrastyle %}
+{{ block.super }}
+<link rel="stylesheet" href="{% static 'admin/css/nutrizone-platform.css' %}?v=5">
+<link rel="stylesheet" href="{% static 'admin/css/nutrizone-repricing.css' %}?v=1">
+{% endblock %}
+{% block breadcrumbs %}
+<ol class="breadcrumb">
+  <li class="breadcrumb-item"><a href="{% url 'admin:index' %}">Bosh sahifa</a></li>
+  <li class="breadcrumb-item"><a href="{% url 'admin:pricing_repricingmodel_changelist' %}">Narxlarni qayta baholash</a></li>
+  <li class="breadcrumb-item active">Yangi</li>
+</ol>
+{% endblock %}
+{% block content_title %}{% endblock %}
+{% block content %}
+<form method="post" class="nzp nzr" data-nzr>
+  {% csrf_token %}
+  <header class="nzp-hero">
+    <div class="nzp-hero-main">
+      <span class="nzp-hero-icon" style="--c:#ea580c"><i class="fas fa-tags" aria-hidden="true"></i></span>
+      <div><h2>Yangi qayta baholash</h2><p>1) Mahsulotlarni tanlang · 2) Qoidani bering · 3) Natijani tekshiring · 4) Hozir qo'llang yoki vaqtini belgilang.</p></div>
+    </div>
+    <div class="nzp-hero-actions"><a class="nzp-btn nzp-btn-ghost" href="{% url 'admin:pricing_repricingmodel_changelist' %}"><i class="fas fa-list" aria-hidden="true"></i> Hujjatlar</a></div>
+  </header>
+  {% if messages %}<div class="nzr-msgs">{% for m in messages %}<div class="nzr-msg is-{{ m.tags }}">{{ m }}</div>{% endfor %}</div>{% endif %}
+
+  <div class="nzr-layout">
+    <aside class="nzr-side">
+      <section class="nzr-panel">
+        <h3><span class="nzr-step">1</span> Qaysi mahsulotlar</h3>
+        <label class="nzr-field"><span>Nom, SKU yoki shtrix-kod</span><input type="search" name="q" value="{{ f.q }}" placeholder="masalan: whey, creatine…"></label>
+        <label class="nzr-field"><span>Brendlar</span>
+          <input type="search" class="nzr-filter" data-filter-for="nzr-brands" placeholder="Brendni qidirish…" aria-label="Brendni qidirish">
+          <select name="brand" id="nzr-brands" multiple size="7">{% for id, name in brands %}<option value="{{ id }}" {% if id in f.brands %}selected{% endif %}>{{ name }}</option>{% endfor %}</select>
+        </label>
+        <label class="nzr-field"><span>Kategoriyalar <small>(ichki bo'limlari bilan)</small></span>
+          <input type="search" class="nzr-filter" data-filter-for="nzr-cats" placeholder="Kategoriyani qidirish…" aria-label="Kategoriyani qidirish">
+          <select name="category" id="nzr-cats" multiple size="8">{% for id, name in cats %}<option value="{{ id }}" {% if id in f.categories %}selected{% endif %}>{{ name }}</option>{% endfor %}</select>
+        </label>
+        <div class="nzr-row2">
+          <label class="nzr-field"><span>Narx, dan</span><input name="price_min" value="{{ f.price_min|default_if_none:'' }}" inputmode="numeric"></label>
+          <label class="nzr-field"><span>gacha</span><input name="price_max" value="{{ f.price_max|default_if_none:'' }}" inputmode="numeric"></label>
+        </div>
+        <label class="nzr-field"><span>Qoldiq</span>
+          <select name="stock"><option value="">Hammasi</option><option value="in" {% if f.stock == "in" %}selected{% endif %}>Faqat bor</option><option value="out" {% if f.stock == "out" %}selected{% endif %}>Faqat tugagan</option></select>
+        </label>
+        <details class="nzr-codes" {% if f.codes %}open{% endif %}><summary>SKU / shtrix-kodlar ro'yxati</summary>
+          <textarea name="codes" rows="4" placeholder="Har qatorda bitta SKU yoki shtrix-kod">{% for c in f.codes %}{{ c }}
+{% endfor %}</textarea></details>
+      </section>
+
+      <section class="nzr-panel">
+        <h3><span class="nzr-step">2</span> Qoida</h3>
+        <div class="nzr-modes">
+          {% for key, label in modes.items %}<label class="nzr-mode"><input type="radio" name="mode" value="{{ key }}" {% if key == mode %}checked{% endif %}><span>{{ label }}</span></label>{% endfor %}
+        </div>
+        <label class="nzr-field"><span data-value-label>Qiymat</span><input name="value" value="{{ value }}" inputmode="decimal" placeholder="masalan: 10 yoki -5" required></label>
+        <p class="nzr-hint" data-hint></p>
+        <label class="nzr-field"><span>Yaxlitlash</span><select name="rounding">{% for key, label in roundings.items %}<option value="{{ key }}" {% if key == rounding %}selected{% endif %}>{{ label }}</option>{% endfor %}</select></label>
+        <label class="nzr-field"><span>Chizilgan «eski narx»</span><select name="compare">{% for key, label in compares.items %}<option value="{{ key }}" {% if key == compare %}selected{% endif %}>{{ label }}</option>{% endfor %}</select></label>
+        <button class="nzp-btn nzr-calc" type="submit" name="preview" value="1"><i class="fas fa-calculator" aria-hidden="true"></i> Hisoblash</button>
+      </section>
+    </aside>
+
+    <section class="nzr-main">
+      {% if not rows %}
+      <div class="nzr-empty"><i class="fas fa-filter" aria-hidden="true"></i><b>Mahsulotlarni tanlang</b><span>Chapda brend, kategoriya yoki nom bo'yicha tanlang, qoidani kiriting va «Hisoblash»ni bosing.</span></div>
+      {% else %}
+      <div class="nzr-summary">
+        <div><b>{{ rows|length }}</b><span>tanlandi</span></div>
+        <div class="is-ok"><b>{{ changing }}</b><span>narxi o'zgaradi</span></div>
+        <div class="{% if below_cost %}is-bad{% endif %}"><b>{{ below_cost }}</b><span>tannarxdan past</span></div>
+        <div><b>{{ skipped }}</b><span>o'tkazib yuboriladi</span></div>
+      </div>
+      {% if limit_hit %}<p class="nzr-warn"><i class="fas fa-triangle-exclamation" aria-hidden="true"></i> Bir hujjatda ko'pi bilan {{ max_lines }} ta variant — tanlovni toraytiring.</p>{% endif %}
+      <div class="nzr-table-wrap">
+        <table class="nzr-table">
+          <thead><tr>
+            <th><input type="checkbox" data-check-all checked aria-label="Hammasini belgilash"></th>
+            <th>Mahsulot</th><th class="r">Tannarx</th><th class="r">Joriy narx</th><th class="r">Yangi narx</th><th class="r">O'zgarish</th><th class="r">Marja</th><th class="r">Chizilgan narx</th>
+          </tr></thead>
+          <tbody>
+            {% for r in rows %}
+            <tr class="{% if r.skip %}is-skip{% endif %}{% if 'below_cost' in r.warn %} is-below{% endif %}" data-cost="{{ r.cost|default_if_none:'' }}" data-price="{{ r.price|default_if_none:'' }}">
+              <td><input type="checkbox" name="on_{{ r.variant_id }}" value="1" {% if not r.skip %}checked{% endif %} aria-label="Belgilash"></td>
+              <td><b>{{ r.name }}</b><small>{% if r.label %}{{ r.label }} · {% endif %}{{ r.sku }} · qoldiq {{ r.stock }}</small>
+                {% if 'below_cost' in r.warn %}<em class="nzr-flag is-bad">tannarxdan past</em>{% elif 'no_cost' in r.warn %}<em class="nzr-flag">tannarx yo'q</em>{% elif 'no_price' in r.warn %}<em class="nzr-flag">narx yo'q</em>{% endif %}</td>
+              <td class="r">{{ r.cost_fmt }}</td>
+              <td class="r">{{ r.price_fmt }}</td>
+              <td class="r"><input class="nzr-new" name="new_{{ r.variant_id }}" value="{{ r.new_fmt }}" inputmode="numeric" aria-label="Yangi narx"></td>
+              <td class="r nzr-delta {% if r.delta and r.delta > 0 %}is-up{% elif r.delta and r.delta < 0 %}is-down{% endif %}" data-delta>{% if r.delta is not None %}{% if r.delta > 0 %}+{% endif %}{{ r.delta }}%{% else %}—{% endif %}</td>
+              <td class="r" data-margin>{% if r.margin_new is not None %}{{ r.margin_new }}%{% if r.margin_old is not None %}<small> ({{ r.margin_old }}%)</small>{% endif %}{% else %}—{% endif %}</td>
+              <td class="r">{% if r.new_compare %}<s>{{ r.new_compare_fmt }}</s>{% else %}—{% endif %}</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+
+      <section class="nzr-panel nzr-save">
+        <h3><span class="nzr-step">3</span> Saqlash va qo'llash</h3>
+        <div class="nzr-row2">
+          <label class="nzr-field"><span>Hujjat nomi</span><input name="title" value="{{ title_default }}" placeholder="masalan: Oktabr — protein narxlari +7%" maxlength="160"></label>
+          <label class="nzr-field"><span>Izoh</span><input name="note" maxlength="255" placeholder="Sabab: yetkazib beruvchi narxi oshdi…"></label>
+        </div>
+        <div class="nzr-when">
+          {% if can_apply %}<label><input type="radio" name="when" value="now" checked> <b>Hozir qo'llash</b></label>
+          <label><input type="radio" name="when" value="later"> <b>Belgilangan vaqtda</b> <input type="datetime-local" name="scheduled_for" min="{{ now_local }}" aria-label="Kuchga kirish vaqti"></label>{% endif %}
+          <label><input type="radio" name="when" value="draft" {% if not can_apply %}checked{% endif %}> <b>Qoralama</b> <small>(keyin tekshirib qo'llanadi)</small></label>
+        </div>
+        <button class="nzp-btn nzr-go" type="submit" name="save" value="1" data-nzr-confirm><i class="fas fa-check" aria-hidden="true"></i> Saqlash</button>
+      </section>
+      {% endif %}
+    </section>
+  </div>
+</form>
+{% endblock %}
+{% block extrajs %}
+{{ block.super }}
+<script src="{% static 'admin/js/nutrizone-repricing.js' %}?v=1"></script>
+{% endblock %}
