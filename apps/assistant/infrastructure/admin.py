@@ -141,7 +141,7 @@ class KnowledgeEntryAdmin(PremiumListMixin, PremiumFormMixin, admin.ModelAdmin):
     nz_subtitle = ("AI maslahatchini o'qiting: yetkazib berish, to'lov, aksiyalar, mahsulotlarni qo'llash va filiallar haqidagi rasmiy javoblaringiz. "
                    "Maslahatchi shu javoblarni mijozning tilida (o'zbek, rus, ingliz) ishlatadi; mahsulot, narx, qoldiq va filiallarni esa o'zi katalogdan o'qiydi.")
     nz_columns = (("Bilim", ""), ("Mavzu", ""), ("Tillar", ""), ("Holat", ""), ("Ishlatildi", "r"))
-    nz_grid = "minmax(280px,3fr) 170px 120px 130px 100px"
+    nz_grid = "minmax(260px,3fr) minmax(170px,1.2fr) 150px 130px 90px"
     nz_search = "Savol, kalit so'z yoki javob…"
     nz_empty = ("Hali bilim yo'q", "«Qo'shish» bilan birinchi savol-javobni kiriting.")
     nz_sorts = (("Muhimlik", ""), ("Ko'p ishlatilgan", "-5"), ("Nom", "1"))
