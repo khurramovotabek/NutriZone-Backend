@@ -1,4 +1,4 @@
-"""apply_official_photos: the listed product's old images are replaced by the bundled official pack shot, once."""
+"""apply_official_photos: the listed product's main photo is replaced by the bundled official pack shot, once; the gallery stays."""
 from __future__ import annotations
 
 import io
@@ -14,7 +14,7 @@ from apps.products.management.commands.apply_official_photos import PHOTO_DIR
 pytestmark = pytest.mark.django_db
 
 
-def test_old_images_are_replaced_by_the_official_photo_and_rerun_is_a_no_op(settings, tmp_path):
+def test_main_photo_is_replaced_gallery_kept_and_rerun_is_a_no_op(settings, tmp_path):
     settings.MEDIA_ROOT = str(tmp_path)
     slug, entry = next(iter(json.loads((PHOTO_DIR / "manifest.json").read_text(encoding="utf-8")).items()))
     product = p_models.Product.objects.create(id=uuid.UUID(entry["product_id"]), status="published")
@@ -25,8 +25,9 @@ def test_old_images_are_replaced_by_the_official_photo_and_rerun_is_a_no_op(sett
 
     call_command("apply_official_photos", stdout=io.StringIO(), stderr=io.StringIO())
 
-    images = list(p_models.ProductMedia.objects.filter(product=product, media_role__in=("primary", "gallery")))
-    assert len(images) == 1 and images[0].media_role == "primary" and "old" not in images[0].storage_path
+    images = list(p_models.ProductMedia.objects.filter(product=product, media_role="primary"))
+    assert len(images) == 1 and "old" not in images[0].storage_path
+    assert p_models.ProductMedia.objects.get(product=product, media_role="gallery").storage_path == "image/old/gallery.jpg"
     assert p_models.ProductMedia.objects.filter(product=product, media_role="video").count() == 1
 
     out = io.StringIO()
