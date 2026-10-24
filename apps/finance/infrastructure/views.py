@@ -39,6 +39,28 @@ def money(v) -> str:
     return f"−{s}" if v < 0 else s
 
 
+def tr(text: str) -> str:
+    """A dashboard phrase in the staff member's language, for text that never passes through the HTML translator (chart JSON)."""
+    from django.utils.translation import get_language
+
+    from apps.platform.infrastructure.admin_i18n import translate_text
+
+    lang = (get_language() or "uz")[:2]
+    if lang == "uz" or not text:
+        return text
+    return translate_text(text, lang) or text
+
+
+UNITS = {"uz": ("ming", "mln", "mlrd"), "ru": ("тыс", "млн", "млрд"), "en": ("K", "M", "B")}
+
+
+def chart_units() -> dict:
+    from django.utils.translation import get_language
+
+    k, m, b = UNITS.get((get_language() or "uz")[:2], UNITS["uz"])
+    return {"k": k, "m": m, "b": b}
+
+
 def tabs(active: str) -> list[dict]:
     return [{"key": k, "label": label, "icon": icon, "url": reverse(name), "on": k == active} for k, label, icon, name in TABS]
 
@@ -98,7 +120,8 @@ def overview_view(request):
         profit=money(report["net"][cur]), profit_neg=report["net"][cur] < 0, margin=report["margins"][cur], gross_margin=report["gross_margins"][cur],
         revenue=money(report["revenue"][cur]), coverage=report["months"][cur]["coverage"],
         chart={"labels": [m["label"] for m in flow["months"]], "in": [float(v) for v in flow["total_in"]], "out": [float(v) for v in flow["total_out"]],
-               "profit": [float(v) for v in report["net"]], "structure": structure},
+               "profit": [float(v) for v in report["net"]], "structure": [{**x, "label": tr(x["label"])} for x in structure],
+               "t": {"in": tr("Kirim"), "out": tr("Chiqim"), "profit": tr("Sof foyda"), "som": tr("so'm"), **chart_units()}},
         orphans=[{"label": str(SOURCES[s][0]), "amount": money(v)} for s, v in orphan_by_source.items() if v],
         debts=debts, over_budget=over, recent=recent, month_label=pnl.month_label(m0), today=today,
         negative=[c for c in cards if c["neg"]], no_accounts=not accounts,
@@ -130,7 +153,8 @@ def pnl_view(request):
         request, "pnl", "Foyda va zarar", r=report, n=n,
         total_margin=round(float(sum(report["net"], ZERO) / sum(report["revenue"], ZERO) * 100), 1) if sum(report["revenue"], ZERO) else None,
         chart={"labels": [m["label"] for m in report["months"]], "revenue": [float(v) for v in report["revenue"]], "gross": [float(v) for v in report["gross"]],
-               "net": [float(v) for v in report["net"]]},
+               "net": [float(v) for v in report["net"]],
+               "t": {"revenue": tr("Sof tushum"), "gross": tr("Yalpi foyda"), "net": tr("Sof foyda"), "som": tr("so'm"), **chart_units()}},
     ))
 
 

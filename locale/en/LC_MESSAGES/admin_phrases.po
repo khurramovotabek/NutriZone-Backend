@@ -5372,3 +5372,21 @@ msgstr "Expense structure"
 
 msgid "qoldi {0}"
 msgstr "left {0}"
+
+msgid "Bu oy sof foyda"
+msgstr "Net profit this month"
+
+msgid "Rentabellik"
+msgstr "Margin"
+
+msgid "Tannarx ma'lum"
+msgstr "Cost known"
+
+msgid "Tannarxi ma'lum tushum ulushi"
+msgstr "Share of revenue with known cost"
+
+msgid "Bosh sahifa"
+msgstr "Home"
+
+msgid "savdo yo'q"
+msgstr "no sales"

@@ -25,9 +25,9 @@
 
 <section class="nzf-kpis">
   <div class="nzf-kpi is-main"><span>Jami pul</span><b>{{ total }} <small>so'm</small></b><em>{{ cards|length }} ta hisobda</em></div>
-  <div class="nzf-kpi"><span>{{ month_label }}: kirim</span><b class="nzf-in">{{ month_in }}</b><em>savdo va boshqa tushumlar</em></div>
-  <div class="nzf-kpi"><span>{{ month_label }}: chiqim</span><b class="nzf-out">{{ month_out }}</b><em>xarid, ish haqi, xarajatlar</em></div>
-  <div class="nzf-kpi"><span>Sof foyda ({{ month_label }})</span><b class="{% if profit_neg %}nzf-out{% else %}nzf-in{% endif %}">{{ profit }}</b><em>{% if margin is not None %}rentabellik {{ margin }}%{% else %}savdo yo'q{% endif %}{% if coverage is not None and coverage < 100 %} · tannarx {{ coverage }}% ma'lum{% endif %}</em></div>
+  <div class="nzf-kpi"><span>Bu oy kirim</span><b class="nzf-in">{{ month_in }}</b><em>savdo va boshqa tushumlar</em></div>
+  <div class="nzf-kpi"><span>Bu oy chiqim</span><b class="nzf-out">{{ month_out }}</b><em>xarid, ish haqi, xarajatlar</em></div>
+  <div class="nzf-kpi"><span>Bu oy sof foyda</span><b class="{% if profit_neg %}nzf-out{% else %}nzf-in{% endif %}">{{ profit }}</b><em>{% if margin is not None %}<span>Rentabellik</span>: {{ margin }}%{% else %}savdo yo'q{% endif %}{% if coverage is not None and coverage < 100 %} · <span>Tannarx ma'lum</span>: {{ coverage }}%{% endif %}</em></div>
   <div class="nzf-kpi"><span>Yetkazib beruvchilarga qarz</span><b class="{% if debts.overdue_raw %}nzf-out{% endif %}">{{ debts.payable }}</b><em>{% if debts.overdue_raw %}muddati o'tgan: {{ debts.overdue }}{% else %}muddati o'tgani yo'q{% endif %}</em></div>
   <div class="nzf-kpi"><span>Kuryerlardagi naqd</span><b>{{ debts.courier }}</b><em>{{ debts.courier_orders }} ta buyurtma yo'lda</em></div>
 </section>
@@ -97,16 +97,16 @@
   var dark = document.documentElement.getAttribute("data-bs-theme") === "dark" || document.body.classList.contains("dark-mode") || matchMedia("(prefers-color-scheme: dark)").matches;
   var ink = dark ? "#cbd5e1" : "#334155", grid = dark ? "rgba(148,163,184,.15)" : "rgba(15,23,42,.08)";
   var fmt = function (v) { return Math.round(v).toLocaleString("ru-RU").replace(/,/g, " "); };
-  var short = function (v) { var a = Math.abs(v); return a >= 1e9 ? (v / 1e9).toFixed(1) + " mlrd" : a >= 1e6 ? (v / 1e6).toFixed(1) + " mln" : a >= 1e3 ? Math.round(v / 1e3) + " ming" : v; };
+  var short = function (v) { var a = Math.abs(v); return a >= 1e9 ? (v / 1e9).toFixed(1) + " " + d.t.b : a >= 1e6 ? (v / 1e6).toFixed(1) + " " + d.t.m : a >= 1e3 ? Math.round(v / 1e3) + " " + d.t.k : v; };
   var flow = document.getElementById("nzf-flow");
   if (flow) new Chart(flow, {
     data: { labels: d.labels, datasets: [
-      { type: "bar", label: "Kirim", data: d.in, backgroundColor: "rgba(22,163,74,.75)", borderRadius: 6, maxBarThickness: 34 },
-      { type: "bar", label: "Chiqim", data: d.out, backgroundColor: "rgba(220,38,38,.7)", borderRadius: 6, maxBarThickness: 34 },
-      { type: "line", label: "Sof foyda", data: d.profit, borderColor: "#f59e0b", backgroundColor: "#f59e0b", tension: .35, pointRadius: 4, borderWidth: 3 },
+      { type: "bar", label: d.t.in, data: d.in, backgroundColor: "rgba(22,163,74,.75)", borderRadius: 6, maxBarThickness: 34 },
+      { type: "bar", label: d.t.out, data: d.out, backgroundColor: "rgba(220,38,38,.7)", borderRadius: 6, maxBarThickness: 34 },
+      { type: "line", label: d.t.profit, data: d.profit, borderColor: "#f59e0b", backgroundColor: "#f59e0b", tension: .35, pointRadius: 4, borderWidth: 3 },
     ] },
     options: { responsive: true, maintainAspectRatio: false, interaction: { mode: "index", intersect: false },
-      plugins: { legend: { labels: { color: ink, usePointStyle: true } }, tooltip: { callbacks: { label: function (c) { return c.dataset.label + ": " + fmt(c.parsed.y) + " so'm"; } } } },
+      plugins: { legend: { labels: { color: ink, usePointStyle: true } }, tooltip: { callbacks: { label: function (c) { return c.dataset.label + ": " + fmt(c.parsed.y) + " " + d.t.som; } } } },
       scales: { x: { ticks: { color: ink }, grid: { display: false } }, y: { ticks: { color: ink, callback: short }, grid: { color: grid } } } },
   });
   var st = document.getElementById("nzf-structure");
@@ -115,7 +115,7 @@
     new Chart(st, { type: "doughnut",
       data: { labels: d.structure.map(function (x) { return x.label; }), datasets: [{ data: d.structure.map(function (x) { return x.value; }), backgroundColor: d.structure.map(function (x, i) { return x.color && x.color !== "#64748b" ? x.color : palette[i % palette.length]; }), borderWidth: 0 }] },
       options: { responsive: true, maintainAspectRatio: false, cutout: "62%", plugins: { legend: { position: "bottom", labels: { color: ink, boxWidth: 10, font: { size: 11 } } },
-        tooltip: { callbacks: { label: function (c) { return c.label + ": " + fmt(c.parsed) + " so'm"; } } } } } });
+        tooltip: { callbacks: { label: function (c) { return c.label + ": " + fmt(c.parsed) + " " + d.t.som; } } } } } });
   }
 })();
 </script>

@@ -14,7 +14,11 @@ from apps.finance.infrastructure import ledger
 from apps.finance.infrastructure.models import SOURCES, Category, CategoryKind, MoneyAccount, PnlSection, TxKind
 
 ZERO = Decimal(0)
-MONTHS_UZ = ("yan", "fev", "mar", "apr", "may", "iyn", "iyl", "avg", "sen", "okt", "noy", "dek")
+MONTHS = {
+    "uz": ("yan", "fev", "mar", "apr", "may", "iyn", "iyl", "avg", "sen", "okt", "noy", "dek"),
+    "ru": ("янв", "фев", "мар", "апр", "май", "июн", "июл", "авг", "сен", "окт", "ноя", "дек"),
+    "en": ("Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"),
+}
 
 
 def month_start(d: date) -> date:
@@ -33,7 +37,10 @@ def months_back(last: date, n: int) -> list[date]:
 
 
 def month_label(m: date) -> str:
-    return f"{MONTHS_UZ[m.month - 1]} {m.year}"
+    from django.utils.translation import get_language
+
+    names = MONTHS.get((get_language() or "uz")[:2], MONTHS["uz"])
+    return f"{names[m.month - 1]} {m.year}"
 
 
 def _sales(start: date, end: date) -> dict:

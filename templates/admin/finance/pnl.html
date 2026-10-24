@@ -37,7 +37,7 @@
 
 <section class="nzf-notes">
   <p><i class="fas fa-circle-info" aria-hidden="true"></i> <b>Tannarx</b> — oxirgi kirim (prixod) narxidan yoki narx ro'yxatidagi tannarxdan. Tannarxi kiritilmagan tovarlar ma'lum qismning o'rtacha ulushi bilan hisoblanadi.
-    {% for m in r.months %}{% if m.coverage is not None and m.coverage < 100 %}<br>{{ m.label }}: tushumning {{ m.coverage }}% qismi tannarxi ma'lum.{% endif %}{% endfor %}</p>
+    {% for m in r.months %}{% if m.coverage is not None and m.coverage < 100 %}<br>{{ m.label }} — <span>Tannarxi ma'lum tushum ulushi</span>: {{ m.coverage }}%{% endif %}{% endfor %}</p>
   <p><i class="fas fa-circle-info" aria-hidden="true"></i> <b>Ish haqi</b> — «Oylik va KPI» sahifasida to'langan kassir maoshlari. Boshqa xodimlar maoshini «Xodimlar ish haqi» moddasi bilan xarajat qilib kiriting.</p>
   <p><i class="fas fa-circle-info" aria-hidden="true"></i> Egasiga to'lov, investitsiya va qarzlar foydaga kirmaydi — ular «Pul oqimi»da ko'rinadi.</p>
 </section>
@@ -54,15 +54,15 @@
   var dark = document.documentElement.getAttribute("data-bs-theme") === "dark" || matchMedia("(prefers-color-scheme: dark)").matches;
   var ink = dark ? "#cbd5e1" : "#334155", grid = dark ? "rgba(148,163,184,.15)" : "rgba(15,23,42,.08)";
   var fmt = function (v) { return Math.round(v).toLocaleString("ru-RU"); };
-  var short = function (v) { var a = Math.abs(v); return a >= 1e9 ? (v / 1e9).toFixed(1) + " mlrd" : a >= 1e6 ? (v / 1e6).toFixed(1) + " mln" : a >= 1e3 ? Math.round(v / 1e3) + " ming" : v; };
+  var short = function (v) { var a = Math.abs(v); return a >= 1e9 ? (v / 1e9).toFixed(1) + " " + d.t.b : a >= 1e6 ? (v / 1e6).toFixed(1) + " " + d.t.m : a >= 1e3 ? Math.round(v / 1e3) + " " + d.t.k : v; };
   new Chart(document.getElementById("nzf-pnl"), {
     data: { labels: d.labels, datasets: [
-      { type: "bar", label: "Sof tushum", data: d.revenue, backgroundColor: "rgba(37,99,235,.7)", borderRadius: 6, maxBarThickness: 40 },
-      { type: "bar", label: "Yalpi foyda", data: d.gross, backgroundColor: "rgba(13,148,136,.7)", borderRadius: 6, maxBarThickness: 40 },
-      { type: "line", label: "Sof foyda", data: d.net, borderColor: "#f59e0b", backgroundColor: "#f59e0b", tension: .35, borderWidth: 3, pointRadius: 4 },
+      { type: "bar", label: d.t.revenue, data: d.revenue, backgroundColor: "rgba(37,99,235,.7)", borderRadius: 6, maxBarThickness: 40 },
+      { type: "bar", label: d.t.gross, data: d.gross, backgroundColor: "rgba(13,148,136,.7)", borderRadius: 6, maxBarThickness: 40 },
+      { type: "line", label: d.t.net, data: d.net, borderColor: "#f59e0b", backgroundColor: "#f59e0b", tension: .35, borderWidth: 3, pointRadius: 4 },
     ] },
     options: { responsive: true, maintainAspectRatio: false, interaction: { mode: "index", intersect: false },
-      plugins: { legend: { labels: { color: ink, usePointStyle: true } }, tooltip: { callbacks: { label: function (c) { return c.dataset.label + ": " + fmt(c.parsed.y) + " so'm"; } } } },
+      plugins: { legend: { labels: { color: ink, usePointStyle: true } }, tooltip: { callbacks: { label: function (c) { return c.dataset.label + ": " + fmt(c.parsed.y) + " " + d.t.som; } } } },
       scales: { x: { ticks: { color: ink }, grid: { display: false } }, y: { ticks: { color: ink, callback: short }, grid: { color: grid } } } },
   });
 })();

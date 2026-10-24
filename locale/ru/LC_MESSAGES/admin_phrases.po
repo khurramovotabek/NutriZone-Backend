@@ -5411,3 +5411,21 @@ msgstr "Структура расходов"
 
 msgid "qoldi {0}"
 msgstr "осталось {0}"
+
+msgid "Bu oy sof foyda"
+msgstr "Чистая прибыль за месяц"
+
+msgid "Rentabellik"
+msgstr "Рентабельность"
+
+msgid "Tannarx ma'lum"
+msgstr "Себестоимость известна"
+
+msgid "Tannarxi ma'lum tushum ulushi"
+msgstr "Доля выручки с известной себестоимостью"
+
+msgid "Bosh sahifa"
+msgstr "Главная"
+
+msgid "savdo yo'q"
+msgstr "нет продаж"
