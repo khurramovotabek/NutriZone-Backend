@@ -4868,3 +4868,546 @@ msgstr "Добавьте первого курьера кнопкой «Доба
 
 msgid "Ism va telefon — yetkazib berish markazida ko'rinadi"
 msgstr "Имя и телефон — видны в центре доставки"
+
+msgid "{0} ta buyurtma yo'lda"
+msgstr "{0} заказов в пути"
+
+msgid "{0} ta buyurtma yo'lda — yetkazilganda kassaga tushadi"
+msgstr "{0} заказов в пути — поступит в кассу после доставки"
+
+msgid "{0} ta hisobda"
+msgstr "на {0} счетах"
+
+msgid "{0} ta faol hisob"
+msgstr "{0} активных счетов"
+
+msgid "{0} ta yetkazib beruvchi"
+msgstr "{0} поставщиков"
+
+msgid "{0} ta operatsiya"
+msgstr "{0} операций"
+
+msgid "{0} oy"
+msgstr "{0} мес."
+
+msgid "Avtomatik harakatlar"
+msgstr "Автоматические движения"
+
+msgid "Avtomatik harakatlar shu kundan boshlab hisoblanadi."
+msgstr "Автоматические движения считаются с этого дня."
+
+msgid "Avtomatik manbalar"
+msgstr "Автоматические источники"
+
+msgid "Avtomatik tushum va to'lovlar"
+msgstr "Автоматические поступления и платежи"
+
+msgid "Bank va kartalarda"
+msgstr "На банке и картах"
+
+msgid "Bank va to'lov komissiyalari"
+msgstr "Банковские и платёжные комиссии"
+
+msgid "Boshlang'ich holat"
+msgstr "Начальное состояние"
+
+msgid "Boshlang'ich qoldiq"
+msgstr "Начальный остаток"
+
+msgid "Hisob boshlangan sana"
+msgstr "Дата начала учёта"
+
+msgid "Boshqa xarajatlar"
+msgstr "Прочие расходы"
+
+msgid "Bu oy hali xarajat yo'q."
+msgstr "В этом месяце расходов ещё нет."
+
+msgid "Bu oy kirim (qo'lda)"
+msgstr "Приход за месяц (вручную)"
+
+msgid "Bu oy xarajat"
+msgstr "Расходы за месяц"
+
+msgid "Bu oy kirim"
+msgstr "Приход за месяц"
+
+msgid "Bu oy chiqim"
+msgstr "Расход за месяц"
+
+msgid "Bu oy"
+msgstr "Этот месяц"
+
+msgid "Eng katta modda"
+msgstr "Крупнейшая статья"
+
+msgid "Chiqim yo'q"
+msgstr "Расходов нет"
+
+msgid "Kirim yo'q"
+msgstr "Поступлений нет"
+
+msgid "coin — kelgusida chegirma sifatida ishlatiladigan majburiyat (1 coin = 1 so'm)."
+msgstr "коинов — обязательство, которое будет использовано как скидка (1 коин = 1 сум)."
+
+msgid "Coins bilan to'langan qism"
+msgstr "Оплачено коинами"
+
+msgid "Do'kon kassalaridagi naqd pul"
+msgstr "Наличные в кассах магазинов"
+
+msgid "Do'kon kassalari savdosi"
+msgstr "Продажи в кассах магазинов"
+
+msgid "Egasiga to'lov (dividend)"
+msgstr "Выплата владельцу (дивиденды)"
+
+msgid "Egasiga to'lov, investitsiya va qarzlar foydaga kirmaydi — ular «Pul oqimi»da ko'rinadi."
+msgstr "Выплаты владельцу, инвестиции и займы не входят в прибыль — они видны в «Движении денег»."
+
+msgid "Egasidan investitsiya"
+msgstr "Инвестиции владельца"
+
+msgid "Qarz olindi"
+msgstr "Получен заём"
+
+msgid "Qarzni qaytarish"
+msgstr "Погашение займа"
+
+msgid "Boshqa daromad"
+msgstr "Прочий доход"
+
+msgid "Foyda va zarar"
+msgstr "Прибыли и убытки"
+
+msgid "Hali qo'lda kiritilgan operatsiya yo'q. Ijara, kommunal, reklama kabi xarajatlarni «Xarajat» tugmasi bilan kiriting."
+msgstr "Ручных операций пока нет. Вносите аренду, коммунальные, рекламу кнопкой «Расход»."
+
+msgid "Haqiqiy pul harakati: qancha pul kirdi, qancha chiqdi va oy oxirida hisoblarda qancha qoldi. Hisoblar orasidagi o'tkazmalar bu yerda ko'rinmaydi."
+msgstr "Реальное движение денег: сколько пришло, сколько ушло и сколько осталось на счетах на конец месяца. Переводы между своими счетами не показываются."
+
+msgid "Haqiqiy xarajat — shu oy «Operatsiyalar»da kiritilgan xarajatlar. Tovar xaridi va kassir oyligi avtomatik hisoblanadi, ular budjetga kirmaydi."
+msgstr "Факт — расходы, внесённые в «Операциях» за месяц. Закупки товара и зарплата кассиров считаются автоматически и в бюджет не входят."
+
+msgid "Har bir xarajat moddasiga oylik reja qo'ying — haqiqiy xarajat rejaga yaqinlashsa yoki oshsa, panel ogohlantiradi."
+msgstr "Задайте месячный план по каждой статье — панель предупредит, когда расходы приблизятся к нему или превысят его."
+
+msgid "Hisobdan chiqarilgan tovar"
+msgstr "Списанный товар"
+
+msgid "Hisoblar"
+msgstr "Счета"
+
+msgid "Hisobotdagi o'rni"
+msgstr "Строка отчёта"
+
+msgid "Internet, aloqa va dasturlar"
+msgstr "Интернет, связь и программы"
+
+msgid "Jami operatsion xarajatlar"
+msgstr "Итого операционные расходы"
+
+msgid "Kassa, bank hisobi yoki karta. Boshlang'ich qoldiq va sana — hozirgi haqiqiy pul bilan boshlang."
+msgstr "Касса, банковский счёт или карта. Начните с реального остатка на сегодня."
+
+msgid "Kassalar, bank hisoblari va kartalar. Qoldiq = boshlang'ich qoldiq + avtomatik tushumlar + qo'lda kiritilgan operatsiyalar."
+msgstr "Кассы, банковские счета и карты. Остаток = начальный остаток + автоматические поступления + ручные операции."
+
+msgid "Kassa savdosi faqat shu filialdan olinadi. Bo'sh = barcha kassalar."
+msgstr "Продажи касс берутся только из этого филиала. Пусто = все кассы."
+
+msgid "Kassirlar ish haqi"
+msgstr "Зарплата кассиров"
+
+msgid "Kassirlar ish haqi (KPI bilan)"
+msgstr "Зарплата кассиров (с KPI)"
+
+msgid "kelajakdagi chegirma majburiyati"
+msgstr "обязательство по будущим скидкам"
+
+msgid "Kimga qarzdormiz, kimdan pul olishimiz kerak va mijozlar oldidagi coin majburiyati."
+msgstr "Кому мы должны, кто должен нам и обязательства по коинам перед клиентами."
+
+msgid "Kirim, chiqim va sof foyda — 6 oy"
+msgstr "Приход, расход и чистая прибыль — 6 месяцев"
+
+msgid "Kirim va chiqim grafigi"
+msgstr "График прихода и расхода"
+
+msgid "Kirim, xarajat yoki hisoblar orasida o'tkazma. Sotuv, yetkazib beruvchiga to'lov va ish haqini bu yerga kiritmang — ular avtomatik hisoblanadi."
+msgstr "Приход, расход или перевод между счетами. Не вносите сюда продажи, оплаты поставщикам и зарплату — они считаются автоматически."
+
+msgid "Ko'chirma"
+msgstr "Выписка"
+
+msgid "Kommunal xizmatlar"
+msgstr "Коммунальные услуги"
+
+msgid "Kuryerlardagi naqd"
+msgstr "Наличные у курьеров"
+
+msgid "Marketing va reklama"
+msgstr "Маркетинг и реклама"
+
+msgid "Mijozlar coinlari"
+msgstr "Коины клиентов"
+
+msgid "Mijozlar hamyonidagi jami"
+msgstr "В кошельках клиентов всего"
+
+msgid "Modda — operatsiyani guruhlash uchun. «Hisobotdagi o'rni» Foyda va zarar qatorini belgilaydi."
+msgstr "Статья группирует операции. «Строка отчёта» определяет её место в отчёте о прибылях и убытках."
+
+msgid "Moliya bo'limlari"
+msgstr "Разделы финансов"
+
+msgid "muddati o'tgani yo'q"
+msgstr "просрочки нет"
+
+msgid "Operatsion xarajatlar"
+msgstr "Операционные расходы"
+
+msgid "Operatsion xarajat"
+msgstr "Операционный расход"
+
+msgid "Operatsion foyda"
+msgstr "Операционная прибыль"
+
+msgid "Operatsiyalar"
+msgstr "Операции"
+
+msgid "Operatsiya yo'q"
+msgstr "Операций нет"
+
+msgid "O'tgan oy rejasini ko'chirish"
+msgstr "Скопировать план прошлого месяца"
+
+msgid "oxirgi kirim (prixod) narxidan yoki narx ro'yxatidagi tannarxdan. Tannarxi kiritilmagan tovarlar ma'lum qismning o'rtacha ulushi bilan hisoblanadi."
+msgstr "по цене последнего прихода или себестоимости из прайс-листа. Товары без себестоимости считаются по средней доле известной части."
+
+msgid "— oxirgi kirim (prixod) narxidan yoki narx ro'yxatidagi tannarxdan. Tannarxi kiritilmagan tovarlar ma'lum qismning o'rtacha ulushi bilan hisoblanadi."
+msgstr "— по цене последнего прихода или себестоимости из прайс-листа. Товары без себестоимости считаются по средней доле известной части."
+
+msgid "Oxirgi operatsiyalar"
+msgstr "Последние операции"
+
+msgid "«Oylik va KPI» sahifasida to'langan kassir maoshlari. Boshqa xodimlar maoshini «Xodimlar ish haqi» moddasi bilan xarajat qilib kiriting."
+msgstr "зарплаты кассиров, выплаченные на странице «Зарплата и KPI». Зарплату остальных сотрудников вносите расходом по статье «Зарплата сотрудников»."
+
+msgid "— «Oylik va KPI» sahifasida to'langan kassir maoshlari. Boshqa xodimlar maoshini «Xodimlar ish haqi» moddasi bilan xarajat qilib kiriting."
+msgstr "— зарплаты кассиров, выплаченные на странице «Зарплата и KPI». Зарплату остальных сотрудников вносите расходом по статье «Зарплата сотрудников»."
+
+msgid "«Oy oxirida hisoblarda» — faol hisoblarning qoldig'i (har bir hisob o'zining boshlangan sanasidan hisoblanadi)."
+msgstr "«На счетах на конец месяца» — остаток активных счетов (каждый считается со своей даты начала)."
+
+msgid "Pul qayerda, bu oy qancha kirdi-chiqdi va biznes qancha foyda qilyapti — bir sahifada."
+msgstr "Где деньги, сколько пришло и ушло за месяц и сколько зарабатывает бизнес — на одной странице."
+
+msgid "Qarz = «Kirim» hujjatlaridagi tovar qiymati − yetkazib beruvchiga qilingan to'lovlar. To'lovni yetkazib beruvchi sahifasida kiriting — u avtomatik ravishda tegishli hisobdan (naqd/bank/karta) chiqim bo'ladi."
+msgstr "Долг = стоимость приходов − оплаты поставщику. Вносите оплату на странице поставщика — она автоматически спишется с нужного счёта (наличные/банк/карта)."
+
+msgid "Qarzlar"
+msgstr "Долги"
+
+msgid "Qo'lda kiritilgan kirim, xarajat va hisoblar orasidagi o'tkazmalar. Savdo, yetkazib beruvchilarga to'lov va ish haqi avtomatik hisoblanadi."
+msgstr "Ручные приходы, расходы и переводы между счетами. Продажи, оплаты поставщикам и зарплата считаются автоматически."
+
+msgid "«Qo'shish» bilan birinchi xarajat yoki kirimni kiriting."
+msgstr "Внесите первый расход или приход кнопкой «Добавить»."
+
+msgid "«Qo'shish» bilan birinchi kassa yoki bank hisobini oching."
+msgstr "Откройте первую кассу или банковский счёт кнопкой «Добавить»."
+
+msgid "Rejadan oshib ketgan modda yo'q."
+msgstr "Нет статей сверх плана."
+
+msgid "reja qo'yilmagan"
+msgstr "план не задан"
+
+msgid "Reja, so'm"
+msgstr "План, сум"
+
+msgid "Haqiqiy"
+msgstr "Факт"
+
+msgid "Haqiqiy xarajat"
+msgstr "Фактические расходы"
+
+msgid "Bajarilishi"
+msgstr "Исполнение"
+
+msgid "Qoldi"
+msgstr "Осталось"
+
+msgid "reja − haqiqiy"
+msgstr "план − факт"
+
+msgid "savdo va boshqa tushumlar"
+msgstr "продажи и прочие поступления"
+
+msgid "Sayt va Telegram buyurtmalari"
+msgstr "Заказы с сайта и Telegram"
+
+msgid "Soliqlar"
+msgstr "Налоги"
+
+msgid "Soliq"
+msgstr "Налог"
+
+msgid "Sotilgan tovar tannarxi"
+msgstr "Себестоимость проданных товаров"
+
+msgid "Ta'mirlash va jihozlar"
+msgstr "Ремонт и оборудование"
+
+msgid "Terminal, Click/Payme/Uzum va bank o'tkazmalari"
+msgstr "Терминал, Click/Payme/Uzum и банковские переводы"
+
+msgid "Tizim o'zi biladigan pul: kassa savdosi, sayt to'lovlari, yetkazib beruvchilarga to'lovlar va ish haqi. Har bir manba faqat bitta hisobga tushadi."
+msgstr "Деньги, которые система знает сама: продажи касс, оплаты на сайте, оплаты поставщикам и зарплата. Каждый источник идёт только на один счёт."
+
+msgid "to'lov muddati o'tib ketgan"
+msgstr "срок оплаты прошёл"
+
+msgid "Tushum − tovar tannarxi − xarajatlar = sof foyda. Savdo raqamlari Biznes analitikasi bilan bir xil manbadan."
+msgstr "Выручка − себестоимость − расходы = чистая прибыль. Продажи — из того же источника, что и Бизнес-аналитика."
+
+msgid "Tushum va foyda grafigi"
+msgstr "График выручки и прибыли"
+
+msgid "Xarajat va kirim turlari: ijara, kommunal, marketing, soliq… Har biri Foyda va zarar hisobotida o'z qatoriga tushadi."
+msgstr "Типы расходов и приходов: аренда, коммунальные, маркетинг, налоги… Каждый попадает в свою строку отчёта о прибылях и убытках."
+
+msgid "xarid, ish haqi, xarajatlar"
+msgstr "закупки, зарплата, расходы"
+
+msgid "Xodimlar ish haqi"
+msgstr "Зарплата сотрудников"
+
+msgid "Xo'jalik va ofis"
+msgstr "Хозяйство и офис"
+
+msgid "Yetkazib berish va logistika"
+msgstr "Доставка и логистика"
+
+msgid "Yetkazib beruvchilarga qarz"
+msgstr "Долг поставщикам"
+
+msgid "Yetkazib beruvchilarga qarzlar"
+msgstr "Долги поставщикам"
+
+msgid "Yetkazib beruvchilarga qarz yo'q."
+msgstr "Долгов поставщикам нет."
+
+msgid "Shundan muddati o'tgan"
+msgstr "Из них просрочено"
+
+msgid "Muddati o'tgan"
+msgstr "Просрочено"
+
+msgid "Eng eski muddat"
+msgstr "Самый ранний срок"
+
+msgid "Akt sverka va to'lov"
+msgstr "Акт сверки и оплата"
+
+msgid "Moliya paneli"
+msgstr "Финансовая панель"
+
+msgid "Moliya"
+msgstr "Финансы"
+
+msgid "Pul oqimi"
+msgstr "Движение денег"
+
+msgid "Budjet"
+msgstr "Бюджет"
+
+msgid "Moddalar"
+msgstr "Статьи"
+
+msgid "Moliya moddalari"
+msgstr "Финансовые статьи"
+
+msgid "Jami pul"
+msgstr "Всего денег"
+
+msgid "Naqd kassalarda"
+msgstr "В наличных кассах"
+
+msgid "Naqd kassa"
+msgstr "Наличная касса"
+
+msgid "Bank hisobi"
+msgstr "Банковский счёт"
+
+msgid "Korporativ karta"
+msgstr "Корпоративная карта"
+
+msgid "Onlayn hamyon"
+msgstr "Онлайн-кошелёк"
+
+msgid "Xarajat"
+msgstr "Расход"
+
+msgid "Kirim"
+msgstr "Приход"
+
+msgid "O'tkazma"
+msgstr "Перевод"
+
+msgid "Sof foyda"
+msgstr "Чистая прибыль"
+
+msgid "Yalpi foyda"
+msgstr "Валовая прибыль"
+
+msgid "Yalpi marja"
+msgstr "Валовая маржа"
+
+msgid "Sof rentabellik"
+msgstr "Чистая рентабельность"
+
+msgid "Kuryer xizmati"
+msgstr "Услуги курьеров"
+
+msgid "Jami kirim"
+msgstr "Всего приход"
+
+msgid "Jami chiqim"
+msgstr "Всего расход"
+
+msgid "Sof pul oqimi"
+msgstr "Чистый денежный поток"
+
+msgid "kirim − chiqim"
+msgstr "приход − расход"
+
+msgid "Oy oxirida hisoblarda"
+msgstr "На счетах на конец месяца"
+
+msgid "Manba / modda"
+msgstr "Источник / статья"
+
+msgid "Modda"
+msgstr "Статья"
+
+msgid "Yakuniy qoldiq"
+msgstr "Конечный остаток"
+
+msgid "Chiqim"
+msgstr "Расход"
+
+msgid "Bu davrda harakat yo'q."
+msgstr "За период движений нет."
+
+msgid "Sozlash"
+msgstr "Настроить"
+
+msgid "Faqat qo'lda"
+msgstr "Только вручную"
+
+msgid "Hisob qo'shish"
+msgstr "Добавить счёт"
+
+msgid "Hali hisob yo'q"
+msgstr "Счетов пока нет"
+
+msgid "Hisob nomi…"
+msgstr "Название счёта…"
+
+msgid "Modda nomi…"
+msgstr "Название статьи…"
+
+msgid "Raqam, kontragent, izoh…"
+msgstr "Номер, контрагент, примечание…"
+
+msgid "Kim kiritdi"
+msgstr "Кто внёс"
+
+msgid "Modda / kontragent"
+msgstr "Статья / контрагент"
+
+msgid "Katta summa"
+msgstr "Крупная сумма"
+
+msgid "Kontragent"
+msgstr "Контрагент"
+
+msgid "Hujjat raqami"
+msgstr "Номер документа"
+
+msgid "Qaysi hisobga"
+msgstr "На счёт"
+
+msgid "Tafsilotlar"
+msgstr "Подробности"
+
+msgid "Operatsiya"
+msgstr "Операция"
+
+msgid "Hisob"
+msgstr "Счёт"
+
+msgid "Bekor"
+msgstr "Аннулирован"
+
+msgid "Kapital / qarz (foydaga kirmaydi)"
+msgstr "Капитал / заём (не в прибыли)"
+
+msgid "Kassa savdosi: naqd"
+msgstr "Продажи касс: наличные"
+
+msgid "Kassa savdosi: Uzcard/Humo terminal"
+msgstr "Продажи касс: терминал Uzcard/Humo"
+
+msgid "Kassa savdosi: Click/Payme/Uzum"
+msgstr "Продажи касс: Click/Payme/Uzum"
+
+msgid "Sayt: onlayn to'lov"
+msgstr "Сайт: онлайн-оплата"
+
+msgid "Sayt: yetkazishda naqd"
+msgstr "Сайт: наличные при доставке"
+
+msgid "Yetkazib beruvchiga: naqd"
+msgstr "Поставщику: наличные"
+
+msgid "Yetkazib beruvchiga: bank"
+msgstr "Поставщику: банк"
+
+msgid "Yetkazib beruvchiga: karta"
+msgstr "Поставщику: карта"
+
+msgid "naqd"
+msgstr "наличные"
+
+msgid "Uzcard/Humo terminal"
+msgstr "терминал Uzcard/Humo"
+
+msgid "onlayn to'lov"
+msgstr "онлайн-оплата"
+
+msgid "yetkazishda naqd"
+msgstr "наличные при доставке"
+
+msgid "bank"
+msgstr "банк"
+
+msgid "karta"
+msgstr "карта"
+
+msgid "Dan"
+msgstr "С"
+
+msgid "Gacha"
+msgstr "По"
+
+msgid "Hisob qoldig'i: {0} so'm"
+msgstr "Остаток счёта: {0} сум"
+
+msgid "Xarajatlar tarkibi"
+msgstr "Структура расходов"
+
+msgid "qoldi {0}"
+msgstr "осталось {0}"

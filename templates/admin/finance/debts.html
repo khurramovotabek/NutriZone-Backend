@@ -1,0 +1,33 @@
+{% extends "admin/finance/base.html" %}
+{% block fin_icon %}fa-file-invoice-dollar{% endblock %}
+{% block fin_subtitle %}Kimga qarzdormiz, kimdan pul olishimiz kerak va mijozlar oldidagi coin majburiyati.{% endblock %}
+{% block fin_actions %}<a class="nzp-btn nzp-btn-ghost" href="{% url 'admin:stores_supplier_changelist' %}"><i class="fas fa-truck-field" aria-hidden="true"></i> Yetkazib beruvchilar</a>{% endblock %}
+
+{% block fin_body %}
+<section class="nzf-kpis">
+  <div class="nzf-kpi is-main"><span>Yetkazib beruvchilarga qarz</span><b class="nzf-out">{{ d.payable }}</b><em>{{ d.suppliers|length }} ta yetkazib beruvchi</em></div>
+  <div class="nzf-kpi"><span>Shundan muddati o'tgan</span><b class="{% if d.overdue_raw %}nzf-out{% endif %}">{{ d.overdue }}</b><em>to'lov muddati o'tib ketgan</em></div>
+  <div class="nzf-kpi"><span>Kuryerlardagi naqd</span><b class="nzf-in">{{ d.courier }}</b><em>{{ d.courier_orders }} ta buyurtma yo'lda — yetkazilganda kassaga tushadi</em></div>
+  <div class="nzf-kpi"><span>Mijozlar coinlari</span><b>{{ d.coins }}</b><em>kelajakdagi chegirma majburiyati</em></div>
+</section>
+
+<section class="nzf-panel">
+  <h3><i class="fas fa-truck-field" aria-hidden="true"></i> Yetkazib beruvchilarga qarzlar</h3>
+  <div class="nzf-table-wrap">
+  <table class="nzf-table">
+    <thead><tr><th>Yetkazib beruvchi</th><th class="r">Qarz</th><th class="r">Muddati o'tgan</th><th>Eng eski muddat</th><th></th></tr></thead>
+    <tbody>
+      {% for s in d.suppliers %}
+      <tr><td><b>{{ s.name }}</b></td><td class="r">{{ s.due_fmt }}</td><td class="r{% if s.overdue %} neg{% endif %}">{{ s.overdue_fmt }}</td><td>{{ s.oldest|date:"d.m.Y"|default:"—" }}</td>
+        <td class="r"><a class="nzp-btn nzp-btn-ghost nzp-btn-sm" href="{{ s.url }}">Akt sverka va to'lov</a></td></tr>
+      {% empty %}
+      <tr><td colspan="5" class="nzf-muted">Yetkazib beruvchilarga qarz yo'q.</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  </div>
+</section>
+<section class="nzf-notes">
+  <p><i class="fas fa-circle-info" aria-hidden="true"></i> Qarz = «Kirim» hujjatlaridagi tovar qiymati − yetkazib beruvchiga qilingan to'lovlar. To'lovni yetkazib beruvchi sahifasida kiriting — u avtomatik ravishda tegishli hisobdan (naqd/bank/karta) chiqim bo'ladi.</p>
+</section>
+{% endblock %}

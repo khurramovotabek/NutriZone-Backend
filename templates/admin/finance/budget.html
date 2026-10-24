@@ -1,0 +1,41 @@
+{% extends "admin/finance/base.html" %}
+{% block fin_icon %}fa-bullseye{% endblock %}
+{% block fin_subtitle %}Har bir xarajat moddasiga oylik reja qo'ying — haqiqiy xarajat rejaga yaqinlashsa yoki oshsa, panel ogohlantiradi.{% endblock %}
+{% block fin_actions %}
+<div class="nzf-seg">
+  <a href="?month={{ prev|date:'Y-m' }}" aria-label="Oldingi oy"><i class="fas fa-chevron-left" aria-hidden="true"></i></a>
+  <span class="is-on">{{ month_label }}</span>
+  <a href="?month={{ next|date:'Y-m' }}" aria-label="Keyingi oy"><i class="fas fa-chevron-right" aria-hidden="true"></i></a>
+</div>
+{% endblock %}
+
+{% block fin_body %}
+<section class="nzf-kpis is-3">
+  <div class="nzf-kpi"><span>Reja</span><b>{{ plan_total }}</b><em>{{ month_label }}</em></div>
+  <div class="nzf-kpi"><span>Haqiqiy xarajat</span><b class="nzf-out">{{ actual_total }}</b><em>{% if pct_total is not None %}rejaning {{ pct_total }}%{% else %}reja qo'yilmagan{% endif %}</em></div>
+  <div class="nzf-kpi is-main"><span>Qoldi</span><b>{{ left_total }}</b><em>reja − haqiqiy</em></div>
+</section>
+
+<form method="post" class="nzf-panel">
+  {% csrf_token %}
+  <input type="hidden" name="month" value="{{ month|date:'Y-m' }}">
+  <div class="nzf-budget">
+    <div class="nzf-budget-head"><span>Modda</span><span>Reja, so'm</span><span>Haqiqiy</span><span>Bajarilishi</span></div>
+    {% for r in rows %}
+    <div class="nzf-budget-row is-{{ r.state }}">
+      <span class="nzf-acc"><i class="fas {{ r.c.icon }}" style="--c:{{ r.c.color }}" aria-hidden="true"></i><span><b>{{ r.c.name }}</b><small>{{ r.c.get_section_display }}</small></span></span>
+      <span>{% if can_edit %}<input name="plan_{{ r.c.id }}" value="{{ r.plan }}" inputmode="numeric" placeholder="—" aria-label="Reja: {{ r.c.name }}">{% else %}{{ r.plan_fmt }}{% endif %}</span>
+      <span class="nzf-out">{{ r.actual_fmt }}</span>
+      <span class="nzf-progress">{% if r.pct is not None %}<i style="width:{{ r.bar }}%"></i><em>{{ r.pct }}%{% if r.left %} · qoldi {{ r.left }}{% endif %}</em>{% else %}<em class="nzf-muted">reja yo'q</em>{% endif %}</span>
+    </div>
+    {% endfor %}
+  </div>
+  {% if can_edit %}
+  <div class="nzf-form-actions">
+    <button type="submit" name="copy_prev" value="1" class="nzp-btn nzp-btn-ghost"><i class="fas fa-copy" aria-hidden="true"></i> O'tgan oy rejasini ko'chirish</button>
+    <button type="submit" class="nzp-btn"><i class="fas fa-floppy-disk" aria-hidden="true"></i> Saqlash</button>
+  </div>
+  {% endif %}
+</form>
+<section class="nzf-notes"><p><i class="fas fa-circle-info" aria-hidden="true"></i> Haqiqiy xarajat — shu oy «Operatsiyalar»da kiritilgan xarajatlar. Tovar xaridi va kassir oyligi avtomatik hisoblanadi, ular budjetga kirmaydi.</p></section>
+{% endblock %}

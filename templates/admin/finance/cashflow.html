@@ -1,0 +1,34 @@
+{% extends "admin/finance/base.html" %}
+{% block fin_icon %}fa-water{% endblock %}
+{% block fin_subtitle %}Haqiqiy pul harakati: qancha pul kirdi, qancha chiqdi va oy oxirida hisoblarda qancha qoldi. Hisoblar orasidagi o'tkazmalar bu yerda ko'rinmaydi.{% endblock %}
+{% block fin_actions %}
+<div class="nzf-seg"><a href="?months=3" class="{% if n == 3 %}is-on{% endif %}">3 oy</a><a href="?months=6" class="{% if n == 6 %}is-on{% endif %}">6 oy</a><a href="?months=12" class="{% if n == 12 %}is-on{% endif %}">12 oy</a></div>
+<a class="nzp-btn nzp-btn-ghost" href="?months={{ n }}&export=xlsx"><i class="fas fa-file-excel" aria-hidden="true"></i> Excel</a>
+{% endblock %}
+
+{% block fin_body %}
+<section class="nzf-kpis is-3">
+  <div class="nzf-kpi"><span>Jami kirim</span><b class="nzf-in">{{ r.sum_in }}</b><em>{{ n }} oy</em></div>
+  <div class="nzf-kpi"><span>Jami chiqim</span><b class="nzf-out">{{ r.sum_out }}</b><em>{{ n }} oy</em></div>
+  <div class="nzf-kpi is-main"><span>Sof pul oqimi</span><b>{{ r.sum_net }}</b><em>kirim − chiqim</em></div>
+</section>
+
+<section class="nzf-panel nzf-table-wrap">
+  <table class="nzf-table">
+    <thead><tr><th>Manba / modda</th>{% for m in r.months %}<th class="r">{{ m.label }}</th>{% endfor %}<th class="r">Jami</th></tr></thead>
+    <tbody>
+      <tr class="is-head"><td colspan="{{ r.months|length|add:2 }}"><i class="fas fa-arrow-down nzf-in" aria-hidden="true"></i> Kirim</td></tr>
+      {% for row in r.inflow %}<tr><td><i class="fas {{ row.icon }}" aria-hidden="true"></i> {{ row.label }}</td>{% for c in row.cells %}<td class="r">{{ c.v }}</td>{% endfor %}<td class="r"><b>{{ row.total_fmt }}</b></td></tr>
+      {% empty %}<tr><td colspan="{{ r.months|length|add:2 }}" class="nzf-muted">Kirim yo'q</td></tr>{% endfor %}
+      <tr class="is-sub"><td>Jami kirim</td>{% for c in r.total_in_fmt %}<td class="r">{{ c.v }}</td>{% endfor %}<td class="r"><b>{{ r.sum_in }}</b></td></tr>
+      <tr class="is-head"><td colspan="{{ r.months|length|add:2 }}"><i class="fas fa-arrow-up nzf-out" aria-hidden="true"></i> Chiqim</td></tr>
+      {% for row in r.outflow %}<tr><td><i class="fas {{ row.icon }}" aria-hidden="true"></i> {{ row.label }}</td>{% for c in row.cells %}<td class="r">{{ c.v }}</td>{% endfor %}<td class="r"><b>{{ row.total_fmt }}</b></td></tr>
+      {% empty %}<tr><td colspan="{{ r.months|length|add:2 }}" class="nzf-muted">Chiqim yo'q</td></tr>{% endfor %}
+      <tr class="is-sub"><td>Jami chiqim</td>{% for c in r.total_out_fmt %}<td class="r">{{ c.v }}</td>{% endfor %}<td class="r"><b>{{ r.sum_out }}</b></td></tr>
+      <tr class="is-grand"><td>Sof pul oqimi</td>{% for c in r.net_fmt %}<td class="r{% if c.neg %} neg{% endif %}">{{ c.v }}</td>{% endfor %}<td class="r"><b>{{ r.sum_net }}</b></td></tr>
+      <tr class="is-margin"><td>Oy oxirida hisoblarda</td>{% for c in r.closing_fmt %}<td class="r{% if c.neg %} neg{% endif %}">{{ c.v }}</td>{% endfor %}<td></td></tr>
+    </tbody>
+  </table>
+</section>
+<section class="nzf-notes"><p><i class="fas fa-circle-info" aria-hidden="true"></i> «Oy oxirida hisoblarda» — faol hisoblarning qoldig'i (har bir hisob o'zining boshlangan sanasidan hisoblanadi).</p></section>
+{% endblock %}

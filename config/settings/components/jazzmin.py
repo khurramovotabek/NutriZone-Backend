@@ -58,6 +58,7 @@ JAZZMIN_SETTINGS = {
         "Analitika",
         # Sales
         "ordering",
+        "finance",
         "payment",
         "payment.PaymentProviderConfig",
         "payment.PaymentModel",
@@ -138,6 +139,7 @@ JAZZMIN_SETTINGS = {
         "geo.address": "fas fa-house",
         "stores": "fas fa-store",
         "loyalty": "fas fa-coins",
+        "finance": "fas fa-sack-dollar",
         "loyalty.LoyaltyTier": "fas fa-crown",
         "loyalty.Wallet": "fas fa-wallet",
         "loyalty.WalletTransaction": "fas fa-receipt",
@@ -157,7 +159,7 @@ JAZZMIN_SETTINGS = {
     # exactly rather than silently hiding it from a staff user who
     # lacks some specific model permission.
     # The WMS models live in the stores app but are reached from the Ombor group (custom_links["inventory"]).
-    "hide_models": ["chat.chatsettings", "ordering.courier", "stores.stocktransfer", "stores.stockreceipt", "stores.stockmovement", "stores.stockcount",
+    "hide_models": ["chat.chatsettings", "ordering.courier", "finance.moneyaccount", "finance.category", "finance.transaction", "stores.stocktransfer", "stores.stockreceipt", "stores.stockmovement", "stores.stockcount",
                     "stores.writeoff", "stores.supplier", "stores.supplierpayment", "stores.reorderrule", "stores.storecashier",
                     "search.searchterm", "telegram_bot.telegrampost", "telegram_bot.channelautopostsettings", "receipts.receiptsettings"],  # reached from the Catalog group (custom_links["products"])
     "usermenu_links": [{"name": _("Mening profilim"), "url": "admin:nz_profile", "icon": "fas fa-user-circle"}],
@@ -190,6 +192,17 @@ JAZZMIN_SETTINGS = {
             {"name": _("Postlar"), "url": "admin:telegram_bot_telegrampost_changelist", "icon": "fas fa-paper-plane", "permissions": ["telegram_bot.view_telegrampost"]},
             {"name": _("Kanal avtopostlari"), "url": "admin:telegram_bot_channelautopostsettings_changelist", "icon": "fas fa-bullhorn", "permissions": ["telegram_bot.change_channelautopostsettings"]},
             {"name": _("Mijozlarga xabar"), "url": "admin:nz_notify_send", "icon": "fas fa-bullhorn", "permissions": ["notifications.add_notificationbroadcast"]},
+        ],
+        # Moliya (apps/finance): one entry per page, in the order of the in-page tabs.
+        "finance": [
+            {"name": _("Moliya paneli"), "url": "admin:nz_finance", "icon": "fas fa-gauge-high", "permissions": ["finance.view_transaction"]},
+            {"name": _("Operatsiyalar"), "url": "admin:finance_transaction_changelist", "icon": "fas fa-right-left", "permissions": ["finance.view_transaction"]},
+            {"name": _("Hisoblar"), "url": "admin:finance_moneyaccount_changelist", "icon": "fas fa-wallet", "permissions": ["finance.view_moneyaccount"]},
+            {"name": _("Foyda va zarar"), "url": "admin:nz_finance_pnl", "icon": "fas fa-scale-balanced", "permissions": ["finance.view_transaction"]},
+            {"name": _("Pul oqimi"), "url": "admin:nz_finance_cashflow", "icon": "fas fa-water", "permissions": ["finance.view_transaction"]},
+            {"name": _("Budjet"), "url": "admin:nz_finance_budget", "icon": "fas fa-bullseye", "permissions": ["finance.view_transaction"]},
+            {"name": _("Qarzlar"), "url": "admin:nz_finance_debts", "icon": "fas fa-file-invoice-dollar", "permissions": ["finance.view_transaction"]},
+            {"name": _("Moddalar"), "url": "admin:finance_category_changelist", "icon": "fas fa-tags", "permissions": ["finance.view_category"]},
         ],
         # Dispatcher board (apps/ordering/infrastructure/admin_board.py): live Kanban of online orders.
         "ordering": [

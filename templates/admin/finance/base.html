@@ -1,0 +1,32 @@
+{% extends "admin/base_site.html" %}
+{% load static %}
+{# Moliya pages (apps/finance/infrastructure/views.py): shared hero + section tabs. #}
+{% block extrastyle %}
+{{ block.super }}
+<link rel="stylesheet" href="{% static 'admin/css/nutrizone-platform.css' %}?v=5">
+<link rel="stylesheet" href="{% static 'admin/css/nutrizone-finance.css' %}?v=1">
+{% endblock %}
+{% block breadcrumbs %}
+<ol class="breadcrumb">
+  <li class="breadcrumb-item"><a href="{% url 'admin:index' %}">Bosh sahifa</a></li>
+  <li class="breadcrumb-item"><a href="{% url 'admin:nz_finance' %}">Moliya</a></li>
+  <li class="breadcrumb-item active">{{ title }}</li>
+</ol>
+{% endblock %}
+{% block content_title %}{% endblock %}
+{% block content %}
+<div class="nzp nzf">
+  <header class="nzp-hero">
+    <div class="nzp-hero-main">
+      <span class="nzp-hero-icon" style="--c:#0d9488"><i class="fas {% block fin_icon %}fa-sack-dollar{% endblock %}" aria-hidden="true"></i></span>
+      <div><h2>{{ title }}</h2><p>{% block fin_subtitle %}{% endblock %}</p></div>
+    </div>
+    <div class="nzp-hero-actions">{% block fin_actions %}{% endblock %}</div>
+  </header>
+  <nav class="nzf-tabs" aria-label="Moliya bo'limlari">
+    {% for t in nz_tabs %}<a href="{{ t.url }}" class="{% if t.on %}is-on{% endif %}"><i class="fas {{ t.icon }}" aria-hidden="true"></i> {{ t.label }}</a>{% endfor %}
+  </nav>
+  {% if messages %}<div class="nzf-msgs">{% for m in messages %}<div class="nzf-msg is-{{ m.tags }}">{{ m }}</div>{% endfor %}</div>{% endif %}
+  {% block fin_body %}{% endblock %}
+</div>
+{% endblock %}

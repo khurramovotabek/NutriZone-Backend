@@ -1,0 +1,70 @@
+{% extends "admin/finance/base.html" %}
+{% load static %}
+{% block fin_icon %}fa-scale-balanced{% endblock %}
+{% block fin_subtitle %}Tushum − tovar tannarxi − xarajatlar = sof foyda. Savdo raqamlari Biznes analitikasi bilan bir xil manbadan.{% endblock %}
+{% block fin_actions %}
+<div class="nzf-seg">
+  <a href="?months=3" class="{% if n == 3 %}is-on{% endif %}">3 oy</a><a href="?months=6" class="{% if n == 6 %}is-on{% endif %}">6 oy</a><a href="?months=12" class="{% if n == 12 %}is-on{% endif %}">12 oy</a>
+</div>
+<a class="nzp-btn nzp-btn-ghost" href="?months={{ n }}&export=xlsx"><i class="fas fa-file-excel" aria-hidden="true"></i> Excel</a>
+{% endblock %}
+
+{% block fin_body %}
+<section class="nzf-panel">
+  <div class="nzf-chart is-short"><canvas id="nzf-pnl" aria-label="Tushum va foyda grafigi"></canvas></div>
+</section>
+
+<section class="nzf-panel nzf-table-wrap">
+  <table class="nzf-table">
+    <thead><tr><th>Modda</th>{% for m in r.months %}<th class="r">{{ m.label }}</th>{% endfor %}<th class="r">Jami</th></tr></thead>
+    <tbody>
+      {% for row in r.rows %}
+        {% if row.kind == "head" %}
+        <tr class="is-head"><td colspan="{{ r.months|length|add:2 }}">{{ row.label }}</td></tr>
+        {% else %}
+        <tr class="is-{{ row.kind }}">
+          <td>{% if row.icon %}<i class="fas {{ row.icon }}" style="{% if row.color %}color:{{ row.color }}{% endif %}" aria-hidden="true"></i> {% endif %}{{ row.label }}</td>
+          {% for c in row.cells %}<td class="r{% if c.neg %} neg{% endif %}">{{ c.v }}</td>{% endfor %}
+          <td class="r{% if row.total_neg %} neg{% endif %}"><b>{{ row.total_fmt }}</b></td>
+        </tr>
+        {% endif %}
+      {% endfor %}
+      <tr class="is-margin"><td>Sof rentabellik</td>{% for v in r.margins %}<td class="r">{% if v is not None %}{{ v }}%{% else %}—{% endif %}</td>{% endfor %}<td class="r"><b>{% if total_margin is not None %}{{ total_margin }}%{% else %}—{% endif %}</b></td></tr>
+      <tr class="is-margin"><td>Yalpi marja</td>{% for v in r.gross_margins %}<td class="r">{% if v is not None %}{{ v }}%{% else %}—{% endif %}</td>{% endfor %}<td></td></tr>
+    </tbody>
+  </table>
+</section>
+
+<section class="nzf-notes">
+  <p><i class="fas fa-circle-info" aria-hidden="true"></i> <b>Tannarx</b> — oxirgi kirim (prixod) narxidan yoki narx ro'yxatidagi tannarxdan. Tannarxi kiritilmagan tovarlar ma'lum qismning o'rtacha ulushi bilan hisoblanadi.
+    {% for m in r.months %}{% if m.coverage is not None and m.coverage < 100 %}<br>{{ m.label }}: tushumning {{ m.coverage }}% qismi tannarxi ma'lum.{% endif %}{% endfor %}</p>
+  <p><i class="fas fa-circle-info" aria-hidden="true"></i> <b>Ish haqi</b> — «Oylik va KPI» sahifasida to'langan kassir maoshlari. Boshqa xodimlar maoshini «Xodimlar ish haqi» moddasi bilan xarajat qilib kiriting.</p>
+  <p><i class="fas fa-circle-info" aria-hidden="true"></i> Egasiga to'lov, investitsiya va qarzlar foydaga kirmaydi — ular «Pul oqimi»da ko'rinadi.</p>
+</section>
+{{ chart|json_script:"nzf-pnl-data" }}
+{% endblock %}
+
+{% block extrajs %}
+{{ block.super }}
+<script src="{% static 'admin/vendor/chartjs/chart.umd.js' %}"></script>
+<script>
+(function () {
+  var d = JSON.parse(document.getElementById("nzf-pnl-data").textContent);
+  if (!window.Chart) return;
+  var dark = document.documentElement.getAttribute("data-bs-theme") === "dark" || matchMedia("(prefers-color-scheme: dark)").matches;
+  var ink = dark ? "#cbd5e1" : "#334155", grid = dark ? "rgba(148,163,184,.15)" : "rgba(15,23,42,.08)";
+  var fmt = function (v) { return Math.round(v).toLocaleString("ru-RU"); };
+  var short = function (v) { var a = Math.abs(v); return a >= 1e9 ? (v / 1e9).toFixed(1) + " mlrd" : a >= 1e6 ? (v / 1e6).toFixed(1) + " mln" : a >= 1e3 ? Math.round(v / 1e3) + " ming" : v; };
+  new Chart(document.getElementById("nzf-pnl"), {
+    data: { labels: d.labels, datasets: [
+      { type: "bar", label: "Sof tushum", data: d.revenue, backgroundColor: "rgba(37,99,235,.7)", borderRadius: 6, maxBarThickness: 40 },
+      { type: "bar", label: "Yalpi foyda", data: d.gross, backgroundColor: "rgba(13,148,136,.7)", borderRadius: 6, maxBarThickness: 40 },
+      { type: "line", label: "Sof foyda", data: d.net, borderColor: "#f59e0b", backgroundColor: "#f59e0b", tension: .35, borderWidth: 3, pointRadius: 4 },
+    ] },
+    options: { responsive: true, maintainAspectRatio: false, interaction: { mode: "index", intersect: false },
+      plugins: { legend: { labels: { color: ink, usePointStyle: true } }, tooltip: { callbacks: { label: function (c) { return c.dataset.label + ": " + fmt(c.parsed.y) + " so'm"; } } } },
+      scales: { x: { ticks: { color: ink }, grid: { display: false } }, y: { ticks: { color: ink, callback: short }, grid: { color: grid } } } },
+  });
+})();
+</script>
+{% endblock %}

@@ -1,0 +1,43 @@
+{% extends "admin/finance/base.html" %}
+{% block fin_icon %}fa-wallet{% endblock %}
+{% block fin_subtitle %}{{ a.get_kind_display }}{% if a.store %} · {{ a.store.name }}{% endif %} — hisob ko'chirmasi: boshlang'ich qoldiq, har bir kirim va chiqim, yakuniy qoldiq.{% endblock %}
+{% block fin_actions %}
+<a class="nzp-btn nzp-btn-ghost" href="?from={{ start|date:'Y-m-d' }}&to={{ end|date:'Y-m-d' }}&export=xlsx"><i class="fas fa-file-excel" aria-hidden="true"></i> Excel</a>
+<a class="nzp-btn nzp-btn-ghost" href="{% url 'admin:finance_moneyaccount_change' a.pk %}"><i class="fas fa-gear" aria-hidden="true"></i> Sozlash</a>
+{% endblock %}
+
+{% block fin_body %}
+<form class="nzf-filter" method="get">
+  <label>Dan <input type="date" name="from" value="{{ start|date:'Y-m-d' }}"></label>
+  <label>Gacha <input type="date" name="to" value="{{ end|date:'Y-m-d' }}"></label>
+  <button class="nzp-btn" type="submit"><i class="fas fa-filter" aria-hidden="true"></i> Ko'rsatish</button>
+</form>
+
+<section class="nzf-kpis">
+  <div class="nzf-kpi"><span>Boshlang'ich qoldiq</span><b>{{ opening }}</b><em>{{ st.start|date:"d.m.Y" }}</em></div>
+  <div class="nzf-kpi"><span>Kirim</span><b class="nzf-in">+{{ inn }}</b></div>
+  <div class="nzf-kpi"><span>Chiqim</span><b class="nzf-out">−{{ out }}</b></div>
+  <div class="nzf-kpi is-main"><span>Yakuniy qoldiq</span><b>{{ closing }}</b><em>{{ st.end|date:"d.m.Y" }}</em></div>
+</section>
+
+<section class="nzf-panel nzf-table-wrap">
+  <table class="nzf-table is-statement">
+    <thead><tr><th>Sana</th><th>Operatsiya</th><th class="r">Summa</th><th class="r">Qoldiq</th></tr></thead>
+    <tbody>
+      {% for r in st.rows %}
+      <tr>
+        <td class="nowrap">{{ r.day|date:"d.m.Y" }}</td>
+        <td>{% if r.auto %}<span class="nzf-tag">avto</span>{% endif %}
+          {% if r.tx %}<a href="{% url 'admin:finance_transaction_change' r.tx.pk %}"><b>{{ r.title }}</b></a> <small class="nzf-muted">{{ r.tx.number }}</small>{% else %}<b>{{ r.title }}</b>{% endif %}
+          {% if r.detail %}<br><small class="nzf-muted">{{ r.detail }}</small>{% endif %}</td>
+        <td class="r {% if r.amount < 0 %}neg{% else %}pos{% endif %}"><b>{% if r.amount > 0 %}+{% endif %}{{ r.amount_fmt }}</b></td>
+        <td class="r">{{ r.balance_fmt }}</td>
+      </tr>
+      {% empty %}
+      <tr><td colspan="4" class="nzf-muted">Bu davrda harakat yo'q.</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</section>
+<section class="nzf-notes"><p><i class="fas fa-circle-info" aria-hidden="true"></i> «avto» — kassa savdosi, sayt to'lovlari, yetkazib beruvchilarga to'lovlar va ish haqi: kunlik jamlanma. Hisob {{ a.opening_date|date:"d.m.Y" }} dan boshlab yuritiladi.</p></section>
+{% endblock %}

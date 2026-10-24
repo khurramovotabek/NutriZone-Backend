@@ -107,5 +107,5 @@ main.app-main:has(.nzdl) { overflow-x: clip !important; overflow-y: visible !imp
   .nzdl-sum { display: none; }
   .nzdl-foot { justify-content: stretch; }
   .nzdl-foot > * { flex: 1 1 auto; justify-content: center; }
-  .nzdl-filters > * { flex: 1 1 100%; }
+  .nzdl-filters > *, .nzdl-filters select, .nzdl-filters input[type=date] { flex: 1 1 100%; }
 }
