@@ -438,6 +438,13 @@ ASSISTANT_EFFORT = os.environ.get("ASSISTANT_EFFORT", "low")  # chat: low; raise
 ASSISTANT_MAX_TURNS = int(os.environ.get("ASSISTANT_MAX_TURNS", "30"))  # customer questions per conversation
 ASSISTANT_RATE_PER_10_MIN = int(os.environ.get("ASSISTANT_RATE_PER_10_MIN", "20"))
 ASSISTANT_RATE_PER_DAY = int(os.environ.get("ASSISTANT_RATE_PER_DAY", "150"))
+# Read-aloud (apps/assistant/infrastructure/tts.py): Azure Speech has natural Uzbek voices (uz-UZ-MadinaNeural / SardorNeural).
+AZURE_SPEECH_KEY = os.environ.get("AZURE_SPEECH_KEY", "")
+AZURE_SPEECH_REGION = os.environ.get("AZURE_SPEECH_REGION", "")
+ASSISTANT_TTS_VOICE_UZ = os.environ.get("ASSISTANT_TTS_VOICE_UZ", "")  # e.g. uz-UZ-SardorNeural for a male voice
+ASSISTANT_TTS_VOICE_RU = os.environ.get("ASSISTANT_TTS_VOICE_RU", "")
+ASSISTANT_TTS_VOICE_EN = os.environ.get("ASSISTANT_TTS_VOICE_EN", "")
+ASSISTANT_TTS_RATE_PER_10_MIN = int(os.environ.get("ASSISTANT_TTS_RATE_PER_10_MIN", "40"))
 TELEGRAM_ANALYTICS_BOT_USERNAME = os.environ.get("TELEGRAM_ANALYTICS_BOT_USERNAME", "NutriZoneAnalyticsBot")
 TELEGRAM_ANALYTICS_WEBHOOK_SECRET = os.environ.get("TELEGRAM_ANALYTICS_WEBHOOK_SECRET")
 TELEGRAM_ANALYTICS_CHAT_IDS = os.environ.get("TELEGRAM_ANALYTICS_CHAT_IDS", "")

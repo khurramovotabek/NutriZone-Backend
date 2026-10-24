@@ -9,6 +9,7 @@ app_name = "assistant"
 urlpatterns = [
     path("status", views.status_view, name="status"),
     path("chat", views.chat_view, name="chat"),
+    path("tts", views.tts_view, name="tts"),
     path("conversations/<str:conversation_id>", views.conversation_view, name="conversation"),
     path("conversations/<str:conversation_id>/feedback", views.feedback_view, name="feedback"),
 ]

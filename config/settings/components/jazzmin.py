@@ -107,6 +107,7 @@ JAZZMIN_SETTINGS = {
         "Telegram": "fab fa-telegram",
         "assistant": "fas fa-robot",
         "assistant.assistantconversation": "fas fa-comments",
+        "assistant.knowledgeentry": "fas fa-brain",
         "ordering": "fas fa-receipt",
         "payment": "fas fa-credit-card",
         "payment.PaymentProviderConfig": "fas fa-building-columns",

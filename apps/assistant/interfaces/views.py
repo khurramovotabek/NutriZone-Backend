@@ -141,7 +141,43 @@ def _chat_input(request):
 
 
 async def status_view(request):
-    return _json({"enabled": engine.is_configured()})
+    from apps.assistant.infrastructure import tts
+
+    return _json({"enabled": engine.is_configured(), "tts": tts.enabled()})
+
+
+@csrf_exempt
+async def tts_view(request):
+    """POST {text, locale} -> audio/mpeg: an answer read aloud by a natural voice (Uzbek included)."""
+    from django.http import HttpResponse
+
+    from apps.assistant.infrastructure import tts
+
+    if request.method != "POST":
+        return HttpResponseNotAllowed(["POST"])
+    if not tts.enabled():
+        return _json({"code": "DISABLED", "message": "Read-aloud is not configured."}, 503)
+    client_key = _client_key(request)
+    if not client_key:
+        return _json({"code": "NO_CLIENT", "message": "Missing client id."}, 400)
+    try:
+        body = json.loads(request.body or b"{}")
+    except ValueError:
+        return _json({"code": "BAD_JSON", "message": "Malformed body."}, 400)
+    text = str(body.get("text") or "")[:4000]
+    locale = body.get("locale") if body.get("locale") in LOCALES else "uz"
+    if not text.strip():
+        return _json({"code": "EMPTY", "message": "Nothing to read."}, 400)
+    limit = getattr(settings, "ASSISTANT_TTS_RATE_PER_10_MIN", 40)
+    if not await sync_to_async(_hit)(f"ai:tts:{client_key}", limit, 600) or not await sync_to_async(_hit)(f"ai:tts:ip:{_ip(request)}", limit * 3, 600):
+        return _json({"code": "RATE_LIMITED", "message": "Too many requests -- try again later."}, 429)
+    try:
+        audio = await sync_to_async(tts.synthesize)(text, locale)
+    except tts.TtsError:
+        return _json({"code": "UNAVAILABLE", "message": "Read-aloud is unavailable right now."}, 503)
+    response = HttpResponse(audio, content_type="audio/mpeg")
+    response["Cache-Control"] = "private, max-age=86400"
+    return response
 
 
 @csrf_exempt

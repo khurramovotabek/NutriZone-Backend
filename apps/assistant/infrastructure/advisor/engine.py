@@ -14,11 +14,12 @@ from collections.abc import AsyncIterator
 from asgiref.sync import sync_to_async
 from django.utils import timezone
 
-from apps.assistant.infrastructure import tools
+from apps.assistant.infrastructure import knowledge, tools
 from apps.assistant.infrastructure.advisor import kb, needs, nlu, reco
 
 logger = logging.getLogger("nutrizone.assistant.local")
 LOCALES = ("uz", "ru", "en")
+STRONG_MATCH = 8.0  # a knowledge entry this close to the question answers it before the built-in FAQ
 CHEAPER = ("arzon", "qimmat", "дешевле", "дорого", "бюджет", "cheaper", "too expensive", "budget")
 
 CHIPS = {
@@ -117,6 +118,12 @@ def answer(conv_meta: dict, text: str, loc: str) -> tuple[str, list[str], list[s
         return kb.T["thanks"][loc], [], CHIPS["faq"][loc], meta
     if p.intent == "operator":
         return kb.T["operator"][loc].format(contacts=kb.contacts(loc)), [], [], meta
+    taught = knowledge.search(text, limit=1)
+    if taught and taught[0].score >= STRONG_MATCH and p.intent not in ("recommend", "faq_stores"):
+        # what the shop taught on the dashboard (AI bilimlar bazasi) wins over the built-in texts
+        knowledge.mark_used([taught[0].entry])
+        meta["last"] = "knowledge"
+        return taught[0].entry.answer(loc), [], CHIPS["faq"][loc], meta
     if p.intent in kb.FAQ:
         meta["last"] = p.intent
         return kb.FAQ[p.intent][loc], [], CHIPS["faq"][loc], meta
@@ -150,6 +157,10 @@ def answer(conv_meta: dict, text: str, loc: str) -> tuple[str, list[str], list[s
         reply, ids, kinds = recommend_answer(profile, loc)
         meta.update(last="recommend", last_ids=ids, last_kinds=kinds, last_total=None)
         return reply, ids, CHIPS["after_reco"][loc], meta
+    if taught:
+        knowledge.mark_used([taught[0].entry])
+        meta["last"] = "knowledge"
+        return taught[0].entry.answer(loc), [], CHIPS["faq"][loc], meta
     # plain product question → catalogue search (the smart search understands misspellings and all 3 languages)
     query = text.strip()[:120]
     found = tools.search_products({"query": query, "limit": 4, "in_stock_only": False}, loc)["products"]

@@ -12,9 +12,13 @@ from __future__ import annotations
 import json
 import re
 import uuid
+from contextvars import ContextVar
 from decimal import Decimal
 
 from apps.products.infrastructure import goals as goal_book
+
+# The signed-in customer of the turn being answered (set by the engine; None for guests).
+CURRENT_CUSTOMER: ContextVar = ContextVar("assistant_customer", default=None)
 
 MAX_RESULTS = 8
 MAX_SHOW = 4
@@ -101,6 +105,26 @@ TOOLS = [
             "required": ["kind"],
             "additionalProperties": False,
         },
+    },
+    {
+        "name": "search_knowledge",
+        "description": "Search NutriZone's own knowledge base, written by the shop: policies (delivery, payment, returns, originality, coins), promotions, branch notes and usage guidance. Call it for any question about how the shop works, how to take a product type, or anything the product tools don't cover. Its answers are the shop's official wording -- prefer them over general knowledge.",
+        "input_schema": {"type": "object", "properties": {"query": {"type": "string", "description": "The customer's question in their own words (any language)."}}, "required": ["query"]},
+    },
+    {
+        "name": "get_customer_profile",
+        "description": "The signed-in customer's profile for personal advice: first name, height, weight, age, goal, loyalty tier and coin balance, and products they bought recently. Returns signed_in=false for guests. Use it before recommending when the customer asks for something personal ('what should I take', 'for me'), and never repeat questions the profile already answers.",
+        "input_schema": {"type": "object", "properties": {}},
+    },
+    {
+        "name": "get_category_info",
+        "description": "What a catalogue category is about (e.g. whey protein, creatine, omega-3): the shop's description, subcategories and how many products it has. Use for 'what is X / what is the difference between X and Y' questions.",
+        "input_schema": {"type": "object", "properties": {"name": {"type": "string", "description": "Category name in any language."}}, "required": ["name"]},
+    },
+    {
+        "name": "get_brand_info",
+        "description": "A brand the shop sells: its description, country and how many products the shop has from it.",
+        "input_schema": {"type": "object", "properties": {"name": {"type": "string", "description": "Brand name."}}, "required": ["name"]},
     },
 ]
 
@@ -376,9 +400,105 @@ def show_products(args: dict, locale: str) -> dict:
     return {"shown": [c["name"] for c in shown], "cards": shown}
 
 
+
+def search_knowledge(args: dict, locale: str) -> dict:
+    from apps.assistant.infrastructure import knowledge
+
+    q = _clip(args.get("query") or "", 300).strip()
+    if not q:
+        raise ToolError("query is required.")
+    hits = knowledge.search(q, limit=3)
+    knowledge.mark_used([h.entry for h in hits])
+    return {"results": [{"title": h.entry.title, "topic": h.entry.topic, "answer": _clip(h.entry.answer(locale), 1500)} for h in hits],
+            "note": "" if hits else "Nothing in the shop's knowledge base matches; answer from the product tools or general guidance, or suggest contacting the shop."}
+
+
+def get_customer_profile(args: dict, locale: str) -> dict:
+    from apps.assistant.infrastructure.advisor.engine import account_facts
+    from apps.identity.infrastructure.models import User
+
+    cid = CURRENT_CUSTOMER.get()
+    user = User.objects.filter(pk=cid).only("id", "full_name").first() if cid else None
+    if user is None:
+        return {"signed_in": False}
+    out = {"signed_in": True, "first_name": (user.full_name or "").split(" ")[0], **account_facts(user.id)}
+    try:
+        from apps.loyalty.infrastructure import services as loyalty
+        from apps.loyalty.infrastructure.models import Wallet
+
+        wallet = Wallet.objects.filter(user_id=user.id).only("balance").first()
+        out["coins"] = int(wallet.balance) if wallet else 0
+        spend, _n = loyalty.qualifying_spend(user.id)
+        rule = loyalty.tier_for(user.id, spend, loyalty.active_tier_rules())
+        if rule is not None:
+            out["tier"] = {"name": getattr(rule, "name", ""), "cashback_percent": float(getattr(rule, "percent", 0) or 0)}
+    except Exception:  # noqa: BLE001 -- loyalty is a nice-to-have in the profile
+        pass
+    out["recent_purchases"] = _recent_purchases(user.id, locale)
+    return out
+
+
+def _recent_purchases(customer_id, locale: str) -> list[str]:
+    from apps.ordering.infrastructure.models import OrderLineItemModel
+    from apps.pos.infrastructure.models import SaleLineItemModel
+    from apps.stores.infrastructure.stock_service import variant_infos
+
+    vids = list(OrderLineItemModel.objects.filter(order__customer_id=customer_id, order__status__in=("delivered", "completed"), status="active")
+                .order_by("-order__placed_at").values_list("product_variant_id", flat=True)[:8])
+    vids += list(SaleLineItemModel.objects.filter(sale__customer_id=customer_id, sale__status="completed", product_variant_id__isnull=False)
+                 .order_by("-sale__completed_at").values_list("product_variant_id", flat=True)[:8])
+    infos = variant_infos(set(vids), locale)
+    seen, out = set(), []
+    for v in vids:
+        i = infos.get(v)
+        if i and i.name not in seen:
+            seen.add(i.name)
+            out.append(f"{i.name} ({i.size})" if i.size else i.name)
+    return out[:6]
+
+
+def _find(trans_model, key: str, name: str):
+    name = (name or "").strip()
+    if not name:
+        raise ToolError("name is required.")
+    row = trans_model.objects.filter(name__iexact=name).values(key).first() or trans_model.objects.filter(name__icontains=name).values(key).first()
+    return row[key] if row else None
+
+
+def _text(trans_model, key: str, obj_id, locale: str) -> tuple[str, str]:
+    rows = {r["locale_code"]: r for r in trans_model.objects.filter(**{key: obj_id}).values("locale_code", "name", "description")}
+    r = rows.get(locale) or rows.get("uz") or rows.get("en") or next(iter(rows.values()), {"name": "", "description": ""})
+    return r["name"], _clip(r.get("description") or "", 1500)
+
+
+def get_category_info(args: dict, locale: str) -> dict:
+    from apps.products.infrastructure import models as orm
+
+    cid = _find(orm.CategoryTranslation, "category_id", args.get("name"))
+    if cid is None:
+        return {"found": False}
+    name, desc = _text(orm.CategoryTranslation, "category_id", cid, locale)
+    children = list(orm.Category.objects.filter(parent_id=cid, deleted_at__isnull=True).values_list("id", flat=True))
+    kids = _names("category", children, locale)
+    count = orm.Product.objects.filter(category_id__in=[cid, *children], status="published", deleted_at__isnull=True).count()
+    return {"found": True, "name": name, "description": desc, "subcategories": list(kids.values())[:15], "products": count}
+
+
+def get_brand_info(args: dict, locale: str) -> dict:
+    from apps.products.infrastructure import models as orm
+
+    bid = _find(orm.BrandTranslation, "brand_id", args.get("name"))
+    if bid is None:
+        return {"found": False}
+    name, desc = _text(orm.BrandTranslation, "brand_id", bid, locale)
+    brand = orm.Brand.objects.filter(pk=bid).select_related("country").first()
+    count = orm.Product.objects.filter(brand_id=bid, status="published", deleted_at__isnull=True).count()
+    return {"found": True, "name": name, "description": desc, "country": str(brand.country) if brand and brand.country else "", "products": count}
+
 HANDLERS = {
     "search_products": search_products, "get_product_details": get_product_details, "show_products": show_products,
-    "get_store_info": get_store_info, "browse_catalog": browse_catalog,
+    "get_store_info": get_store_info, "browse_catalog": browse_catalog, "search_knowledge": search_knowledge,
+    "get_customer_profile": get_customer_profile, "get_category_info": get_category_info, "get_brand_info": get_brand_info,
 }
 
 

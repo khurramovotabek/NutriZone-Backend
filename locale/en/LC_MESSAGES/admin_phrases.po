@@ -5729,3 +5729,123 @@ msgstr "e.g. short in the count, damaged"
 
 msgid "Qoldiq o'zgardi — sababini yozing (jurnalga tushadi)."
 msgstr "Stock changed — write the reason (it goes into the log)."
+
+msgid "AI bilimlar bazasi"
+msgstr "AI knowledge base"
+
+msgid "AI bilim"
+msgstr "AI knowledge"
+
+msgid "AI maslahatchini o'qiting: yetkazib berish, to'lov, aksiyalar, mahsulotlarni qo'llash va filiallar haqidagi rasmiy javoblaringiz. Maslahatchi shu javoblarni mijozning tilida (o'zbek, rus, ingliz) ishlatadi; mahsulot, narx, qoldiq va filiallarni esa o'zi katalogdan o'qiydi."
+msgstr "Teach the AI assistant: your official answers about delivery, payment, promotions, product usage and branches. It uses them in the customer's language (Uzbek, Russian, English); products, prices, stock and branches it reads from the catalogue itself."
+
+msgid "Bilim"
+msgstr "Knowledge"
+
+msgid "Mavzu"
+msgstr "Topic"
+
+msgid "Ishlatildi"
+msgstr "Used"
+
+msgid "Savol, kalit so'z yoki javob…"
+msgstr "Question, keyword or answer…"
+
+msgid "Hali bilim yo'q"
+msgstr "No knowledge yet"
+
+msgid "«Qo'shish» bilan birinchi savol-javobni kiriting."
+msgstr "Add the first Q&A with «Add»."
+
+msgid "Muhimlik"
+msgstr "Priority"
+
+msgid "Nom"
+msgstr "Name"
+
+msgid "Faol bilimlar"
+msgstr "Active entries"
+
+msgid "Javoblarda ishlatildi"
+msgstr "Used in answers"
+
+msgid "Tarjimasi yo'q"
+msgstr "Missing translations"
+
+msgid "ru/en bo'sh — o'zbekcha javob ishlatiladi"
+msgstr "ru/en empty — the Uzbek answer is used"
+
+msgid "Ovozli o'qish"
+msgstr "Read-aloud"
+
+msgid "Yoqilgan"
+msgstr "On"
+
+msgid "O'chiq"
+msgstr "Off"
+
+msgid "Azure: Madina / Sardor"
+msgstr "Azure: Madina / Sardor"
+
+msgid "AZURE_SPEECH_KEY kerak"
+msgstr "needs AZURE_SPEECH_KEY"
+
+msgid "Yangi bilim"
+msgstr "New entry"
+
+msgid "Savol shakllarini mijozlar qanday yozsa, shunday kiriting (uch tilda ham bo'ladi). Javob qisqa va aniq bo'lsin — maslahatchi uni o'zi moslab beradi."
+msgstr "Enter the questions the way customers write them (any of the three languages). Keep the answer short and exact — the assistant adapts it."
+
+msgid "Ko'p so'raladigan savol"
+msgstr "FAQ"
+
+msgid "Qoida (yetkazish, to'lov, qaytarish)"
+msgstr "Policy (delivery, payment, returns)"
+
+msgid "Qo'llash bo'yicha maslahat"
+msgstr "Usage advice"
+
+msgid "Mahsulot / brend haqida"
+msgstr "About a product / brand"
+
+msgid "Aksiya"
+msgstr "Promotion"
+
+msgid "Filial haqida"
+msgstr "About a branch"
+
+msgid "Sarlavha (o'zbekcha)"
+msgstr "Title (Uzbek)"
+
+msgid "Savol shakllari"
+msgstr "Question forms"
+
+msgid "Javob (o'zbekcha)"
+msgstr "Answer (Uzbek)"
+
+msgid "Javob (ruscha)"
+msgstr "Answer (Russian)"
+
+msgid "Javob (inglizcha)"
+msgstr "Answer (English)"
+
+msgid "Kalit so'zlar"
+msgstr "Keywords"
+
+msgid "Amal qiladi (gacha)"
+msgstr "Valid until"
+
+msgid "Mijoz qanday so'rashi mumkin — har qatorda bittadan, istalgan tilda. Masalan: «yetkazib berish qancha turadi», «доставка сколько»."
+msgstr "How a customer might ask — one per line, any language. E.g. «yetkazib berish qancha turadi», «доставка сколько»."
+
+msgid "Vergul bilan: kreatin, dozasi, creatine"
+msgstr "Comma-separated: kreatin, dozasi, creatine"
+
+msgid "0–100: bir nechta mos kelganda yuqorisi ustun."
+msgstr "0–100: when several match, the higher one wins."
+
+msgid "Aksiya kabi vaqtinchalik ma'lumot uchun."
+msgstr "For temporary info such as a promotion."
+
+msgid "{0} marta ishlatilgan"
+msgstr "used {0} times"

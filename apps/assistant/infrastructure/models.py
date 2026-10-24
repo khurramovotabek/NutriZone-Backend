@@ -62,3 +62,44 @@ class AdvisorSignal(models.Model):
         db_table = "assistant_advisor_signals"
         verbose_name = _("Maslahatchi signali")
         verbose_name_plural = _("Maslahatchi signallari")
+
+
+class KnowledgeEntry(models.Model):
+    """
+    AI bilimlar bazasi: what the shop teaches its assistant -- policies, FAQ, usage guidance, promotions, branch
+    notes. Both engines read it: Claude through the search_knowledge tool, the free advisor by matching questions.
+    """
+
+    TOPICS = (
+        ("faq", _("Ko'p so'raladigan savol")), ("policy", _("Qoida (yetkazish, to'lov, qaytarish)")), ("usage", _("Qo'llash bo'yicha maslahat")),
+        ("product", _("Mahsulot / brend haqida")), ("promo", _("Aksiya")), ("branch", _("Filial haqida")), ("other", _("Boshqa")),
+    )
+
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    topic = models.CharField(_("Mavzu"), max_length=10, choices=TOPICS, default="faq", db_index=True)
+    title = models.CharField(_("Sarlavha (o'zbekcha)"), max_length=200)
+    questions = models.TextField(_("Savol shakllari"), blank=True, default="",
+                                 help_text=_("Mijoz qanday so'rashi mumkin — har qatorda bittadan, istalgan tilda. Masalan: «yetkazib berish qancha turadi», «доставка сколько»."))
+    answer_uz = models.TextField(_("Javob (o'zbekcha)"))
+    answer_ru = models.TextField(_("Javob (ruscha)"), blank=True, default="")
+    answer_en = models.TextField(_("Javob (inglizcha)"), blank=True, default="")
+    keywords = models.CharField(_("Kalit so'zlar"), max_length=300, blank=True, default="", help_text=_("Vergul bilan: kreatin, dozasi, creatine"))
+    priority = models.PositiveSmallIntegerField(_("Muhimlik"), default=50, help_text=_("0–100: bir nechta mos kelganda yuqorisi ustun."))
+    is_active = models.BooleanField(_("Faol"), default=True, db_index=True)
+    valid_until = models.DateField(_("Amal qiladi (gacha)"), null=True, blank=True, help_text=_("Aksiya kabi vaqtinchalik ma'lumot uchun."))
+    uses = models.PositiveIntegerField(_("Ishlatilgan"), default=0)
+    created_by = models.CharField(max_length=150, blank=True, default="")
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        db_table = "assistant_knowledge"
+        ordering = ("-priority", "title")
+        verbose_name = _("AI bilim")
+        verbose_name_plural = _("AI bilimlar bazasi")
+
+    def __str__(self) -> str:
+        return self.title
+
+    def answer(self, locale: str) -> str:
+        return {"ru": self.answer_ru, "en": self.answer_en}.get(locale) or self.answer_uz

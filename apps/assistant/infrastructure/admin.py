@@ -100,3 +100,92 @@ class AssistantConversationAdmin(ui.PremiumListMixin, admin.ModelAdmin):
             **self.admin_site.each_context(request), "opts": self.model._meta, "title": f"AI suhbat · {ui.local(conv.created_at)}",
             "c": conv, "customer": customer, "cost": cost_usd(conv), "model": settings.ASSISTANT_MODEL,
         })
+
+
+# ---------------------------------------------------------------- AI bilimlar bazasi
+
+from django import forms  # noqa: E402
+
+from apps.assistant.infrastructure.models import KnowledgeEntry  # noqa: E402
+from apps.platform.infrastructure.premium_admin import PremiumFormMixin, PremiumListMixin  # noqa: E402
+
+TOPIC_STYLE = {"faq": ("#2563eb", "fa-circle-question"), "policy": ("#0d9488", "fa-scale-balanced"), "usage": ("#7c3aed", "fa-flask"),
+               "product": ("#ea580c", "fa-box"), "promo": ("#db2777", "fa-bullhorn"), "branch": ("#16a34a", "fa-store"), "other": ("#64748b", "fa-tag")}
+
+
+class KnowledgeForm(forms.ModelForm):
+    class Meta:
+        model = KnowledgeEntry
+        fields = ("topic", "title", "questions", "keywords", "answer_uz", "answer_ru", "answer_en", "priority", "valid_until", "is_active")
+        widgets = {
+            "questions": forms.Textarea(attrs={"rows": 4, "placeholder": "yetkazib berish qancha turadi\nдоставка сколько стоит\nhow much is delivery"}),
+            "answer_uz": forms.Textarea(attrs={"rows": 6}), "answer_ru": forms.Textarea(attrs={"rows": 6}), "answer_en": forms.Textarea(attrs={"rows": 6}),
+            "valid_until": forms.DateInput(attrs={"type": "date"}, format="%Y-%m-%d"),
+        }
+
+
+@admin.register(KnowledgeEntry)
+class KnowledgeEntryAdmin(PremiumListMixin, PremiumFormMixin, admin.ModelAdmin):
+    form = KnowledgeForm
+    list_display = ("title", "topic", "priority", "uses", "is_active")
+    list_filter = ("topic", "is_active")
+    search_fields = ("title", "questions", "keywords", "answer_uz", "answer_ru", "answer_en")
+    ordering = ("-priority", "title")
+    actions = None
+    fieldsets = (
+        ("Bilim", {"fields": ("topic", "title", "questions", "keywords")}),
+        ("Javob", {"fields": ("answer_uz", "answer_ru", "answer_en")}),
+        ("Sozlamalar", {"fields": ("priority", "valid_until", "is_active")}),
+    )
+    nz_icon, nz_tone, nz_title = "fa-brain", "#7c3aed", "AI bilimlar bazasi"
+    nz_subtitle = ("AI maslahatchini o'qiting: yetkazib berish, to'lov, aksiyalar, mahsulotlarni qo'llash va filiallar haqidagi rasmiy javoblaringiz. "
+                   "Maslahatchi shu javoblarni mijozning tilida (o'zbek, rus, ingliz) ishlatadi; mahsulot, narx, qoldiq va filiallarni esa o'zi katalogdan o'qiydi.")
+    nz_columns = (("Bilim", ""), ("Mavzu", ""), ("Tillar", ""), ("Holat", ""), ("Ishlatildi", "r"))
+    nz_grid = "minmax(280px,3fr) 170px 120px 130px 100px"
+    nz_search = "Savol, kalit so'z yoki javob…"
+    nz_empty = ("Hali bilim yo'q", "«Qo'shish» bilan birinchi savol-javobni kiriting.")
+    nz_sorts = (("Muhimlik", ""), ("Ko'p ishlatilgan", "-5"), ("Nom", "1"))
+
+    def nz_tabs(self, request):
+        counts = dict(KnowledgeEntry.objects.values_list("topic").annotate(n=Count("id")))
+        return ui.tabs_for(request, "topic__exact", [("", "Hammasi", sum(counts.values()))] + [(k, str(label), counts.get(k, 0)) for k, label in KnowledgeEntry.TOPICS if counts.get(k)],
+                           {k: v[0] for k, v in TOPIC_STYLE.items()})
+
+    def nz_stats(self, request):
+        from apps.assistant.infrastructure import tts
+
+        agg = KnowledgeEntry.objects.aggregate(n=Count("id", filter=Q(is_active=True)), uses=Sum("uses"), no_ru=Count("id", filter=Q(answer_ru="")), no_en=Count("id", filter=Q(answer_en="")))
+        return [ui.stat_card("Faol bilimlar", agg["n"], "#7c3aed", "fa-brain"), ui.stat_card("Javoblarda ishlatildi", agg["uses"] or 0, "#16a34a", "fa-comments"),
+                ui.stat_card("Tarjimasi yo'q", (agg["no_ru"] or 0) + (agg["no_en"] or 0), "#f59e0b", "fa-language", "ru/en bo'sh — o'zbekcha javob ishlatiladi"),
+                ui.stat_card("Ovozli o'qish", "Yoqilgan" if tts.enabled() else "O'chiq", "#0ea5e9" if tts.enabled() else "#94a3b8", "fa-volume-high",
+                             "Azure: Madina / Sardor" if tts.enabled() else "AZURE_SPEECH_KEY kerak")]
+
+    def nz_hero_actions(self, request):
+        from django.urls import reverse
+
+        return [{"label": "AI suhbatlar", "url": reverse("admin:assistant_assistantconversation_changelist"), "icon": "fa-comments"},
+                {"label": "Yangi bilim", "url": reverse("admin:assistant_knowledgeentry_add"), "icon": "fa-plus", "primary": True}]
+
+    def nz_row(self, e):
+        color, icon = TOPIC_STYLE.get(e.topic, ("#64748b", "fa-tag"))
+        q = [x for x in (e.questions or "").splitlines() if x.strip()][:2]
+        title = format_html("<b>{}</b><br><small>{}</small>", e.title, " · ".join(q) or e.answer_uz[:90])
+        langs = format_html("{} {} {}", ui.chip("UZ", "#16a34a"), ui.chip("RU", "#16a34a" if e.answer_ru else "#cbd5e1"), ui.chip("EN", "#16a34a" if e.answer_en else "#cbd5e1"))
+        today = timezone.localdate()
+        if not e.is_active:
+            state = ui.chip("O'chiq", "#94a3b8", "fa-circle-pause")
+        elif e.valid_until and e.valid_until < today:
+            state = ui.chip("Muddati o'tgan", "#f59e0b", "fa-clock")
+        else:
+            state = ui.chip("Faol", "#16a34a", "fa-circle-check")
+        return [title, ui.chip(e.get_topic_display(), color, icon), langs, state, format_html("<b>{}</b>", e.uses)]
+
+    def form_hero(self, request, obj):
+        if obj is None:
+            return {"subtitle": "Savol shakllarini mijozlar qanday yozsa, shunday kiriting (uch tilda ham bo'ladi). Javob qisqa va aniq bo'lsin — maslahatchi uni o'zi moslab beradi."}
+        return {"title": obj.title, "subtitle": f"{obj.get_topic_display()} · {obj.uses} marta ishlatilgan"}
+
+    def save_model(self, request, obj, form, change):
+        if not change:
+            obj.created_by = request.user.get_full_name() or request.user.get_username()
+        super().save_model(request, obj, form, change)

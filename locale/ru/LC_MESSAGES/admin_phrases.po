@@ -5768,3 +5768,123 @@ msgstr "например: недостача при пересчёте, повр
 
 msgid "Qoldiq o'zgardi — sababini yozing (jurnalga tushadi)."
 msgstr "Остаток изменён — укажите причину (попадёт в журнал)."
+
+msgid "AI bilimlar bazasi"
+msgstr "База знаний ИИ"
+
+msgid "AI bilim"
+msgstr "Знание ИИ"
+
+msgid "AI maslahatchini o'qiting: yetkazib berish, to'lov, aksiyalar, mahsulotlarni qo'llash va filiallar haqidagi rasmiy javoblaringiz. Maslahatchi shu javoblarni mijozning tilida (o'zbek, rus, ingliz) ishlatadi; mahsulot, narx, qoldiq va filiallarni esa o'zi katalogdan o'qiydi."
+msgstr "Обучите ИИ-консультанта: ваши официальные ответы о доставке, оплате, акциях, применении товаров и филиалах. Он использует их на языке клиента (узбекский, русский, английский); товары, цены, остатки и филиалы он читает из каталога сам."
+
+msgid "Bilim"
+msgstr "Знание"
+
+msgid "Mavzu"
+msgstr "Тема"
+
+msgid "Ishlatildi"
+msgstr "Использовано"
+
+msgid "Savol, kalit so'z yoki javob…"
+msgstr "Вопрос, ключевое слово или ответ…"
+
+msgid "Hali bilim yo'q"
+msgstr "Знаний пока нет"
+
+msgid "«Qo'shish» bilan birinchi savol-javobni kiriting."
+msgstr "Добавьте первый вопрос-ответ кнопкой «Добавить»."
+
+msgid "Muhimlik"
+msgstr "Приоритет"
+
+msgid "Nom"
+msgstr "Название"
+
+msgid "Faol bilimlar"
+msgstr "Активные знания"
+
+msgid "Javoblarda ishlatildi"
+msgstr "Использовано в ответах"
+
+msgid "Tarjimasi yo'q"
+msgstr "Нет перевода"
+
+msgid "ru/en bo'sh — o'zbekcha javob ishlatiladi"
+msgstr "ru/en пусто — используется узбекский ответ"
+
+msgid "Ovozli o'qish"
+msgstr "Озвучка"
+
+msgid "Yoqilgan"
+msgstr "Включена"
+
+msgid "O'chiq"
+msgstr "Выключена"
+
+msgid "Azure: Madina / Sardor"
+msgstr "Azure: Madina / Sardor"
+
+msgid "AZURE_SPEECH_KEY kerak"
+msgstr "нужен AZURE_SPEECH_KEY"
+
+msgid "Yangi bilim"
+msgstr "Новое знание"
+
+msgid "Savol shakllarini mijozlar qanday yozsa, shunday kiriting (uch tilda ham bo'ladi). Javob qisqa va aniq bo'lsin — maslahatchi uni o'zi moslab beradi."
+msgstr "Вводите вопросы так, как их пишут клиенты (на любом из трёх языков). Ответ — коротко и точно, консультант сам его адаптирует."
+
+msgid "Ko'p so'raladigan savol"
+msgstr "Частый вопрос"
+
+msgid "Qoida (yetkazish, to'lov, qaytarish)"
+msgstr "Правило (доставка, оплата, возврат)"
+
+msgid "Qo'llash bo'yicha maslahat"
+msgstr "Совет по применению"
+
+msgid "Mahsulot / brend haqida"
+msgstr "О товаре / бренде"
+
+msgid "Aksiya"
+msgstr "Акция"
+
+msgid "Filial haqida"
+msgstr "О филиале"
+
+msgid "Sarlavha (o'zbekcha)"
+msgstr "Заголовок (узбекский)"
+
+msgid "Savol shakllari"
+msgstr "Формы вопроса"
+
+msgid "Javob (o'zbekcha)"
+msgstr "Ответ (узбекский)"
+
+msgid "Javob (ruscha)"
+msgstr "Ответ (русский)"
+
+msgid "Javob (inglizcha)"
+msgstr "Ответ (английский)"
+
+msgid "Kalit so'zlar"
+msgstr "Ключевые слова"
+
+msgid "Amal qiladi (gacha)"
+msgstr "Действует до"
+
+msgid "Mijoz qanday so'rashi mumkin — har qatorda bittadan, istalgan tilda. Masalan: «yetkazib berish qancha turadi», «доставка сколько»."
+msgstr "Как может спросить клиент — по одному в строке, на любом языке. Например: «yetkazib berish qancha turadi», «доставка сколько»."
+
+msgid "Vergul bilan: kreatin, dozasi, creatine"
+msgstr "Через запятую: kreatin, dozasi, creatine"
+
+msgid "0–100: bir nechta mos kelganda yuqorisi ustun."
+msgstr "0–100: при нескольких совпадениях побеждает больший."
+
+msgid "Aksiya kabi vaqtinchalik ma'lumot uchun."
+msgstr "Для временной информации, например акции."
+
+msgid "{0} marta ishlatilgan"
+msgstr "использовано {0} раз"

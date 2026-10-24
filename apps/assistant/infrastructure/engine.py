@@ -150,6 +150,7 @@ async def _claude_turn(conversation_id, user_text: str, client=None) -> AsyncIte
 
     conv = await sync_to_async(_load)(conversation_id)
     locale = conv.locale if conv.locale in ERROR_TEXT else "uz"
+    tools.CURRENT_CUSTOMER.set(conv.customer_id)  # get_customer_profile answers for this shopper only
     client = client or make_client()
     turn: list[dict] = [{"role": "user", "content": user_text}]
     answer_parts: list[str] = []
