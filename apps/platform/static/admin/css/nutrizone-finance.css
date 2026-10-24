@@ -30,6 +30,7 @@ main.app-main:has(.nzf) { overflow-x: clip !important; overflow-y: visible !impo
 .nzf-kpi b { display: block; margin: 6px 0 2px; font-size: 1.35rem; font-weight: 800; color: var(--nz-text-primary); font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
 .nzf-kpi b small { font-size: .75rem; color: var(--nz-text-muted); }
 .nzf-kpi em { font-style: normal; font-size: .75rem; color: var(--nz-text-muted); }
+.nzf-kpi em span { display: inline; font: inherit; letter-spacing: 0; text-transform: none; color: inherit; }
 .nzf-kpi.is-main { background: linear-gradient(135deg, #0f766e, #0d9488 55%, #14b8a6); border-color: transparent; }
 .nzf-kpi.is-main span, .nzf-kpi.is-main em, .nzf-kpi.is-main b, .nzf-kpi.is-main b small { color: #fff !important; }
 .nzf-kpi.is-main span, .nzf-kpi.is-main em { opacity: .85; }
