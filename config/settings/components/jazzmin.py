@@ -157,7 +157,7 @@ JAZZMIN_SETTINGS = {
     # exactly rather than silently hiding it from a staff user who
     # lacks some specific model permission.
     # The WMS models live in the stores app but are reached from the Ombor group (custom_links["inventory"]).
-    "hide_models": ["chat.chatsettings", "stores.stocktransfer", "stores.stockreceipt", "stores.stockmovement", "stores.stockcount",
+    "hide_models": ["chat.chatsettings", "ordering.courier", "stores.stocktransfer", "stores.stockreceipt", "stores.stockmovement", "stores.stockcount",
                     "stores.writeoff", "stores.supplier", "stores.supplierpayment", "stores.reorderrule", "stores.storecashier",
                     "search.searchterm", "telegram_bot.telegrampost", "telegram_bot.channelautopostsettings", "receipts.receiptsettings"],  # reached from the Catalog group (custom_links["products"])
     "usermenu_links": [{"name": _("Mening profilim"), "url": "admin:nz_profile", "icon": "fas fa-user-circle"}],
@@ -194,6 +194,8 @@ JAZZMIN_SETTINGS = {
         # Dispatcher board (apps/ordering/infrastructure/admin_board.py): live Kanban of online orders.
         "ordering": [
             {"name": _("Buyurtmalar paneli"), "url": "admin:ordering_ordermodel_board", "icon": "fas fa-table-columns", "permissions": ["ordering.view_ordermodel"]},
+            {"name": _("Yetkazib berish"), "url": "admin:ordering_ordermodel_delivery", "icon": "fas fa-truck-fast", "permissions": ["ordering.view_ordermodel"]},
+            {"name": _("Kuryerlar"), "url": "admin:ordering_courier_changelist", "icon": "fas fa-motorcycle", "permissions": ["ordering.view_courier"]},
         ],
         # What shoppers search for -- above all what they search for and don't find (apps/search).
         "products": [

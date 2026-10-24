@@ -9604,3 +9604,144 @@ msgstr "Tanlanganlarni o'chirish"
 #, python-format
 msgid "%(role)s roli olib tashlansinmi?"
 msgstr ""
+
+msgid "All couriers"
+msgstr "Barcha kuryerlar"
+
+msgid "Cash to collect on the road"
+msgstr "Yo'lda yig'iladigan naqd"
+
+msgid "Collect"
+msgstr "Olinadi"
+
+msgid "Collect from the customer"
+msgstr "Mijozdan olinadi"
+
+msgid "Courier"
+msgstr "Kuryer"
+
+msgid "Courier fee"
+msgstr "Kuryer haqi"
+
+msgid "Courier not found."
+msgstr "Kuryer topilmadi."
+
+msgid "Couriers"
+msgstr "Kuryerlar"
+
+msgid "Customer comment"
+msgstr "Mijoz izohi"
+
+msgid "Deliveries"
+msgstr "Yetkazib berishlar"
+
+msgid "Delivery date"
+msgstr "Yetkazish sanasi"
+
+msgid "Delivery waybill"
+msgstr "Yetkazib berish yo'l varaqasi"
+
+msgid "In the parcel"
+msgstr "Posilkada"
+
+msgid "Invalid amount."
+msgstr "Summa noto'g'ri."
+
+msgid "Invalid date."
+msgstr "Sana noto'g'ri."
+
+msgid "Late (this tab)"
+msgstr "Kechikkan (shu bo'lim)"
+
+msgid "New courier…"
+msgstr "Yangi kuryer…"
+
+msgid "New delivery orders appear here as soon as they are placed."
+msgstr "Yangi yetkazib berish buyurtmalari rasmiylashtirilishi bilan shu yerda paydo bo'ladi."
+
+msgid "No courier yet"
+msgstr "Kuryer biriktirilmagan"
+
+msgid "No couriers yet -- add one on any order card or on the Couriers page."
+msgstr "Hali kuryer yo'q — istalgan buyurtma kartasida yoki «Kuryerlar» sahifasida qo'shing."
+
+msgid "No delivery orders here"
+msgstr "Bu yerda yetkazib berish buyurtmasi yo'q"
+
+msgid "No map point -- call the customer"
+msgstr "Xaritada nuqta yo'q — mijozga qo'ng'iroq qiling"
+
+msgid "Note for the courier"
+msgstr "Kuryer uchun izoh"
+
+msgid "On the road"
+msgstr "Yo'lda"
+
+msgid "Order, name, phone or street…"
+msgstr "Buyurtma, ism, telefon yoki ko'cha…"
+
+msgid "Orders in this tab have no map points."
+msgstr "Bu bo'limdagi buyurtmalarda xarita nuqtasi yo'q."
+
+msgid "Packed by"
+msgstr "Yig'di"
+
+msgid "Paid -- collect nothing"
+msgstr "To'langan — hech narsa olinmaydi"
+
+msgid "Paid online"
+msgstr "Onlayn to'langan"
+
+msgid "Received by the customer (signature)"
+msgstr "Mijoz qabul qildi (imzo)"
+
+msgid "Reset"
+msgstr "Tozalash"
+
+msgid "Saved."
+msgstr "Saqlandi."
+
+msgid "Show"
+msgstr "Ko'rsatish"
+
+msgid "Stage"
+msgstr "Bosqich"
+
+msgid "Sum"
+msgstr "Summa"
+
+msgid "This order is closed."
+msgstr "Bu buyurtma yopilgan."
+
+msgid "This order is picked up in a store, it has no courier."
+msgstr "Bu buyurtma do'kondan olib ketiladi, kuryer kerak emas."
+
+msgid "Time window"
+msgstr "Vaqt oralig'i"
+
+msgid "To pack"
+msgstr "Yig'ish kerak"
+
+msgid "Transport"
+msgstr "Transport"
+
+msgid "Waybill"
+msgstr "Yo'l varaqasi"
+
+msgid "What goes in each parcel, where it goes, who takes it and how much the courier collects."
+msgstr "Har bir posilkada nima bor, qayerga boradi, kim olib boradi va kuryer qancha pul oladi."
+
+msgid "Where to deliver"
+msgstr "Qayerga yetkaziladi"
+
+msgid "Without a courier"
+msgstr "Kuryersiz"
+
+msgid "e.g. 14:00-18:00"
+msgstr "masalan 14:00-18:00"
+
+msgid "e.g. Damas 01 A 123 BC, scooter, on foot"
+msgstr "masalan Damas 01 A 123 BC, skuter, piyoda"
+
+msgid "not assigned"
+msgstr "biriktirilmagan"

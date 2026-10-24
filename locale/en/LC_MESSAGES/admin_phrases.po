@@ -4805,3 +4805,27 @@ msgstr "get their own branch report"
 
 msgid "Hali faol filial yo'q."
 msgstr "No active branches yet."
+
+msgid "Buyurtmalarni mijozga olib boradigan xodimlar. Yetkazib berish markazida buyurtmaga biriktiriladi."
+msgstr "People who take orders to customers. Assigned to an order on the Delivery desk."
+
+msgid "Kuryer"
+msgstr "Courier"
+
+msgid "Telefon"
+msgstr "Phone"
+
+msgid "Transport"
+msgstr "Transport"
+
+msgid "Ism, telefon yoki transport…"
+msgstr "Name, phone or transport…"
+
+msgid "Kuryer yo'q"
+msgstr "No couriers"
+
+msgid "«Qo'shish» bilan birinchi kuryerni kiriting."
+msgstr "Add the first courier with «Add»."
+
+msgid "Ism va telefon — yetkazib berish markazida ko'rinadi"
+msgstr "Name and phone — shown on the Delivery desk"

@@ -43,6 +43,7 @@ from apps.pos.infrastructure import receipts
 from apps.pos.infrastructure.models import SaleLineItemModel, SaleModel
 from apps.stores.infrastructure.models import CashSession, CashSessionStatus, Store, StoreProductStock
 from apps.stores.infrastructure.pos_cashiers import kassa_name
+from apps.stores.infrastructure.stock_service import variant_image_urls
 from common.exceptions import ConflictError, ResourceNotFound, ValidationFailed
 
 
@@ -112,16 +113,14 @@ def catalog(store: Store, locale: str, q: str = "", page: int = 1, page_size: in
 
     variant_ids = [r.product_variant_id for r in rows]
     prices = bulk_variant_prices(variant_ids)
-    from apps.products.infrastructure.models import ProductMedia, ProductTranslation
+    from apps.products.infrastructure.models import ProductTranslation
 
     product_ids = {r.product_variant.product_id for r in rows}
     names: dict = {}
     for tr in ProductTranslation.objects.filter(product_id__in=product_ids).values("product_id", "locale_code", "name"):
         bucket = names.setdefault(tr["product_id"], {})
         bucket[tr["locale_code"]] = tr["name"]
-    images: dict = {}
-    for m in ProductMedia.objects.filter(product_id__in=product_ids).order_by("product_id", "sort_order").values("product_id", "storage_path", "thumbnail_paths"):
-        images.setdefault(m["product_id"], _media_url(m["storage_path"], m["thumbnail_paths"]))
+    images = variant_image_urls(r.product_variant for r in rows)
 
     exact = None
     items = []
@@ -132,7 +131,7 @@ def catalog(store: Store, locale: str, q: str = "", page: int = 1, page_size: in
         item = {
             "variant_id": str(v.id), "product_id": str(v.product_id), "sku": v.sku, "barcode": v.barcode,
             "name": by_locale.get(locale) or by_locale.get("uz") or by_locale.get("en") or next(iter(by_locale.values()), v.sku),
-            "variant_label": _variant_label(v), "image_url": images.get(v.product_id),
+            "variant_label": _variant_label(v), "image_url": images.get(v.id),
             "price": price["amount"] if price else None, "currency": price["currency"] if price else CURRENCY,
             "stock": r.available, "sellable": bool(price) and r.available > 0 and v.status == "active",
         }
@@ -974,7 +973,7 @@ def refunds_payload(sale_id) -> list[dict]:
 def catalog_items_by_variant(store: Store, locale: str, variant_ids: list) -> list[dict]:
     if not variant_ids:
         return []
-    from apps.products.infrastructure.models import ProductMedia, ProductTranslation, ProductVariant
+    from apps.products.infrastructure.models import ProductTranslation, ProductVariant
 
     variants = list(ProductVariant.objects.filter(id__in=variant_ids).select_related("package", "flavour").prefetch_related("flavour__translations", "package__translations"))
     stock = {r["product_variant_id"]: max(0, r["quantity"] - r["reserved_quantity"]) for r in StoreProductStock.objects.filter(store=store, product_variant_id__in=variant_ids).values("product_variant_id", "quantity", "reserved_quantity")}
@@ -982,14 +981,12 @@ def catalog_items_by_variant(store: Store, locale: str, variant_ids: list) -> li
     names: dict = {}
     for tr in ProductTranslation.objects.filter(product_id__in=product_ids).values("product_id", "locale_code", "name"):
         names.setdefault(tr["product_id"], {})[tr["locale_code"]] = tr["name"]
-    images: dict = {}
-    for m in ProductMedia.objects.filter(product_id__in=product_ids).order_by("product_id", "sort_order").values("product_id", "storage_path", "thumbnail_paths"):
-        images.setdefault(m["product_id"], _media_url(m["storage_path"], m["thumbnail_paths"]))
+    images = variant_image_urls(variants)
     out = []
     for v in variants:
         by_locale = names.get(v.product_id, {})
         out.append({
-            "variant_id": str(v.id), "sku": v.sku, "variant_label": _variant_label(v), "image_url": images.get(v.product_id), "stock": stock.get(v.id, 0),
+            "variant_id": str(v.id), "sku": v.sku, "variant_label": _variant_label(v), "image_url": images.get(v.id), "stock": stock.get(v.id, 0),
             "name": by_locale.get(locale) or by_locale.get("uz") or by_locale.get("en") or next(iter(by_locale.values()), v.sku),
         })
     return out

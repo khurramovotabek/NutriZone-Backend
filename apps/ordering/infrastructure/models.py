@@ -299,3 +299,45 @@ class PaymentWebhookDelivery(BaseModel):
 
     def __str__(self) -> str:  # pragma: no cover
         return f"PaymentWebhookDelivery(provider={self.provider}, provider_transaction_id={self.provider_transaction_id}, status={self.status})"
+
+
+# ---------------------------------------------------------------------------
+# Delivery (Yetkazib berish markazi -- apps/ordering/infrastructure/admin_delivery.py)
+# ---------------------------------------------------------------------------
+
+
+class Courier(BaseModel):
+    """A person who takes delivery orders to customers (own staff or a hired courier); picked on the delivery desk."""
+
+    name = models.CharField(_("Name"), max_length=120)
+    phone = models.CharField(_("Phone"), max_length=32, blank=True, default="")
+    vehicle = models.CharField(_("Transport"), max_length=60, blank=True, default="", help_text=_("e.g. Damas 01 A 123 BC, scooter, on foot"))
+    telegram_username = models.CharField(_("Telegram"), max_length=64, blank=True, default="")
+    is_active = models.BooleanField(_("Active"), default=True)
+
+    class Meta:
+        db_table = "ordering_couriers"
+        ordering = ("-is_active", "name")
+        verbose_name = _("Courier")
+        verbose_name_plural = _("Couriers")
+
+    def __str__(self) -> str:
+        return self.name
+
+
+class DeliveryAssignment(BaseModel):
+    """Who takes an order and when -- one row per delivery order, written only by the delivery desk. The order status
+    itself still changes only through the ordering lifecycle services."""
+
+    order = models.OneToOneField(OrderModel, on_delete=models.CASCADE, related_name="delivery")
+    courier = models.ForeignKey(Courier, on_delete=models.SET_NULL, null=True, blank=True, related_name="deliveries")
+    planned_date = models.DateField(_("Delivery date"), null=True, blank=True)
+    time_slot = models.CharField(_("Time window"), max_length=40, blank=True, default="", help_text=_("e.g. 14:00-18:00"))
+    fee = models.DecimalField(_("Courier fee"), max_digits=12, decimal_places=2, null=True, blank=True)
+    note = models.CharField(_("Note for the courier"), max_length=300, blank=True, default="")
+    assigned_by = models.CharField(max_length=150, blank=True, default="")
+
+    class Meta:
+        db_table = "ordering_delivery_assignments"
+        verbose_name = _("Delivery")
+        verbose_name_plural = _("Deliveries")

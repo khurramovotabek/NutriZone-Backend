@@ -1,0 +1,187 @@
+{% extends "admin/base_site.html" %}
+{% load i18n static %}
+{# Delivery desk (Yetkazib berish markazi): data from admin_delivery.desk_payload; courier saves -> delivery/<id>/assign/, status moves -> board/<id>/move/. #}
+
+{% block extrastyle %}
+{{ block.super }}
+<link rel="stylesheet" href="{% static 'admin/css/nutrizone-platform.css' %}?v=5">
+<link rel="stylesheet" href="{% static 'admin/vendor/leaflet/leaflet.css' %}">
+<link rel="stylesheet" href="{% static 'admin/css/nutrizone-geo.css' %}?v=3">
+<link rel="stylesheet" href="{% static 'admin/css/nutrizone-delivery.css' %}?v=3">
+{% endblock %}
+
+{% block breadcrumbs %}
+<ol class="breadcrumb">
+  <li class="breadcrumb-item"><a href="{% url 'admin:index' %}">{% translate "Home" %}</a></li>
+  <li class="breadcrumb-item"><a href="{% url 'admin:ordering_ordermodel_changelist' %}">{% translate "Buyurtmalar" %}</a></li>
+  <li class="breadcrumb-item active">{% translate "Delivery" %}</li>
+</ol>
+{% endblock %}
+
+{% block content_title %}{% endblock %}
+
+{% block content %}
+<div class="nzp nzdl" data-nzdl
+     data-url-assign="{% url 'admin:ordering_ordermodel_delivery_assign' '00000000-0000-0000-0000-000000000000' %}"
+     data-url-move="{% url 'admin:ordering_ordermodel_board_move' '00000000-0000-0000-0000-000000000000' %}"
+     data-can-change="{% if has_change_permission %}1{% endif %}">
+  {% csrf_token %}
+  <header class="nzp-hero">
+    <div class="nzp-hero-main">
+      <span class="nzp-hero-icon" style="--c:#0ea5e9"><i class="fas fa-truck-fast" aria-hidden="true"></i></span>
+      <div>
+        <h2>{% translate "Delivery" %}</h2>
+        <p>{% translate "What goes in each parcel, where it goes, who takes it and how much the courier collects." %}</p>
+      </div>
+    </div>
+    <div class="nzp-hero-actions">
+      <span class="nzdl-upd"><i class="fas fa-clock" aria-hidden="true"></i> {{ desk.updated }}</span>
+      <a class="nzp-btn nzp-btn-ghost" href="{% url 'admin:ordering_courier_changelist' %}"><i class="fas fa-motorcycle" aria-hidden="true"></i> {% translate "Couriers" %}</a>
+      <a class="nzp-btn nzp-btn-ghost" href="{% url 'admin:ordering_ordermodel_board' %}"><i class="fas fa-table-columns" aria-hidden="true"></i> {% translate "Order board" %}</a>
+    </div>
+  </header>
+
+  <div class="nzdl-stats">
+    <div class="nzp-stat" style="--c:#6366f1"><i class="fas fa-box-open" aria-hidden="true"></i><div><b>{{ desk.stats.prepare }}</b><span>{% translate "To pack" %}</span></div></div>
+    <div class="nzp-stat" style="--c:#0ea5e9"><i class="fas fa-route" aria-hidden="true"></i><div><b>{{ desk.stats.road }}</b><span>{% translate "On the road" %}</span></div></div>
+    <div class="nzp-stat" style="--c:#16a34a"><i class="fas fa-circle-check" aria-hidden="true"></i><div><b>{{ desk.stats.delivered_today }}</b><span>{% translate "Delivered today" %}</span></div></div>
+    <div class="nzp-stat" style="--c:#f59e0b"><i class="fas fa-user-slash" aria-hidden="true"></i><div><b>{{ desk.stats.unassigned }}</b><span>{% translate "No courier yet" %}</span></div></div>
+    <div class="nzp-stat" style="--c:#dc2626"><i class="fas fa-hourglass-end" aria-hidden="true"></i><div><b>{{ desk.stats.late }}</b><span>{% translate "Late (this tab)" %}</span></div></div>
+    <div class="nzp-stat" style="--c:#0d9488"><i class="fas fa-money-bill-wave" aria-hidden="true"></i><div><b>{{ desk.stats.to_collect }}</b><span>{% translate "Cash to collect on the road" %}</span></div></div>
+  </div>
+
+  <nav class="nzdl-tabs" aria-label="{% translate 'Stage' %}">
+    {% for s in desk.stages %}
+      <a href="?stage={{ s.key }}" class="{% if s.key == desk.stage %}is-on{% endif %}">{{ s.label }} <b>{{ s.count }}</b></a>
+    {% endfor %}
+  </nav>
+
+  <form class="nzdl-filters" method="get">
+    <input type="hidden" name="stage" value="{{ desk.stage }}">
+    <label class="nzdl-search"><i class="fas fa-magnifying-glass" aria-hidden="true"></i><input type="search" name="q" value="{{ desk.filters.q }}" placeholder="{% translate 'Order, name, phone or street…' %}"></label>
+    <select name="city" aria-label="{% translate 'City' %}">
+      <option value="">{% translate "All cities" %}</option>
+      {% for c in desk.cities %}<option value="{{ c }}" {% if c == desk.filters.city %}selected{% endif %}>{{ c }}</option>{% endfor %}
+    </select>
+    <select name="courier" aria-label="{% translate 'Courier' %}">
+      <option value="">{% translate "All couriers" %}</option>
+      <option value="none" {% if desk.filters.courier == "none" %}selected{% endif %}>{% translate "Without a courier" %}</option>
+      {% for c in desk.couriers %}<option value="{{ c.id }}" {% if c.id == desk.filters.courier %}selected{% endif %}>{{ c.name }}{% if c.load %} · {{ c.load }}{% endif %}</option>{% endfor %}
+    </select>
+    <input type="date" name="day" value="{{ desk.filters.day }}" aria-label="{% translate 'Delivery date' %}">
+    <button class="nzp-btn" type="submit"><i class="fas fa-filter" aria-hidden="true"></i> {% translate "Show" %}</button>
+    {% if desk.filters.q or desk.filters.city or desk.filters.courier or desk.filters.day %}<a class="nzp-btn nzp-btn-ghost" href="?stage={{ desk.stage }}">{% translate "Reset" %}</a>{% endif %}
+  </form>
+
+  <div class="nzdl-layout">
+    <section class="nzdl-list">
+      {% for o in desk.cards %}
+      <article class="nzdl-card is-{{ o.sla }}" data-order="{{ o.id }}" data-next="{{ o.next|default:'' }}">
+        <header class="nzdl-head">
+          <a class="nzdl-num" href="{{ o.url }}">{{ o.number }}</a>
+          <span class="nzdl-pill" style="--c:{{ o.status.color }}"><i class="fas {{ o.status.icon }}" aria-hidden="true"></i> {{ o.status.label }}</span>
+          {% if o.sla != "ok" %}<span class="nzdl-pill nzdl-sla" style="--c:{% if o.sla == 'late' %}#dc2626{% else %}#d97706{% endif %}"><i class="fas fa-stopwatch" aria-hidden="true"></i> {% if o.minutes >= 1440 %}{% widthratio o.minutes 1440 1 %} {% translate "d" %}{% elif o.minutes >= 60 %}{% widthratio o.minutes 60 1 %} {% translate "h" %}{% else %}{{ o.minutes }} {% translate "min" %}{% endif %}</span>{% endif %}
+          {% if o.short %}<span class="nzdl-pill" style="--c:#dc2626" title="{% translate 'Not enough stock at the main warehouse' %}"><i class="fas fa-triangle-exclamation" aria-hidden="true"></i> {{ o.short }}</span>{% endif %}
+          <span class="nzdl-placed">{{ o.placed }}</span>
+        </header>
+
+        <div class="nzdl-body">
+          <div class="nzdl-where">
+            <h4><i class="fas fa-location-dot" aria-hidden="true"></i> {% translate "Where to deliver" %}</h4>
+            <p class="nzdl-who"><b>{{ o.recipient }}</b>{% if o.phone %} · <a href="tel:{{ o.phone }}">{{ o.phone }}</a>{% endif %}</p>
+            <p class="nzdl-addr">{{ o.line1 }}{% if o.line2 %}<br><small>{{ o.line2 }}</small>{% endif %}<br><span>{{ o.city }}{% if o.region %}, {{ o.region }}{% endif %}</span></p>
+            {% if o.links %}<div class="nzdl-maps">{{ o.links }}</div>{% else %}<p class="nzdl-muted"><i class="fas fa-map-pin" aria-hidden="true"></i> {% translate "No map point -- call the customer" %}</p>{% endif %}
+            {% if o.comment %}<p class="nzdl-comment"><i class="fas fa-comment-dots" aria-hidden="true"></i> {{ o.comment }}</p>{% endif %}
+          </div>
+
+          <div class="nzdl-what">
+            <h4><i class="fas fa-box" aria-hidden="true"></i> {% translate "In the parcel" %} <small>· {{ o.units }} {% translate "pcs" %}</small></h4>
+            <ul class="nzdl-items">
+              {% for i in o.items %}
+              <li>
+                <span class="nzdl-thumb">{% if i.image %}<img src="{{ i.image }}" alt="" loading="lazy" decoding="async">{% else %}<i class="fas fa-box" aria-hidden="true"></i>{% endif %}</span>
+                <span class="nzdl-iname"><b>{{ i.name }}</b><small>{% if i.size %}{{ i.size }} · {% endif %}{{ i.sku }}</small></span>
+                <span class="nzdl-qty">× {{ i.qty }}</span>
+                <span class="nzdl-sum">{{ i.total }}</span>
+              </li>
+              {% endfor %}
+            </ul>
+            <div class="nzdl-money">
+              <span>{% translate "Total" %} <b>{{ o.total }}</b></span>
+              {% if o.is_paid %}<span class="nzdl-paid"><i class="fas fa-circle-check" aria-hidden="true"></i> {% translate "Paid online" %}</span>
+              {% else %}<span class="nzdl-collect"><i class="fas fa-hand-holding-dollar" aria-hidden="true"></i> {% translate "Collect" %} <b>{{ o.collect }}</b></span>{% endif %}
+            </div>
+          </div>
+
+          <form class="nzdl-courier" data-assign>
+            <h4><i class="fas fa-motorcycle" aria-hidden="true"></i> {% translate "Courier" %}</h4>
+            <select name="courier_id" {% if not has_change_permission %}disabled{% endif %}>
+              <option value="">— {% translate "not assigned" %} —</option>
+              {% for c in desk.couriers %}<option value="{{ c.id }}" {% if c.id == o.courier_id %}selected{% endif %}>{{ c.name }}{% if c.vehicle %} · {{ c.vehicle }}{% endif %}</option>{% endfor %}
+              <option value="__new">+ {% translate "New courier…" %}</option>
+            </select>
+            <div class="nzdl-new" hidden>
+              <input name="new_courier" placeholder="{% translate 'Name' %}" maxlength="120">
+              <input name="new_phone" placeholder="+998 …" maxlength="32" inputmode="tel">
+            </div>
+            <div class="nzdl-row">
+              <input type="date" name="planned_date" value="{{ o.planned_date }}" aria-label="{% translate 'Delivery date' %}">
+              <input name="time_slot" value="{{ o.time_slot }}" list="nzdl-slots" placeholder="{% translate 'Time' %}" maxlength="40" aria-label="{% translate 'Time window' %}">
+            </div>
+            <div class="nzdl-row">
+              <input name="fee" value="{{ o.fee }}" inputmode="numeric" placeholder="{% translate 'Courier fee' %}" aria-label="{% translate 'Courier fee' %}">
+            </div>
+            <input name="note" value="{{ o.courier_note }}" placeholder="{% translate 'Note for the courier' %}" maxlength="300">
+            {% if has_change_permission %}<button type="submit" class="nzp-btn nzp-btn-ghost"><i class="fas fa-floppy-disk" aria-hidden="true"></i> {% translate "Save" %}</button>{% endif %}
+          </form>
+        </div>
+
+        <footer class="nzdl-foot">
+          <a class="nzp-btn nzp-btn-ghost" href="{% url 'admin:ordering_ordermodel_delivery_waybill' o.id %}?print=1" target="_blank" rel="noopener"><i class="fas fa-print" aria-hidden="true"></i> {% translate "Waybill" %}</a>
+          {% if o.phone %}<a class="nzp-btn nzp-btn-ghost" href="tel:{{ o.phone }}"><i class="fas fa-phone" aria-hidden="true"></i> {% translate "Call" %}</a>{% endif %}
+          <a class="nzp-btn nzp-btn-ghost" href="{{ o.url }}"><i class="fas fa-up-right-from-square" aria-hidden="true"></i> {% translate "Open" %}</a>
+          {% if has_change_permission and o.next %}
+          <button type="button" class="nzp-btn nzdl-go" data-move="{{ o.next }}">
+            {% if o.next == "confirm" %}<i class="fas fa-check" aria-hidden="true"></i> {% translate "Confirm" %}
+            {% elif o.next == "start_processing" %}<i class="fas fa-box-open" aria-hidden="true"></i> {% translate "Start packing" %}
+            {% elif o.next == "ship" %}<i class="fas fa-truck-fast" aria-hidden="true"></i> {% translate "To courier" %}
+            {% else %}<i class="fas fa-circle-check" aria-hidden="true"></i> {% translate "Delivered" %}{% endif %}
+          </button>
+          {% endif %}
+        </footer>
+      </article>
+      {% empty %}
+      <div class="nzdl-empty"><i class="fas fa-truck" aria-hidden="true"></i><b>{% translate "No delivery orders here" %}</b><span>{% translate "New delivery orders appear here as soon as they are placed." %}</span></div>
+      {% endfor %}
+    </section>
+
+    <aside class="nzdl-side">
+      <div class="nzdl-panel">
+        <h3><i class="fas fa-map-location-dot" aria-hidden="true"></i> {% translate "Map" %} <small>{{ desk.pins|length }}</small></h3>
+        <div class="nzdl-map" data-nzdl-map></div>
+        {% if not desk.pins %}<p class="nzdl-muted">{% translate "Orders in this tab have no map points." %}</p>{% endif %}
+      </div>
+      <div class="nzdl-panel">
+        <h3><i class="fas fa-motorcycle" aria-hidden="true"></i> {% translate "Couriers" %}</h3>
+        <ul class="nzdl-couriers">
+          {% for c in desk.couriers %}
+          <li><a href="?stage=road&courier={{ c.id }}"><b>{{ c.name }}</b><small>{{ c.phone|default:"—" }}{% if c.vehicle %} · {{ c.vehicle }}{% endif %}</small></a><span class="nzdl-load{% if c.load %} is-busy{% endif %}">{{ c.load }}</span></li>
+          {% empty %}
+          <li class="nzdl-muted">{% translate "No couriers yet -- add one on any order card or on the Couriers page." %}</li>
+          {% endfor %}
+        </ul>
+      </div>
+    </aside>
+  </div>
+
+  <datalist id="nzdl-slots"><option value="09:00–12:00"><option value="12:00–15:00"><option value="15:00–18:00"><option value="18:00–21:00"></datalist>
+  {{ desk.pins|json_script:"nzdl-pins" }}
+  <div class="nzdl-toast" data-nzdl-toast role="status" aria-live="polite" hidden></div>
+</div>
+{% endblock %}
+
+{% block extrajs %}
+{{ block.super }}
+<script src="{% static 'admin/vendor/leaflet/leaflet.js' %}"></script>
+<script src="{% static 'admin/js/nutrizone-delivery.js' %}?v=1"></script>
+{% endblock %}

@@ -22,6 +22,7 @@ from apps.ordering.infrastructure.repositories import DjangoOrderRepository
 from apps.platform.infrastructure import excel_export as xl
 from apps.platform.infrastructure.excel_export import Col, ExcelExportMixin
 from core.outbox import stage_event
+from apps.platform.infrastructure.premium_admin import PremiumFormMixin, PremiumListMixin
 
 
 def _stage_ordering_events(events: list[tuple[str, dict]]) -> None:
@@ -215,6 +216,9 @@ class OrderAdmin(ExcelExportMixin, admin.ModelAdmin):
             path("board/data/", self.admin_site.admin_view(self.board_data_view), name="ordering_ordermodel_board_data"),
             path("board/<uuid:pk>/move/", self.admin_site.admin_view(self.board_move_view), name="ordering_ordermodel_board_move"),
             path("board/<uuid:pk>/ship-options/", self.admin_site.admin_view(self.board_ship_options_view), name="ordering_ordermodel_board_ship_options"),
+            path("delivery/", self.admin_site.admin_view(self.delivery_view), name="ordering_ordermodel_delivery"),
+            path("delivery/<uuid:pk>/assign/", self.admin_site.admin_view(self.delivery_assign_view), name="ordering_ordermodel_delivery_assign"),
+            path("delivery/<uuid:pk>/waybill/", self.admin_site.admin_view(self.delivery_waybill_view), name="ordering_ordermodel_delivery_waybill"),
             path("<uuid:pk>/act/", self.admin_site.admin_view(self.act_view), name="ordering_ordermodel_act"),
             path("<uuid:pk>/note/", self.admin_site.admin_view(self.note_view), name="ordering_ordermodel_note"),
         ] + super().get_urls()
@@ -389,6 +393,58 @@ class OrderAdmin(ExcelExportMixin, admin.ModelAdmin):
             return JsonResponse({"ok": False}, status=403)
         order = get_object_or_404(orm.OrderModel, pk=pk)
         return JsonResponse({"ok": True, "locations": admin_board.ship_options(order)})
+
+    # ------------------------------------------------------------------ delivery desk
+
+    def delivery_view(self, request):
+        """Yetkazib berish markazi: delivery orders by stage with items, address, courier and the cash to collect."""
+        from django.core.exceptions import PermissionDenied
+        from django.template.response import TemplateResponse
+
+        from apps.ordering.infrastructure import admin_delivery
+
+        if not self.has_view_permission(request):
+            raise PermissionDenied
+        g = request.GET
+        desk = admin_delivery.desk_payload(g.get("stage") or "prepare", (g.get("q") or "").strip()[:80], g.get("city") or "", g.get("courier") or "", g.get("day") or "")
+        context = {**self.admin_site.each_context(request), "title": _("Delivery"), "opts": self.model._meta, "desk": desk,
+                   "has_change_permission": self.has_change_permission(request)}
+        return TemplateResponse(request, "admin/ordering/ordermodel/delivery.html", context)
+
+    def delivery_assign_view(self, request, pk):
+        import json
+
+        from django.http import JsonResponse
+        from django.shortcuts import get_object_or_404
+
+        from apps.ordering.infrastructure import admin_delivery
+
+        if request.method != "POST":
+            return JsonResponse({"ok": False, "error": "POST required"}, status=405)
+        order = get_object_or_404(orm.OrderModel, pk=pk)
+        if not self.has_change_permission(request, order):
+            return JsonResponse({"ok": False, "error": str(_("You don't have permission to change orders."))}, status=403)
+        try:
+            body = json.loads(request.body or b"{}")
+        except ValueError:
+            return JsonResponse({"ok": False, "error": "invalid body"}, status=400)
+        try:
+            row = admin_delivery.assign(order, body, request.user.get_full_name() or request.user.get_username())
+        except ValueError as exc:
+            return JsonResponse({"ok": False, "error": str(exc)}, status=422)
+        return JsonResponse({"ok": True, "message": str(_("Saved.")), "courier": row.courier.name if row.courier else "", "courier_id": str(row.courier_id or "")})
+
+    def delivery_waybill_view(self, request, pk):
+        from django.core.exceptions import PermissionDenied
+        from django.shortcuts import get_object_or_404
+        from django.template.response import TemplateResponse
+
+        from apps.ordering.infrastructure import admin_delivery
+
+        if not self.has_view_permission(request):
+            raise PermissionDenied
+        order = get_object_or_404(orm.OrderModel, pk=pk)
+        return TemplateResponse(request, "admin/ordering/ordermodel/waybill.html", {"w": admin_delivery.waybill(order), "auto_print": request.GET.get("print") == "1"})
 
     def note_view(self, request, pk):
         """The internal (staff-only) note on the order."""
@@ -1152,3 +1208,41 @@ def _order_payments(order) -> list[dict]:
         rows.append({"url": reverse("admin:payment_paymentmodel_change", args=[p.pk]), "logo": _logo(key), "name": provider_label(key), "amount": _money(p.amount),
                      "label": label, "color": color, "icon": icon, "test": p.is_test, "when": p.paid_at or p.created_at})
     return rows
+
+
+@admin.register(orm.Courier)
+class CourierAdmin(PremiumListMixin, PremiumFormMixin, admin.ModelAdmin):
+    """Couriers picked on the delivery desk (Yetkazib berish markazi)."""
+
+    list_display = ("name", "phone", "vehicle", "is_active", "created_at")
+    search_fields = ("name", "phone", "vehicle")
+    ordering = ("-is_active", "name")
+    actions = None
+    fieldsets = ((None, {"fields": ("name", "phone", "vehicle", "telegram_username", "is_active")}),)
+
+    nz_icon, nz_tone, nz_title = "fa-motorcycle", "#0ea5e9", "Kuryerlar"
+    nz_subtitle = "Buyurtmalarni mijozga olib boradigan xodimlar. Yetkazib berish markazida buyurtmaga biriktiriladi."
+    nz_columns = (("Kuryer", ""), ("Telefon", ""), ("Transport", ""), ("Holat", ""), ("Yo'lda", "r"))
+    nz_grid = "minmax(200px,2fr) 160px minmax(140px,1fr) 110px 90px"
+    nz_search = "Ism, telefon yoki transport…"
+    nz_empty = ("Kuryer yo'q", "«Qo'shish» bilan birinchi kuryerni kiriting.")
+
+    def nz_prepare(self, request, objs):
+        from django.db.models import Count
+
+        loads = dict(orm.DeliveryAssignment.objects.filter(courier__in=objs, order__status="shipped").values_list("courier_id").annotate(n=Count("id")))
+        for c in objs:
+            c.nz_load = loads.get(c.id, 0)
+
+    def nz_row(self, c):
+        from apps.platform.infrastructure.premium_admin import chip, muted
+
+        name = format_html('<b>{}</b>{}', c.name, format_html('<br><small>@{}</small>', c.telegram_username) if c.telegram_username else "")
+        phone = format_html('<a href="tel:{}">{}</a>', c.phone, c.phone) if c.phone else muted()
+        state = chip("Faol", "#16a34a", "fa-circle-check") if c.is_active else chip("Nofaol", "#64748b", "fa-circle-pause")
+        return [name, phone, c.vehicle or muted(), state, format_html("<b>{}</b>", getattr(c, "nz_load", 0))]
+
+    def form_hero(self, request, obj):
+        if obj is None:
+            return {"subtitle": "Ism va telefon — yetkazib berish markazida ko'rinadi"}
+        return {"title": obj.name, "subtitle": " · ".join(p for p in (obj.phone, obj.vehicle) if p)}

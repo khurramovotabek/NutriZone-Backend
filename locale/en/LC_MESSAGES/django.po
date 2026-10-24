@@ -2577,3 +2577,6 @@ msgstr "The customer chooses «%(n)s» at checkout and enters the card details o
 #, python-format
 msgid "%(role)s roli olib tashlansinmi?"
 msgstr "Remove the %(role)s role?"
+
+msgid "Kuryerlar"
+msgstr "Couriers"

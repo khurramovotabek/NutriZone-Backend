@@ -1,0 +1,96 @@
+{% load i18n %}<!doctype html>
+{# Printable delivery sheet (yo'l varaqasi) for one order: admin_delivery.waybill. A4 or a phone screen. #}
+<html lang="uz">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{{ w.order.order_number }} · {% translate "Waybill" %}</title>
+<style>
+  * { box-sizing: border-box; }
+  body { margin: 0; font-size: 14px; line-height: 1.45; font-family: -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; color: #0f172a; background: #f1f5f9; }
+  .sheet { max-width: 800px; margin: 24px auto; background: #fff; border-radius: 16px; padding: 28px; box-shadow: 0 8px 30px rgba(15, 23, 42, .08); }
+  header { display: flex; justify-content: space-between; align-items: flex-start; gap: 16px; border-bottom: 2px solid #0f172a; padding-bottom: 14px; }
+  .brand { font-weight: 900; font-size: 22px; letter-spacing: .02em; }
+  .brand small { display: block; font-weight: 600; font-size: 12px; color: #64748b; letter-spacing: 0; }
+  .num { text-align: right; }
+  .num b { font-size: 22px; font-variant-numeric: tabular-nums; }
+  .num small { display: block; color: #64748b; }
+  .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin: 18px 0; }
+  .box { border: 1px solid #e2e8f0; border-radius: 12px; padding: 12px 14px; }
+  .box h3 { margin: 0 0 6px; font-size: 11px; letter-spacing: .06em; text-transform: uppercase; color: #64748b; }
+  .box p { margin: 0; }
+  .big { font-size: 16px; font-weight: 800; }
+  table { width: 100%; border-collapse: collapse; }
+  th, td { padding: 8px 6px; border-bottom: 1px solid #e2e8f0; text-align: left; vertical-align: top; }
+  th { font-size: 11px; text-transform: uppercase; letter-spacing: .05em; color: #64748b; }
+  td.r, th.r { text-align: right; white-space: nowrap; font-variant-numeric: tabular-nums; }
+  td small { color: #64748b; }
+  .check { width: 18px; height: 18px; border: 2px solid #94a3b8; border-radius: 4px; display: inline-block; }
+  .totals { display: flex; justify-content: flex-end; gap: 24px; margin-top: 14px; flex-wrap: wrap; }
+  .collect { padding: 10px 16px; border-radius: 12px; background: #fef3c7; font-weight: 800; font-size: 18px; }
+  .paid { padding: 10px 16px; border-radius: 12px; background: #dcfce7; font-weight: 800; color: #166534; }
+  .sign { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; margin-top: 34px; }
+  .sign div { border-top: 1px solid #94a3b8; padding-top: 6px; font-size: 12px; color: #64748b; }
+  .actions { max-width: 800px; margin: 0 auto 24px; display: flex; gap: 8px; justify-content: flex-end; padding: 0 16px; }
+  .actions button { border: 0; border-radius: 10px; padding: 10px 18px; font-weight: 700; background: #0f172a; color: #fff; cursor: pointer; }
+  @media (max-width: 640px) { .sheet { margin: 0; border-radius: 0; padding: 18px; } .grid { grid-template-columns: 1fr; } .hide-sm { display: none; } }
+  @media print { body { background: #fff; } .sheet { box-shadow: none; margin: 0; max-width: none; padding: 0; } .actions { display: none; } }
+</style>
+</head>
+<body>
+<div class="sheet">
+  <header>
+    <div class="brand">NUTRIZONE<small>{% translate "Delivery waybill" %} · nutrizone.uz</small></div>
+    <div class="num"><b>{{ w.order.order_number }}</b><small>{% if w.placed %}{{ w.placed|date:"d.m.Y H:i" }}{% endif %}</small></div>
+  </header>
+
+  <div class="grid">
+    <div class="box">
+      <h3>{% translate "Recipient" %}</h3>
+      <p class="big">{{ w.order.shipping_recipient_name }}</p>
+      <p>{{ w.order.shipping_phone|default:"" }}</p>
+    </div>
+    <div class="box">
+      <h3>{% translate "Address" %}</h3>
+      <p><b>{{ w.address }}</b></p>
+      {% if w.order.shipping_latitude is not None %}<p><small>{{ w.order.shipping_latitude|stringformat:".6f" }}, {{ w.order.shipping_longitude|stringformat:".6f" }}</small></p>{% endif %}
+    </div>
+    <div class="box">
+      <h3>{% translate "Courier" %}</h3>
+      <p><b>{{ w.delivery.courier.name|default:"—" }}</b> {{ w.delivery.courier.phone|default:"" }}</p>
+      {% if w.delivery.planned_date or w.delivery.time_slot %}<p>{{ w.delivery.planned_date|date:"d.m.Y"|default:"" }} {{ w.delivery.time_slot }}</p>{% endif %}
+      {% if w.delivery.note %}<p><small>{{ w.delivery.note }}</small></p>{% endif %}
+    </div>
+    <div class="box">
+      <h3>{% translate "Customer comment" %}</h3>
+      <p>{{ w.order.customer_comment|default:"—" }}</p>
+    </div>
+  </div>
+
+  <table>
+    <thead><tr><th style="width:28px"></th><th>{% translate "Product" %}</th><th class="r">{% translate "Qty" %}</th><th class="r hide-sm">{% translate "Price" %}</th><th class="r">{% translate "Sum" %}</th></tr></thead>
+    <tbody>
+      {% for i in w.items %}
+      <tr><td><span class="check"></span></td><td><b>{{ i.name }}</b><br><small>{% if i.size %}{{ i.size }} · {% endif %}{{ i.sku }}</small></td><td class="r"><b>{{ i.qty }}</b></td><td class="r hide-sm">{{ i.unit }}</td><td class="r">{{ i.total }}</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+
+  <div class="totals">
+    <span>{% translate "Items" %}: <b>{{ w.units }}</b></span>
+    <span>{% translate "Total" %}: <b>{{ w.total }}</b></span>
+  </div>
+  <div class="totals">
+    {% if w.is_paid %}<span class="paid">{% translate "Paid -- collect nothing" %}</span>
+    {% else %}<span class="collect">{% translate "Collect from the customer" %}: {{ w.collect }}</span>{% endif %}
+  </div>
+
+  <div class="sign">
+    <div>{% translate "Packed by" %}</div>
+    <div>{% translate "Received by the customer (signature)" %}</div>
+  </div>
+</div>
+<div class="actions"><button type="button" onclick="window.print()">{% translate "Print" %}</button></div>
+{% if auto_print %}<script>window.addEventListener("load", function () { setTimeout(function () { window.print(); }, 300); });</script>{% endif %}
+</body>
+</html>

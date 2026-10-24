@@ -9813,3 +9813,147 @@ msgstr "Клиент выбирает «%(n)s» при оформлении и �
 #, python-format
 msgid "%(role)s roli olib tashlansinmi?"
 msgstr "Снять роль «%(role)s»?"
+
+msgid "All couriers"
+msgstr "Все курьеры"
+
+msgid "Cash to collect on the road"
+msgstr "Наличные к получению в пути"
+
+msgid "Collect"
+msgstr "Получить"
+
+msgid "Collect from the customer"
+msgstr "Получить с клиента"
+
+msgid "Courier"
+msgstr "Курьер"
+
+msgid "Courier fee"
+msgstr "Оплата курьеру"
+
+msgid "Courier not found."
+msgstr "Курьер не найден."
+
+msgid "Couriers"
+msgstr "Курьеры"
+
+msgid "Customer comment"
+msgstr "Комментарий клиента"
+
+msgid "Deliveries"
+msgstr "Доставки"
+
+msgid "Delivery date"
+msgstr "Дата доставки"
+
+msgid "Delivery waybill"
+msgstr "Накладная доставки"
+
+msgid "In the parcel"
+msgstr "В посылке"
+
+msgid "Invalid amount."
+msgstr "Неверная сумма."
+
+msgid "Invalid date."
+msgstr "Неверная дата."
+
+msgid "Late (this tab)"
+msgstr "Опаздывают (вкладка)"
+
+msgid "New courier…"
+msgstr "Новый курьер…"
+
+msgid "New delivery orders appear here as soon as they are placed."
+msgstr "Новые заказы с доставкой появятся здесь сразу после оформления."
+
+msgid "No courier yet"
+msgstr "Без курьера"
+
+msgid "No couriers yet -- add one on any order card or on the Couriers page."
+msgstr "Курьеров пока нет — добавьте в карточке заказа или на странице «Курьеры»."
+
+msgid "No delivery orders here"
+msgstr "Здесь нет заказов с доставкой"
+
+msgid "No map point -- call the customer"
+msgstr "Нет точки на карте — позвоните клиенту"
+
+msgid "Note for the courier"
+msgstr "Заметка для курьера"
+
+msgid "On the road"
+msgstr "В пути"
+
+msgid "Order, name, phone or street…"
+msgstr "Заказ, имя, телефон или улица…"
+
+msgid "Orders in this tab have no map points."
+msgstr "У заказов на этой вкладке нет точек на карте."
+
+msgid "Packed by"
+msgstr "Собрал"
+
+msgid "Paid -- collect nothing"
+msgstr "Оплачено — ничего не брать"
+
+msgid "Paid online"
+msgstr "Оплачено онлайн"
+
+msgid "Received by the customer (signature)"
+msgstr "Клиент получил (подпись)"
+
+msgid "Reset"
+msgstr "Сбросить"
+
+msgid "Saved."
+msgstr "Сохранено."
+
+msgid "Show"
+msgstr "Показать"
+
+msgid "Stage"
+msgstr "Этап"
+
+msgid "Sum"
+msgstr "Сумма"
+
+msgid "This order is closed."
+msgstr "Этот заказ закрыт."
+
+msgid "This order is picked up in a store, it has no courier."
+msgstr "Этот заказ забирают в магазине, курьер не нужен."
+
+msgid "Time window"
+msgstr "Интервал времени"
+
+msgid "To pack"
+msgstr "К сборке"
+
+msgid "Transport"
+msgstr "Транспорт"
+
+msgid "Waybill"
+msgstr "Накладная"
+
+msgid "What goes in each parcel, where it goes, who takes it and how much the courier collects."
+msgstr "Что в каждой посылке, куда она едет, кто везёт и сколько получает курьер."
+
+msgid "Where to deliver"
+msgstr "Куда доставить"
+
+msgid "Without a courier"
+msgstr "Без курьера"
+
+msgid "e.g. 14:00-18:00"
+msgstr "например 14:00-18:00"
+
+msgid "e.g. Damas 01 A 123 BC, scooter, on foot"
+msgstr "например Damas 01 A 123 BC, скутер, пешком"
+
+msgid "not assigned"
+msgstr "не назначен"
+
+msgid "Kuryerlar"
+msgstr "Курьеры"

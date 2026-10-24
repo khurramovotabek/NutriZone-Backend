@@ -67,8 +67,34 @@ class VariantInfo:
     active: bool
 
 
+_PHOTO_ROLES = ("primary", "gallery")
+
+
+def variant_image_urls(variants, size: str = "medium") -> dict:
+    """{variant id: photo URL}: the variant's own photo (a flavour/size shot) first, else the family's primary photo,
+    else any product photo -- never a video, document or nutrition label. "medium" (400 px) keeps cards sharp on
+    retina screens; the 150 px "small" thumbnail was upscaled and looked blurry."""
+    from apps.products.infrastructure.models import ProductMedia
+
+    variants = list(variants)
+    rank = {"primary": 0, "gallery": 1}
+    by_product: dict = {}
+    rows = (ProductMedia.objects.filter(product_id__in={v.product_id for v in variants}, media_role__in=_PHOTO_ROLES)
+            .values("product_id", "variant_id", "media_role", "sort_order", "storage_path", "thumbnail_paths"))
+    for m in rows:
+        by_product.setdefault(m["product_id"], []).append(m)
+    out: dict = {}
+    for v in variants:
+        media = by_product.get(v.product_id) or []
+        if not media:
+            continue
+        best = min(media, key=lambda m: (0 if m["variant_id"] == v.id else 1 if m["variant_id"] is None else 2, rank[m["media_role"]], m["sort_order"]))
+        out[v.id] = f"/media/{(best['thumbnail_paths'] or {}).get(size) or best['storage_path']}"
+    return out
+
+
 def variant_infos(variant_ids, locale: str = "uz") -> dict:
-    from apps.products.infrastructure.models import ProductMedia, ProductTranslation, ProductVariant
+    from apps.products.infrastructure.models import ProductTranslation, ProductVariant
     from apps.products.infrastructure.selectors import bulk_variant_prices
 
     from apps.products.infrastructure.variant_labels import variant_label
@@ -80,9 +106,7 @@ def variant_infos(variant_ids, locale: str = "uz") -> dict:
     names: dict = {}
     for tr in ProductTranslation.objects.filter(product_id__in=pids).values("product_id", "locale_code", "name"):
         names.setdefault(tr["product_id"], {})[tr["locale_code"]] = tr["name"]
-    images: dict = {}
-    for m in ProductMedia.objects.filter(product_id__in=pids).order_by("product_id", "sort_order").values("product_id", "storage_path", "thumbnail_paths"):
-        images.setdefault(m["product_id"], f"/media/{(m['thumbnail_paths'] or {}).get('small') or m['storage_path']}")
+    images = variant_image_urls(variants)
     prices = bulk_variant_prices([v.id for v in variants])
     out = {}
     for v in variants:
@@ -91,7 +115,7 @@ def variant_infos(variant_ids, locale: str = "uz") -> dict:
         price = prices.get(v.id)
         out[v.id] = VariantInfo(
             id=v.id, product_id=v.product_id, name=by.get(locale) or by.get("uz") or by.get("en") or next(iter(by.values()), v.sku),
-            sku=v.sku, barcode=v.barcode or "", size=size, image_url=images.get(v.product_id),
+            sku=v.sku, barcode=v.barcode or "", size=size, image_url=images.get(v.id),
             price=Decimal(price["amount"]) if price else None, active=v.status == "active",
         )
     return out

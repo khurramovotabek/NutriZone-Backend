@@ -4844,3 +4844,27 @@ msgstr "получают отчёт своего филиала"
 
 msgid "Hali faol filial yo'q."
 msgstr "Активных филиалов пока нет."
+
+msgid "Buyurtmalarni mijozga olib boradigan xodimlar. Yetkazib berish markazida buyurtmaga biriktiriladi."
+msgstr "Сотрудники, которые доставляют заказы клиентам. Назначаются заказу в центре доставки."
+
+msgid "Kuryer"
+msgstr "Курьер"
+
+msgid "Telefon"
+msgstr "Телефон"
+
+msgid "Transport"
+msgstr "Транспорт"
+
+msgid "Ism, telefon yoki transport…"
+msgstr "Имя, телефон или транспорт…"
+
+msgid "Kuryer yo'q"
+msgstr "Нет курьеров"
+
+msgid "«Qo'shish» bilan birinchi kuryerni kiriting."
+msgstr "Добавьте первого курьера кнопкой «Добавить»."
+
+msgid "Ism va telefon — yetkazib berish markazida ko'rinadi"
+msgstr "Имя и телефон — видны в центре доставки"
