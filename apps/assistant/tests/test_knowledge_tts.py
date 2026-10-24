@@ -47,7 +47,10 @@ class TestSearch:
 
         _entry()
         reply, ids, chips, meta = answer({}, "aksiya bormi?", "uz")
-        assert "10% chegirma" in reply and meta["last"] == "knowledge"
+        assert "10% chegirma" in reply and meta["last"] == "knowledge"  # asked exactly as taught: the shop's own answer wins
+        _entry(topic="faq", title="Ish kunlari", questions="bayramda ishlaysizmi", keywords="bayram, праздник", answer_uz="Bayram kunlari ham ishlaymiz.", priority=60)
+        reply, *_rest, meta = answer({}, "bayramda ishlaysizmi", "uz")
+        assert reply == "Bayram kunlari ham ishlaymiz." and meta["last"] == "knowledge"
 
 
 class TestTools:

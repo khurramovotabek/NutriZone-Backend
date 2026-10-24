@@ -32,6 +32,7 @@ def _stems(text: str) -> set:
 class Hit:
     entry: object
     score: float
+    exact: bool = False  # the customer asked one of the entry's own question forms (whole, or nearly)
 
 
 def search(query: str, limit: int = 3, min_score: float = MIN_SCORE) -> list[Hit]:
@@ -46,14 +47,15 @@ def search(query: str, limit: int = 3, min_score: float = MIN_SCORE) -> list[Hit
     for e in KnowledgeEntry.objects.filter(is_active=True).filter(Q(valid_until__isnull=True) | Q(valid_until__gte=today)):
         questions = [_norm(x).strip(" ?!.") for x in (e.questions or "").splitlines() if x.strip()]
         score = 0.0
-        if qn and any(qn == x or (len(x) > 8 and x in qn) for x in questions):
+        exact = bool(qn) and any(qn == x or (len(x) > 8 and x in qn and len(x) >= 0.6 * len(qn)) for x in questions)
+        if exact:
             score += 10  # the customer asked (almost) exactly one of the listed questions
         score += 2.5 * len(q & set().union(*(_stems(x) for x in questions))) if questions else 0
         score += 3.0 * len(q & _stems(e.keywords.replace(",", " ")))
         score += 1.5 * len(q & _stems(e.title))
         score += 0.4 * len(q & _stems(" ".join((e.answer_uz, e.answer_ru, e.answer_en))))
         if score >= min_score:
-            hits.append(Hit(e, score + e.priority / 100))
+            hits.append(Hit(e, score + e.priority / 100, exact))
     hits.sort(key=lambda h: -h.score)
     return hits[:limit]
 

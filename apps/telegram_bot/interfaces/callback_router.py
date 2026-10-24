@@ -70,6 +70,46 @@ def _send(chat_id: int, text: str, keyboard: list | None = None) -> None:
         logger.warning("Telegram bot: failed to send message to chat %s", chat_id)
 
 
+def _send_venues(chat_id: int, venues: list) -> None:
+    """The branches an advisor answer is about, as real map pins (open in the user's own map app with one tap)."""
+    from apps.notifications.infrastructure import composition as notifications_composition
+
+    if not venues:
+        return
+    try:
+        gateway = notifications_composition.build_telegram_gateway()
+        for v in venues[:3]:
+            gateway.send_venue(str(chat_id), v["lat"], v["lng"], v["title"][:60], (v.get("address") or "")[:120])
+    except Exception:  # noqa: BLE001 -- the text answer already has the map links
+        logger.warning("Telegram bot: failed to send branch pins to chat %s", chat_id)
+
+
+AI_CHIPS_TTL = 6 * 3600
+
+
+def _chip_rows(chat_id: int, chips: list) -> list:
+    """Quick replies under an advisor answer: their texts are kept in the cache (callback data is limited to 64 bytes)."""
+    from django.core.cache import cache
+
+    chips = [c for c in (chips or []) if c][:4]
+    if not chips:
+        return []
+    cache.set(f"tg:aiq:{chat_id}", chips, AI_CHIPS_TTL)
+    pairs = [chips[i:i + 2] for i in range(0, len(chips), 2)]
+    return [[{"text": f"💬 {c[:30]}", "callback_data": f"aiq:{chips.index(c)}"} for c in pair] for pair in pairs]
+
+
+def _chip_tapped(chat_id: int, telegram_user_id: int, index: str | None) -> None:
+    from django.core.cache import cache
+
+    chips = cache.get(f"tg:aiq:{chat_id}") or []
+    try:
+        text = chips[int(index or "")]
+    except (ValueError, IndexError):
+        return
+    search_text(chat_id, telegram_user_id, text)
+
+
 def _resolve_user(telegram_user_id: int):
     from apps.identity.infrastructure import models as identity_orm
     from apps.telegram_bot.application.services.linking import ResolveTelegramCustomer
@@ -285,6 +325,8 @@ def handle_callback(callback_query: dict) -> None:
             from apps.telegram_bot.interfaces import stores_menu
 
             stores_menu.handle_callback(chat_id, action, arg, lang)
+        elif namespace == "aiq":
+            _chip_tapped(chat_id, from_user["id"], action)
         else:
             _send(chat_id, t("unknown_action", lang))
     except ResourceNotFound:
@@ -1467,6 +1509,22 @@ def claude_reply(conversation_id, text: str) -> dict:
     return async_to_sync(collect)()
 
 
+def _advisor_understands(text: str, lang: str) -> bool:
+    """A "search"-looking message the free advisor still answers better: price, branch stock, contacts, hours, promo,
+    compare, safety (Brain v2) or a question the shop taught word for word."""
+    from apps.assistant.infrastructure import knowledge
+    from apps.assistant.infrastructure.advisor import brain
+
+    try:
+        if brain.respond({}, text, lang if lang in ("uz", "ru", "en") else "uz") is not None:
+            return True
+        hits = knowledge.search(text, limit=1)
+        return bool(hits and hits[0].exact)
+    except Exception:  # noqa: BLE001 -- when in doubt the plain catalogue search answers
+        logger.exception("advisor pre-check failed")
+        return False
+
+
 def _advisor_reply(user, chat_id: int, telegram_user_id: int, text: str, lang: str) -> bool:
     """Free text that is a question, a goal or profile facts goes to the local advisor (same brain as the website
     widget, its memory kept per Telegram user for 24 h); plain product words stay a catalogue search."""
@@ -1481,7 +1539,7 @@ def _advisor_reply(user, chat_id: int, telegram_user_id: int, text: str, lang: s
     from apps.assistant.infrastructure import engine as ai
 
     smart = ai.uses_claude()
-    if not smart and nlu.parse(text).intent == "search":
+    if not smart and nlu.parse(text).intent == "search" and not _advisor_understands(text, lang):
         return False
     try:
         key = f"tg:{telegram_user_id}"
@@ -1499,8 +1557,10 @@ def _advisor_reply(user, chat_id: int, telegram_user_id: int, text: str, lang: s
     for c in result["cards"][:4]:
         price = f" — {int(float(c['price'])):,}".replace(",", " ") if c.get("price") else ""
         rows.append([{"text": f"🛒 {c['name'][:34]}{price}", "callback_data": f"po:open:{c['id']}"}])
+    rows += _chip_rows(chat_id, result.get("chips"))
     rows.append([{"text": t("home_button", lang), "callback_data": "menu:home"}])
     _send(chat_id, _md_to_html(result["reply"])[:4000], rows)
+    _send_venues(chat_id, result.get("venues"))
     return True
 
 
@@ -1549,6 +1609,7 @@ def group_question(message: dict) -> bool:
         rows.append([{"text": "💬 NutriZone bot", "url": f"https://t.me/{bot}"}])
     name = html.escape(sender.get("first_name") or "")
     _send(chat_id, (f"{name}, " if name else "") + _md_to_html(result["reply"])[:3900], rows)
+    _send_venues(chat_id, result.get("venues"))
     return True
 
 

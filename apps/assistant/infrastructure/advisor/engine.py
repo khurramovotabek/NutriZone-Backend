@@ -15,7 +15,7 @@ from asgiref.sync import sync_to_async
 from django.utils import timezone
 
 from apps.assistant.infrastructure import knowledge, tools
-from apps.assistant.infrastructure.advisor import kb, needs, nlu, reco
+from apps.assistant.infrastructure.advisor import brain, kb, needs, nlu, reco
 
 logger = logging.getLogger("nutrizone.assistant.local")
 LOCALES = ("uz", "ru", "en")
@@ -118,17 +118,35 @@ def answer(conv_meta: dict, text: str, loc: str) -> tuple[str, list[str], list[s
         return kb.T["thanks"][loc], [], CHIPS["faq"][loc], meta
     if p.intent == "operator":
         return kb.T["operator"][loc].format(contacts=kb.contacts(loc)), [], [], meta
+    meta.pop("_venues", None)
     taught = knowledge.search(text, limit=1)
-    if taught and taught[0].score >= STRONG_MATCH and p.intent not in ("recommend", "faq_stores"):
-        # what the shop taught on the dashboard (AI bilimlar bazasi) wins over the built-in texts
+    if taught and taught[0].exact and not brain.understand(text).health:
+        # the shop taught this very question on the dashboard -- its answer wins over everything automatic
         knowledge.mark_used([taught[0].entry])
         meta["last"] = "knowledge"
         return taught[0].entry.answer(loc), [], CHIPS["faq"][loc], meta
+    smart = brain.respond(meta, text, loc)  # live-data answers: price, branch stock, best sellers, compare, promo, contacts, hours, safety
+    if smart is not None:
+        meta["last"] = smart.last
+        if smart.venues:
+            meta["_venues"] = smart.venues
+        return smart.text, smart.product_ids, smart.chips or CHIPS["faq"][loc], meta
+    if taught and taught[0].score >= STRONG_MATCH and p.intent not in ("recommend", "faq_stores"):
+        # what the shop taught on the dashboard (AI bilimlar bazasi) wins over the built-in texts; products of the kind asked about come along
+        knowledge.mark_used([taught[0].entry])
+        meta["last"] = "knowledge"
+        ids = []
+        if p.concept:
+            ids = [x["id"] for x in tools.search_products({"query": reco.QUERIES.get(p.concept, p.concept), "limit": 3, "in_stock_only": True}, loc)["products"]]
+        return taught[0].entry.answer(loc), ids, (CHIPS["after_reco"] if ids else CHIPS["faq"])[loc], meta
     if p.intent in kb.FAQ:
         meta["last"] = p.intent
         return kb.FAQ[p.intent][loc], [], CHIPS["faq"][loc], meta
     if p.intent == "faq_stores":
         meta["last"] = p.intent
+        venues = brain.venues_for(text)
+        if venues:
+            meta["_venues"] = venues
         return kb.stores_text(loc, text), [], CHIPS["faq"][loc], meta
     if p.intent in ("faq_brands", "faq_flavours"):
         meta["last"] = p.intent
@@ -146,6 +164,26 @@ def answer(conv_meta: dict, text: str, loc: str) -> tuple[str, list[str], list[s
         kinds = meta.get("last_kinds") or []
         body = "\n".join(f"• **{kb.T['kind_name'][loc][k]}:** {kb.T['usage'][loc][k]}" for k in kinds)
         return body + "\n\n" + kb.T["disclaimer"][loc], [], CHIPS["after_reco"][loc], meta
+    if p.concept and not p.facts and p.intent in ("recommend", "search"):
+        # "qaysi protein yaxshi?", "что лучше для суставов" -- show the best of that kind right away, offer a personal pick instead of interrogating
+        q = reco.QUERIES.get(p.concept, p.concept)
+        found = tools.search_products({"query": q, "limit": 4, "in_stock_only": True}, loc)["products"] or tools.search_products({"query": q, "limit": 4, "in_stock_only": False}, loc)["products"]
+        if not found:
+            meta["last"] = "kind_missing"
+            name = kb.T["kind_name"][loc][p.concept]
+            msg = {"uz": f"**{name}** — {kb.T['why'][loc][p.concept]}.\n\n{kb.T['usage'][loc][p.concept]}\n\nHozir bu mahsulot sotuvda yo'q. Saytdagi «Mahsulot topib bering» orqali so'rov qoldiring — kelishi bilan xabar beramiz.",
+                   "ru": f"**{name}** — {kb.T['why'][loc][p.concept]}.\n\n{kb.T['usage'][loc][p.concept]}\n\nСейчас этого нет в продаже. Оставьте заявку «Найти товар» на сайте — сообщим, как только появится.",
+                   "en": f"**{name}** — {kb.T['why'][loc][p.concept]}.\n\n{kb.T['usage'][loc][p.concept]}\n\nIt's not on sale right now. Leave a «Find a product» request on the site and we'll tell you when it arrives."}[loc]
+            return msg, [], CHIPS["faq"][loc], meta
+        if found:
+            meta["last"] = "kind_pick"
+            head = {"uz": f"**{kb.T['kind_name'][loc][p.concept]}** — {kb.T['why'][loc][p.concept]}. Eng ko'p tanlanadiganlar:",
+                    "ru": f"**{kb.T['kind_name'][loc][p.concept]}** — {kb.T['why'][loc][p.concept]}. Чаще всего выбирают:",
+                    "en": f"**{kb.T['kind_name'][loc][p.concept]}** — {kb.T['why'][loc][p.concept]}. Most chosen:"}[loc]
+            tail = {"uz": "Bo'y, vazn va maqsadingizni yozsangiz, aynan sizga mos dozani va variantni hisoblab beraman.",
+                    "ru": "Напишите рост, вес и цель — рассчитаю дозировку и подберу вариант под вас.",
+                    "en": "Tell me your height, weight and goal and I'll work out the dose and the right option for you."}[loc]
+            return f"{head}\n\n{tail}", [x["id"] for x in found], CHIPS["after_reco"][loc], meta
     if p.intent == "recommend" or (p.goal and not p.concept):
         gaps = needs.missing(profile)
         if gaps:
@@ -157,7 +195,7 @@ def answer(conv_meta: dict, text: str, loc: str) -> tuple[str, list[str], list[s
         reply, ids, kinds = recommend_answer(profile, loc)
         meta.update(last="recommend", last_ids=ids, last_kinds=kinds, last_total=None)
         return reply, ids, CHIPS["after_reco"][loc], meta
-    if taught:
+    if taught and not (p.concept or brain.understand(text).brands):  # a weak match never hides a product search
         knowledge.mark_used([taught[0].entry])
         meta["last"] = "knowledge"
         return taught[0].entry.answer(loc), [], CHIPS["faq"][loc], meta
@@ -232,6 +270,7 @@ def _turn_sync(conversation_id, user_text: str) -> dict:
     if conv.customer_id:
         start["profile"] = {**account_facts(conv.customer_id), **(start.get("profile") or {})}
     reply, ids, chips, meta = answer(start, user_text, loc)
+    venues = meta.pop("_venues", None) or []
     if conv.customer_id:
         save_account_facts(conv.customer_id, meta.get("profile") or {})
     cards = tools.cards([tools._uuid(i) for i in ids], loc) if ids else []
@@ -253,7 +292,7 @@ def _turn_sync(conversation_id, user_text: str) -> dict:
         row.last_message = user_text[:300]
         row.save()
         row.refresh_from_db(fields=["turns"])
-    return {"reply": reply, "cards": cards, "chips": chips, "turns": row.turns}
+    return {"reply": reply, "cards": cards, "chips": chips, "turns": row.turns, "venues": venues}
 
 
 async def run_turn(conversation_id, user_text: str) -> AsyncIterator[dict]:

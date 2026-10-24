@@ -115,7 +115,7 @@ def test_questions_go_to_the_free_advisor_and_product_words_stay_a_search():
     with patch("apps.telegram_bot.interfaces.callback_router._send") as mock_send:
         _text(Client(), customer.telegram_user_id, "Yetkazib berish qanday?")
     text = mock_send.call_args[0][1]
-    assert "Yetkazib berish" in text and "<b>" in text  # FAQ answer, markdown converted to Telegram HTML
+    assert "Yetkaz" in text and "xaritada" in text  # delivery answer (the shop's knowledge base wording), not a product search
     with patch("apps.telegram_bot.interfaces.callback_router._send") as mock_send:
         _text(Client(), customer.telegram_user_id, "180 sm 80 kg 25 yosh massa")
     assert "Kunlik ehtiyoj" in mock_send.call_args[0][1]
@@ -123,3 +123,28 @@ def test_questions_go_to_the_free_advisor_and_product_words_stay_a_search():
 
     conv = AssistantConversation.objects.get(client_key=f"tg:{customer.telegram_user_id}")
     assert conv.channel == "telegram" and conv.turns == 2 and conv.meta["profile"]["weight"] == 80
+
+
+def test_branch_question_sends_a_map_pin_and_chip_buttons_ask_again():
+    from apps.assistant.infrastructure.advisor import brain
+    from apps.stores.infrastructure.models import Store
+
+    brain._CACHE.clear()
+    brain._CACHE["at"] = 0.0
+    Store.objects.create(id=uuid.uuid4(), name="LifeSport Andijon", slug=f"s-{uuid.uuid4().hex[:6]}", kind="store", status="active", city="Andijon",
+                         latitude=40.77, longitude=72.36, phone_numbers=["+998901112233"])
+    customer = _make_customer()
+    with patch("apps.telegram_bot.interfaces.callback_router._send") as mock_send, \
+         patch("apps.notifications.infrastructure.composition.build_telegram_gateway") as gw:
+        _text(Client(), customer.telegram_user_id, "Andijon filiali qayerda?")
+    text, keyboard = mock_send.call_args[0][1], mock_send.call_args[0][2]
+    assert "LifeSport Andijon" in text
+    venue = gw.return_value.send_venue.call_args[0]
+    assert venue[1:4] == (40.77, 72.36, "LifeSport Andijon")
+    chips = [b for row in keyboard for b in row if b["callback_data"].startswith("aiq:")]
+    assert chips
+    with patch("apps.telegram_bot.interfaces.callback_router.search_text") as again:
+        _callback(Client(), customer.telegram_user_id, chips[0]["callback_data"])
+    assert again.call_args[0][2] == chips[0]["text"].removeprefix("💬 ")
+    brain._CACHE.clear()
+    brain._CACHE["at"] = 0.0
