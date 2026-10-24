@@ -60,7 +60,7 @@ class TestAnswers:
         self._product("Zorvex Whey Protein", 450000)
         self._product("Zorvex Creatine Monohydrate", 150000)
         reply, ids, _chips, meta = answer({}, "massa olmoqchiman", "uz")
-        assert ids == [] and "bo'yingiz" in reply and meta["profile"]["goal"] == "muscle"
+        assert len(ids) == 2 and "bo'yingiz" in reply and meta["profile"]["goal"] == "muscle"  # the goal's stack is shown while we ask
         reply, ids, chips, meta = answer(meta, "178 sm 75 kg 24 yosh", "uz")
         assert "Kunlik ehtiyoj" in reply and "Protein" in reply and "Kreatin" in reply and len(ids) == 2
         assert meta["last"] == "recommend" and chips

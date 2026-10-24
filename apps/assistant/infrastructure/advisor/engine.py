@@ -205,7 +205,9 @@ def answer(conv_meta: dict, text: str, loc: str) -> tuple[str, list[str], list[s
                        "en": f"175 cm, 72 kg, 28 years, {goal}, 3 times a week"}[loc]
             ids = []
             if profile.get("goal"):  # while we wait for the details, the goal's best sellers are already on screen
-                ids = [x["id"] for x in tools.search_products({"query": "", "goal": profile["goal"], "limit": 4, "in_stock_only": True}, loc)["products"]]
+                for kind in reco.STACKS.get(profile["goal"], reco.STACKS["health"]):  # the goal's own stack (protein, creatine...), not loose goal tags
+                    ids += [x["id"] for x in tools.search_products({"query": reco.QUERIES.get(kind, kind), "limit": 2, "in_stock_only": True}, loc)["products"] if x["id"] not in ids]
+                ids = ids[:4]
                 if ids:
                     prefix += {"uz": "Bu maqsad uchun eng ko'p tanlanadiganlar pastda. ", "ru": "Самое популярное под эту цель — ниже. ",
                                "en": "The most chosen for this goal are below. "}[loc]
