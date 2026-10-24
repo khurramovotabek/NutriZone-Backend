@@ -70,3 +70,27 @@ def test_turn_returns_venues_for_the_bot():
     assert out["venues"] and out["venues"][0]["title"] == "LifeSport Andijon"
     conv.refresh_from_db()
     assert "_venues" not in conv.meta
+
+
+def test_why_questions_explain_the_kind():
+    reply, *_r, meta = answer({}, "зачем креатин?", "ru")
+    assert meta["last"] == "why" and "Кому нужно" in reply and "3–5 г" in reply
+
+
+def test_cheapest_sorts_by_price_and_follow_up_reuses_the_kind(monkeypatch):
+    calls = []
+
+    def fake_search(query="", loc="uz", limit=4, category=None, brand=None, sort=None, on_sale=False, in_stock=True):
+        calls.append((query, sort))
+        return [{"id": str(uuid.uuid4()), "name": "Whey A", "price": Decimal("500000"), "old": None, "discount": None, "variant": None, "in_stock": True}]
+
+    monkeypatch.setattr(brain, "_search", fake_search)
+    reply, ids, _c, meta = answer({}, "eng arzon protein qaysi?", "uz")
+    assert meta["last"] == "cheap" and calls[-1] == ("whey protein", "price") and len(ids) == 1
+    reply, *_r, meta = answer(meta, "Eng arzoni qaysi?", "uz")
+    assert meta["last"] == "cheap" and calls[-1] == ("whey protein", "price")
+
+
+def test_asking_for_details_uses_the_goal_in_the_example():
+    reply, *_r, meta = answer({}, "massa olish uchun nima tavsiya qilasiz?", "uz")
+    assert meta["last"] == "ask" and "mushak massasi, haftada 3 marta" in reply and ", ozish," not in reply

@@ -96,6 +96,13 @@ def recommend_answer(profile: dict, loc: str) -> tuple[str, list[str], list[str]
     return "\n".join(lines), ids, [k for k, _p in picks]
 
 
+def _kind_ids(concept: str | None, loc: str) -> list[str]:
+    """In-stock products of the kind a knowledge answer talks about (none when it isn't about a product kind)."""
+    if not concept:
+        return []
+    return [x["id"] for x in tools.search_products({"query": reco.QUERIES.get(concept, concept), "limit": 3, "in_stock_only": True}, loc)["products"]]
+
+
 def answer(conv_meta: dict, text: str, loc: str) -> tuple[str, list[str], list[str], dict]:
     """(reply text, product ids to show, quick-reply chips, updated meta). Pure sync -- DB reads only."""
     meta = dict(conv_meta or {})
@@ -124,10 +131,13 @@ def answer(conv_meta: dict, text: str, loc: str) -> tuple[str, list[str], list[s
         # the shop taught this very question on the dashboard -- its answer wins over everything automatic
         knowledge.mark_used([taught[0].entry])
         meta["last"] = "knowledge"
-        return taught[0].entry.answer(loc), [], CHIPS["faq"][loc], meta
+        ids = _kind_ids(p.concept, loc)
+        return taught[0].entry.answer(loc), ids, (CHIPS["after_reco"] if ids else CHIPS["faq"])[loc], meta
     smart = brain.respond(meta, text, loc)  # live-data answers: price, branch stock, best sellers, compare, promo, contacts, hours, safety
     if smart is not None:
         meta["last"] = smart.last
+        if smart.query:
+            meta["last_query"] = smart.query
         if smart.venues:
             meta["_venues"] = smart.venues
         return smart.text, smart.product_ids, smart.chips or CHIPS["faq"][loc], meta
@@ -135,9 +145,7 @@ def answer(conv_meta: dict, text: str, loc: str) -> tuple[str, list[str], list[s
         # what the shop taught on the dashboard (AI bilimlar bazasi) wins over the built-in texts; products of the kind asked about come along
         knowledge.mark_used([taught[0].entry])
         meta["last"] = "knowledge"
-        ids = []
-        if p.concept:
-            ids = [x["id"] for x in tools.search_products({"query": reco.QUERIES.get(p.concept, p.concept), "limit": 3, "in_stock_only": True}, loc)["products"]]
+        ids = _kind_ids(p.concept, loc)
         return taught[0].entry.answer(loc), ids, (CHIPS["after_reco"] if ids else CHIPS["faq"])[loc], meta
     if p.intent in kb.FAQ:
         meta["last"] = p.intent
@@ -177,6 +185,7 @@ def answer(conv_meta: dict, text: str, loc: str) -> tuple[str, list[str], list[s
             return msg, [], CHIPS["faq"][loc], meta
         if found:
             meta["last"] = "kind_pick"
+            meta["last_query"] = q
             head = {"uz": f"**{kb.T['kind_name'][loc][p.concept]}** — {kb.T['why'][loc][p.concept]}. Eng ko'p tanlanadiganlar:",
                     "ru": f"**{kb.T['kind_name'][loc][p.concept]}** — {kb.T['why'][loc][p.concept]}. Чаще всего выбирают:",
                     "en": f"**{kb.T['kind_name'][loc][p.concept]}** — {kb.T['why'][loc][p.concept]}. Most chosen:"}[loc]
@@ -191,7 +200,16 @@ def answer(conv_meta: dict, text: str, loc: str) -> tuple[str, list[str], list[s
             fields = ", ".join(kb.T["fields"][loc][g] for g in gaps)
             known = _profile_line(profile, loc)
             prefix = ({"uz": "Tushundim: ", "ru": "Понял: ", "en": "Got it: "}[loc] + known + "\n\n") if known else ""
-            return prefix + kb.T["ask"][loc].format(fields=fields), [], [], meta
+            goal = kb.T["goal_name"][loc][profile.get("goal") or "muscle"]
+            example = {"uz": f"175 sm, 72 kg, 28 yosh, {goal}, haftada 3 marta", "ru": f"175 см, 72 кг, 28 лет, {goal}, 3 раза в неделю",
+                       "en": f"175 cm, 72 kg, 28 years, {goal}, 3 times a week"}[loc]
+            ids = []
+            if profile.get("goal"):  # while we wait for the details, the goal's best sellers are already on screen
+                ids = [x["id"] for x in tools.search_products({"query": "", "goal": profile["goal"], "limit": 4, "in_stock_only": True}, loc)["products"]]
+                if ids:
+                    prefix += {"uz": "Bu maqsad uchun eng ko'p tanlanadiganlar pastda. ", "ru": "Самое популярное под эту цель — ниже. ",
+                               "en": "The most chosen for this goal are below. "}[loc]
+            return prefix + kb.T["ask"][loc].format(fields=fields, example=example), ids, [], meta
         reply, ids, kinds = recommend_answer(profile, loc)
         meta.update(last="recommend", last_ids=ids, last_kinds=kinds, last_total=None)
         return reply, ids, CHIPS["after_reco"][loc], meta

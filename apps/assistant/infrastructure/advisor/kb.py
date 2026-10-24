@@ -12,9 +12,9 @@ T = {
     },
     "thanks": {"uz": "Arzimaydi! Yana savolingiz bo'lsa, yozing 🙂", "ru": "Пожалуйста! Если будут вопросы — пишите 🙂", "en": "You're welcome! Ask me anything else 🙂"},
     "ask": {
-        "uz": "Sizga aniq tavsiya berishim uchun yana bir nechta ma'lumot kerak: {fields}.\n\nBittada yozishingiz mumkin, masalan: **175 sm, 72 kg, 28 yosh, ozish, haftada 3 marta**.",
-        "ru": "Чтобы дать точную рекомендацию, нужно ещё: {fields}.\n\nМожно одним сообщением, например: **175 см, 72 кг, 28 лет, похудение, 3 раза в неделю**.",
-        "en": "To give you an accurate recommendation I still need: {fields}.\n\nOne message is fine, e.g.: **175 cm, 72 kg, 28 years, fat loss, 3 times a week**.",
+        "uz": "Sizga aniq tavsiya berishim uchun yana bir nechta ma'lumot kerak: {fields}.\n\nBittada yozishingiz mumkin, masalan: **{example}**.",
+        "ru": "Чтобы дать точную рекомендацию, нужно ещё: {fields}.\n\nМожно одним сообщением, например: **{example}**.",
+        "en": "To give you an accurate recommendation I still need: {fields}.\n\nOne message is fine, e.g.: **{example}**.",
     },
     "fields": {
         "uz": {"height": "bo'yingiz (sm)", "weight": "vazningiz (kg)", "age": "yoshingiz", "goal": "maqsadingiz (massa / ozish / chidamlilik / salomatlik)"},
@@ -41,6 +41,20 @@ T = {
         "en": {"protein": "an easy way to reach your daily protein", "creatine": "the best-proven supplement for strength and size", "gainer": "helps you gain weight when calories fall short",
                "bcaa": "protects muscle during long sessions", "carnitine": "a helper for fat loss alongside a calorie deficit", "vitamin": "prevents vitamin gaps while dieting",
                "omega": "for heart, joints and recovery", "collagen": "for joints, skin and tendons", "preworkout": "energy before training"},
+    },
+    "who": {
+        "uz": {"protein": "ovqatdan oqsil yetishmaydigan har bir mashq qiluvchiga — massa olishda ham, ozishda ham", "creatine": "kuch, portlovchi harakat va mushak massasini oshirmoqchi bo'lganlarga",
+               "gainer": "ozg'in, tez metabolizmli va ovqatdan yetarli kaloriya ololmaydiganlarga", "bcaa": "och qoringa, uzoq yoki kardio mashg'ulot qiladiganlarga; oqsil yetarli bo'lsa foydasi kichik",
+               "carnitine": "kaloriya defitsitida ozayotgan va muntazam kardio qiladiganlarga", "vitamin": "parhezda bo'lganlar va og'ir mashq qiluvchilarga",
+               "omega": "baliqni kam yeydigan, bo'g'im va yurak salomatligini o'ylaydiganlarga", "collagen": "bo'g'im va paylariga yuk tushadiganlarga", "preworkout": "mashg'ulotda energiya va diqqat yetishmaydigan sog'lom kattalarga"},
+        "ru": {"protein": "всем тренирующимся, кому не хватает белка из еды — и на массе, и на похудении", "creatine": "тем, кто хочет больше силы, взрывной мощи и мышечной массы",
+               "gainer": "худощавым, с быстрым обменом, кому не хватает калорий из еды", "bcaa": "тем, кто тренируется натощак, долго или кардио; при достатке белка польза мала",
+               "carnitine": "тем, кто худеет в дефиците калорий и регулярно делает кардио", "vitamin": "тем, кто на диете или много тренируется",
+               "omega": "тем, кто редко ест рыбу и заботится о суставах и сердце", "collagen": "тем, у кого большая нагрузка на суставы и связки", "preworkout": "здоровым взрослым, которым не хватает энергии и фокуса на тренировке"},
+        "en": {"protein": "anyone training who falls short on protein from food -- for both gaining and cutting", "creatine": "anyone after more strength, power and muscle",
+               "gainer": "lean, fast-metabolism people who can't eat enough calories", "bcaa": "people training fasted, long or cardio; small benefit if protein is already enough",
+               "carnitine": "people cutting in a calorie deficit who do regular cardio", "vitamin": "people dieting or training hard",
+               "omega": "people who rarely eat fish and care about joints and heart", "collagen": "people with heavy load on joints and tendons", "preworkout": "healthy adults short on energy and focus in training"},
     },
     "usage": {
         "uz": {"protein": "Kuniga 1–2 porsiya (20–40 g oqsil): biri mashg'ulotdan keyin, qolgani ovqatlar orasida. 250–300 ml suv yoki sut bilan aralashtiring.",

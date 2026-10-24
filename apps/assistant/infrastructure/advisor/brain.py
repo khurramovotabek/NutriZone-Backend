@@ -29,6 +29,11 @@ PRICE = ("narx", "narhi", "qancha tur", "necha pul", "qanchaga", "qancha so'm", 
 HAVE = ("bormi", "bor mi", "mavjudmi", "qoldimi", "sotasiz", "sotiladimi", "topsa bo'ladimi", "есть ли", "есть в", "в наличии", "имеется", "продаете", "do you have", "in stock", "available")
 BEST = ("eng ko'p sotil", "ko'p sotil", "top", "xit", "mashhur", "eng yaxshi", "eng zo'r", "zo'r", "хит", "популяр", "самый продаваем", "лучш", "топ", "best seller", "bestseller", "best", "popular", "top rated")
 COMPARE = ("farq", "farqi", "yoki", "qaysi biri", "solishtir", "taqqosla", "или", "разниц", "отлича", "сравн", "что лучше", "versus", " vs ", "difference", "compare", "or ", "better than")
+CHEAP = ("eng arzon", "arzon", "hamyonbop", "qimmat emas", "дешев", "недорог", "бюджетн", "cheapest", "cheap", "affordable", "lowest price", "арзон")
+WHY = ("nima uchun kerak", "nima uchun ich", "nimaga kerak", "nimaga ich", "nima foyda", "foydasi", "nima beradi", "nima qiladi", "nima o'zi", "nima degani",
+       "для чего", "зачем", "польза", "что дает", "что даёт", "что такое", "what is", "what does", "why take", "why do i need", "benefit", "good for")
+CHEAP_WORDS = re.compile(r"\b(eng|arzon\w*|hamyonbop\w*|qimmat|emas|qaysi\w*|biri|variant\w*|bormi|самы\w*|дешев\w*|недорог\w*|бюджетн\w*|какой|какая|какие|"
+                         r"вариант\w*|the|cheap\w*|affordable|lowest|price|which|one|option|is|what)\b")
 PROMO = ("chegirma", "aksiya", "skidka", "arzonlash", "sale", "скидк", "акци", "распродаж", "discount", "promo", "deal")
 CONTACT = ("telefon", "raqam", "nomer", "aloqa", "bog'lan", "qo'ng'iroq", "телефон", "номер", "контакт", "связ", "позвон", "phone", "contact", "call you", "number")
 HOURS = ("ish vaqt", "soat nechagacha", "soat nechada", "nechagacha", "ochiqmi", "ochiq", "yopiq", "ishlaysiz", "dam olish", "время работ", "график", "до скольки", "во сколько", "открыт", "работает", "работаете", "hours", "open", "close", "working time")
@@ -55,6 +60,7 @@ class Reply:
     chips: list = field(default_factory=list)
     venues: list = field(default_factory=list)  # [{"title", "address", "lat", "lng"}] -- the bot sends real map pins
     last: str = "brain"
+    query: str = ""  # what was searched -- a follow-up "arzonroq?" reuses it
 
 
 def _l(loc: str, uz: str, ru: str, en: str) -> str:
@@ -430,6 +436,49 @@ def _listing(seen: Seen, loc: str) -> Reply | None:
     return Reply(f"{head}\n{_lines(items, loc)}\n\n{tail}", [p["id"] for p in items], [_l(loc, "Qanday ichiladi?", "Как принимать?", "How to take it?")], last="listing")
 
 
+def _kind_query(seen: Seen) -> str:
+    from apps.assistant.infrastructure.advisor import reco
+
+    return reco.QUERIES.get(seen.concepts[0], seen.concepts[0]) if seen.concepts else ""
+
+
+def _cheapest(seen: Seen, loc: str, query: str, meta: dict) -> Reply | None:
+    """"eng arzon protein", "дешёвый креатин" -- the same kind ordered by price, in stock first."""
+    cat = seen.cats[0] if seen.cats else None
+    brand = seen.brands[0] if seen.brands else None
+    rest = CHEAP_WORDS.sub(" ", query).strip()  # "eng arzoni qaysi?" alone is a follow-up about the previous kind
+    q = _kind_query(seen) or ("" if (cat or brand) else (rest if len(rest) >= 3 else meta.get("last_query") or ""))
+    if not (q or cat or brand):
+        return None
+    items = _search(q, loc, limit=4, category=cat, brand=brand, sort="price") or _search(q, loc, limit=4, category=cat, brand=brand, sort="price", in_stock=False)
+    if not items:
+        return None
+    head = _l(loc, "💸 **Eng hamyonbop variantlar (narx bo'yicha):**", "💸 **Самые доступные (по цене):**", "💸 **Most affordable (by price):**")
+    tail = _l(loc, "Arzon — yomon degani emas: hammasi original. Farqi odatda brend, hajm va tarkibda (masalan, konsentrat va izolyat).",
+              "Дешевле — не значит хуже: всё оригинал. Разница обычно в бренде, объёме и составе (например, концентрат и изолят).",
+              "Cheaper doesn't mean worse -- everything is genuine. The difference is usually brand, size and formula (e.g. concentrate vs isolate).")
+    return Reply(f"{head}\n{_lines(items, loc)}\n\n{tail}", [p["id"] for p in items], [_l(loc, "Qaysi biri yaxshiroq?", "Какой лучше?", "Which one is better?"),
+                 _l(loc, "Menga tanlab bering", "Подберите мне", "Pick one for me")], last="cheap", query=q)
+
+
+def _why(seen: Seen, loc: str) -> Reply | None:
+    """"BCAA nima uchun kerak?", "зачем креатин" -- what it does, who needs it, how to take it, and what's in stock."""
+    from apps.assistant.infrastructure.advisor import kb
+
+    kind = seen.concepts[0]
+    if kind not in kb.T["why"][loc]:
+        return None
+    items = _search(_kind_query(seen), loc, limit=3, sort="-popularity")
+    text = (f"**{kb.T['kind_name'][loc][kind]}** — {kb.T['why'][loc][kind]}.\n\n"
+            f"{_l(loc, 'Kimga kerak', 'Кому нужно', 'Who needs it')}: {kb.T['who'][loc][kind]}\n\n"
+            f"_{_l(loc, 'Qanday ichish', 'Как принимать', 'How to take')}:_ {kb.T['usage'][loc][kind]}")
+    if items:
+        text += "\n\n" + _l(loc, "Ombordagi mashhur variantlar:", "Популярное в наличии:", "Popular in stock:")
+    text += "\n\n" + kb.T["disclaimer"][loc]
+    return Reply(text, [p["id"] for p in items], [_l(loc, "Eng arzoni qaysi?", "Какой самый дешёвый?", "Which is the cheapest?"),
+                 _l(loc, "Menga tanlab bering", "Подберите мне", "Pick one for me")], last="why", query=_kind_query(seen))
+
+
 def respond(meta: dict, text: str, loc: str) -> Reply | None:
     """An answer from live shop data for the questions Brain v2 understands, else None."""
     loc = loc if loc in LOCALES else "uz"
@@ -442,8 +491,11 @@ def respond(meta: dict, text: str, loc: str) -> Reply | None:
         return _contacts(seen, loc)
     if _has(b, HOURS) and not seen.concepts and not seen.cats:
         return _hours(seen, loc)
-    if _has(b, PROMO):
+    if _has(b, PROMO) and not _has(b, ("arzon", "дешев", "cheap")):
         return _promo(seen, loc)
+    if seen.concepts and _has(b, WHY) and not seen.health:
+        if (r := _why(seen, loc)) is not None:
+            return r
     if len(seen.concepts) >= 2 and _has(b, COMPARE):
         if (r := _compare(seen, loc)) is not None:
             return r
@@ -454,6 +506,9 @@ def respond(meta: dict, text: str, loc: str) -> Reply | None:
     query = re.sub(r"\s+", " ", query).strip()
     if seen.stores and (seen.concepts or seen.cats or seen.brands or (query and _has(b, HAVE))):
         if (r := _branch_stock(seen, loc, query)) is not None:
+            return r
+    if _has(b, CHEAP) and meta.get("last") != "recommend" and not parsed.facts:
+        if (r := _cheapest(seen, loc, query, meta)) is not None:
             return r
     if _has(b, PRICE):
         if (r := _price(seen, loc, query)) is not None:
