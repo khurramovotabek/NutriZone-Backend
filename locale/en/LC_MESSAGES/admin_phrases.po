@@ -5666,3 +5666,66 @@ msgstr "Select"
 
 msgid "Hammasini belgilash"
 msgstr "Select all"
+
+msgid "Qo'lda +/− jurnali"
+msgstr "Manual +/− log"
+
+msgid "Qo'lda o'zgarish"
+msgstr "Manual change"
+
+msgid "Filiallar qoldig'iga qo'lda qo'shilgan (+) va olib tashlangan (−) har bir mahsulot: kim, qachon, qayerda, nechta va nima uchun. Yozuvlarni hech kim o'zgartira yoki o'chira olmaydi."
+msgstr "Every unit added (+) or removed (−) by hand from a branch's stock: who, when, where, how many and why. Nobody can edit or delete these records."
+
+msgid "Qachon"
+msgstr "When"
+
+msgid "Kim / sabab"
+msgstr "Who / reason"
+
+msgid "Oldin → keyin"
+msgstr "Before → after"
+
+msgid "Mahsulot, SKU, xodim yoki sabab…"
+msgstr "Product, SKU, staff or reason…"
+
+msgid "Qo'lda o'zgarish yo'q"
+msgstr "No manual changes"
+
+msgid "Filial qoldig'i qo'lda o'zgartirilganda shu yerda paydo bo'ladi."
+msgstr "Appears here when a branch's stock is changed by hand."
+
+msgid "Admin tuzatishi"
+msgstr "Admin correction"
+
+msgid "Inventarizatsiya"
+msgstr "Stock count"
+
+msgid "Hisobdan chiqarish"
+msgstr "Write-off"
+
+msgid "Transfer kamomadi"
+msgstr "Transfer shortage"
+
+msgid "Bugun qo'shildi"
+msgstr "Added today"
+
+msgid "Bugun olib tashlandi"
+msgstr "Removed today"
+
+msgid "7 kunda olib tashlandi"
+msgstr "Removed in 7 days"
+
+msgid "7 kunda admin tuzatishlari"
+msgstr "Admin corrections in 7 days"
+
+msgid "Tizim"
+msgstr "System"
+
+msgid "Eski"
+msgstr "Oldest"
+
+msgid "masalan: sanoqda kam chiqdi, shikastlangan"
+msgstr "e.g. short in the count, damaged"
+
+msgid "Qoldiq o'zgardi — sababini yozing (jurnalga tushadi)."
+msgstr "Stock changed — write the reason (it goes into the log)."

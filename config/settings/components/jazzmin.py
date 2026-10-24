@@ -159,7 +159,7 @@ JAZZMIN_SETTINGS = {
     # exactly rather than silently hiding it from a staff user who
     # lacks some specific model permission.
     # The WMS models live in the stores app but are reached from the Ombor group (custom_links["inventory"]).
-    "hide_models": ["chat.chatsettings", "pricing.repricingmodel", "ordering.courier", "finance.moneyaccount", "finance.category", "finance.transaction", "stores.stocktransfer", "stores.stockreceipt", "stores.stockmovement", "stores.stockcount",
+    "hide_models": ["chat.chatsettings", "stores.stockadjustment", "pricing.repricingmodel", "ordering.courier", "finance.moneyaccount", "finance.category", "finance.transaction", "stores.stocktransfer", "stores.stockreceipt", "stores.stockmovement", "stores.stockcount",
                     "stores.writeoff", "stores.supplier", "stores.supplierpayment", "stores.reorderrule", "stores.storecashier",
                     "search.searchterm", "telegram_bot.telegrampost", "telegram_bot.channelautopostsettings", "receipts.receiptsettings"],  # reached from the Catalog group (custom_links["products"])
     "usermenu_links": [{"name": _("Mening profilim"), "url": "admin:nz_profile", "icon": "fas fa-user-circle"}],
@@ -262,6 +262,7 @@ JAZZMIN_SETTINGS = {
             {"name": _("Hisobdan chiqarish"), "url": "admin:stores_writeoff_changelist", "icon": "fas fa-trash-can-arrow-up", "permissions": ["stores.view_writeoff"]},
             {"name": _("Inventarizatsiya"), "url": "admin:stores_stockcount_changelist", "icon": "fas fa-clipboard-check", "permissions": ["stores.view_stockcount"]},
             {"name": _("Ombor tarixi"), "url": "admin:stores_stockmovement_changelist", "icon": "fas fa-clock-rotate-left", "permissions": ["stores.view_stockmovement"]},
+            {"name": _("Qo'lda +/− jurnali"), "url": "admin:stores_stockadjustment_changelist", "icon": "fas fa-scale-unbalanced", "permissions": ["stores.view_stockmovement"]},
             {"name": _("Ombor hisobotlari"), "url": "admin:nz_wms_reports", "icon": "fas fa-chart-column", "permissions": ["stores.view_stockmovement"]},
         ],
     },

@@ -5705,3 +5705,66 @@ msgstr "Отметить"
 
 msgid "Hammasini belgilash"
 msgstr "Отметить все"
+
+msgid "Qo'lda +/− jurnali"
+msgstr "Журнал ручных +/−"
+
+msgid "Qo'lda o'zgarish"
+msgstr "Ручное изменение"
+
+msgid "Filiallar qoldig'iga qo'lda qo'shilgan (+) va olib tashlangan (−) har bir mahsulot: kim, qachon, qayerda, nechta va nima uchun. Yozuvlarni hech kim o'zgartira yoki o'chira olmaydi."
+msgstr "Каждая единица, вручную добавленная (+) или убранная (−) из остатка филиала: кто, когда, где, сколько и почему. Записи нельзя изменить или удалить."
+
+msgid "Qachon"
+msgstr "Когда"
+
+msgid "Kim / sabab"
+msgstr "Кто / причина"
+
+msgid "Oldin → keyin"
+msgstr "До → после"
+
+msgid "Mahsulot, SKU, xodim yoki sabab…"
+msgstr "Товар, SKU, сотрудник или причина…"
+
+msgid "Qo'lda o'zgarish yo'q"
+msgstr "Ручных изменений нет"
+
+msgid "Filial qoldig'i qo'lda o'zgartirilganda shu yerda paydo bo'ladi."
+msgstr "Появится здесь, когда остаток филиала изменят вручную."
+
+msgid "Admin tuzatishi"
+msgstr "Исправление админа"
+
+msgid "Inventarizatsiya"
+msgstr "Инвентаризация"
+
+msgid "Hisobdan chiqarish"
+msgstr "Списание"
+
+msgid "Transfer kamomadi"
+msgstr "Недостача при перемещении"
+
+msgid "Bugun qo'shildi"
+msgstr "Добавлено сегодня"
+
+msgid "Bugun olib tashlandi"
+msgstr "Убрано сегодня"
+
+msgid "7 kunda olib tashlandi"
+msgstr "Убрано за 7 дней"
+
+msgid "7 kunda admin tuzatishlari"
+msgstr "Исправлений админа за 7 дней"
+
+msgid "Tizim"
+msgstr "Система"
+
+msgid "Eski"
+msgstr "Старые"
+
+msgid "masalan: sanoqda kam chiqdi, shikastlangan"
+msgstr "например: недостача при пересчёте, повреждён"
+
+msgid "Qoldiq o'zgardi — sababini yozing (jurnalga tushadi)."
+msgstr "Остаток изменён — укажите причину (попадёт в журнал)."

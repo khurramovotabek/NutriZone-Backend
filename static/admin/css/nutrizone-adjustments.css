@@ -1,0 +1,14 @@
+/* Qo'lda +/− jurnali (apps/stores/infrastructure/adjustment_admin.py) */
+.nzaj-prod { display: inline-flex; align-items: center; gap: 10px; min-width: 0; }
+.nzaj-prod > span:last-child { min-width: 0; }
+.nzaj-prod b, .nzaj-prod small { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.nzaj-prod small { color: var(--nz-text-muted); font-size: .75rem; }
+.nzaj-img { flex: none; width: 42px; height: 42px; border-radius: 10px; background: #fff; border: 1px solid var(--nz-border); display: grid; place-items: center; overflow: hidden; color: #94a3b8; }
+.nzaj-img img { width: 100%; height: 100%; object-fit: contain; padding: 2px; }
+.nzaj-store { display: inline-flex; align-items: center; gap: 6px; font-weight: 700; }
+.nzaj-store i { color: var(--nz-text-muted); }
+.nzaj-ba { font-variant-numeric: tabular-nums; color: var(--nz-text-secondary); white-space: nowrap; }
+.nzaj-ba i { font-size: .7rem; color: var(--nz-text-muted); margin: 0 2px; }
+.nzaj-delta { display: inline-block; min-width: 56px; padding: 4px 10px; border-radius: 10px; font-weight: 900; font-size: 1.05rem; text-align: center; font-variant-numeric: tabular-nums; }
+.nzaj-delta.is-plus { color: #16a34a; background: color-mix(in srgb, #16a34a 14%, transparent); }
+.nzaj-delta.is-minus { color: #dc2626; background: color-mix(in srgb, #dc2626 14%, transparent); }

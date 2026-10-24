@@ -250,7 +250,9 @@ def _sell(store, v, qty, days_ago=1):
 
     with transaction.atomic():
         m = stock_service.move(store, v.id, -qty, "sale", reference="S", mirror=False)
-    StockMovement.objects.filter(pk=m.pk).update(created_at=timezone.now() - timedelta(days=days_ago))
+    from apps.products.tests.stock_helpers import backdate_movement
+
+    backdate_movement(m.pk, timezone.now() - timedelta(days=days_ago))
 
 
 class TestStockRules:

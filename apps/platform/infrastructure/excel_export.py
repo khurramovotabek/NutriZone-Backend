@@ -20,6 +20,8 @@ widths, money as "# ##0", dates in Tashkent time, a totals row for money columns
 """
 from __future__ import annotations
 
+import re
+
 import io
 from collections.abc import Callable
 from dataclasses import dataclass
@@ -82,7 +84,7 @@ def workbook(title: str, columns: list[Col], rows, subtitle: str = "") -> bytes:
 
     wb = Workbook()
     ws = wb.active
-    ws.title = title[:31]
+    ws.title = re.sub(r"[\[\]:*?/\\]", " ", title).strip()[:31] or "Sheet"  # Excel forbids []:*?/\ in sheet names
     n = len(columns)
     stamp = timezone.localtime(timezone.now(), TZ).strftime("%d.%m.%Y %H:%M")
     ws.append([f"NutriZone · {title}"] + [None] * (n - 1))

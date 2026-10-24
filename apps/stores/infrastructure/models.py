@@ -437,6 +437,31 @@ class StockMovement(models.Model):
     def __str__(self) -> str:  # pragma: no cover
         return f"{self.get_movement_type_display()} {self.quantity:+d}"
 
+    def save(self, *args, **kwargs):
+        # The ledger is append-only: a written movement is never edited (the database trigger from migration 0020 enforces it too).
+        if not self._state.adding:
+            raise PermissionError("Stock ledger rows cannot be changed.")
+        return super().save(*args, **kwargs)
+
+    def delete(self, *args, **kwargs):
+        raise PermissionError("Stock ledger rows cannot be deleted.")
+
+    @property
+    def balance_before(self) -> int:
+        return self.balance_after - (0 if self.movement_type in ("reservation", "release") else self.quantity)
+
+
+MANUAL_MOVEMENT_TYPES = (StockMovementType.ADJUSTMENT, StockMovementType.DAMAGE, StockMovementType.EXPIRED, StockMovementType.WRITE_OFF)
+
+
+class StockAdjustment(StockMovement):
+    """Qo'lda +/− jurnali: the ledger rows people made by hand (admin edits, counts, write-offs, transfer shortages)."""
+
+    class Meta:
+        proxy = True
+        verbose_name = _("Qo'lda o'zgarish")
+        verbose_name_plural = _("Qo'lda +/− jurnali")
+
 
 class StockReceipt(models.Model):
     """A goods receipt (Kirim): units arriving at a location from a supplier -- scanned or imported from Excel."""

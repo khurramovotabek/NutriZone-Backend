@@ -78,13 +78,31 @@ class StoreMediaInline(admin.TabularInline):
         formset.save()
 
 
+class StockInlineForm(forms.ModelForm):
+    """A changed quantity needs a reason -- it goes into the stock ledger with the +/- change (Qo'lda +/− jurnali)."""
+
+    reason = forms.CharField(label=_("Sabab"), required=False, max_length=200, widget=forms.TextInput(attrs={"placeholder": _("masalan: sanoqda kam chiqdi, shikastlangan")}))
+
+    class Meta:
+        model = orm.StoreProductStock
+        fields = ("product_variant", "quantity")
+
+    def clean(self):
+        data = super().clean()
+        old = self.instance.quantity if self.instance and self.instance.pk else 0
+        if self.has_changed() and data.get("product_variant") and int(data.get("quantity") or 0) != old and not (data.get("reason") or "").strip():
+            self.add_error("reason", _("Qoldiq o'zgardi — sababini yozing (jurnalga tushadi)."))
+        return data
+
+
 class StoreProductStockInline(admin.TabularInline):
     """Real, product-required boundary: a store owner NEVER creates a product here -- product_variant is a fixed dropdown over EXISTING variants only (autocomplete), and quantity is the only thing an owner meaningfully edits."""
 
     model = orm.StoreProductStock
+    form = StockInlineForm
     extra = 1
     autocomplete_fields = ["product_variant"]
-    fields = ("product_variant", "quantity", "reserved_quantity", "updated_at")
+    fields = ("product_variant", "quantity", "reason", "reserved_quantity", "updated_at")
     readonly_fields = ("reserved_quantity", "updated_at")
     can_delete = False
     verbose_name_plural = _("Stock (every change here is recorded in the stock ledger as an adjustment)")
@@ -399,7 +417,8 @@ class StoreAdmin(ExcelExportMixin, admin.ModelAdmin):
                 new_qty = int(sub.cleaned_data.get("quantity") or 0)
                 old_qty = orm.StoreProductStock.objects.filter(store=form.instance, product_variant=variant).values_list("quantity", flat=True).first() or 0
                 if new_qty != old_qty:
-                    stock_service.move(form.instance, variant.id, new_qty - old_qty, orm.StockMovementType.ADJUSTMENT, reference="ADMIN", actor=actor, note="Admin: qo'lda tuzatish")
+                    reason = (sub.cleaned_data.get("reason") or "").strip() or "qo'lda tuzatish"
+                    stock_service.move(form.instance, variant.id, new_qty - old_qty, orm.StockMovementType.ADJUSTMENT, reference="ADMIN", actor=actor, note=f"Admin: {reason}"[:255])
 
     def get_queryset(self, request):
         """Real, professional-grade performance: annotates the real product count in one query rather than triggering an N+1 (one extra query per row) via a naive obj.stock_entries.count() in product_count_display."""
@@ -1003,6 +1022,7 @@ from apps.stores.infrastructure import (  # noqa: E402
     planning_admin,  # noqa: E402,F401  (reorder points / replenishment, expiry)
     pos_cashier_admin,  # noqa: E402,F401  (POS cashiers / PIN sign-in)
     supplier_admin,  # noqa: E402,F401  (suppliers and accounts payable)
+    adjustment_admin,  # noqa: E402,F401  (Qo'lda +/− jurnali)
     warehouse_admin,  # noqa: E402,F401  (registers the WMS admins: transfers, goods receipts, ledger)
     writeoff_admin,  # noqa: E402,F401  (write-offs / Hisobdan chiqarish)
 )
