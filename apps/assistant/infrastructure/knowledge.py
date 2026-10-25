@@ -20,12 +20,30 @@ STOP = {
 MIN_SCORE = 3.0
 
 
+# "D vitamini", "vitamin D3", "витамин Д", "b12" → one token ("vitd", "vitb12"), so a question about vitamin D doesn't
+# rank as a question about vitamins in general (single letters are otherwise dropped as noise)
+_VIT_NAME = r"(?:vitamin\w*|витамин\w*)"
+_VIT_LETTER = r"([abcdekавсдек])\s*-?\s*(\d{0,2})"
+_VIT_AFTER = re.compile(_VIT_NAME + r"\s*-?\s*" + _VIT_LETTER + r"(?![a-zа-я0-9])")
+_VIT_BEFORE = re.compile(r"(?<![a-zа-я0-9])" + _VIT_LETTER + r"\s*-?\s*" + _VIT_NAME)
+_VIT_BARE = re.compile(r"(?<![a-zа-я0-9])(d3|k2|b12|b6|b9|b1|b2|b3|b5|b7|д3|в12|в6)(?![a-zа-я0-9])")
+_CYR_LETTER = str.maketrans({"а": "a", "в": "b", "с": "c", "д": "d", "е": "e", "к": "k"})
+
+
+def _vit_token(letter: str, digits: str) -> str:
+    letter = letter.translate(_CYR_LETTER)
+    return f" vit{letter}{digits if letter == 'b' else ''} "  # D3 = D, K2 = K; B vitamins differ by number
+
+
 def _norm(text: str) -> str:
-    return _APOS.sub("", (text or "").lower().replace("ё", "е"))
+    t = _APOS.sub("", (text or "").lower().replace("ё", "е"))
+    t = _VIT_AFTER.sub(lambda m: _vit_token(m.group(1), m.group(2)), t)
+    t = _VIT_BEFORE.sub(lambda m: _vit_token(m.group(1), m.group(2)), t)
+    return _VIT_BARE.sub(lambda m: _vit_token(m.group(1)[0], m.group(1)[1:]), t)
 
 
 def _stems(text: str) -> set:
-    return {w[:5] for w in _WORD.findall(_norm(text)) if w not in STOP and len(w) > 1}
+    return {w[:6] if w.startswith("vit") and len(w) <= 6 else w[:5] for w in _WORD.findall(_norm(text)) if w not in STOP and len(w) > 1}
 
 
 @dataclass

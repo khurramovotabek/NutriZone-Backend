@@ -26,7 +26,7 @@ INTENTS: dict[str, tuple[str, ...]] = {
     "faq_original": ("original", "sertifikat", "qalbaki", "soxta", "оригинал", "подделк", "сертификат", "fake", "genuine", "authentic", "certificate"),
     "faq_returns": ("qaytar", "almashtir", "vozvrat", "возврат", "обмен", "return", "refund", "exchange"),
     "faq_order": ("buyurtmam", "zakazim", "заказ", "где мой", "my order", "order status", "track"),
-    "usage": ("qanday ich", "qanday qabul", "qachon ich", "doza", "dozirovka", "как приним", "как пить", "когда пить", "дозиров", "how to take", "how to use", "when to take", "dosage", "how much should"),
+    "usage": ("qanday ich", "qanday qabul", "qachon qabul", "qancha ich", "necha mg", "necha gramm", "kuniga qancha", "сколько пить", "сколько принимать", "сколько мг", "how many mg", "how much a day", "qachon ich", "doza", "dozirovka", "как приним", "как пить", "когда пить", "дозиров", "how to take", "how to use", "when to take", "dosage", "how much should"),
     "recommend": ("tavsiya", "maslahat", "tanlab", "nima ich", "qaysi", "taklif", "kerak bo'l", "nima olay", "посовет", "что выбрать", "какой", "какую", "рекоменд", "подбер", "recommend", "suggest", "which", "what should", "advise", "best for", "maqsad"),
     "profile": ("bo'y", "vazn", "yosh", "рост", "вес", "лет", "height", "weight", "years old"),
 }
@@ -42,13 +42,47 @@ CONCEPT_WORDS: dict[str, tuple[str, ...]] = {
     "protein": ("protein", "proteyn", "whey", "izolyat", "isolate", "kazein", "casein", "oqsil", "протеин", "белок", "изолят", "казеин"),
     "creatine": ("kreatin", "creatine", "креатин"),
     "gainer": ("gainer", "geyner", "гейнер"),
-    "bcaa": ("bcaa", "eaa", "amino", "аминокисл", "глютамин", "glutamin"),
-    "preworkout": ("preworkout", "pre-workout", "predtren", "предтрен"),
-    "carnitine": ("karnitin", "carnitine", "карнитин", "fat burner", "жиросжиг"),
-    "omega": ("omega", "baliq yog'", "fish oil", "омега"),
+    "bcaa": ("bcaa", "eaa", "amino", "аминокисл"),
+    "glutamine": ("glutamin", "glyutamin", "глютамин", "glutamine"),
+    "beta_alanine": ("beta-alanin", "beta alanin", "betaalanin", "бета-аланин", "бета аланин", "beta-alanine"),
+    "citrulline": ("sitrullin", "citrullin", "цитруллин", "arginin", "аргинин"),
+    "preworkout": ("preworkout", "pre-workout", "pre workout", "predtren", "предтрен"),
+    "caffeine": ("kofein", "caffeine", "кофеин"),
+    "carnitine": ("karnitin", "carnitine", "карнитин", "fat burner", "жиросжиг", "yog' yoqiruvchi", "yog' yoquvchi"),
+    "test_booster": ("testosteron", "тестостерон", "tribulus", "трибулус", "testobuster", "test booster"),
+    "ashwagandha": ("ashvagand", "ashwagand", "ашваганд"),
+    "zma": ("zma",),
+    "magnesium": ("magniy", "magnesium", "magnez", "магни"),
+    "iron": ("temir", "iron", "желез", "ferritin", "ферритин", "kamqonlik", "анеми", "anemia", "anaemia"),
+    "calcium": ("kalsiy", "kalciy", "kaltsiy", "calcium", "кальци"),
+    "electrolytes": ("elektrolit", "electrolyt", "электролит", "izotonik", "isotonic", "изотоник"),
+    "melatonin": ("melatonin", "мелатонин"),
+    "probiotic": ("probiotik", "probiotic", "пробиотик", "prebiotik", "пребиотик"),
+    "glucosamine": ("glyukozamin", "glukozamin", "glucosamin", "глюкозамин", "xondroitin", "chondroitin", "хондроитин", "msm"),
+    "omega": ("omega", "baliq yog'", "fish oil", "омега", "рыбий жир"),
     "vitamin": ("vitamin", "multivitamin", "витамин", "мультивитамин"),
     "collagen": ("kollagen", "collagen", "коллаген", "bo'g'im", "сустав", "joint"),
 }
+
+# vitamins named by a letter ("D vitamini", "vitamin D3", "витамин Д", "b12") and zinc ("rux" is also the start of "ruxsat")
+SPECIFIC: dict[str, re.Pattern] = {
+    "vitamin_d": re.compile(r"(?:\b(?:vitamin\w*|витамин\w*)\s*-?\s*[dд]\d?\b|\b[dд]\s*-?\s*3?\s*(?:vitamin\w*|витамин\w*)|\b[dд]3\b|xolekalsiferol|холекальциферол|cholecalciferol)"),
+    "vitamin_c": re.compile(r"(?:\b(?:vitamin\w*|витамин\w*)\s*-?\s*[cс]\b|\b[cс]\s*-?\s*(?:vitamin\w*|витамин\w*)|askorbin|аскорбин|ascorbic)"),
+    "vitamin_b12": re.compile(r"(?:\b[bв]\s*-?\s*12\b|\b(?:vitamin\w*|витамин\w*)\s*[bв]\s*-?\s*12|kobalamin|кобаламин|cobalamin)"),
+    "zinc": re.compile(r"\b(?:rux|ruxni|ruxli|sink|zinc\w*|цинк\w*)\b"),
+}
+
+
+def concepts_in(text: str) -> list[str]:
+    """Every product kind a (normalized, Latin + Cyrillic) message mentions; a named vitamin replaces the generic one."""
+    found = [c for c, rx in SPECIFIC.items() if rx.search(text)]
+    found += [c for c, stems in CONCEPT_WORDS.items() if _has(text, stems) and c not in found]
+    if any(c.startswith("vitamin_") for c in found) and "vitamin" in found and not _has(text, ("multivitamin", "мультивитамин", "vitamin kompleks", "витаминный комплекс")):
+        found.remove("vitamin")
+    if "zma" in found:  # ZMA = zinc + magnesium + B6 in one product
+        found = [c for c in found if c not in ("zinc", "magnesium")]
+    return found
+
 
 LATIN_FROM_CYR = str.maketrans({
     "а": "a", "б": "b", "в": "v", "г": "g", "д": "d", "е": "e", "ё": "yo", "ж": "j", "з": "z", "и": "i", "й": "y", "к": "k", "л": "l",
@@ -133,7 +167,7 @@ def parse(text: str) -> Parsed:
     both = f"{t} {latin}"
     p = Parsed(text=t, facts=extract_facts(t))
     p.goal = next((g for g, stems in GOALS.items() if _has(both, stems)), None)
-    p.concept = next((c for c, stems in CONCEPT_WORDS.items() if _has(both, stems)), None)
+    p.concept = next(iter(concepts_in(both)), None)
     for intent in ("operator", "faq_order", "faq_returns", "faq_original", "faq_loyalty", "faq_payment", "faq_delivery", "faq_stores", "faq_brands", "faq_flavours", "usage", "recommend"):
         if _has(both, INTENTS[intent]):
             p.intent = intent

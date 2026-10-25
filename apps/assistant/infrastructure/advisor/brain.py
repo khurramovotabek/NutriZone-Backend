@@ -43,7 +43,7 @@ HEALTH = {
     "pregnant": ("homilador", "emiz", "beremen", "беремен", "кормлю грудью", "лактац", "pregnan", "breastfeed"),
     "child": ("bola", "bolam", "bolalar", "farzand", "o'smir", "ребен", "дет", "подрост", "child", "kid", "teen", "son ", "daughter"),
     "kidney": ("buyrak", "jigar", "почк", "печен", "kidney", "liver"),
-    "diabetes": ("diabet", "qand", "диабет", "сахар", "diabetes", "blood sugar"),
+    "diabetes": ("diabet", "qandli", "qand kasal", "qonda qand", "qon qand", "qandim", "диабет", "сахарный диабет", "сахар в крови", "высокий сахар", "diabetes", "blood sugar"),
     "meds": ("dori ich", "dori qabul", "antidepress", "лекарств", "таблетк", "medication", "pills", "medicine"),
     "allergy": ("allergi", "аллерги", "allergy", "allergic"),
 }
@@ -147,7 +147,7 @@ def understand(text: str) -> Seen:
     t = nlu.normalize(text)
     both = f"{t} {t.translate(nlu.LATIN_FROM_CYR)}"
     idx = _index()
-    concepts = [c for c, stems in nlu.CONCEPT_WORDS.items() if _has(both, stems)]
+    concepts = nlu.concepts_in(both)
     return Seen(text=t, both=both, brands=_find_long(both, idx["brands"]), cats=_find_long(both, idx["cats"]), concepts=concepts,
                 stores=_stores_in(text), health=[h for h, stems in HEALTH.items() if _has(both, stems)])
 

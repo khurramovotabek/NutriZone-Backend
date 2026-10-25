@@ -20,6 +20,8 @@ from apps.assistant.infrastructure.advisor import brain, kb, needs, nlu, reco
 logger = logging.getLogger("nutrizone.assistant.local")
 LOCALES = ("uz", "ru", "en")
 STRONG_MATCH = 8.0  # a knowledge entry this close to the question answers it before the built-in FAQ
+KNOWLEDGE_MATCH = 10.0  # ...and this close, it answers "what should I take for X?" instead of asking for height and weight
+DEEP_MATCH = 12.0  # ...and this close, it also beats Brain's short "what is X" / "X vs Y" summaries
 CHEAPER = ("arzon", "qimmat", "дешевле", "дорого", "бюджет", "cheaper", "too expensive", "budget")
 
 CHIPS = {
@@ -134,6 +136,13 @@ def answer(conv_meta: dict, text: str, loc: str) -> tuple[str, list[str], list[s
         ids = _kind_ids(p.concept, loc)
         return taught[0].entry.answer(loc), ids, (CHIPS["after_reco"] if ids else CHIPS["faq"])[loc], meta
     smart = brain.respond(meta, text, loc)  # live-data answers: price, branch stock, best sellers, compare, promo, contacts, hours, safety
+    if smart is not None and taught and ((smart.last in ("why", "compare") and taught[0].score >= DEEP_MATCH)
+                                         or (smart.last == "listing" and not smart.product_ids and taught[0].score >= STRONG_MATCH)):
+        # a dedicated expert entry ("Kreatin haqida miflar", "BCAA yoki EAA") explains more than the one-line kind summary;
+        # the products Brain found still come along
+        knowledge.mark_used([taught[0].entry])
+        meta["last"] = "knowledge"
+        return taught[0].entry.answer(loc), smart.product_ids, smart.chips or CHIPS["after_reco"][loc], meta
     if smart is not None:
         meta["last"] = smart.last
         if smart.query:
@@ -141,7 +150,10 @@ def answer(conv_meta: dict, text: str, loc: str) -> tuple[str, list[str], list[s
         if smart.venues:
             meta["_venues"] = smart.venues
         return smart.text, smart.product_ids, smart.chips or CHIPS["faq"][loc], meta
-    if taught and taught[0].score >= STRONG_MATCH and p.intent not in ("recommend", "faq_stores"):
+    # "nima ichay?" about a symptom or a named kind ("mushagim tortishyapti", "how much vitamin D should I take") is a
+    # knowledge question, not a request for a personal stack -- only a body-shape goal (muscle, fat loss) goes to the stack
+    knowledge_question = not p.facts and (p.concept or p.goal in (None, "health"))
+    if taught and taught[0].score >= STRONG_MATCH and (p.intent not in ("recommend", "faq_stores") or (knowledge_question and taught[0].score >= KNOWLEDGE_MATCH)):
         # what the shop taught on the dashboard (AI bilimlar bazasi) wins over the built-in texts; products of the kind asked about come along
         knowledge.mark_used([taught[0].entry])
         meta["last"] = "knowledge"

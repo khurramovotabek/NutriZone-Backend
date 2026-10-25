@@ -20,6 +20,10 @@ STACKS = {
 QUERIES = {
     "protein": "whey protein", "creatine": "creatine", "gainer": "gainer", "bcaa": "bcaa", "carnitine": "carnitine",
     "vitamin": "multivitamin", "omega": "omega 3", "collagen": "collagen", "preworkout": "pre workout",
+    "vitamin_d": "vitamin d3", "vitamin_c": "vitamin c", "vitamin_b12": "vitamin b12", "magnesium": "magnesium", "zinc": "zinc",
+    "iron": "iron", "calcium": "calcium", "electrolytes": "electrolytes", "glutamine": "glutamine", "beta_alanine": "beta alanine",
+    "citrulline": "citrulline", "caffeine": "caffeine", "test_booster": "testosterone", "ashwagandha": "ashwagandha", "zma": "zma",
+    "melatonin": "melatonin", "probiotic": "probiotic", "glucosamine": "glucosamine",
 }
 BUDGET_SHARE = {"protein": 0.55, "creatine": 0.25, "gainer": 0.45, "bcaa": 0.35, "carnitine": 0.3, "vitamin": 0.25, "omega": 0.3, "collagen": 0.3, "preworkout": 0.3}
 
