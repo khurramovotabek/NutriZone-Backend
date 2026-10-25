@@ -59,7 +59,7 @@ from datetime import datetime
 from apps.pos.application.ports import PricingResolver, ProductLookup
 from apps.pos.application.services._shared import PosServiceContext
 from apps.pos.application.services.pricing import ResolveLineItemPrice
-from apps.pos.application.services.sale import AddLineItem, CompleteSale, LoadSale, OpenSale, RefundSale, RemoveLineItem, SetSaleCustomer, UpdateLineItemQuantity, VoidSale
+from apps.pos.application.services.sale import AddLineItem, ChangeLineItemPrice, CompleteSale, LoadSale, OpenSale, RefundSale, RemoveLineItem, SetSaleCustomer, UpdateLineItemQuantity, VoidSale
 from apps.pos.application.services.search import SearchProduct
 from apps.pos.infrastructure import models as orm
 from apps.pos.infrastructure.repositories import DjangoSaleRepository
@@ -104,6 +104,10 @@ def build_remove_line_item(actor_id=None) -> RemoveLineItem:
 
 def build_update_line_item_quantity(actor_id=None) -> UpdateLineItemQuantity:
     return UpdateLineItemQuantity(DjangoSaleRepository(), build_pos_service_context(actor_id))
+
+
+def build_change_line_item_price(actor_id=None) -> ChangeLineItemPrice:
+    return ChangeLineItemPrice(DjangoSaleRepository(), build_pos_service_context(actor_id))
 
 
 def build_set_sale_customer(actor_id=None) -> SetSaleCustomer:

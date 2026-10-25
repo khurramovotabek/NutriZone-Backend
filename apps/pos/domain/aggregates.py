@@ -32,6 +32,7 @@ from apps.pos.domain.events import (
     SaleCompleted,
     SaleCustomerSet,
     SaleLineItemAdded,
+    SaleLineItemPriceChanged,
     SaleLineItemQuantityUpdated,
     SaleLineItemRemoved,
     SaleOpened,
@@ -99,6 +100,18 @@ class Sale:
         existing = self.line_items[line_item_id]
         self.line_items[line_item_id] = SaleLineItem(id=existing.id, product_id=existing.product_id, quantity=new_quantity, unit_price=existing.unit_price)
         return SaleLineItemQuantityUpdated(sale_id=self.id, line_item_id=line_item_id, new_quantity=new_quantity.value)
+
+    def change_line_item_price(self, line_item_id: uuid.UUID, new_unit_price: Money) -> SaleLineItemPriceChanged:
+        """A different unit price for one line of an OPEN sale (the cashier's negotiated price); never zero or negative."""
+        if self.status != SaleStatus.OPEN:
+            raise InvalidSaleTransition(f"Cannot change a price on a sale in status {self.status.value}; only OPEN sales can be modified.")
+        if line_item_id not in self.line_items:
+            raise SaleLineItemNotFound(f"No line item '{line_item_id}' exists on this sale.")
+        if new_unit_price.amount <= 0:
+            raise InvalidSaleTransition("A line's price must be greater than zero.")
+        existing = self.line_items[line_item_id]
+        self.line_items[line_item_id] = SaleLineItem(id=existing.id, product_id=existing.product_id, quantity=existing.quantity, unit_price=new_unit_price)
+        return SaleLineItemPriceChanged(sale_id=self.id, line_item_id=line_item_id, old_unit_price=existing.unit_price.amount, new_unit_price=new_unit_price.amount)
 
     def set_customer(self, customer_id: uuid.UUID) -> SaleCustomerSet:
         """

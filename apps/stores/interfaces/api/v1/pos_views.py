@@ -165,9 +165,12 @@ class PosSaleItemsView(PosBase):
 
 
 class PosSaleItemView(PosBase):
-    @extend_schema(tags=["Store POS"], summary="Set a line's quantity (0 removes it)")
+    @extend_schema(tags=["Store POS"], summary="Set a line's quantity (0 removes it) or its unit price ({unit_price, reason})")
     def patch(self, request, sale_id, line_id):
         store = _store(request)
+        if request.data.get("unit_price") is not None:  # the cashier's own price -- journaled (Dashboard: Narx o'zgarishlari)
+            return _sale(request, store, svc.set_price(store, _actor(request), _uuid(sale_id), _uuid(line_id), request.data.get("unit_price"),
+                                                       str(request.data.get("reason") or "")))
         return _sale(request, store, svc.set_quantity(store, _actor(request), _uuid(sale_id), _uuid(line_id), _int(request.data.get("quantity"))))
 
     @extend_schema(tags=["Store POS"], summary="Remove a line")

@@ -309,3 +309,9 @@ body:has(.pk) .app-main .alert, body:has(.pk) .content-wrapper .alert { position
 .px-last-badge.is-price { background: #f59e0b; }
 .px-line.is-last { background: color-mix(in srgb, #16a34a 9%, transparent); box-shadow: inset 3px 0 0 #16a34a; }
 @keyframes pxIn { from { transform: translateY(-4px); opacity: 0; } to { transform: none; opacity: 1; } }
+/* the line's unit price is a button: tap to sell at another price (journaled) */
+.px-price { border: 0; background: none; padding: 0 2px; font: inherit; color: inherit; cursor: pointer; border-radius: 6px; }
+.px-price i { font-size: .6rem; opacity: .45; }
+.px-price:hover, .px-price:focus-visible { color: var(--nz-primary, #3b82f6); background: color-mix(in srgb, var(--nz-primary, #3b82f6) 10%, transparent); }
+.px-price.is-changed { color: #d97706; font-weight: 700; }
+.px-price s { color: var(--nz-text-muted); font-weight: 400; }

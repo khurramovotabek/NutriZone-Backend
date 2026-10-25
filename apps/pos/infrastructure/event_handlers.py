@@ -27,6 +27,7 @@ _EVENT_TO_METRIC = {
     "SaleLineItemAdded": "pos_sale_line_items_added_total",
     "SaleLineItemRemoved": "pos_sale_line_items_removed_total",
     "SaleLineItemQuantityUpdated": "pos_sale_line_items_quantity_updated_total",
+    "SaleLineItemPriceChanged": "pos_sale_line_items_price_changed_total",
     "SaleCompleted": "pos_sales_completed_total",
     "SaleVoided": "pos_sales_voided_total",
     "SaleRefunded": "pos_sales_refunded_total",

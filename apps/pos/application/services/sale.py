@@ -148,6 +148,26 @@ class UpdateLineItemQuantity:
         return saved
 
 
+class ChangeLineItemPrice:
+    """Maps to `Sale.change_line_item_price(line_item_id, new_unit_price)` -- the line keeps its currency."""
+
+    def __init__(self, repository: SaleRepository, ctx: PosServiceContext) -> None:
+        self._repository = repository
+        self._ctx = ctx
+
+    def execute(self, sale_id: uuid.UUID, line_item_id: uuid.UUID, new_unit_price_amount) -> Sale:
+        sale = self._repository.get_by_id(sale_id)
+        if sale is None:
+            raise ResourceNotFound(f"Sale '{sale_id}' not found.")
+        line = sale.line_items.get(line_item_id)
+        currency = line.unit_price.currency if line is not None else "UZS"
+        event = sale.change_line_item_price(line_item_id, Money(new_unit_price_amount, currency))
+        with transaction.atomic():
+            saved = self._repository.save(sale)
+            self._ctx.stage_events([(event.__class__.__name__, event.to_payload())])
+        return saved
+
+
 class CompleteSale:
     """Maps to `Sale.complete(at)`. Never validates line-item count, quantity, or price here -- `EmptySale`/`InvalidSaleTransition` remain entirely Domain-owned and propagate unchanged."""
 

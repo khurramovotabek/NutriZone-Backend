@@ -986,3 +986,40 @@ class StoreOrderLog(models.Model):
     class Meta:
         db_table = "stores_store_order_log"
         ordering = ["-created_at"]
+
+
+class PosPriceChange(models.Model):
+    """
+    A price the cashier changed in the basket at a till (any kassa, branch or online) -- one row per basket line,
+    keeping the original list price even if the price was changed again. The sale itself (completed / voided /
+    still open) is read live, so the journal shows whether the cheaper price was really sold. Written only by
+    pos_service.set_price; the Dashboard page "Narx o'zgarishlari" lists them.
+    """
+
+    store = models.ForeignKey(Store, on_delete=models.CASCADE, related_name="price_changes", verbose_name=_("Kassa"))
+    sale_id = models.UUIDField(db_index=True)
+    line_id = models.UUIDField(unique=True)
+    product_variant_id = models.UUIDField(null=True, blank=True, db_index=True)
+    product_name = models.CharField(max_length=255, blank=True, default="", verbose_name=_("Mahsulot"))
+    quantity = models.PositiveIntegerField(default=1, verbose_name=_("Soni"))
+    list_price = models.DecimalField(max_digits=14, decimal_places=2, verbose_name=_("Eski narx"))
+    new_price = models.DecimalField(max_digits=14, decimal_places=2, verbose_name=_("Yangi narx"))
+    cashier_id = models.UUIDField(null=True, blank=True, db_index=True)
+    cashier_name = models.CharField(max_length=150, blank=True, default="", verbose_name=_("Kassir"))
+    reason = models.CharField(max_length=200, blank=True, default="", verbose_name=_("Sabab"))
+    created_at = models.DateTimeField(auto_now_add=True, db_index=True, verbose_name=_("Vaqt"))
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        db_table = "stores_pos_price_changes"
+        ordering = ["-created_at"]
+        verbose_name = _("Narx o'zgarishi")
+        verbose_name_plural = _("Narx o'zgarishlari")
+
+    def __str__(self) -> str:
+        return f"{self.product_name}: {self.list_price} → {self.new_price}"
+
+    @property
+    def difference(self):
+        """Per-line money given away (negative = sold above the list price)."""
+        return (self.list_price - self.new_price) * self.quantity

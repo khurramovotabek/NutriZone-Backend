@@ -149,6 +149,8 @@ def i18n() -> dict:
         "autoPrint": t("Auto print"), "autoPrintHint": t("Print the receipt on the thermal printer after every sale"),
         "autoPrintOn": t("Receipts print automatically"), "autoPrintOff": t("Automatic printing off"), "top": t("Best sellers"),
         "receiptSent": t("The e-receipt was sent to the customer (inbox and Telegram)."),
+        "changePrice": t("Narxni o'zgartirish"), "listPrice": t("Asl narx"), "newPrice": t("Yangi narx"), "priceReason": t("Sabab (ixtiyoriy)"),
+        "resetPrice": t("Asl narxga qaytarish"), "save": t("Saqlash"), "priceSaved": t("Narx o'zgartirildi"), "priceInvalid": t("Narxni to'g'ri kiriting"),
     }
 
 
@@ -190,6 +192,8 @@ def api(request, action: str):
             sale = svc.add_item(store, cashier, sale_id, _uuid(b.get("variant_id")), int(b.get("quantity") or 1), code=(str(b.get("code") or "")[:64] or None))
         elif action == "qty":
             sale = svc.set_quantity(store, cashier, sale_id, _uuid(b.get("line_id")), int(b.get("quantity") or 0))
+        elif action == "price":
+            sale = svc.set_price(store, cashier, sale_id, _uuid(b.get("line_id")), b.get("unit_price"), str(b.get("reason") or ""))
         elif action == "remove":
             sale = svc.remove_item(store, cashier, sale_id, _uuid(b.get("line_id")))
         elif action == "clear":

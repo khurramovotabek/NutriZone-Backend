@@ -1,7 +1,7 @@
 {% extends "admin/base_site.html" %}
 {% load i18n static %}
 {# POS terminal (staff till on the branch-till engine). Rendered by nutrizone-pos.js from <api>/state; every action POSTs to pos/terminal/api2/<action>. #}
-{% block extrastyle %}{{ block.super }}<link rel="stylesheet" href="{% static 'admin/css/nutrizone-platform.css' %}?v=5"><link rel="stylesheet" href="{% static 'admin/css/nutrizone-orderdesk.css' %}?v=6"><link rel="stylesheet" href="{% static 'admin/css/nutrizone-wmsx.css' %}?v=12"><link rel="stylesheet" href="{% static 'admin/css/nutrizone-pos-terminal.css' %}?v=10">{% endblock %}
+{% block extrastyle %}{{ block.super }}<link rel="stylesheet" href="{% static 'admin/css/nutrizone-platform.css' %}?v=5"><link rel="stylesheet" href="{% static 'admin/css/nutrizone-orderdesk.css' %}?v=6"><link rel="stylesheet" href="{% static 'admin/css/nutrizone-wmsx.css' %}?v=12"><link rel="stylesheet" href="{% static 'admin/css/nutrizone-pos-terminal.css' %}?v=11">{% endblock %}
 {% block content_title %}{% endblock %}
 {% block content %}
 <div class="nzp nzd wx px">
@@ -13,4 +13,4 @@
 {{ config|json_script:"px-config" }}
 {{ i18n|json_script:"px-i18n" }}
 {% endblock %}
-{% block extrajs %}{{ block.super }}<script src="{% static 'admin/js/nutrizone-pos.js' %}?v=10"></script>{% endblock %}
+{% block extrajs %}{{ block.super }}<script src="{% static 'admin/js/nutrizone-pos.js' %}?v=11"></script>{% endblock %}

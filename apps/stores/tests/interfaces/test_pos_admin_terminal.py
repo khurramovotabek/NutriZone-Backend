@@ -86,3 +86,18 @@ def test_needs_pos_permission(kassa):
     c = Client()
     c.force_login(StaffUser.objects.create_user(username=f"np_{uuid.uuid4().hex[:6]}", password="x-pass-12345", is_staff=True))
     assert c.get(f"{API}state").status_code == 403
+
+
+def test_online_kassa_can_change_a_line_price_and_it_is_journaled(staff, kassa):
+    from apps.stores.infrastructure.models import PosPriceChange
+
+    wh, v = kassa
+    sale = post(staff, "open_shift", note="", pin="4826").json()["data"]["sale"]
+    sale = post(staff, "add", sale_id=sale["id"], variant_id=str(v.id), quantity=2).json()["data"]["sale"]
+    line = sale["items"][0]
+    sale = post(staff, "price", sale_id=sale["id"], line_id=line["id"], unit_price=85000, reason="ulgurji").json()["data"]["sale"]
+    assert sale["total"] == "170000.00" and sale["items"][0]["list_price"] == "100000.00"
+    entry = PosPriceChange.objects.get(line_id=line["id"])
+    assert (entry.store, entry.new_price, entry.cashier_name, entry.reason) == (wh, 85000, "Kassir Admin", "ulgurji")
+    page = staff.get("/django-admin/pos/terminal/", HTTP_ACCEPT_LANGUAGE="uz")
+    assert b"Narxni o" in page.content  # the price editor's labels reach the till

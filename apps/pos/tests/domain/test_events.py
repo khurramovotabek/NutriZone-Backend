@@ -57,11 +57,11 @@ def test_events_are_immutable():
         event.sale_id = uuid.uuid4()  # type: ignore[misc]
 
 
-def test_programmatically_verify_exactly_8_events():
-    """Count updated to 7 after the premium checkout redesign added SaleCustomerSet, then to 8 with SaleRefunded (Sale.refund() -- the whole-sale return of a completed sale)."""
+def test_programmatically_verify_exactly_9_events():
+    """Count updated to 7 after the premium checkout redesign added SaleCustomerSet, to 8 with SaleRefunded (Sale.refund() -- the whole-sale return of a completed sale), then to 9 with SaleLineItemPriceChanged (the cashier's own line price)."""
     tree = ast.parse(open(events_module.__file__).read())
     class_names = [n.name for n in tree.body if isinstance(n, ast.ClassDef)]
-    assert len(class_names) == 8, f"Expected exactly 8 POS domain events, found {len(class_names)}: {class_names}"
+    assert len(class_names) == 9, f"Expected exactly 9 POS domain events, found {len(class_names)}: {class_names}"
 
 
 def test_zero_collisions_between_events_and_exceptions():

@@ -1021,6 +1021,7 @@ from apps.stores.infrastructure import (  # noqa: E402
     count_admin,  # noqa: E402,F401  (registers the stock count / Inventarizatsiya admin)
     planning_admin,  # noqa: E402,F401  (reorder points / replenishment, expiry)
     pos_cashier_admin,  # noqa: E402,F401  (POS cashiers / PIN sign-in)
+    price_change_admin,  # noqa: E402,F401  (Narx o'zgarishlari -- cashier price changes at the tills)
     supplier_admin,  # noqa: E402,F401  (suppliers and accounts payable)
     adjustment_admin,  # noqa: E402,F401  (Qo'lda +/− jurnali)
     warehouse_admin,  # noqa: E402,F401  (registers the WMS admins: transfers, goods receipts, ledger)

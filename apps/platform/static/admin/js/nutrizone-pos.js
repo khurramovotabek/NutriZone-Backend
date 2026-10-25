@@ -149,7 +149,8 @@
         : '<button type="button" class="px-add-customer" data-act="customer"><i class="fas fa-user-plus" aria-hidden="true"></i> ' + esc(L.addCustomer) + "</button>") + "</div>" +
       '<ul class="px-lines">' + (s && s.items.length ? s.items.map(function (l) {
         var max = l.stock != null && l.quantity >= l.stock;
-        return '<li class="px-line' + (S.last && S.last.kind === "added" && S.last.item.variant_id === l.variant_id ? " is-last" : "") + '" data-line="' + l.id + '">' + thumb(l.image_url) + '<div class="px-line-main"><b>' + esc(l.name) + "</b><small>" + (l.variant_label ? esc(l.variant_label) + " · " : "") + money(l.unit_price) + " × " + l.quantity + "</small>" +
+        return '<li class="px-line' + (S.last && S.last.kind === "added" && S.last.item.variant_id === l.variant_id ? " is-last" : "") + '" data-line="' + l.id + '">' + thumb(l.image_url) + '<div class="px-line-main"><b>' + esc(l.name) + "</b><small>" + (l.variant_label ? esc(l.variant_label) + " · " : "") +
+          '<button type="button" class="px-price' + (l.list_price ? " is-changed" : "") + '" data-price title="' + esc(L.changePrice) + '">' + (l.list_price ? "<s>" + money(l.list_price) + "</s> " : "") + money(l.unit_price) + ' <i class="fas fa-pen" aria-hidden="true"></i></button> × ' + l.quantity + "</small>" +
           ((l.batches || []).length ? '<span class="px-batches">' + l.batches.map(function (b) { return '<span>' + (b.batch ? "LOT " + esc(b.batch) : esc(L.batch)) + (b.expiry ? " · " + b.expiry.split("-").reverse().join(".") : "") + " ×" + b.qty + "</span>"; }).join("") + "</span>" : "") +
           '<span class="px-stepper"><button type="button" data-qty="-1" aria-label="−">−</button><b>' + l.quantity + '</b><button type="button" data-qty="1" aria-label="+"' + (max ? " disabled" : "") + '>+</button></span></div>' +
           '<div class="px-line-side"><b>' + money(l.line_total) + '</b><button type="button" class="px-link" data-remove aria-label="' + esc(L.remove) + '"><i class="fas fa-xmark" aria-hidden="true"></i></button></div></li>';
@@ -244,6 +245,32 @@
     var first = form.querySelector("[autofocus]") || form.querySelector("input"); if (first) { first.focus(); if (first.select) first.select(); }
   }
   function closeDialog() { dlg.close(); focusScanner(); }
+
+  /* the cashier's own price for one basket line -- journaled on the Dashboard (POS → Narx o'zgarishlari) */
+  function priceDialog(l) {
+    if (!l) return;
+    var base = num(l.list_price || l.unit_price);
+    openDialog('<header><span class="nzd-dialog-icon" style="color:#f59e0b;background:color-mix(in srgb,#f59e0b 13%,transparent)"><i class="fas fa-tag" aria-hidden="true"></i></span><div><h3>' + esc(L.changePrice) + "</h3><p>" + esc(l.name) + (l.variant_label ? " · " + esc(l.variant_label) : "") + "</p></div></header>" +
+      '<p class="wx-muted" style="margin:.25rem 0 .75rem">' + esc(L.listPrice) + ": <b>" + money(base) + " " + esc(L.som) + "</b></p>" +
+      '<label class="nzd-field-label">' + esc(L.newPrice) + " (" + esc(L.som) + ')<input class="nzd-input px-big" data-newprice inputmode="numeric" autofocus value="' + num(l.unit_price) + '"></label>' +
+      '<small class="wx-muted" data-pdiff></small>' +
+      '<label class="nzd-field-label" style="margin-top:.6rem">' + esc(L.priceReason) + '<input class="nzd-input" data-preason maxlength="200" value="' + esc(l.price_reason || "") + '"></label>' +
+      '<p class="px-pin-err" data-perr></p>' +
+      '<div class="nzd-next-row" style="justify-content:flex-end">' + (l.list_price ? '<button type="button" class="nzp-btn nzp-btn-ghost" data-preset>' + esc(L.resetPrice) + "</button>" : "") +
+        '<button type="button" class="nzp-btn nzp-btn-ghost" data-close>' + esc(L.cancel) + '</button><button class="nzp-btn nzp-btn-primary"><i class="fas fa-check" aria-hidden="true"></i> ' + esc(L.save) + "</button></div>",
+    function (f) {
+      var v = num(f.querySelector("[data-newprice]").value);
+      if (!(v > 0)) { f.querySelector("[data-perr]").textContent = L.priceInvalid; return; }
+      act("price", { line_id: l.id, unit_price: v, reason: f.querySelector("[data-preason]").value }).then(function () { closeDialog(); toast("✓ " + L.priceSaved); })
+        .catch(function (e) { f.querySelector("[data-perr]").textContent = e.message; });
+    });
+    var form = dlg.querySelector("[data-px-dialog]"), input = form.querySelector("[data-newprice]"), diff = form.querySelector("[data-pdiff]");
+    var show = function () { var v = num(input.value); diff.textContent = v > 0 && v !== base ? (v < base ? "−" : "+") + money(Math.abs(base - v)) + " " + L.som + " × " + l.quantity : ""; };
+    input.addEventListener("input", show); show();
+    var reset = form.querySelector("[data-preset]");
+    if (reset) reset.addEventListener("click", function () { act("price", { line_id: l.id, unit_price: base }).then(closeDialog).catch(function () {}); });
+    form.querySelectorAll("[data-close]").forEach(function (b) { b.addEventListener("click", closeDialog); });
+  }
   dlg.addEventListener("close", focusScanner);
 
   function payDialog() {
@@ -387,6 +414,7 @@
       act("qty", { line_id: l.id, quantity: l.quantity + Number(b.getAttribute("data-qty")) }).catch(function () {});
       return;
     }
+    if (line && e.target.closest("[data-price]")) { priceDialog(S.sale.items.filter(function (x) { return x.id === line.getAttribute("data-line"); })[0]); return; }
     if (line && e.target.closest("[data-remove]")) { act("remove", { line_id: line.getAttribute("data-line") }).catch(function () {}); return; }
     var mode = e.target.closest("[data-smode]");
     if (mode) { S.priceMode = mode.getAttribute("data-smode") === "price"; renderScanner(); focusScanner(); return; }

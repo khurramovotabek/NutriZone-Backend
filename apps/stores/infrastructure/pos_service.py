@@ -41,7 +41,7 @@ from apps.pos.domain.enums import CARD_PAYMENT_METHODS, LIVE_PAYMENT_METHODS, Pa
 from apps.pos.infrastructure import composition as pos
 from apps.pos.infrastructure import receipts
 from apps.pos.infrastructure.models import SaleLineItemModel, SaleModel
-from apps.stores.infrastructure.models import CashSession, CashSessionStatus, Store, StoreProductStock
+from apps.stores.infrastructure.models import CashSession, CashSessionStatus, PosPriceChange, Store, StoreProductStock
 from apps.stores.infrastructure.pos_cashiers import kassa_name
 from apps.stores.infrastructure.stock_service import variant_image_urls
 from common.exceptions import ConflictError, ResourceNotFound, ValidationFailed
@@ -498,12 +498,60 @@ def set_quantity(store: Store, cashier_id: uuid.UUID, sale_id: uuid.UUID, line_i
             raise _conflict("STOCK_LIMIT", f"Only {available} in stock.", available=available)
     sale = pos.build_update_line_item_quantity(cashier_id).execute(sale_id=sale.id, line_item_id=line_id, new_quantity=quantity)
     _trim_batches(line_id, quantity)
+    PosPriceChange.objects.filter(line_id=line_id).update(quantity=quantity)
     return sale
 
 
 def remove_item(store: Store, cashier_id: uuid.UUID, sale_id: uuid.UUID, line_id: uuid.UUID):
     sale = _load(store, sale_id)
-    return pos.build_remove_line_item(cashier_id).execute(sale_id=sale.id, line_item_id=line_id)
+    sale = pos.build_remove_line_item(cashier_id).execute(sale_id=sale.id, line_item_id=line_id)
+    PosPriceChange.objects.filter(line_id=line_id).delete()  # a line taken out of the basket was never sold at that price
+    return sale
+
+
+MAX_PRICE_FACTOR = 10  # a typo guard: 4 900 000 instead of 490 000 for a 560 000 product is refused
+
+
+def set_price(store: Store, cashier_id: uuid.UUID, sale_id: uuid.UUID, line_id: uuid.UUID, price, reason: str = ""):
+    """
+    The cashier sells one basket line at another unit price (a negotiated or manager price). Every change is journaled
+    (PosPriceChange: kassa, cashier, product, list price -> new price); setting the list price back removes the entry.
+    """
+    from apps.products.infrastructure.selectors import bulk_variant_prices
+
+    try:
+        amount = Decimal(str(price)).quantize(Decimal("1"))
+    except (ArithmeticError, ValueError, TypeError):
+        raise ValidationFailed("Enter the price as a number.") from None
+    if amount <= 0:
+        raise ValidationFailed("The price must be greater than zero.")
+    sale = _load(store, sale_id)
+    line = sale.line_items.get(line_id)
+    if line is None:
+        raise ResourceNotFound("This line is not in the basket.")
+    variant_id = _line_variant_map(sale.id).get(line_id)
+    entry = PosPriceChange.objects.filter(line_id=line_id).first()
+    list_price = entry.list_price if entry else line.unit_price.amount
+    if variant_id and not entry:  # the catalogue price is the reference, even if the line was added at an older one
+        current = (bulk_variant_prices([variant_id]).get(variant_id) or {}).get("amount")
+        list_price = Decimal(str(current)) if current else list_price
+    if amount > list_price * MAX_PRICE_FACTOR:
+        raise _conflict("PRICE_TOO_HIGH", f"{amount:,.0f} is more than {MAX_PRICE_FACTOR}x the list price -- check the number.".replace(",", " "), list_price=f"{list_price:.0f}")
+    sale = pos.build_change_line_item_price(cashier_id).execute(sale_id=sale.id, line_item_id=line_id, new_unit_price_amount=amount)
+    if amount == list_price:
+        PosPriceChange.objects.filter(line_id=line_id).delete()
+        return sale
+    name = ""
+    if variant_id:
+        item = next(iter(catalog_items_by_variant(store, "uz", [variant_id])), None) or {}
+        name = " · ".join(x for x in (item.get("name"), item.get("variant_label")) if x)
+    PosPriceChange.objects.update_or_create(
+        line_id=line_id,
+        defaults={"store": store, "sale_id": sale.id, "product_variant_id": variant_id, "product_name": name[:255], "quantity": line.quantity.value,
+                  "list_price": list_price, "new_price": amount, "cashier_id": cashier_id, "cashier_name": (_actor_name(cashier_id) or "")[:150],
+                  "reason": (reason or "").strip()[:200]},
+    )
+    return sale
 
 
 def clear(store: Store, cashier_id: uuid.UUID, sale_id: uuid.UUID):
@@ -511,6 +559,7 @@ def clear(store: Store, cashier_id: uuid.UUID, sale_id: uuid.UUID):
     remover = pos.build_remove_line_item(cashier_id)
     for line_id in list(sale.line_items):
         sale = remover.execute(sale_id=sale.id, line_item_id=line_id)
+    PosPriceChange.objects.filter(sale_id=sale.id).delete()
     return sale
 
 
@@ -906,6 +955,7 @@ def sale_payload(store: Store, sale, locale: str = "uz") -> dict:
     refunded_qty = dict(SaleLineItemModel.objects.filter(sale_id=sale.id).values_list("id", "refunded_quantity"))
     line_batches = dict(SaleLineItemModel.objects.filter(sale_id=sale.id).values_list("id", "batches"))
     variant_map = _line_variant_map(sale.id)
+    changed = {c.line_id: c for c in PosPriceChange.objects.filter(sale_id=sale.id)}
     variants = {v.id: v for v in ProductVariant.objects.filter(id__in=[vid for vid in variant_map.values() if vid]).select_related("package", "flavour").prefetch_related("flavour__translations", "package__translations")}
     info = {i["variant_id"]: i for i in catalog_items_by_variant(store, locale, list(variants))}
     lines = []
@@ -918,6 +968,9 @@ def sale_payload(store: Store, sale, locale: str = "uz") -> dict:
             "image_url": meta.get("image_url"), "stock": meta.get("stock"),
             "quantity": line.quantity.value, "unit_price": str(line.unit_price.amount), "line_total": str(line.unit_price.amount * line.quantity.value),
             "refunded_quantity": refunded_qty.get(line.id, 0),
+            # the cashier's own price: the list price stays visible (struck through) on the till and the receipt
+            "list_price": str(changed[line.id].list_price) if line.id in changed else None,
+            "price_reason": changed[line.id].reason if line.id in changed else "",
             "batches": [{"batch": k.partition("|")[0], "expiry": k.partition("|")[2] or None, "qty": n} for k, n in (line_batches.get(line.id) or {}).items() if n],
         })
     total = sale.total()

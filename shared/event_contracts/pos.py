@@ -6,7 +6,7 @@ every prior module's `shared/event_contracts/*.py` pattern.
 """
 from __future__ import annotations
 
-from apps.pos.domain.events import SaleCompleted, SaleCustomerSet, SaleLineItemAdded, SaleLineItemQuantityUpdated, SaleLineItemRemoved, SaleOpened, SaleRefunded, SaleVoided
+from apps.pos.domain.events import SaleCompleted, SaleCustomerSet, SaleLineItemAdded, SaleLineItemPriceChanged, SaleLineItemQuantityUpdated, SaleLineItemRemoved, SaleOpened, SaleRefunded, SaleVoided
 from core.events import EventContract, registry
 
 for _event_type, _payload_cls in (
@@ -15,6 +15,7 @@ for _event_type, _payload_cls in (
     ("SaleLineItemAdded", SaleLineItemAdded),
     ("SaleLineItemRemoved", SaleLineItemRemoved),
     ("SaleLineItemQuantityUpdated", SaleLineItemQuantityUpdated),
+    ("SaleLineItemPriceChanged", SaleLineItemPriceChanged),
     ("SaleCompleted", SaleCompleted),
     ("SaleVoided", SaleVoided),
     ("SaleRefunded", SaleRefunded),

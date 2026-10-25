@@ -84,3 +84,15 @@ class SaleVoided:
 
     def to_payload(self) -> dict:
         return {"sale_id": str(self.sale_id)}
+
+
+@dataclass(frozen=True, slots=True)
+class SaleLineItemPriceChanged:
+    """The cashier sold a line at a different price than the price list's (a negotiated / manager price)."""
+    sale_id: uuid.UUID
+    line_item_id: uuid.UUID
+    old_unit_price: object
+    new_unit_price: object
+
+    def to_payload(self) -> dict:
+        return {"sale_id": str(self.sale_id), "line_item_id": str(self.line_item_id), "old_unit_price": str(self.old_unit_price), "new_unit_price": str(self.new_unit_price)}
