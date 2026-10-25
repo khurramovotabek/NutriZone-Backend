@@ -16,6 +16,8 @@ STOP = {
     "va", "bilan", "uchun", "qanday", "nima", "qancha", "bormi", "men", "menga", "siz", "sizda", "bu", "u", "ham", "yoki", "edi", "kerak", "mumkin",
     "и", "в", "на", "как", "что", "сколько", "есть", "у", "вас", "мне", "я", "для", "с", "по", "ли", "а", "не",
     "the", "a", "an", "is", "are", "do", "you", "how", "what", "for", "to", "of", "and", "i", "me", "my", "can", "it", "in", "on",
+    # everyday verbs and time words that matched unrelated entries ("ob-havo qanday bo'ladi" -> a protein answer)
+    "boladi", "boladimi", "bolsa", "bolyapti", "bugun", "ertaga", "hozir", "qiladi", "qilsa", "будет", "сегодня", "завтра", "will", "today", "tomorrow",
 }
 MIN_SCORE = 3.0
 

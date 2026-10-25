@@ -15,11 +15,12 @@ from asgiref.sync import sync_to_async
 from django.utils import timezone
 
 from apps.assistant.infrastructure import knowledge, tools
-from apps.assistant.infrastructure.advisor import brain, kb, needs, nlu, reco
+from apps.assistant.infrastructure.advisor import brain, kb, needs, nlu, reco, talk
 
 logger = logging.getLogger("nutrizone.assistant.local")
 LOCALES = ("uz", "ru", "en")
 STRONG_MATCH = 8.0  # a knowledge entry this close to the question answers it before the built-in FAQ
+WEAK_MATCH = 5.5  # below this a knowledge hit is a coincidence of one common word -- better ask than answer off-topic
 KNOWLEDGE_MATCH = 10.0  # ...and this close, it answers "what should I take for X?" instead of asking for height and weight
 DEEP_MATCH = 12.0  # ...and this close, it also beats Brain's short "what is X" / "X vs Y" summaries
 CHEAPER = ("arzon", "qimmat", "дешевле", "дорого", "бюджет", "cheaper", "too expensive", "budget")
@@ -120,13 +121,23 @@ def answer(conv_meta: dict, text: str, loc: str) -> tuple[str, list[str], list[s
         p.intent = "recommend"
     meta["profile"] = profile
 
+    name = meta.get("name") or ""
     if p.intent == "greet":
         meta["last"] = "greet"
-        return kb.T["greet"][loc], [], CHIPS["start"][loc], meta
+        greeting = kb.T["greet"][loc]
+        if name:  # "Assalomu alaykum, Otabek! ..." -- a signed-in customer is greeted by name
+            head, sep, rest = greeting.partition("!")
+            greeting = f"{head}, {name}{sep}{rest}" if sep else greeting
+        return greeting, [], CHIPS["start"][loc], meta
     if p.intent == "thanks":
         return kb.T["thanks"][loc], [], CHIPS["faq"][loc], meta
     if p.intent == "operator":
         return kb.T["operator"][loc].format(contacts=kb.contacts(loc)), [], [], meta
+    small = talk.intent(text)
+    if small and not (p.facts or brain.understand(text).health):  # how are you / who are you / complaints / bye ...
+        meta["last"] = f"talk_{small}"
+        reply, chips = talk.reply(small, loc, name, kb.contacts(loc) if small == "complaint" else "")
+        return reply, [], chips, meta
     meta.pop("_venues", None)
     taught = knowledge.search(text, limit=1)
     if taught and taught[0].exact and not brain.understand(text).health:
@@ -227,7 +238,7 @@ def answer(conv_meta: dict, text: str, loc: str) -> tuple[str, list[str], list[s
         reply, ids, kinds = recommend_answer(profile, loc)
         meta.update(last="recommend", last_ids=ids, last_kinds=kinds, last_total=None)
         return reply, ids, CHIPS["after_reco"][loc], meta
-    if taught and not (p.concept or brain.understand(text).brands):  # a weak match never hides a product search
+    if taught and taught[0].score >= WEAK_MATCH and not (p.concept or brain.understand(text).brands):  # a weak match never hides a product search
         knowledge.mark_used([taught[0].entry])
         meta["last"] = "knowledge"
         return taught[0].entry.answer(loc), [], CHIPS["faq"][loc], meta
@@ -235,6 +246,10 @@ def answer(conv_meta: dict, text: str, loc: str) -> tuple[str, list[str], list[s
     query = text.strip()[:120]
     found = tools.search_products({"query": query, "limit": 4, "in_stock_only": False}, loc)["products"]
     meta["last"] = "search"
+    if not found and talk.looks_like_a_sentence(text):  # a sentence that matched nothing: ask, don't say "nothing found for <sentence>"
+        meta["last"] = "unclear"
+        reply, chips = talk.reply("unclear", loc, name)
+        return reply, [], chips, meta
     if not found:
         return kb.T["nothing"][loc].format(q=query[:60]), [], CHIPS["start"][loc], meta
     lines = [kb.T["found"][loc]]
@@ -272,6 +287,14 @@ def account_facts(customer_id) -> dict:
     return facts
 
 
+def first_name(customer_id) -> str:
+    """The signed-in customer's first name, to address them like a person ("Assalomu alaykum, Otabek!")."""
+    from apps.identity.infrastructure.models import User
+
+    full = User.objects.filter(pk=customer_id).values_list("full_name", flat=True).first() if customer_id else ""
+    return (full or "").strip().split(" ")[0][:30]
+
+
 def save_account_facts(customer_id, profile: dict) -> None:
     """Facts told in the chat fill the customer's empty profile fields (what they set themselves is never overwritten)."""
     from apps.identity.infrastructure.models import User
@@ -301,6 +324,7 @@ def _turn_sync(conversation_id, user_text: str) -> dict:
     start = dict(conv.meta or {})
     if conv.customer_id:
         start["profile"] = {**account_facts(conv.customer_id), **(start.get("profile") or {})}
+        start.setdefault("name", first_name(conv.customer_id))
     reply, ids, chips, meta = answer(start, user_text, loc)
     venues = meta.pop("_venues", None) or []
     if conv.customer_id:

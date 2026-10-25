@@ -48,7 +48,7 @@ class User(SoftDeleteModel):
     weight_kg = models.FloatField(null=True, blank=True)
     goal = models.CharField(null=True, blank=True, **enum_field_kwargs(FitnessGoal))
 
-    language = models.CharField(default=LanguagePreference.EN.value, **enum_field_kwargs(LanguagePreference))
+    language = models.CharField(default=LanguagePreference.UZ.value, **enum_field_kwargs(LanguagePreference))  # the shop speaks Uzbek first
     status = models.CharField(default=UserStatus.PENDING_VERIFICATION.value, **enum_field_kwargs(UserStatus))
 
     class Meta:

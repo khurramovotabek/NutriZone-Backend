@@ -181,7 +181,7 @@ class TestMeEndpointProfileUpdate:
         body = response.json()["data"]
         assert body["full_name"] == "Regression Test User"
         assert body["bio"] == "A real, non-fabricated bio"
-        assert body["language"] == "en"
+        assert body["language"] == "uz"  # untouched by the PATCH: the default (Uzbek)
 
         get_response = api_client.get("/api/v1/identity/users/me")
         assert get_response.status_code == 200

@@ -72,7 +72,7 @@ class User:
     bio: str | None = None
     birthday: date | None = None
     fitness_profile: FitnessProfile = field(default_factory=FitnessProfile)
-    language: LanguagePreference = LanguagePreference.EN
+    language: LanguagePreference = LanguagePreference.UZ
     created_at: datetime | None = None
 
     # --- Invariant-enforcing state transitions ---
