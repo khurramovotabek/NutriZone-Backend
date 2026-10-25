@@ -116,7 +116,7 @@ TOPIC_STYLE = {"faq": ("#2563eb", "fa-circle-question"), "policy": ("#0d9488", "
 class KnowledgeForm(forms.ModelForm):
     class Meta:
         model = KnowledgeEntry
-        fields = ("topic", "title", "questions", "keywords", "answer_uz", "answer_ru", "answer_en", "priority", "valid_until", "is_active")
+        fields = ("topic", "title", "title_ru", "title_en", "slug", "questions", "keywords", "answer_uz", "answer_ru", "answer_en", "priority", "valid_until", "is_active")
         widgets = {
             "questions": forms.Textarea(attrs={"rows": 4, "placeholder": "yetkazib berish qancha turadi\nдоставка сколько стоит\nhow much is delivery"}),
             "answer_uz": forms.Textarea(attrs={"rows": 6}), "answer_ru": forms.Textarea(attrs={"rows": 6}), "answer_en": forms.Textarea(attrs={"rows": 6}),
@@ -133,7 +133,7 @@ class KnowledgeEntryAdmin(PremiumListMixin, PremiumFormMixin, admin.ModelAdmin):
     ordering = ("-priority", "title")
     actions = None
     fieldsets = (
-        ("Bilim", {"fields": ("topic", "title", "questions", "keywords")}),
+        ("Bilim", {"fields": ("topic", "title", "title_ru", "title_en", "slug", "questions", "keywords")}),
         ("Javob", {"fields": ("answer_uz", "answer_ru", "answer_en")}),
         ("Sozlamalar", {"fields": ("priority", "valid_until", "is_active")}),
     )

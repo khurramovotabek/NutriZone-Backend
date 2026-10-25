@@ -78,6 +78,10 @@ class KnowledgeEntry(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     topic = models.CharField(_("Mavzu"), max_length=10, choices=TOPICS, default="faq", db_index=True)
     title = models.CharField(_("Sarlavha (o'zbekcha)"), max_length=200)
+    title_ru = models.CharField(_("Sarlavha (ruscha)"), max_length=200, blank=True, default="")
+    title_en = models.CharField(_("Sarlavha (inglizcha)"), max_length=200, blank=True, default="")
+    slug = models.SlugField(_("Manzil (URL)"), max_length=90, blank=True, default="", db_index=True,
+                            help_text=_("nutrizone.uz/guides/<slug> — bo'sh qoldirilsa sarlavhadan yasaladi."))
     questions = models.TextField(_("Savol shakllari"), blank=True, default="",
                                  help_text=_("Mijoz qanday so'rashi mumkin — har qatorda bittadan, istalgan tilda. Masalan: «yetkazib berish qancha turadi», «доставка сколько»."))
     answer_uz = models.TextField(_("Javob (o'zbekcha)"))
@@ -103,3 +107,19 @@ class KnowledgeEntry(models.Model):
 
     def answer(self, locale: str) -> str:
         return {"ru": self.answer_ru, "en": self.answer_en}.get(locale) or self.answer_uz
+
+    def localized_title(self, locale: str) -> str:
+        return {"ru": self.title_ru, "en": self.title_en}.get(locale) or self.title
+
+    def save(self, *args, **kwargs):
+        if not self.slug:  # a stable public address (guides page) from the Uzbek title, unique among entries
+            import re
+
+            base = re.sub(r"[^a-z0-9]+", "-", re.sub(r"[ʻʼ‘’`´']", "", self.title.lower())).strip("-")[:80] or "maslahat"
+            slug, n = base, 2
+            while KnowledgeEntry.objects.filter(slug=slug).exclude(pk=self.pk).exists():
+                slug, n = f"{base}-{n}", n + 1
+            self.slug = slug
+            if kwargs.get("update_fields") is not None:
+                kwargs["update_fields"] = {*kwargs["update_fields"], "slug"}
+        super().save(*args, **kwargs)

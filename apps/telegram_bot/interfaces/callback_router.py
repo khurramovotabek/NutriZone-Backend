@@ -1544,15 +1544,18 @@ def claude_reply(conversation_id, text: str) -> dict:
 
 def _advisor_understands(text: str, lang: str) -> bool:
     """A "search"-looking message the free advisor still answers better: price, branch stock, contacts, hours, promo,
-    compare, safety (Brain v2) or a question the shop taught word for word."""
+    compare, safety (Brain v2), a question the shop taught word for word, or a real question (3+ words or a "?") the
+    expert knowledge base answers strongly ("kreatin buyrakka zararmi?") -- bare product words stay a catalogue search."""
     from apps.assistant.infrastructure import knowledge
     from apps.assistant.infrastructure.advisor import brain
+    from apps.assistant.infrastructure.advisor.engine import STRONG_MATCH
 
     try:
         if brain.respond({}, text, lang if lang in ("uz", "ru", "en") else "uz") is not None:
             return True
         hits = knowledge.search(text, limit=1)
-        return bool(hits and hits[0].exact)
+        question = "?" in text or len(text.split()) >= 3
+        return bool(hits and (hits[0].exact or (question and hits[0].score >= STRONG_MATCH)))
     except Exception:  # noqa: BLE001 -- when in doubt the plain catalogue search answers
         logger.exception("advisor pre-check failed")
         return False

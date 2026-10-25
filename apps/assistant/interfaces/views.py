@@ -262,3 +262,23 @@ async def feedback_view(request, conversation_id):
     if not await sync_to_async(_feedback)(conv, body.get("index"), value):
         return _json({"code": "BAD_REQUEST", "message": "No such answer."}, 400)
     return _json({"ok": True})
+
+
+def guides_view(request):
+    """GET /assistant/guides?locale= -- the public sports-nutrition guides (knowledge base), for nutrizone.uz/guides."""
+    from apps.assistant.infrastructure import guides
+
+    if request.method != "GET":
+        return HttpResponseNotAllowed(["GET"])
+    return _json({"guides": guides.listing(request.GET.get("locale") or "uz")})
+
+
+def guide_view(request, slug):
+    from apps.assistant.infrastructure import guides
+
+    if request.method != "GET":
+        return HttpResponseNotAllowed(["GET"])
+    data = guides.detail(slug, request.GET.get("locale") or "uz")
+    if data is None:
+        return _json({"code": "NOT_FOUND", "message": "No such guide."}, 404)
+    return _json(data)

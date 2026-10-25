@@ -95,3 +95,31 @@ def test_expert_entries_are_complete():
     assert len(titles) == len(set(titles)) >= 45
     for topic, _p, title, questions, keywords, uz, ru, en in EXPERT.ENTRIES:
         assert topic in dict(KnowledgeEntry.TOPICS) and questions.count("\n") >= 2 and len(keywords) <= 300 and uz and ru and en, title
+
+
+def test_the_bot_hands_expert_questions_to_the_advisor_but_keeps_product_names_a_search(expert_kb):
+    from apps.telegram_bot.interfaces.callback_router import _advisor_understands
+
+    assert _advisor_understands("kreatin sochni to'kadimi?", "uz")
+    assert _advisor_understands("ramazonda protein qachon ichiladi", "uz")
+    assert not _advisor_understands("Optimum Nutrition Gold Standard", "uz")
+
+
+def test_guides_api_lists_public_entries_in_every_language_and_hides_promos(expert_kb):
+    from django.core.cache import cache
+    from django.test import Client
+
+    cache.clear()
+    KnowledgeEntry.objects.create(topic="promo", title="Oktabr aksiyasi", answer_uz="10% chegirma")
+    entry = KnowledgeEntry.objects.get(title="D vitamini: kimga va qancha")
+    entry.title_en = "Vitamin D: who needs it and how much"
+    entry.save()
+    assert entry.slug == "d-vitamini-kimga-va-qancha"  # made from the Uzbek title on save
+
+    listing = Client().get("/api/v1/assistant/guides?locale=en").json()["data"]["guides"]
+    assert {g["slug"] for g in listing} >= {"d-vitamini-kimga-va-qancha"} and "oktabr-aksiyasi" not in {g["slug"] for g in listing}
+
+    detail = Client().get("/api/v1/assistant/guides/d-vitamini-kimga-va-qancha?locale=en").json()["data"]
+    assert detail["title"] == "Vitamin D: who needs it and how much" and detail["answer"] == entry.answer_en
+    assert detail["product_query"] == "vitamin d3"
+    assert Client().get("/api/v1/assistant/guides/oktabr-aksiyasi").status_code == 404
