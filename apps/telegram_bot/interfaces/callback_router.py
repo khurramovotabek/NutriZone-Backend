@@ -665,7 +665,10 @@ def _handle_checkout(user, chat_id: int, action: str, lang: str, arg: str | None
             _request_delivery_location(chat_id, lang)
             return
 
-        _send_checkout_summary(chat_id, lang, summary)
+        _send_checkout_summary(chat_id, lang, summary, user)
+
+    elif action == "relocate":  # deliver somewhere else: share a new location, the summary comes back with it
+        _request_delivery_location(chat_id, lang)
 
     elif action in ("confirm", "pay"):
         # "confirm" = cash on delivery; "pay:<method>" = online (Payme / Click / Uzum / Uzcard / Humo) right after the order is created.
@@ -736,23 +739,53 @@ def _online_method_active(method: str) -> bool:
     return method in _online_methods()
 
 
-def _send_checkout_summary(chat_id: int, lang: str, summary: dict) -> None:
+def _checkout_details(user, lang: str, summary: dict) -> str:
+    """What the customer is about to confirm: every line, where it goes and to whom (the order used to show only a raw
+    total like "450000.00 UZS", so nobody could check the address before confirming)."""
+    from apps.geo.infrastructure import models as geo_orm
+    from apps.stores.infrastructure.stock_service import variant_infos
+
+    items = [i for i in summary["cart"].items.values() if i.status.value != "removed"]
+    infos = variant_infos([i.product_variant_id for i in items], locale=lang)
+    rows = []
+    for n, item in enumerate(items, 1):
+        info = infos.get(item.product_variant_id)
+        name = html.escape(info.name if info else "—")
+        price = money_text(item.price_reference.unit_amount.amount * item.quantity.value, lang) if item.price_reference else t("price_pending", lang)
+        rows.append(f"{n}. {name} × {item.quantity.value} — <b>{price}</b>")
+    lines = [f"<blockquote>{chr(10).join(rows)}</blockquote>"] if rows else []
+    address = geo_orm.Address.objects.filter(owner_type="user", owner_id=user.id).order_by("-created_at").first() if user is not None else None
+    if address is not None:
+        place = html.escape(address.formatted_single_line or address.line1 or "")
+        lines.append(t("checkout_address_line", lang, address=place))
+        who = " · ".join(html.escape(str(x)) for x in (address.recipient_name, address.recipient_phone) if x)
+        if who:
+            lines.append(t("checkout_recipient_line", lang, recipient=who))
+    return "\n".join(lines)
+
+
+def _send_checkout_summary(chat_id: int, lang: str, summary: dict, user=None) -> None:
     from apps.payment.infrastructure.providers.registry import provider_label
 
+    total = money_text(summary["total"], lang)
     methods = _online_methods()
     if not methods:
-        text = t("checkout_title", lang, total=summary["total"], currency=summary["currency"])
+        text = t("checkout_title", lang, total=total, currency="").replace(f"{total} ", total)
         keyboard = [
             [{"text": t("checkout_confirm_button", lang), "callback_data": "checkout:confirm"}],
-            [{"text": t("checkout_cancel_button", lang), "callback_data": "checkout:cancel"}],
         ]
     else:
-        text = t("checkout_choose_payment", lang, total=summary["total"], currency=summary["currency"])
+        text = t("checkout_choose_payment", lang, total=total, currency="").replace(f"{total} ", total)
         keyboard = [[{"text": t("checkout_pay_online_button", lang, provider=provider_label(m)), "callback_data": f"checkout:pay:{m}"}] for m in methods]
-        keyboard += [
-            [{"text": t("checkout_pay_cash_button", lang), "callback_data": "checkout:confirm"}],
-            [{"text": t("checkout_cancel_button", lang), "callback_data": "checkout:cancel"}],
-        ]
+        keyboard += [[{"text": t("checkout_pay_cash_button", lang), "callback_data": "checkout:confirm"}]]
+    keyboard += [
+        [{"text": t("checkout_change_address_button", lang), "callback_data": "checkout:relocate"}],
+        [{"text": t("checkout_cancel_button", lang), "callback_data": "checkout:cancel"}],
+    ]
+    details = _checkout_details(user, lang, summary)
+    if details:
+        head, _sep, rest = text.partition("\n\n")
+        text = f"{head}\n\n{details}\n\n{rest}"
     _send(chat_id, text, keyboard)
 
 

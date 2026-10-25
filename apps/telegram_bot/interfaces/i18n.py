@@ -444,6 +444,21 @@ _TRANSLATIONS: dict[str, dict[str, str]] = {
         "ru": "\U0001F9FE <b>ЗАКАЗ</b>\n\n\U0001F4B0 Итого: {total} {currency}\n\n\U0001F4B5 Оплата: Наличными\n\nПодтвердить заказ?",
         "en": "\U0001F9FE <b>ORDER</b>\n\n\U0001F4B0 Total: {total} {currency}\n\n\U0001F4B5 Payment: Cash\n\nConfirm this order?",
     },
+    "checkout_address_line": {
+        "uz": "\U0001F4CD <b>Manzil:</b> {address}",
+        "ru": "\U0001F4CD <b>Адрес:</b> {address}",
+        "en": "\U0001F4CD <b>Address:</b> {address}",
+    },
+    "checkout_recipient_line": {
+        "uz": "\U0001F464 <b>Qabul qiluvchi:</b> {recipient}",
+        "ru": "\U0001F464 <b>Получатель:</b> {recipient}",
+        "en": "\U0001F464 <b>Recipient:</b> {recipient}",
+    },
+    "checkout_change_address_button": {
+        "uz": "\U0001F4CD Boshqa manzilga",
+        "ru": "\U0001F4CD Другой адрес",
+        "en": "\U0001F4CD Different address",
+    },
     "checkout_confirm_button": {
         "uz": "\u2705 Buyurtmani tasdiqlash",
         "ru": "\u2705 Подтвердить заказ",

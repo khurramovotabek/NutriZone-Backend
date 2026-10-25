@@ -308,3 +308,32 @@ class TestSharedLocationBecomesARealAddress:
 
         monkeypatch.setattr(geocoder, "locate", lambda *a, **k: {"street": "", "label": "", "in_service_area": False})
         assert get_or_create_default_address(self._user(), 41.311081, 69.240562).line1 == "📍 41.31108, 69.24056"
+
+
+def test_summary_shows_lines_address_recipient_and_a_readable_total(settings, monkeypatch):
+    """Before confirming, the customer sees what they buy, where it goes and to whom -- not a bare "450000.00 UZS"."""
+    from apps.telegram_bot.interfaces import callback_router
+
+    settings.TELEGRAM_WEBHOOK_SECRET = TEST_SECRET
+    sent = []
+    monkeypatch.setattr(callback_router, "_send", lambda chat_id, text, keyboard=None, **kw: sent.append((text, keyboard)))
+    _category, _product, variant = _make_priced_product(Decimal("450000.00"))
+    telegram_id = 800400190
+    _register(telegram_id, 90)
+    client = Client()
+    _post(client, _callback(telegram_id, f"cart:add:{variant.id}"))
+    _share_real_location(client, telegram_id)
+    sent.clear()
+    _post(client, _callback(telegram_id, "checkout:start"))
+
+    text, keyboard = sent[-1]
+    assert "Checkout Test Product" in text and "450 000" in text and "450000.00" not in text
+    assert "Checkout Test" in text and "+99891" in text  # recipient
+    assert any(b["callback_data"] == "checkout:relocate" for row in keyboard for b in row)
+
+    sent.clear()
+    _post(client, _callback(telegram_id, "checkout:relocate"))  # a different address: asks for a new location, no order
+    from apps.ordering.infrastructure import models as ordering_orm
+    from apps.telegram_bot.interfaces import checkout_state
+
+    assert checkout_state.is_awaiting_location(telegram_id) and not ordering_orm.OrderModel.objects.exists()

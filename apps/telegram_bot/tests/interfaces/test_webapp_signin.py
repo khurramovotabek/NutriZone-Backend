@@ -17,8 +17,9 @@ pytestmark = pytest.mark.django_db
 TOKEN = "123456:TEST-TOKEN"
 
 
-def _init_data(tg_id: int, *, token: str = TOKEN, auth_date: int | None = None, tamper: bool = False) -> str:
-    fields = {"auth_date": str(auth_date or int(time.time())), "query_id": "AAH", "user": json.dumps({"id": tg_id, "first_name": "Ali"})}
+def _init_data(tg_id: int, *, token: str = TOKEN, auth_date: int | None = None, tamper: bool = False, username: str | None = None) -> str:
+    user = {"id": tg_id, "first_name": "Ali", **({"username": username} if username else {})}
+    fields = {"auth_date": str(auth_date or int(time.time())), "query_id": "AAH", "user": json.dumps(user)}
     check = "\n".join(f"{k}={v}" for k, v in sorted(fields.items()))
     secret = hmac.new(b"WebAppData", token.encode(), hashlib.sha256).digest()
     fields["hash"] = hmac.new(secret, check.encode(), hashlib.sha256).hexdigest()
@@ -52,6 +53,19 @@ def test_registered_customer_gets_a_verified_auto_login_session():
     assert response.status_code == 200
     session = TelegramAuthSession.objects.get(id=response.json()["data"]["session_id"])
     assert (session.user_id, session.status) == (customer.id, "verified")
+
+
+def test_sign_in_fills_an_empty_telegram_username_but_never_overwrites_one():
+    customer = _make_customer()
+    customer.telegram_username = None
+    customer.save(update_fields=["telegram_username"])
+    Client().post("/api/v1/telegram/webapp/session", {"init_data": _init_data(customer.telegram_user_id, username="ali_fit")}, content_type="application/json")
+    customer.refresh_from_db()
+    assert customer.telegram_username == "ali_fit"  # checkout's recipient form comes prefilled
+
+    Client().post("/api/v1/telegram/webapp/session", {"init_data": _init_data(customer.telegram_user_id, username="someone_else")}, content_type="application/json")
+    customer.refresh_from_db()
+    assert customer.telegram_username == "ali_fit"
 
 
 def test_forged_data_and_unregistered_users_are_refused():

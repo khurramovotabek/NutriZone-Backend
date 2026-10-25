@@ -393,7 +393,7 @@ def _handle_location(message: dict) -> None:
 
     lang = getattr(user, "language", None) or "uz"
     summary = checkout_service.get_checkout_summary(user)
-    _send_checkout_summary(chat["id"], lang, summary)
+    _send_checkout_summary(chat["id"], lang, summary, user)
 
 
 def _handle_contact(message: dict) -> None:

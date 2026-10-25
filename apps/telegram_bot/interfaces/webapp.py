@@ -13,6 +13,7 @@ import time
 from urllib.parse import parse_qsl
 
 from django.conf import settings
+from django.db.models import Q
 from drf_spectacular.utils import extend_schema
 from rest_framework.permissions import AllowAny
 from rest_framework.views import APIView
@@ -71,8 +72,18 @@ class TelegramWebAppSessionView(APIView):
         customer_id = ResolveTelegramCustomer().execute(int(user["id"]))
         if customer_id is None:
             return error_response("NOT_REGISTERED", "Open the bot and register first.", "business", 404)
+        remember_username(customer_id, user.get("username"))
         created = CreateBotInitiatedAuthSession().execute(customer_id=customer_id, telegram_user_id=int(user["id"]))
         return success_response(data={"session_id": str(created.session_id), "cart": shared_cart(customer_id)})
+
+
+def remember_username(customer_id, username) -> None:
+    """The verified Telegram @username fills an empty profile field, so checkout's recipient form comes prefilled."""
+    from apps.identity.infrastructure.models import User
+
+    name = str(username or "").strip().lstrip("@")[:64]
+    if name:
+        User.objects.filter(pk=customer_id).filter(Q(telegram_username__isnull=True) | Q(telegram_username="")).update(telegram_username=name)
 
 
 def shared_cart(customer_id) -> dict | None:
