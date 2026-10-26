@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Production deploy: ./deploy.sh [backend|frontend|all]   (default: all)
 # Backend: pull -> build images -> migrate (old web keeps serving) -> rolling web swap (no 502) -> workers -> health check.
-# Frontend: pull -> build in a copy -> swap .next -> pm2 restart (the live site keeps serving during the build).
+# Frontend: pull -> build in a copy -> swap .next -> standby on :3001 -> pm2 restart -> standby gone (no gap).
 set -euo pipefail
 
 ROOT=/opt/nutrizone
@@ -63,6 +63,15 @@ deploy_backend() {
   docker image prune -f >/dev/null
 }
 
+wait_http() {  # wait_http URL NAME -- up to 60 s for a 200
+  for _ in $(seq 1 60); do
+    if curl -fsS -o /dev/null --max-time 10 "$1"; then echo "$2 ready"; return 0; fi
+    sleep 1
+  done
+  echo "$2 never answered $1" >&2
+  return 1
+}
+
 deploy_frontend() {
   log "Frontend: git pull"
   cd "$ROOT/frontend"
@@ -93,8 +102,17 @@ deploy_frontend() {
   rm -rf "$ROOT/frontend/.next.old"
   [ -d "$ROOT/frontend/.next" ] && mv "$ROOT/frontend/.next" "$ROOT/frontend/.next.old"
   mv .next "$ROOT/frontend/.next"
+  # No gap while the live process restarts: a standby on :3001 (the backup server of host nginx's nz_storefront
+  # upstream, docker/deploy/host-nginx-tune.sh) answers meanwhile. Only one process serves at a time -- the
+  # refresh-token exchange dedupe in proxy.ts is per process, so two live ones could replay a refresh token.
+  cd "$ROOT/frontend"
+  pm2 delete frontend-standby >/dev/null 2>&1 || true
+  pm2 start npm --name frontend-standby --cwd "$ROOT/frontend" -- start -- -p 3001 -H 127.0.0.1 >/dev/null
+  wait_http http://127.0.0.1:3001/ standby
   pm2 restart frontend --update-env
-  sleep 4
+  wait_http http://127.0.0.1:3000/ frontend
+  sleep 12  # host nginx keeps the restarted :3000 out for fail_timeout (10 s); the standby serves until then
+  pm2 delete frontend-standby >/dev/null
   curl -fsS -o /dev/null -w "frontend %{http_code}\n" http://127.0.0.1:3000/
   rm -rf "$BUILD" "$ROOT/frontend/node_modules.old"
 }

@@ -6,6 +6,7 @@
 #   * Upload size on the storefront host: uploads (avatar, review/chat media, store gallery, product-request photos)
 #     go through Next's /api routes on nutrizone.uz, where nginx's 1 MB default answered 413 to ordinary photos.
 #   * Paths with invalid UTF-8 %-escapes answer 400 (Next.js answered 500).
+#   * Storefront upstream with a backup on :3001: deploy.sh runs a standby there while the live Next.js restarts.
 # The site file stays certbot-compatible. A copy is kept and nginx is reloaded only when `nginx -t` passes;
 # otherwise the copy is restored.
 set -euo pipefail
@@ -84,4 +85,28 @@ if ! grep -q 'nz-utf8-path' "$SITE"; then
 else
   nginx -t 2>/dev/null && systemctl reload nginx
   echo "invalid UTF-8 path rule already included (snippet refreshed)"
+fi
+
+# Storefront upstream: the live Next.js on :3000, the deploy-time standby on :3001 as backup (idle otherwise).
+cat > /etc/nginx/conf.d/nz-storefront-upstream.conf <<'CONF'
+upstream nz_storefront {
+    server 127.0.0.1:3000;
+    server 127.0.0.1:3001 backup;
+}
+CONF
+if ! grep -q 'nz-storefront-upstream' "$SITE"; then
+  cp -a "$SITE" "$BACKUP.upstream"
+  sed -i -E '0,/^(\s*)proxy_pass http:\/\/127\.0\.0\.1:3000;/s//\1proxy_pass http:\/\/nz_storefront;  # nz-storefront-upstream/' "$SITE"
+  if nginx -t 2>/dev/null; then
+    systemctl reload nginx
+    echo "storefront upstream with deploy standby (backup: $BACKUP.upstream)"
+  else
+    cp -a "$BACKUP.upstream" "$SITE"
+    nginx -t
+    echo "nginx -t failed -- restored $BACKUP.upstream" >&2
+    exit 1
+  fi
+else
+  nginx -t 2>/dev/null && systemctl reload nginx
+  echo "storefront upstream already in place"
 fi
