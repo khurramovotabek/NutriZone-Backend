@@ -530,7 +530,9 @@ class SaleAdmin(admin.ModelAdmin):
             from django.contrib.contenttypes.models import ContentType
 
             ContentType.objects.clear_cache()
-            self.log_change(request, obj, [{"changed": {"fields": ["status"], "name": str(title)}}])
+            # "name" inside "changed" means an inline object to Django and then needs "object" too, so the
+            # action title goes in as a plain-text message (a malformed entry 500s the admin index's recent actions)
+            self.log_change(request, obj, f"{title}: status")
             messages.success(request, success_message % {"order": obj.receipt_number or _order_number(obj.pk)})
             return HttpResponseRedirect(change_url)
 

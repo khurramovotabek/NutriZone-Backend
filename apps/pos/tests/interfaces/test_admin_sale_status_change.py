@@ -105,3 +105,16 @@ def test_anonymous_cannot_refund():
     assert response.status_code in (302, 403)
     sale.refresh_from_db()
     assert sale.status == "completed"
+
+
+def test_status_change_audit_entry_renders_on_the_admin_index(staff_client):
+    """The audit LogEntry must be readable by Django: the admin index lists it under recent actions."""
+    from django.contrib.admin.models import LogEntry
+
+    product, _ = _stocked_product(available=5)
+    sale = _sale("completed", product_id=product.id)
+    staff_client.post(f"/django-admin/pos/salemodel/{sale.id}/refund/")
+
+    entry = LogEntry.objects.get(object_id=str(sale.id))
+    assert "status" in entry.get_change_message()
+    assert staff_client.get("/django-admin/").status_code == 200
