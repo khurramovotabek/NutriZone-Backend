@@ -25,6 +25,8 @@ class _FakeEventRow:
 
 class _FakeQuerySet(list):
     def filter(self, **kwargs):
+        if "pk" in kwargs:
+            return _FakeQuerySet(r for r in self if r.pk == kwargs["pk"])
         published_at__isnull = kwargs.get("published_at__isnull")
         publish_attempts__lt = kwargs.get("publish_attempts__lt")
         results = self
@@ -36,6 +38,12 @@ class _FakeQuerySet(list):
 
     def order_by(self, *_args):
         return self
+
+    def update(self, **values):
+        for row in self:
+            for name, value in values.items():
+                setattr(row, name, value)
+        return len(self)
 
     def __getitem__(self, item):
         if isinstance(item, slice):
@@ -179,3 +187,25 @@ class TestStageEventActorFallback:
     def test_background_execution_without_middleware_never_fabricates_an_actor(self):
         """Simulates a Celery task: no HTTP request ever ran, so AuditContextMiddleware never called set_current_actor_id() -- the contextvar must resolve to its own default, None, not any prior value."""
         assert get_current_actor_id() is None
+
+
+@pytest.mark.django_db
+@pytest.mark.integration
+def test_relay_marks_a_real_append_only_outbox_row():
+    """The fakes above accept save(); a real Outbox row is append-only, so the relay must not save() it."""
+    from django.db import transaction
+
+    from apps.pricing.infrastructure.models import PricingOutboxEvent
+    from core.outbox import stage_event
+
+    with transaction.atomic():
+        ok = stage_event(PricingOutboxEvent, "PriceSet", {"product_id": "a"})
+    assert OutboxRelay(PricingOutboxEvent).relay_pending(publish_fn=lambda event: True)["published"] == 1
+    ok.refresh_from_db()
+    assert ok.published_at is not None
+
+    with transaction.atomic():
+        bad = stage_event(PricingOutboxEvent, "PriceSet", {"product_id": "b"})
+    assert OutboxRelay(PricingOutboxEvent).relay_pending(publish_fn=lambda event: False)["failed"] == 1
+    bad.refresh_from_db()
+    assert bad.published_at is None and bad.publish_attempts == 1

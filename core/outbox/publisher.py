@@ -145,9 +145,12 @@ class OutboxRelay:
                 logger.exception("Outbox relay: publish_fn raised for event %s", getattr(event, "pk", None))
                 success = False
 
+            # Outbox rows are append-only (AppendOnlyModel.save() refuses an existing row), so the relay's own
+            # bookkeeping columns are written with a queryset update instead
+            rows = self.outbox_model.objects.filter(pk=event.pk)
             if success:
                 event.published_at = timezone.now()
-                event.save(update_fields=["published_at"])
+                rows.update(published_at=event.published_at)
                 published_count += 1
             else:
                 event.publish_attempts += 1
@@ -158,7 +161,7 @@ class OutboxRelay:
                         getattr(event, "pk", None),
                         self.max_attempts,
                     )
-                event.save(update_fields=["publish_attempts"])
+                rows.update(publish_attempts=event.publish_attempts)
                 failed_count += 1
 
         return {"published": published_count, "failed": failed_count, "exhausted": exhausted_count}
