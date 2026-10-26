@@ -1,12 +1,43 @@
 #!/usr/bin/env bash
 # Production deploy: ./deploy.sh [backend|frontend|all]   (default: all)
-# Backend: pull -> build images -> migrate (compose dependency) -> restart -> health check.
+# Backend: pull -> build images -> migrate (old web keeps serving) -> rolling web swap (no 502) -> workers -> health check.
 # Frontend: pull -> build in a copy -> swap .next -> pm2 restart (the live site keeps serving during the build).
 set -euo pipefail
 
 ROOT=/opt/nutrizone
 TARGET=${1:-all}
 log() { printf '\n\033[1;32m==> %s\033[0m\n' "$*"; }
+
+# Zero-downtime web swap. `up` used to recreate both replicas at once: ~1 min of 502 on every deploy.
+# nginx resolves `web` only when (re)loaded, so it is reloaded once the new replicas are up and once the old ones are gone;
+# in between, a retiring replica refuses connections and nginx retries the request on another one (proxy_next_upstream).
+roll_web() {
+  local old new id ok
+  old=$($DC ps -q web)
+  local count; count=$(echo "$old" | grep -c . || true)
+  $DC up -d --no-deps --no-recreate --scale web=$((count > 0 ? count * 2 : 2)) web
+  new=$(comm -13 <(echo "$old" | sort) <($DC ps -q web | sort))
+  for id in $new; do
+    ok=0
+    for _ in $(seq 1 60); do
+      if docker exec "$id" curl -fsS -o /dev/null http://localhost:8000/health/live 2>/dev/null; then ok=1; break; fi
+      sleep 2
+    done
+    if [ "$ok" != 1 ]; then
+      echo "new web replica $id never became live -- removing the new replicas, the old ones keep serving" >&2
+      docker logs --tail 40 "$id" >&2 || true
+      echo "$new" | xargs -r docker rm -f >/dev/null
+      exit 1
+    fi
+  done
+  $DC exec -T nginx nginx -s reload
+  sleep 2
+  if [ -n "$old" ]; then
+    echo "$old" | xargs -r docker stop -t 35 >/dev/null  # gunicorn finishes in-flight requests (graceful_timeout 30 s)
+    echo "$old" | xargs -r docker rm >/dev/null
+  fi
+  $DC exec -T nginx nginx -s reload
+}
 
 deploy_backend() {
   log "Backend: git pull"
@@ -15,8 +46,14 @@ deploy_backend() {
   DC="docker compose --env-file .env -f docker/compose/docker-compose.prod.yml"
   log "Backend: build"
   $DC build migrate web celery_worker_transactional celery_worker_default celery_worker_bulk celery_beat
-  log "Backend: up (migrate runs first)"
-  $DC up -d --remove-orphans
+  log "Backend: migrate + collectstatic"
+  # a failing migration stops the deploy here, with the old web replicas still serving
+  $DC run --rm -T --no-deps migrate
+  log "Backend: web (rolling -- new replicas next to the old ones, then the old ones retire)"
+  roll_web
+  log "Backend: workers, beat, the rest"
+  $DC up -d --no-deps --remove-orphans celery_worker_transactional celery_worker_default celery_worker_bulk celery_beat
+  $DC up -d --no-deps db redis db_backup nginx
   log "Backend: health"
   for i in $(seq 1 30); do
     if curl -fsS -o /dev/null -H "X-Forwarded-Proto: https" http://127.0.0.1:8080/health/ready; then echo "ready"; break; fi
