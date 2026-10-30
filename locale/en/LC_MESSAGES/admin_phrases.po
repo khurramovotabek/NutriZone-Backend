@@ -5849,3 +5849,60 @@ msgstr "For temporary info such as a promotion."
 
 msgid "{0} marta ishlatilgan"
 msgstr "used {0} times"
+
+msgid "Sharh so'rovi"
+msgstr "Review request"
+
+msgid "Sharh so'rovi sozlamalari"
+msgstr "Review request settings"
+
+msgid "Sharh so'rovi yoqilgan"
+msgstr "Review request on"
+
+msgid "Necha kundan keyin so'ralsin"
+msgstr "Ask after (days)"
+
+msgid "Necha kungacha so'ralsin"
+msgstr "Ask until (days)"
+
+msgid "Har kuni 12:00 da (Toshkent) mahsulotini olgan mijozga bir marta «… sizga yoqdimi?» xabari boradi — saytdagi bildirishnomalarga va Telegram'ga, sharh yozish tugmasi bilan. Bir xarid uchun bitta xabar; mijoz allaqachon sharh yozgan mahsulotlar so'ralmaydi. Bonus berilmaydi."
+msgstr "Every day at 12:00 (Tashkent) a customer who received their goods gets one “How was your …?” message — in the site notifications and on Telegram, with a write-a-review button. One message per purchase; products the customer has already reviewed are skipped. No bonus is given."
+
+msgid "Buyurtma yetkazilgandan (yoki do'kondagi xariddan) shuncha kun o'tgach — mahsulotni sinab ko'rishga vaqt bo'lsin."
+msgstr "This many days after the order was delivered (or the store purchase) — time to actually try the product."
+
+msgid "Shundan eski xaridlar uchun so'ralmaydi — mijoz eslay olmaydi."
+msgstr "Older purchases are not asked about — the customer won't remember."
+
+msgid "«Necha kundan keyin» dan katta bo'lsin."
+msgstr "Must be greater than “Ask after”."
+
+msgid "Sharh so'rovi sozlamalari saqlandi — keyingi yuborishda (har kuni 12:00) kuchga kiradi."
+msgstr "Review request settings saved — they apply from the next run (daily at 12:00)."
+
+msgid "xariddan {0}–{1} kun o'tib, har kuni {2} da"
+msgstr "{0}–{1} days after purchase, daily at {2}"
+
+msgid "O'chirilgan"
+msgstr "Off"
+
+msgid "Bonussiz"
+msgstr "No bonus"
+
+msgid "oxirgi 30 kun"
+msgstr "last 30 days"
+
+msgid "Ko'rilgan"
+msgstr "Seen"
+
+msgid "bildirishnoma ochilgan"
+msgstr "notification opened"
+
+msgid "Sharh yozganlar"
+msgstr "Wrote a review"
+
+msgid "so'ralganlarning {0}%"
+msgstr "{0}% of those asked"
+
+msgid "hali so'rov yo'q"
+msgstr "none sent yet"

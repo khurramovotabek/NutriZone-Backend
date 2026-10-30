@@ -24,6 +24,7 @@ from __future__ import annotations
 
 import uuid
 
+from django.core.validators import MaxValueValidator, MinValueValidator
 from django.db import models
 from django.utils.translation import gettext_lazy as _
 
@@ -79,6 +80,34 @@ class ReviewMediaModel(models.Model):
         verbose_name = _("Review media")
         verbose_name_plural = _("Review media")
         indexes = [models.Index(fields=["review"])]
+
+
+class ReviewRequestSettings(models.Model):
+    """Singleton (pk=1): the "how was it?" message a few days after a purchase (ordering/review_requests.py). Editable in Dashboard → Sharhlar."""
+
+    enabled = models.BooleanField(_("Sharh so'rovi yoqilgan"), default=True)
+    ask_after_days = models.PositiveSmallIntegerField(_("Necha kundan keyin so'ralsin"), default=5, validators=[MinValueValidator(1), MaxValueValidator(60)])
+    ask_until_days = models.PositiveSmallIntegerField(_("Necha kungacha so'ralsin"), default=14, validators=[MinValueValidator(2), MaxValueValidator(90)])
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        db_table = "reviews_request_settings"
+        verbose_name = _("Sharh so'rovi sozlamalari")
+        verbose_name_plural = _("Sharh so'rovi sozlamalari")
+
+    def __str__(self) -> str:
+        return "Sharh so'rovi sozlamalari"
+
+    def save(self, *args, **kwargs):
+        self.pk = 1
+        super().save(*args, **kwargs)
+
+    @classmethod
+    def load(cls) -> ReviewRequestSettings:
+        obj, created = cls.objects.get_or_create(pk=1)
+        if created:
+            obj.refresh_from_db()
+        return obj
 
 
 class ReviewOutboxEvent(AbstractOutboxEvent):

@@ -5888,3 +5888,60 @@ msgstr "Для временной информации, например акц�
 
 msgid "{0} marta ishlatilgan"
 msgstr "использовано {0} раз"
+
+msgid "Sharh so'rovi"
+msgstr "Запрос отзыва"
+
+msgid "Sharh so'rovi sozlamalari"
+msgstr "Настройки запроса отзыва"
+
+msgid "Sharh so'rovi yoqilgan"
+msgstr "Запрос отзыва включён"
+
+msgid "Necha kundan keyin so'ralsin"
+msgstr "Через сколько дней спрашивать"
+
+msgid "Necha kungacha so'ralsin"
+msgstr "До скольких дней спрашивать"
+
+msgid "Har kuni 12:00 da (Toshkent) mahsulotini olgan mijozga bir marta «… sizga yoqdimi?» xabari boradi — saytdagi bildirishnomalarga va Telegram'ga, sharh yozish tugmasi bilan. Bir xarid uchun bitta xabar; mijoz allaqachon sharh yozgan mahsulotlar so'ralmaydi. Bonus berilmaydi."
+msgstr "Каждый день в 12:00 (Ташкент) клиент, получивший товар, один раз получает сообщение «Как вам …?» — в уведомлениях сайта и в Telegram, с кнопкой для отзыва. Одно сообщение на покупку; товары, на которые клиент уже написал отзыв, не спрашиваются. Бонус не начисляется."
+
+msgid "Buyurtma yetkazilgandan (yoki do'kondagi xariddan) shuncha kun o'tgach — mahsulotni sinab ko'rishga vaqt bo'lsin."
+msgstr "Через столько дней после доставки заказа (или покупки в магазине) — чтобы клиент успел попробовать товар."
+
+msgid "Shundan eski xaridlar uchun so'ralmaydi — mijoz eslay olmaydi."
+msgstr "Для более старых покупок не спрашиваем — клиент уже не вспомнит."
+
+msgid "«Necha kundan keyin» dan katta bo'lsin."
+msgstr "Должно быть больше, чем «Через сколько дней»."
+
+msgid "Sharh so'rovi sozlamalari saqlandi — keyingi yuborishda (har kuni 12:00) kuchga kiradi."
+msgstr "Настройки запроса отзыва сохранены — вступят в силу при следующей отправке (каждый день в 12:00)."
+
+msgid "xariddan {0}–{1} kun o'tib, har kuni {2} da"
+msgstr "через {0}–{1} дней после покупки, каждый день в {2}"
+
+msgid "O'chirilgan"
+msgstr "Выключено"
+
+msgid "Bonussiz"
+msgstr "Без бонуса"
+
+msgid "oxirgi 30 kun"
+msgstr "последние 30 дней"
+
+msgid "Ko'rilgan"
+msgstr "Просмотрено"
+
+msgid "bildirishnoma ochilgan"
+msgstr "уведомление открыто"
+
+msgid "Sharh yozganlar"
+msgstr "Написали отзыв"
+
+msgid "so'ralganlarning {0}%"
+msgstr "{0}% от спрошенных"
+
+msgid "hali so'rov yo'q"
+msgstr "запросов ещё не было"

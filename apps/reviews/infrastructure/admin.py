@@ -220,7 +220,8 @@ class ReviewAdmin(ExcelExportMixin, PremiumListMixin, PremiumFormMixin, admin.Mo
                            {s: v[1] for s, v in STATUS.items()})
 
     def nz_hero_actions(self, request):
-        return [{"label": "Rasm va videolar", "url": reverse("admin:reviews_reviewmediamodel_changelist"), "icon": "fa-images"}]
+        return [{"label": "Rasm va videolar", "url": reverse("admin:reviews_reviewmediamodel_changelist"), "icon": "fa-images"},
+                {"label": "Sharh so'rovi", "url": reverse("admin:reviews_reviewrequestsettings_changelist"), "icon": "fa-comment-dots"}]
 
     def nz_prepare(self, request, objs):
         self._p, self._c = _products([r.product_id for r in objs]), _customers([r.customer_id for r in objs])
@@ -425,3 +426,79 @@ class ReviewMediaAdmin(PremiumListMixin, admin.ModelAdmin):
             format_html("<small>{}</small>", ui.local(m.uploaded_at)),
         ]
 
+
+
+# ---------------------------------------------------------------- "how was it?" settings
+
+from datetime import timedelta  # noqa: E402
+
+from django import forms  # noqa: E402
+from django.shortcuts import redirect  # noqa: E402
+
+
+class ReviewRequestSettingsForm(forms.ModelForm):
+    class Meta:
+        model = orm.ReviewRequestSettings
+        fields = ("enabled", "ask_after_days", "ask_until_days")
+        help_texts = {
+            "enabled": "Har kuni 12:00 da (Toshkent) mahsulotini olgan mijozga bir marta «… sizga yoqdimi?» xabari boradi — saytdagi bildirishnomalarga va Telegram'ga, "
+                       "sharh yozish tugmasi bilan. Bir xarid uchun bitta xabar; mijoz allaqachon sharh yozgan mahsulotlar so'ralmaydi. Bonus berilmaydi.",
+            "ask_after_days": "Buyurtma yetkazilgandan (yoki do'kondagi xariddan) shuncha kun o'tgach — mahsulotni sinab ko'rishga vaqt bo'lsin.",
+            "ask_until_days": "Shundan eski xaridlar uchun so'ralmaydi — mijoz eslay olmaydi.",
+        }
+
+    def clean(self):
+        data = super().clean()
+        after, until = data.get("ask_after_days"), data.get("ask_until_days")
+        if after and until and until <= after:
+            self.add_error("ask_until_days", "«Necha kundan keyin» dan katta bo'lsin.")
+        return data
+
+
+@admin.register(orm.ReviewRequestSettings)
+class ReviewRequestSettingsAdmin(PremiumFormMixin, admin.ModelAdmin):
+    """Sharh so'rovi: the singleton -- on/off and the days window of the "how was it?" message."""
+
+    form = ReviewRequestSettingsForm
+    fieldsets = (("Sharh so'rovi", {"fields": ("enabled", "ask_after_days", "ask_until_days")}),)
+    hero_icon, hero_tone = "fa-comment-dots", "#eab308"
+
+    def changelist_view(self, request, extra_context=None):
+        return redirect(reverse("admin:reviews_reviewrequestsettings_change", args=[orm.ReviewRequestSettings.load().pk]))
+
+    def get_object(self, request, object_id, from_field=None):
+        return orm.ReviewRequestSettings.load()  # a bookmarked /1/change/ works on a fresh database too
+
+    def has_add_permission(self, request) -> bool:
+        return False
+
+    def has_delete_permission(self, request, obj=None) -> bool:
+        return False
+
+    def response_change(self, request, obj):
+        messages.success(request, "Sharh so'rovi sozlamalari saqlandi — keyingi yuborishda (har kuni 12:00) kuchga kiradi.")
+        return redirect(request.path)
+
+    def form_hero(self, request, obj):
+        from apps.notifications.infrastructure.models import NotificationModel
+
+        since = timezone.now() - timedelta(days=30)
+        asks = NotificationModel.objects.filter(kind="review_request", created_at__gte=since)
+        asked = list(asks.values_list("recipient_id", "created_at"))
+        first_ask = {}
+        for customer, at in asked:
+            first_ask[customer] = min(at, first_ask.get(customer, at))
+        answered = {c for c, at in orm.ReviewModel.objects.filter(customer_id__in=first_ask, created_at__gte=since).values_list("customer_id", "created_at") if at >= first_ask[c]}
+        opened = asks.exclude(seen_at=None, read_at=None).count()
+        rate = f"{len(answered) * 100 // len(first_ask)}%" if first_ask else ""
+        return {
+            "title": "Sharh so'rovi", "subtitle": f"xariddan {obj.ask_after_days}–{obj.ask_until_days} kun o'tib, har kuni 12:00 da",
+            "chips": [ui.chip("Yoqilgan" if obj.enabled else "O'chirilgan", "#16a34a" if obj.enabled else "#64748b", "fa-power-off"),
+                      ui.chip("Bonussiz", "#64748b", "fa-coins")],
+            "stats": [
+                hero_stat("Yuborilgan", len(asked), "#eab308", "oxirgi 30 kun", "fa-paper-plane"),
+                hero_stat("Ko'rilgan", opened, "#0891b2", "bildirishnoma ochilgan", "fa-eye"),
+                hero_stat("Sharh yozganlar", len(answered), "#16a34a", f"so'ralganlarning {rate}" if first_ask else "hali so'rov yo'q", "fa-star"),
+            ],
+            "links": [{"label": "Sharhlar", "url": reverse("admin:reviews_reviewmodel_changelist"), "icon": "fa-star", "primary": True}],
+        }

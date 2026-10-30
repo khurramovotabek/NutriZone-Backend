@@ -69,3 +69,29 @@ def test_the_task_is_on_the_beat_schedule():
     from django_celery_beat.models import PeriodicTask
 
     assert PeriodicTask.objects.filter(task="ordering.review_requests", enabled=True).exists()
+
+
+def test_dashboard_settings_switch_off_and_move_the_window(monkeypatch):
+    from apps.reviews.infrastructure.models import ReviewRequestSettings
+
+    customer, whey = uuid.uuid4(), _product()
+    monkeypatch.setattr(rp, "purchases", lambda customer_ids=None, since=None: [_buy(customer, whey.id, 3, "order:d")])
+    assert rr.due(NOW) == []  # default window 5..14 days
+
+    ReviewRequestSettings.objects.update_or_create(pk=1, defaults={"ask_after_days": 2, "ask_until_days": 10})
+    assert [a.ref for a in rr.due(NOW)] == ["order:d"]
+
+    ReviewRequestSettings.objects.update_or_create(pk=1, defaults={"enabled": False})
+    assert rr.due(NOW) == []
+
+
+def test_settings_page_opens_and_rejects_a_backwards_window(admin_client):
+    from apps.reviews.infrastructure.models import ReviewRequestSettings
+
+    url = "/django-admin/reviews/reviewrequestsettings/1/change/"
+    assert admin_client.get(url).status_code == 200  # straight to the page, before the row exists
+    assert admin_client.get("/django-admin/reviews/reviewrequestsettings/").status_code == 302
+    resp = admin_client.post(url, {"enabled": "on", "ask_after_days": 10, "ask_until_days": 7})
+    assert resp.status_code == 200 and ReviewRequestSettings.load().ask_until_days == 14
+    assert admin_client.post(url, {"enabled": "on", "ask_after_days": 3, "ask_until_days": 7}).status_code == 302
+    assert (ReviewRequestSettings.load().ask_after_days, ReviewRequestSettings.load().ask_until_days) == (3, 7)

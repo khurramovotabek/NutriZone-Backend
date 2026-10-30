@@ -160,7 +160,7 @@ JAZZMIN_SETTINGS = {
     # exactly rather than silently hiding it from a staff user who
     # lacks some specific model permission.
     # The WMS models live in the stores app but are reached from the Ombor group (custom_links["inventory"]).
-    "hide_models": ["chat.chatsettings", "stores.stockadjustment", "stores.pospricechange", "pricing.repricingmodel", "ordering.courier", "finance.moneyaccount", "finance.category", "finance.transaction", "stores.stocktransfer", "stores.stockreceipt", "stores.stockmovement", "stores.stockcount",
+    "hide_models": ["chat.chatsettings", "reviews.reviewrequestsettings", "stores.stockadjustment", "stores.pospricechange", "pricing.repricingmodel", "ordering.courier", "finance.moneyaccount", "finance.category", "finance.transaction", "stores.stocktransfer", "stores.stockreceipt", "stores.stockmovement", "stores.stockcount",
                     "stores.writeoff", "stores.supplier", "stores.supplierpayment", "stores.reorderrule", "stores.storecashier",
                     "search.searchterm", "telegram_bot.telegrampost", "telegram_bot.channelautopostsettings", "receipts.receiptsettings"],  # reached from the Catalog group (custom_links["products"])
     "usermenu_links": [{"name": _("Mening profilim"), "url": "admin:nz_profile", "icon": "fas fa-user-circle"}],
