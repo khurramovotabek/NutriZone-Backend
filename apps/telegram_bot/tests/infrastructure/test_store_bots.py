@@ -253,6 +253,16 @@ class TestOwnerInvite:
         row = SimpleNamespace(link="https://t.me/NutriZoneAnalyticsBot?start=owner")
         assert telegram_keyboard(row, "uz") == [[{"text": "🌐 Ochish", "url": "https://t.me/NutriZoneAnalyticsBot?start=owner"}]]
 
+    def test_site_link_opens_the_mini_app_signed_in(self, settings):
+        from types import SimpleNamespace
+
+        from apps.notifications.infrastructure.notify import telegram_keyboard
+
+        settings.FRONTEND_URL = "https://nutrizone.uz"
+        row = SimpleNamespace(link="/products/gold-whey#reviews")
+        assert telegram_keyboard(row, "uz") == [[{"text": "🌐 Ochish", "web_app": {"url": "https://nutrizone.uz/tg?next=/products/gold-whey%23reviews"}}]]
+        assert telegram_keyboard(SimpleNamespace(link=""), "uz") == []
+
 
 class TestBotsCenterOwners:
     def test_branch_owner_states_and_invite_button(self, settings, admin_client):

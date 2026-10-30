@@ -359,7 +359,11 @@ def telegram_keyboard(row, lang: str) -> list:
     base = (getattr(settings, "FRONTEND_URL", "") or "").rstrip("/")
     if not (row.link and base.startswith("https://")):  # Telegram only accepts https URL buttons
         return []
-    return [[{"text": label, "url": f"{base}{row.link}"}]]
+    # A site page opens as the Mini App: the message sits in the customer's own chat with the bot, so they land
+    # signed in (writing a review, tracking an order) instead of on a browser login page.
+    from urllib.parse import quote
+
+    return [[{"text": label, "web_app": {"url": f"{base}/tg?next={quote(row.link, safe='/')}"}}]]
 
 
 def telegram_enabled_for(user_id, notification_type: str) -> bool:
