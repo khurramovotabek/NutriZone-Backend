@@ -260,6 +260,17 @@ class AdminCatalogSelector:
         return [_admin_product_card(r) for r in rows], total
 
 
+def valid_gtin(code: str | None) -> str | None:
+    """The barcode when it is a real GTIN-8/12/13/14 (digits, correct check digit) -- for search engines'
+    product matching; an internal or mistyped code is never published as a GTIN."""
+    code = (code or "").strip()
+    if len(code) not in (8, 12, 13, 14) or not code.isdigit():
+        return None
+    body, check = code[:-1], int(code[-1])
+    total = sum(int(d) * (3 if i % 2 == 0 else 1) for i, d in enumerate(reversed(body)))
+    return code if (10 - total % 10) % 10 == check else None
+
+
 def _url_slugs(row, locale: str | None) -> tuple[str, dict[str, str]]:
     """(slug in `locale` -- else uz, else any, else the id; slug per language) from prefetched translations, for readable URLs."""
     slugs = {t.locale_code: t.slug for t in row.translations.all() if t.slug}
@@ -838,6 +849,7 @@ def _variant_summary(variant: orm.ProductVariant, locale: str, price_by_variant:
     return {
         "id": str(variant.id),
         "sku": variant.sku,
+        "gtin": valid_gtin(variant.barcode),
         "is_default": variant.is_default,
         "status": variant.status,
         "weight_value": variant.weight_value,
