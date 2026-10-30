@@ -71,3 +71,30 @@
   /* iOS zooms into any field under 16px on focus and never zooms back */
   input:not([type=checkbox]):not([type=radio]), select, textarea { font-size: max(16px, 1em); }
 }
+
+/* ── Changelist pager (templates/admin/pagination.html) ───────────── */
+.nz-pager { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px 16px; width: 100%; padding: 10px 2px; }
+.nz-pager-info { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 8px; font-size: .82rem; color: var(--nz-text-secondary); }
+.nz-pager-info b { color: var(--nz-text-primary); font-variant-numeric: tabular-nums; }
+.nz-pager-noun { color: var(--nz-text-muted); }
+.nz-pager-all { padding: 3px 10px; border-radius: 999px; border: 1px solid var(--nz-border); font-weight: 600; font-size: .75rem; text-decoration: none; }
+.nz-pager-list { display: flex; align-items: center; gap: 4px; margin: 0; padding: 4px; list-style: none; border-radius: 14px; border: 1px solid var(--nz-glass-border, var(--nz-border)); background: var(--nz-glass-bg, var(--nz-surface)); }
+.nz-pager-num, .nz-pager-step { display: inline-flex; align-items: center; justify-content: center; gap: 6px; min-width: 36px; height: 36px; padding: 0 10px; border-radius: 10px; font-size: .85rem; font-weight: 600; font-variant-numeric: tabular-nums; color: var(--nz-text-secondary); text-decoration: none !important; transition: background .15s, color .15s; }
+a.nz-pager-num:hover, a.nz-pager-step:hover { background: var(--nz-hover); color: var(--nz-primary); }
+.nz-pager-num.is-current { color: #fff; background: var(--nz-primary, #3b82f6); box-shadow: 0 6px 16px -8px var(--nz-primary, #3b82f6); }
+.nz-pager-step.is-off { opacity: .35; pointer-events: none; }
+.nz-pager-gap { width: 18px; text-align: center; color: var(--nz-text-muted); }
+.nz-pager-of, .nz-pager-narrow { display: none; }
+@media (max-width: 767.98px) {
+  .nz-pager { justify-content: center; }
+  .nz-pager-info { width: 100%; justify-content: center; }
+  .nz-pager-list { width: 100%; justify-content: space-between; }
+  .nz-pager-list .nz-pager-wide { display: none; }
+  .nz-pager-list .nz-pager-narrow { display: list-item; list-style: none; }
+  .nz-pager-step span { display: none; }
+  .nz-pager-num, .nz-pager-step { min-width: 42px; height: 42px; }
+}
+@media (max-width: 380px) {
+  .nz-pager-list > li.nz-pager-narrow { display: none; }
+  .nz-pager-of { display: block; font-weight: 700; font-size: .85rem; color: var(--nz-text-primary); }
+}

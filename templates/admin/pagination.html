@@ -1,0 +1,27 @@
+{% load i18n nzi %}{# Only one of the two number rows is displayed at a time (CSS), so assistive tech never hears both. Every changelist's pager (Django's {% pagination cl %} renders this): one row on desktop, a compact thumb-sized row on phones. #}
+{% nz_pager cl page_range as pg %}
+<nav class="nz-pager" aria-label="{% translate 'Sahifalar' %}">
+  <div class="nz-pager-info" role="status" aria-live="polite">
+    {% if pagination_required %}<b>{{ pg.start }}–{{ pg.end }}</b> / {{ cl.result_count }}{% else %}<b>{{ cl.result_count }}</b>{% endif %}
+    <span class="nz-pager-noun">{% if cl.result_count == 1 %}{{ cl.opts.verbose_name }}{% else %}{{ cl.opts.verbose_name_plural }}{% endif %}</span>
+    {% if show_all_url %}<a class="nz-pager-all" href="{{ show_all_url }}">{% translate 'Show all' %}</a>{% endif %}
+    {% if cl.formset and cl.result_count %}<input type="submit" name="_save" class="btn btn-sm btn-success" value="{% translate 'Save' %}">{% endif %}
+  </div>
+  {% if pagination_required %}
+  <ul class="nz-pager-list">
+    <li>{% if pg.prev %}<a class="nz-pager-step" href="{{ pg.prev }}" rel="prev" aria-label="{% translate 'Previous' %}"><i class="fas fa-chevron-left" aria-hidden="true"></i><span>{% translate 'Previous' %}</span></a>{% else %}<span class="nz-pager-step is-off" aria-disabled="true"><i class="fas fa-chevron-left" aria-hidden="true"></i><span>{% translate 'Previous' %}</span></span>{% endif %}</li>
+    {% for it in pg.items %}
+      {% if it.gap %}<li class="nz-pager-gap nz-pager-wide" aria-hidden="true">…</li>
+      {% elif it.current %}<li class="nz-pager-wide"><span class="nz-pager-num is-current" aria-current="page">{{ it.n }}</span></li>
+      {% else %}<li class="nz-pager-wide"><a class="nz-pager-num" href="{{ it.url }}" aria-label="{% blocktranslate with n=it.n %}Page {{ n }}{% endblocktranslate %}">{{ it.n }}</a></li>{% endif %}
+    {% endfor %}
+    {% for it in pg.compact %}
+      {% if it.gap %}<li class="nz-pager-gap nz-pager-narrow" aria-hidden="true">…</li>
+      {% elif it.current %}<li class="nz-pager-narrow"><span class="nz-pager-num is-current" aria-current="page">{{ it.n }}</span></li>
+      {% else %}<li class="nz-pager-narrow"><a class="nz-pager-num" href="{{ it.url }}" aria-label="{% blocktranslate with n=it.n %}Page {{ n }}{% endblocktranslate %}">{{ it.n }}</a></li>{% endif %}
+    {% endfor %}
+    <li class="nz-pager-of" aria-hidden="true">{{ pg.current }} / {{ pg.total }}</li>
+    <li>{% if pg.next %}<a class="nz-pager-step" href="{{ pg.next }}" rel="next" aria-label="{% translate 'Next' %}"><span>{% translate 'Next' %}</span><i class="fas fa-chevron-right" aria-hidden="true"></i></a>{% else %}<span class="nz-pager-step is-off" aria-disabled="true"><span>{% translate 'Next' %}</span><i class="fas fa-chevron-right" aria-hidden="true"></i></span>{% endif %}</li>
+  </ul>
+  {% endif %}
+</nav>
