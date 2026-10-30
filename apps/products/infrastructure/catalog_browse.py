@@ -83,6 +83,33 @@ def size_key(value, unit) -> str | None:
     return f"{format(Decimal(str(value)).normalize(), 'f')}{unit}"
 
 
+# Size bands -- what a shopper picks instead of 200 exact pack sizes (2.27 kg, 2270 g, 2268 g...): (id, kind, from, to)
+# in grams / millilitres / pieces, from inclusive, to exclusive. filter[size] accepts these ids next to exact keys.
+SIZE_BANDS = (
+    ("upto-300g", "mass", 0, 300), ("300g-1kg", "mass", 300, 1000), ("1-2kg", "mass", 1000, 2000), ("2-3kg", "mass", 2000, 3000), ("3kg-plus", "mass", 3000, float("inf")),
+    ("upto-60pcs", "count", 0, 61), ("61-120pcs", "count", 61, 121), ("121-200pcs", "count", 121, 201), ("200pcs-plus", "count", 201, float("inf")),
+    ("upto-250ml", "volume", 0, 251), ("250ml-1l", "volume", 251, 1000), ("1l-plus", "volume", 1000, float("inf")),
+)
+_BAND_IDS = {b[0] for b in SIZE_BANDS}
+_KIND_UNITS = {"mass": {"mg": 0.001, "g": 1, "kg": 1000, "lb": 453.592, "oz": 28.3495}, "volume": {"ml": 1, "l": 1000},
+               "count": {"tablet": 1, "capsule": 1, "gummy": 1, "chewable": 1, "softgel": 1}}
+
+
+def size_band(key: str | None) -> str | None:
+    """The band id a size key falls in ("2270g" -> "2-3kg", "120capsule" -> "61-120pcs"); None for an unknown unit."""
+    if not key:
+        return None
+    for kind, units in _KIND_UNITS.items():
+        for unit in sorted(units, key=len, reverse=True):
+            if key.endswith(unit):
+                try:
+                    amount = float(key[: -len(unit)]) * units[unit]
+                except ValueError:
+                    return None
+                return next((band for band, k, lo, hi in SIZE_BANDS if k == kind and lo <= amount < hi), None)
+    return None
+
+
 def _grams(key: str) -> float:
     """Sort key for sizes: mass units in grams, anything else after them."""
     units = {"mg": 0.001, "g": 1, "kg": 1000, "lb": 453.592, "oz": 28.3495}
@@ -206,7 +233,8 @@ def _predicates(filters: dict) -> dict:
         preds["flavour"] = OfferTest(lambda o: bool(o.flavours & flavour_ids))
     sizes = set(filters.get("sizes") or [])
     if sizes:
-        preds["size"] = OfferTest(lambda o: o.size in sizes)
+        bands = sizes & _BAND_IDS
+        preds["size"] = OfferTest(lambda o: o.size in sizes or (bool(bands) and size_band(o.size) in bands))
     goals = set(filters.get("goals") or [])
     if goals:
         preds["goal"] = lambda c: bool(c.goals & goals)
@@ -273,9 +301,13 @@ def _facets(candidates: list, preds: dict, locale: str) -> dict:
         for f in {f for o in _matching_offers(c, preds, skip="flavour") for f in o.flavours}:
             flavour_counts[f] = flavour_counts.get(f, 0) + 1
     size_counts: dict = {}
+    band_counts: dict = {}
     for c in pool("size"):
-        for s in {o.size for o in _matching_offers(c, preds, skip="size") if o.size}:
+        offered = {o.size for o in _matching_offers(c, preds, skip="size") if o.size}
+        for s in offered:
             size_counts[s] = size_counts.get(s, 0) + 1
+        for band in {size_band(s) for s in offered} - {None}:
+            band_counts[band] = band_counts.get(band, 0) + 1
     goal_counts: dict = {}
     for c in pool("goal"):
         for g in c.goals:
@@ -291,6 +323,7 @@ def _facets(candidates: list, preds: dict, locale: str) -> dict:
         "category": sorted(({"id": str(c.id), "name": _category_name(c, locale), "count": category_counts[c.id]} for c in categories), key=lambda x: (-x["count"], x["name"])),
         "flavour": [{**_flavour_summary(f, locale), "count": flavour_counts[f.id]} for f in flavours],
         "size": [{"id": s, "count": n} for s, n in sorted(size_counts.items(), key=lambda kv: (_grams(kv[0]), kv[0]))],
+        "size_band": [{"id": band, "kind": kind, "count": band_counts[band]} for band, kind, _lo, _hi in SIZE_BANDS if band_counts.get(band)],
         "goal": [{"id": code, "name": goal_label(code, locale), "count": goal_counts[code]} for code in GOALS if goal_counts.get(code)],
         "rating": [{"min": stars, "count": sum(1 for c in rating_pool if (c.rating or 0) >= stars)} for stars in (4, 3, 2, 1)],
         "price_range": {"min": str(min(price_pool)) if price_pool else None, "max": str(max(price_pool)) if price_pool else None},

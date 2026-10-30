@@ -12,7 +12,7 @@ from unittest.mock import patch
 import pytest
 
 from apps.products.infrastructure import models as p_models
-from apps.products.infrastructure.catalog_browse import size_key
+from apps.products.infrastructure.catalog_browse import size_band, size_key
 from apps.products.tests.stock_helpers import put_stock
 
 pytestmark = pytest.mark.django_db
@@ -92,6 +92,14 @@ class TestFilters:
         body = _get(client, catalog, **{"filter[size]": "250g,400g"})
         assert set(_ids(body)) == {_id(catalog["a_crea"]), _id(catalog["b_bcaa"])}
 
+    def test_size_band_takes_every_pack_size_in_its_range(self, client, catalog):
+        body = _get(client, catalog, **{"filter[size]": "2-3kg"})
+        assert set(_ids(body)) == {_id(catalog["a_whey"]), _id(catalog["b_whey"])}
+
+    def test_size_bands_and_exact_sizes_combine_as_any_of(self, client, catalog):
+        body = _get(client, catalog, **{"filter[size]": "2-3kg,400g"})
+        assert len(_ids(body)) == 3
+
     def test_in_stock_only(self, client, catalog):
         body = _get(client, catalog, **{"filter[availability]": "in_stock"})
         assert _id(catalog["a_crea"]) not in _ids(body)
@@ -123,6 +131,8 @@ class TestFacets:
         assert {f["id"]: f["count"] for f in facets["flavour"]} == {str(catalog["vanilla"].id): 2, str(catalog["choco"].id): 2}
         assert {r["min"]: r["count"] for r in facets["rating"]} == {4: 2, 3: 3, 2: 3, 1: 3}
         assert [s["id"] for s in facets["size"]] == ["250g", "400g", "2270g"]  # sorted by real weight
+        # the bands a shopper sees, in their fixed order, counting products
+        assert [(b["id"], b["kind"], b["count"]) for b in facets["size_band"]] == [("upto-300g", "mass", 1), ("300g-1kg", "mass", 1), ("2-3kg", "mass", 2)]
 
 
 class TestSorting:
@@ -134,3 +144,8 @@ class TestSorting:
 @pytest.mark.parametrize("value, unit, expected", [(250, "g", "250g"), (Decimal("2.270"), "kg", "2.27kg"), (Decimal("1.0"), "kg", "1kg"), (None, "g", None)])
 def test_size_key(value, unit, expected):
     assert size_key(value, unit) == expected
+
+
+@pytest.mark.parametrize("key, band", [("250g", "upto-300g"), ("2270g", "2-3kg"), ("2.27kg", "2-3kg"), ("5lb", "2-3kg"), ("60capsule", "upto-60pcs"), ("120tablet", "61-120pcs"), ("500ml", "250ml-1l"), ("1l", "1l-plus"), ("12x", None), (None, None)])
+def test_size_band(key, band):
+    assert size_band(key) == band
