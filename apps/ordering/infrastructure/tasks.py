@@ -107,3 +107,33 @@ def replenish_reminders() -> int:
                link=f"/products/{slugs[f.product_id]}" if f.product_id in slugs else "/orders", dedupe_key=f"replenish:{f.ref}:{f.product_id}")
         sent += 1
     return sent
+
+
+_MORE_TEXT = {"uz": " va yana {n} ta mahsulot", "ru": " и ещё {n} товар(ов)", "en": " and {n} more"}
+
+
+@shared_task(queue="default", name="ordering.review_requests")
+def review_requests() -> int:
+    """Daily: "how was it?" a few days after a customer got their goods -- one message per purchase (review_requests.py)."""
+    from apps.notifications.infrastructure.notify import notify
+    from apps.ordering.infrastructure.review_requests import due
+    from apps.products.infrastructure.models import ProductTranslation
+
+    asks = due()
+    names: dict = {}
+    slugs: dict = {}
+    for pid, locale, name, slug in ProductTranslation.objects.filter(product_id__in={p for a in asks for p in a.product_ids}).values_list("product_id", "locale_code", "name", "slug"):
+        names.setdefault(pid, {})[locale] = name
+        if slug and (locale == "uz" or pid not in slugs):
+            slugs[pid] = slug
+    sent = 0
+    for ask in asks:
+        first = ask.product_ids[0]
+        product_names = names.get(first) or {}
+        fallback = product_names.get("uz") or next(iter(product_names.values()), "")
+        extra = len(ask.product_ids) - 1
+        i18n = {lang: {"product": product_names.get(lang) or fallback, "more": more.format(n=extra) if extra else ""} for lang, more in _MORE_TEXT.items()}
+        notify(ask.customer_id, "review_request", {"product": fallback, "more": i18n["uz"]["more"], "i18n": i18n},
+               link=f"/products/{slugs[first]}#reviews" if first in slugs else "/orders", dedupe_key=f"review_request:{ask.ref}")
+        sent += 1
+    return sent

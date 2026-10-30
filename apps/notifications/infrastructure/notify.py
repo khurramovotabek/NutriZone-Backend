@@ -147,6 +147,10 @@ KINDS: dict[str, Kind] = {
         ("{product} tugab qolmoqda", "Hisob-kitobimizcha, {product} {days_text}. Yangisini hozir buyurtma qilsangiz, tanaffussiz davom etasiz."),
         ("{product} скоро закончится", "По нашим расчётам, {product} {days_text}. Закажите сейчас — и продолжите без перерыва."),
         ("Your {product} is running low", "By our estimate, your {product} {days_text}. Reorder now to keep going without a break.")),
+    "review_request": K("star", "warning", "normal",
+        ("{product} sizga yoqdimi?", "{product}{more} haqida fikringizni yozing — bir necha so'z va yulduzcha boshqa xaridorlarga to'g'ri tanlov qilishga yordam beradi."),
+        ("Как вам {product}?", "Поделитесь впечатлением о {product}{more} — пара слов и звёзды помогут другим покупателям сделать правильный выбор."),
+        ("How was your {product}?", "Tell us what you think of {product}{more} — a few words and stars help other shoppers choose well.")),
     "cart_reminder": K("shopping-cart", "primary", "normal",
         ("Savatingiz sizni kutyapti", "Savatingizda {products} turibdi. Buyurtmani bir necha bosishda yakunlashingiz mumkin."),
         ("Ваша корзина ждёт", "В вашей корзине {products}. Оформить заказ можно в пару кликов."),
@@ -268,7 +272,7 @@ def render(kind: str, ctx: dict) -> dict:
     for lang in LANGS:
         title, body = getattr(spec, lang)
         per_lang = _Safe(data)
-        for key in ("title", "body", "note", "until", "discount", "method", "product", "days_text"):  # per-language overrides: ctx["i18n"]["ru"]["until"]
+        for key in ("title", "body", "note", "until", "discount", "method", "product", "days_text", "more"):  # per-language overrides: ctx["i18n"]["ru"]["until"]
             v = ((ctx.get("i18n") or {}).get(lang) or {}).get(key)
             if v is not None:
                 per_lang[key] = v
