@@ -745,7 +745,10 @@ def _checkout_details(user, lang: str, summary: dict) -> str:
     from apps.geo.infrastructure import models as geo_orm
     from apps.stores.infrastructure.stock_service import variant_infos
 
-    items = [i for i in summary["cart"].items.values() if i.status.value != "removed"]
+    cart = summary.get("cart")
+    if cart is None:  # a summary without its cart (only the total) still gets the plain total message
+        return ""
+    items = [i for i in cart.items.values() if i.status.value != "removed"]
     infos = variant_infos([i.product_variant_id for i in items], locale=lang)
     rows = []
     for n, item in enumerate(items, 1):
