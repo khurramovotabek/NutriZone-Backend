@@ -1,7 +1,7 @@
 {% extends "admin/base_site.html" %}
 {% load i18n static %}
 {# New goods receipt (Kirim): the scanning / costing workspace is rendered by nutrizone-wms-receipt.js from `config`. #}
-{% block extrastyle %}{{ block.super }}<link rel="stylesheet" href="{% static 'admin/css/nutrizone-wms.css' %}?v=3"><link rel="stylesheet" href="{% static 'admin/css/nutrizone-platform.css' %}?v=5"><link rel="stylesheet" href="{% static 'admin/css/nutrizone-wmsx.css' %}?v=9"><link rel="stylesheet" href="{% static 'admin/css/nutrizone-wms-flow.css' %}?v=6">{% endblock %}
+{% block extrastyle %}{{ block.super }}<link rel="stylesheet" href="{% static 'admin/css/nutrizone-wms.css' %}?v=3"><link rel="stylesheet" href="{% static 'admin/css/nutrizone-platform.css' %}?v=5"><link rel="stylesheet" href="{% static 'admin/css/nutrizone-wmsx.css' %}?v=13"><link rel="stylesheet" href="{% static 'admin/css/nutrizone-wms-flow.css' %}?v=6">{% endblock %}
 {% block breadcrumbs %}<ol class="breadcrumb"><li class="breadcrumb-item"><a href="{% url 'admin:index' %}">{% translate "Home" %}</a></li><li class="breadcrumb-item"><a href="{% url 'admin:stores_stockreceipt_changelist' %}">{% translate "Kirim (qabul)" %}</a></li><li class="breadcrumb-item active">{% translate "Yangi kirim" %}</li></ol>{% endblock %}
 {% block content_title %}{% endblock %}
 {% block content %}

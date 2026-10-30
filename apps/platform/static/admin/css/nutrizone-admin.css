@@ -15,6 +15,12 @@
   --nz-surface: #ffffff;
   --nz-surface-secondary: #f1f3f5;
   --nz-border: #e4e7eb;
+  /* light values for the glass tokens -- only the dark theme defined them, so in light mode every stock admin
+     input (vTextField, select, textarea) had an invalid border/background and was invisible on the white card */
+  --nz-glass-bg: rgba(255, 255, 255, 0.85);
+  --nz-glass-border: #d5dbe3;
+  --nz-glass-shadow: 0 8px 24px rgba(15, 23, 42, 0.08);
+  --nz-glass-highlight: rgba(255, 255, 255, 0.6);
 
   /* --- Text --- */
   --nz-text-primary: #14181f;

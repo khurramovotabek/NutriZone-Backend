@@ -44,3 +44,5 @@ html[data-bs-theme="light"] .sup-card p { color: #475569; }
 @media (max-width: 640px) { .sup-board { grid-auto-columns: 86%; scroll-snap-type: x mandatory; } .sup-col { scroll-snap-align: start; } .sup-search { min-width: 0; flex: 1; } }
 .sup-tools select, .sup-tools input { width: auto !important; max-width: 260px; }
 .sup-head > div:first-child { flex: 1 1 320px; }
+/* phones: the search gets its own full row (it was squeezed to ~60px beside the topic select) */
+@media (max-width: 640px) { .sup-tools { width: 100%; } .sup-tools .sup-search { flex: 1 1 100%; width: 100% !important; max-width: none; } .sup-tools select { flex: 1 1 0; max-width: none; } }

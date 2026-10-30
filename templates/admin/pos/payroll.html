@@ -1,7 +1,7 @@
 {% extends "admin/base_site.html" %}
 {% load i18n static %}
 {# Cashier payroll (StoreCashierAdmin.payroll_view): base salary + KPI % of the cashier's own net sales, per month. #}
-{% block extrastyle %}{{ block.super }}<link rel="stylesheet" href="{% static 'admin/css/nutrizone-platform.css' %}?v=5"><link rel="stylesheet" href="{% static 'admin/css/nutrizone-orderdesk.css' %}?v=6"><link rel="stylesheet" href="{% static 'admin/css/nutrizone-wmsx.css' %}?v=12"><link rel="stylesheet" href="{% static 'admin/css/nutrizone-pos-terminal.css' %}?v=9">{% endblock %}
+{% block extrastyle %}{{ block.super }}<link rel="stylesheet" href="{% static 'admin/css/nutrizone-platform.css' %}?v=5"><link rel="stylesheet" href="{% static 'admin/css/nutrizone-orderdesk.css' %}?v=6"><link rel="stylesheet" href="{% static 'admin/css/nutrizone-wmsx.css' %}?v=13"><link rel="stylesheet" href="{% static 'admin/css/nutrizone-pos-terminal.css' %}?v=9">{% endblock %}
 {% block breadcrumbs %}<ol class="breadcrumb float-sm-right"><li class="breadcrumb-item"><a href="{% url 'admin:index' %}">{% translate "Home" %}</a></li><li class="breadcrumb-item"><a href="{% url 'admin:stores_storecashier_changelist' %}">{% translate "Kassalar va kassirlar" %}</a></li><li class="breadcrumb-item active">{% translate "Oylik va KPI" %}</li></ol>{% endblock %}
 {% block content_title %}{% endblock %}
 {% block content %}

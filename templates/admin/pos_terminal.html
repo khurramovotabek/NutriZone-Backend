@@ -3,7 +3,7 @@
 
 {% block extrastyle %}
 {{ block.super }}
-<link rel="stylesheet" href="{% static 'admin/css/nutrizone-pos.css' %}?v=2026.09.26.10">
+<link rel="stylesheet" href="{% static 'admin/css/nutrizone-pos.css' %}?v=2026.10.30.1">
 <link rel="stylesheet" href="{% static 'admin/css/nutrizone-pos-glass.css' %}?v=1">
 {% endblock %}
 
@@ -701,8 +701,8 @@ document.addEventListener("DOMContentLoaded", function () {
           <div class="pos-product-name" title="${esc(p.name)}">${esc(p.name)}</div>
           <div class="pos-product-meta">${p.weight ? `<span>${esc(p.weight)}</span>` : ""}${stockBadge(p.stock)}</div>
           <div class="pos-product-price pos-num">${p.price !== null ? `${formatMoney(p.price)}<small>${esc(T.som)}</small>` : "&mdash;"}</div>
-          <button type="button" class="pos-add-btn ${state.pending.has(p.id) ? "pos-busy" : ""}" data-add="${esc(p.id)}" ${out ? "disabled" : ""}>
-            ${out ? esc(T.outOfStock) : `<i class="fas fa-plus" aria-hidden="true"></i>${esc(T.addToCart)}`}
+          <button type="button" class="pos-add-btn ${state.pending.has(p.id) ? "pos-busy" : ""}" data-add="${esc(p.id)}" ${out ? "disabled" : ""} aria-label="${esc(out ? T.outOfStock : T.addToCart)}" title="${esc(out ? T.outOfStock : T.addToCart)}">
+            ${out ? `<i class="fas fa-ban" aria-hidden="true"></i>` : `<i class="fas fa-plus" aria-hidden="true"></i>`}
           </button>
         </div>
       </article>`;

@@ -55,3 +55,19 @@
     width: 250px;
   }
 }
+
+/* ── Phones (2026-10-30 mobile pass) ─────────────────────────────────
+ * Stock Django widgets carry fixed sizes (textarea cols=40 = 333px, vTextField 20em),
+ * which pushed change forms ~20-40px past a 375px screen. Fields never exceed their column. */
+@media (max-width: 767.98px) {
+  #content-main :is(input:not([type=checkbox]):not([type=radio]), select, textarea, .vLargeTextField, .vTextField, .select2-container) {
+    max-width: 100%;
+  }
+  #content-main textarea { width: 100%; }
+
+  /* changelist paginator: a centred one-line row ran off the left edge with 10+ pages */
+  .pagination { flex-wrap: wrap; justify-content: center; row-gap: 4px; }
+
+  /* iOS zooms into any field under 16px on focus and never zooms back */
+  input:not([type=checkbox]):not([type=radio]), select, textarea { font-size: max(16px, 1em); }
+}

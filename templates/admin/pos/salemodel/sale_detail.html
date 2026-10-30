@@ -1,7 +1,7 @@
 {% extends "admin/base_site.html" %}
 {% load i18n static nz_money %}
 {# One till sale as a receipt card (SaleAdmin.change_view): lines, payment split, customer, where / who / shift, returns, return or cancel. #}
-{% block extrastyle %}{{ block.super }}<link rel="stylesheet" href="{% static 'admin/css/nutrizone-platform.css' %}?v=5"><link rel="stylesheet" href="{% static 'admin/css/nutrizone-orderdesk.css' %}?v=5"><link rel="stylesheet" href="{% static 'admin/css/nutrizone-wmsx.css' %}?v=12"><link rel="stylesheet" href="{% static 'admin/css/nutrizone-pos-terminal.css' %}?v=7">{% endblock %}
+{% block extrastyle %}{{ block.super }}<link rel="stylesheet" href="{% static 'admin/css/nutrizone-platform.css' %}?v=5"><link rel="stylesheet" href="{% static 'admin/css/nutrizone-orderdesk.css' %}?v=5"><link rel="stylesheet" href="{% static 'admin/css/nutrizone-wmsx.css' %}?v=13"><link rel="stylesheet" href="{% static 'admin/css/nutrizone-pos-terminal.css' %}?v=7">{% endblock %}
 {% block breadcrumbs %}<ol class="breadcrumb"><li class="breadcrumb-item"><a href="{% url 'admin:index' %}">{% translate "Home" %}</a></li><li class="breadcrumb-item"><a href="{% url 'admin:pos_salemodel_changelist' %}">{% translate "Savdolar" %}</a></li><li class="breadcrumb-item active">{{ rc.number }}</li></ol>{% endblock %}
 {% block content_title %}{% endblock %}
 {% block content %}

@@ -1,7 +1,7 @@
 {% extends "admin/base_site.html" %}
 {% load i18n static %}
 {# New transfer: pick source → destination (each card shows what it holds / lacks), then take the smart fill-up suggestions or continue empty. #}
-{% block extrastyle %}{{ block.super }}<link rel="stylesheet" href="{% static 'admin/css/nutrizone-platform.css' %}?v=5"><link rel="stylesheet" href="{% static 'admin/css/nutrizone-wmsx.css' %}?v=9"><link rel="stylesheet" href="{% static 'admin/css/nutrizone-wms-flow.css' %}?v=5">{% endblock %}
+{% block extrastyle %}{{ block.super }}<link rel="stylesheet" href="{% static 'admin/css/nutrizone-platform.css' %}?v=5"><link rel="stylesheet" href="{% static 'admin/css/nutrizone-wmsx.css' %}?v=13"><link rel="stylesheet" href="{% static 'admin/css/nutrizone-wms-flow.css' %}?v=5">{% endblock %}
 {% block breadcrumbs %}<ol class="breadcrumb"><li class="breadcrumb-item"><a href="{% url 'admin:index' %}">{% translate "Home" %}</a></li><li class="breadcrumb-item"><a href="{% url 'admin:stores_stocktransfer_changelist' %}">{% translate "Transferlar" %}</a></li><li class="breadcrumb-item active">{% translate "Yangi transfer" %}</li></ol>{% endblock %}
 {% block content_title %}{% endblock %}
 {% block content %}

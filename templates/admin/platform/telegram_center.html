@@ -1,7 +1,7 @@
 {% extends "admin/base_site.html" %}
 {% load i18n static %}
 {# Dashboard → Telegram botlar markazi (apps/platform/infrastructure/telegram_view.py, telegram_center.py). #}
-{% block extrastyle %}{{ block.super }}<link rel="stylesheet" href="{% static 'admin/css/nutrizone-analytics.css' %}?v=5"><link rel="stylesheet" href="{% static 'admin/css/nutrizone-telegram.css' %}?v=4">{% endblock %}
+{% block extrastyle %}{{ block.super }}<link rel="stylesheet" href="{% static 'admin/css/nutrizone-analytics.css' %}?v=5"><link rel="stylesheet" href="{% static 'admin/css/nutrizone-telegram.css' %}?v=5">{% endblock %}
 {% block breadcrumbs %}<ol class="breadcrumb"><li class="breadcrumb-item"><a href="{% url 'admin:index' %}">{% translate "Home" %}</a></li><li class="breadcrumb-item active">{{ title }}</li></ol>{% endblock %}
 {% block content_title %}{% endblock %}
 {% block content %}

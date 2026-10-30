@@ -77,6 +77,11 @@
 .tgp-map { display: flex; align-items: center; gap: 8px; margin: 6px 0; padding: 22px 12px; border-radius: 12px; color: #e0f2fe !important; text-decoration: none !important; background: linear-gradient(135deg, #0f766e, #1d4ed8); }
 
 .nzt-table { display: grid; }
+/* phones: the five fixed columns are ~390px -- the table scrolls inside its card rather than the page sideways */
+@media (max-width: 640px) {
+  .nzt-table { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+  .nzt-tr { min-width: 520px; }
+}
 .nzt-tr { display: grid; grid-template-columns: minmax(0, 1.6fr) 110px minmax(0, 1.6fr) 100px 130px; gap: 10px; align-items: center; padding: 9px 4px; border-bottom: 1px solid var(--nz-border); font-size: 13px; }
 .nzt-tr span { min-width: 0; overflow-wrap: anywhere; }
 .nzt-tr small { display: block; color: var(--nz-text-muted); font-size: 11px; }

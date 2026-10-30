@@ -121,6 +121,8 @@
   display: flex; align-items: center; justify-content: center; box-shadow: 0 2px 6px rgba(0,0,0,0.3);
 }
 .pos-add-btn:hover { background: var(--pos-accent-hover); }
+.pos-add-btn:disabled { background: var(--pos-surface-2); color: var(--pos-text-muted); cursor: not-allowed; }
+@media (pointer: coarse) { .pos-add-btn { width: 36px; height: 36px; } }
 .pos-badge { position: absolute; top: 8px; left: 8px; font-size: 0.625rem; font-weight: 700; padding: 2px 7px; border-radius: 4px; text-transform: uppercase; letter-spacing: 0.02em; }
 .pos-badge-bestseller { background: var(--pos-warning); color: #1a1200; }
 .pos-badge-lowstock { background: var(--pos-danger); color: #ffffff; }

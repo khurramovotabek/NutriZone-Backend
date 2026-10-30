@@ -1,7 +1,7 @@
 {% extends "admin/base_site.html" %}
 {% load i18n static %}
 {# Replenishment (To'ldirish): location cards, per-product min / fill-up rules edited inline (POST save/), suggestions, "create transfer draft" (POST transfer/). #}
-{% block extrastyle %}{{ block.super }}<link rel="stylesheet" href="{% static 'admin/css/nutrizone-platform.css' %}?v=5"><link rel="stylesheet" href="{% static 'admin/css/nutrizone-orderdesk.css' %}?v=5"><link rel="stylesheet" href="{% static 'admin/css/nutrizone-wmsx.css' %}?v=9">{% endblock %}
+{% block extrastyle %}{{ block.super }}<link rel="stylesheet" href="{% static 'admin/css/nutrizone-platform.css' %}?v=5"><link rel="stylesheet" href="{% static 'admin/css/nutrizone-orderdesk.css' %}?v=5"><link rel="stylesheet" href="{% static 'admin/css/nutrizone-wmsx.css' %}?v=13">{% endblock %}
 {% block content_title %}{% endblock %}
 {% block content %}
 <div class="nzp nzd wx" id="wx-replenish" data-save="{% url 'admin:stores_reorderrule_save' %}" data-search="{{ search_url }}" data-location="{{ store.pk }}" data-saved="✓ {% translate 'Rule saved' %}">

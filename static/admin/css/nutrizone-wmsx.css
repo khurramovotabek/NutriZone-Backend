@@ -221,6 +221,12 @@ a.wx-loc { text-decoration: none !important; }
 .wx-wo-totals { display: flex; gap: 16px; font-size: .82rem; color: var(--nz-text-secondary); white-space: nowrap; }
 .wx-wo-totals b { color: var(--nz-text-primary); font-size: .95rem; }
 .wx-wo-buttons { display: flex; gap: 8px; }
+/* phones: totals, note and buttons stack instead of sitting in one 400px row */
+@media (max-width: 760px) {
+  .wx-wo-foot { grid-template-columns: minmax(0, 1fr); gap: 10px; }
+  .wx-wo-totals { flex-wrap: wrap; white-space: normal; gap: 6px 14px; }
+  .wx-wo-buttons { flex-wrap: wrap; } .wx-wo-buttons > * { flex: 1 1 140px; }
+}
 .wx-decide { display: flex; align-items: center; gap: 14px; border-color: color-mix(in srgb, #f59e0b 40%, var(--nz-border)); background: color-mix(in srgb, #f59e0b 6%, var(--nz-surface)); }
 .wx-decide-icon { flex: none; width: 46px; height: 46px; display: grid; place-items: center; border-radius: 14px; color: #f59e0b; background: color-mix(in srgb, #f59e0b 15%, transparent); font-size: 1.1rem; }
 .wx-decide > div:nth-child(2) { flex: 1; display: flex; flex-direction: column; gap: 2px; } .wx-decide small { color: var(--nz-text-secondary); }
@@ -291,7 +297,7 @@ a.wx-loc { text-decoration: none !important; }
   .wx-expiry-table .nzd-tr > span:nth-child(2), .wx-expiry-table .nzd-tr > span:nth-child(3), .wx-expiry-table .nzd-tr > span:nth-child(6) { display: none; }
   .wx-replenish-table .nzd-tr { grid-template-columns: 30px minmax(0, 1.6fr) .8fr .8fr 1fr 1fr; }
   .wx-replenish-table .nzd-tr > span:nth-child(4), .wx-replenish-table .nzd-tr > span:nth-child(5) { display: none; }
-  .wx-wo-foot { grid-template-columns: 1fr; }
+  .wx-wo-foot { grid-template-columns: minmax(0, 1fr); } .wx-wo-foot > * { min-width: 0; } .wx-wo-foot .nzd-input { width: 100%; }
 }
 @media (max-width: 760px) {
   .wx-exp-buckets { grid-template-columns: repeat(2, minmax(0, 1fr)); }
