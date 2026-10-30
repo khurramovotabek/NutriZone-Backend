@@ -61,6 +61,7 @@ class PublicProductListSerializer(serializers.Serializer):
 
     id = serializers.UUIDField()
     slug = serializers.CharField()
+    slugs = serializers.DictField(child=serializers.CharField(), help_text="URL slug per language code (uz/ru/en) -- for hreflang alternates")
     name = serializers.CharField()
     brand_id = serializers.CharField(allow_null=True)
     category_id = serializers.CharField(allow_null=True)
@@ -73,6 +74,7 @@ class PublicProductDetailSerializer(serializers.Serializer):
 
     id = serializers.UUIDField()
     slug = serializers.CharField()
+    slugs = serializers.DictField(child=serializers.CharField(), help_text="URL slug per language code (uz/ru/en) -- for hreflang alternates")
     name = serializers.CharField()
     status = serializers.CharField()
     brand_id = serializers.CharField(allow_null=True)

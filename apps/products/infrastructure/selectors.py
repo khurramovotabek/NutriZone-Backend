@@ -260,6 +260,12 @@ class AdminCatalogSelector:
         return [_admin_product_card(r) for r in rows], total
 
 
+def _url_slugs(row, locale: str | None) -> tuple[str, dict[str, str]]:
+    """(slug in `locale` -- else uz, else any, else the id; slug per language) from prefetched translations, for readable URLs."""
+    slugs = {t.locale_code: t.slug for t in row.translations.all() if t.slug}
+    return slugs.get(locale or _DEFAULT_LOCALE) or slugs.get("uz") or next(iter(slugs.values()), str(row.id)), slugs
+
+
 class CategoryTreeSelector:
     def tree(self, locale: str | None = None) -> list[dict]:
         """`locale`: names in that language (falling back like `_translated_name`); omitted -- the default locale, as before."""
@@ -276,6 +282,7 @@ class CategoryTreeSelector:
             result.append({
                 "id": str(r.id), "parent_id": str(r.parent_id) if r.parent_id else None,
                 "name": _translated_name(r, locale), "sort_order": r.sort_order, "image_url": image_url,
+                **dict(zip(("slug", "slugs"), _url_slugs(r, locale))),
             })
         return result
 
@@ -309,6 +316,7 @@ class BrandSelector:
                 logo_url = path if path.startswith(("http://", "https://")) else f"{base}{settings.MEDIA_URL}{path}"
             result.append({
                 "id": str(r.id), "name": _translated_name(r, locale=locale), "logo_url": logo_url,
+                **dict(zip(("slug", "slugs"), _url_slugs(r, locale or description_locale))),
                 "description": _translated_description(r, description_locale or locale),
                 "product_count": r.published_count, "country": _brand_country(r.country, description_locale or locale),
             })
@@ -975,6 +983,9 @@ def _product_card(row: orm.Product, locale: str | None = None, include_variants:
     card = {
         "id": str(row.id),
         "slug": translation.slug if translation else str(row.id),
+        # the URL slug in every language this product is translated into -- the storefront's hreflang
+        # alternates and sitemap need /ru/products/<ru slug>, not the current language's slug under /ru
+        "slugs": {t.locale_code: t.slug for t in all_translations if t.slug},
         "name": translation.name if translation else "",
         "status": row.status,
         "brand_id": str(row.brand_id) if row.brand_id else None,
