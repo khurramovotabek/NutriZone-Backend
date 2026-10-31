@@ -181,16 +181,31 @@
         }).catch(function () { say("Tarmoq xatosi", true); }).finally(function () { paste.disabled = false; });
     });
     var me = el.querySelector("[data-me]");
+    // Like the storefront: phones answer first from Wi-Fi / towers, then GPS -- listen up to 9 s, keep the most precise fix.
+    var watch = null, timer = null, best = null;
+    function stopWatch(commit) {
+      if (watch !== null) navigator.geolocation.clearWatch(watch);
+      if (timer !== null) clearTimeout(timer);
+      watch = timer = null; me.disabled = false;
+      if (commit && best) place(best.latitude, best.longitude, { fly: true, source: "gps", accuracy: best.accuracy, keepCircle: true, note: "Aniqlik ±" + Math.round(best.accuracy) + " m" + (best.accuracy > 50 ? " — pinni aniq joyga suring" : "") });
+      best = null;
+    }
     me && me.addEventListener("click", function () {
       if (!navigator.geolocation) { say("Brauzer joylashuvni aniqlay olmaydi", true); return; }
-      me.disabled = true; say("Aniqlanmoqda…");
-      navigator.geolocation.getCurrentPosition(function (p) {
-        me.disabled = false;
-        place(p.coords.latitude, p.coords.longitude, { fly: true, source: "gps", accuracy: p.coords.accuracy, keepCircle: true, note: "Aniqlik ±" + Math.round(p.coords.accuracy) + " m" });
+      if (!window.isSecureContext) { say("Joylashuv faqat https sahifada ishlaydi — xaritada bosing", true); return; }
+      if (watch !== null) return;
+      me.disabled = true; best = null; say("Aniqlanmoqda…");
+      watch = navigator.geolocation.watchPosition(function (p) {
+        if (best && p.coords.accuracy >= best.accuracy) return;
+        best = { latitude: p.coords.latitude, longitude: p.coords.longitude, accuracy: p.coords.accuracy };
+        if (best.accuracy <= 20) { stopWatch(true); return; }
+        say("Aniqlanmoqda · ±" + Math.round(best.accuracy) + " m");
       }, function (err) {
-        me.disabled = false;
-        say(err.code === 1 ? "Joylashuvga ruxsat berilmagan — brauzer manzil satridagi 🔒 belgisidan ruxsat bering" : "Joylashuv aniqlanmadi, xaritada bosing", true);
-      }, { enableHighAccuracy: true, timeout: 12000, maximumAge: 0 });
+        if (best) { stopWatch(true); return; }
+        stopWatch(false);
+        say(err.code === 1 ? "Joylashuvga ruxsat berilmagan — brauzer manzil satridagi 🔒 belgisidan ruxsat bering" : err.code === 3 ? "GPS signali topilmadi — derazaga yaqinlashing yoki xaritada bosing" : "Joylashuv aniqlanmadi (GPS o'chiq?) — xaritada bosing", true);
+      }, { enableHighAccuracy: true, timeout: 20000, maximumAge: 0 });
+      timer = setTimeout(function () { if (best) stopWatch(true); }, 9000);
     });
     var clear = el.querySelector("[data-clear]");
     clear && clear.addEventListener("click", function () {

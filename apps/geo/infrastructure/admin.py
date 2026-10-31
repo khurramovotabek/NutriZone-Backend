@@ -35,7 +35,7 @@ from apps.products.infrastructure.catalog_form_ui import TranslationInlineMixin
 from core.outbox import stage_event
 
 LOCALES = ("uz", "ru", "en")
-GEO_JS_V = "5"  # bump after editing nutrizone-geo-admin.js
+GEO_JS_V = "6"  # bump after editing nutrizone-geo-admin.js
 GEO_CSS = ("admin/css/nutrizone-geo.css",)
 STATUS_COLORS = {"active": "#16a34a", "inactive": "#94a3b8"}
 STATUS_LABELS = {"active": "Faol", "inactive": "O'chirilgan"}
