@@ -117,6 +117,20 @@ TOOLS = [
         "input_schema": {"type": "object", "properties": {}},
     },
     {
+        "name": "get_my_orders",
+        "description": (
+            "The signed-in customer's own recent orders (newest first): number, status, total, items, pickup or delivery, "
+            "the branch for pickup, the estimated delivery day and whether it is paid. Pass `order_number` to look up one "
+            "order. Use for 'where is my order', 'when will it arrive', 'did my payment go through'. Returns signed_in=false "
+            "for guests -- then ask them to sign in or give the shop's contacts."
+        ),
+        "input_schema": {
+            "type": "object",
+            "properties": {"order_number": {"type": "string", "description": "Order number such as NZ-260401-0001, when the customer gives one."}},
+            "additionalProperties": False,
+        },
+    },
+    {
         "name": "get_category_info",
         "description": "What a catalogue category is about (e.g. whey protein, creatine, omega-3): the shop's description, subcategories and how many products it has. Use for 'what is X / what is the difference between X and Y' questions.",
         "input_schema": {"type": "object", "properties": {"name": {"type": "string", "description": "Category name in any language."}}, "required": ["name"]},
@@ -350,10 +364,80 @@ def get_store_info(args: dict, locale: str) -> dict:
             contact = {k: getattr(site, k) for k in ("support_phone", "support_email", "address", "working_hours", "telegram_username", "telegram_channel_url", "instagram_url") if getattr(site, k, "")}
     except Exception:  # noqa: BLE001 - contact details are a nice-to-have
         contact = {}
-    result = {"branches": out, "contact": contact, "online": "Delivery across Uzbekistan from the website; payment by Payme, Click, Uzum, card or cash on delivery."}
+    result = {"branches": out, "contact": contact, "online": "Delivery across Uzbekistan from the website.", "payment_methods": _payment_methods()}
     if place and not out:
         result["note"] = "No branch in that place -- offer delivery or the closest city's branches."
     return result
+
+
+def _payment_methods() -> dict:
+    """What checkout really accepts right now (never promise a method that is switched off)."""
+    try:
+        from apps.payment.infrastructure.providers import registry
+
+        states = registry.all_states()
+        return {"available": [str(s.spec.name) for s in states if s.status == "active"],
+                "coming_soon": [str(s.spec.name) for s in states if s.status != "active"]}
+    except Exception:  # noqa: BLE001 -- payment config is a nice-to-have here
+        return {}
+
+
+ORDER_STATUS_TEXT = {
+    "pending_payment": "waiting for payment", "confirmed": "confirmed, being prepared", "processing": "being packed",
+    "shipped": "on its way", "delivered": "delivered", "completed": "completed", "cancelled": "cancelled",
+    "returned": "returned", "failed": "failed",
+}
+
+
+def get_my_orders(args: dict, locale: str) -> dict:
+    from django.db.models import DecimalField, ExpressionWrapper, F, Sum
+
+    from apps.ordering.infrastructure.models import OrderLineItemModel, OrderModel
+    from apps.stores.infrastructure.models import Store
+
+    cid = CURRENT_CUSTOMER.get()
+    if not cid:
+        return {"signed_in": False}
+    qs = OrderModel.objects.filter(customer_id=cid).exclude(status="draft").order_by("-created_at")
+    number = _clip(args.get("order_number") or "", 40).strip().upper()
+    if number:
+        qs = qs.filter(order_number__iexact=number)
+    orders = list(qs[:5])
+    if number and not orders:
+        return {"signed_in": True, "orders": [], "note": "No order with that number on this customer's account."}
+    try:
+        from apps.chat.infrastructure.automation import delivery_eta
+    except Exception:  # noqa: BLE001
+        delivery_eta = None
+    try:
+        from apps.payment.infrastructure import service as pay
+    except Exception:  # noqa: BLE001
+        pay = None
+    expr = ExpressionWrapper(F("unit_price_amount") * F("quantity") - F("discount_amount") + F("tax_amount"), output_field=DecimalField(max_digits=16, decimal_places=2))
+    stores = dict(Store.objects.filter(pk__in={o.fulfilment_store_id for o in orders if o.fulfilment_store_id}).values_list("id", "name"))
+    out = []
+    for o in orders:
+        lines = OrderLineItemModel.objects.filter(order=o, status="active")
+        total = lines.aggregate(t=Sum(expr))["t"] or 0
+        row = {"number": o.order_number, "status": o.status, "status_text": ORDER_STATUS_TEXT.get(o.status, o.status),
+               "placed": (o.placed_at or o.created_at).strftime("%d.%m.%Y"), "total": f"{int(total):,}".replace(",", " ") + " so'm",
+               "items": int(lines.aggregate(q=Sum("quantity"))["q"] or 0), "fulfilment": o.fulfilment_method}
+        if o.fulfilment_method == "pickup" and o.fulfilment_store_id:
+            row["pickup_branch"] = stores.get(o.fulfilment_store_id, "")
+        if delivery_eta is not None and o.fulfilment_method == "delivery":
+            try:
+                eta = delivery_eta(o)
+                if eta:
+                    row["estimated_delivery"] = eta.strftime("%d.%m.%Y")
+            except Exception:  # noqa: BLE001
+                pass
+        if pay is not None:
+            try:
+                row["paid"] = bool(pay.is_paid(o))
+            except Exception:  # noqa: BLE001
+                pass
+        out.append(row)
+    return {"signed_in": True, "orders": out, "page": "/orders"}
 
 
 def browse_catalog(args: dict, locale: str) -> dict:
@@ -498,7 +582,7 @@ def get_brand_info(args: dict, locale: str) -> dict:
 HANDLERS = {
     "search_products": search_products, "get_product_details": get_product_details, "show_products": show_products,
     "get_store_info": get_store_info, "browse_catalog": browse_catalog, "search_knowledge": search_knowledge,
-    "get_customer_profile": get_customer_profile, "get_category_info": get_category_info, "get_brand_info": get_brand_info,
+    "get_customer_profile": get_customer_profile, "get_my_orders": get_my_orders, "get_category_info": get_category_info, "get_brand_info": get_brand_info,
 }
 
 

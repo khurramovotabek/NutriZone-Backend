@@ -38,12 +38,15 @@ def branches(variant_ids) -> dict:
         return {}
     rows = _rows(variant_ids).filter(store__kind=StoreKind.STORE).values(
         "product_variant_id", "quantity", "reserved_quantity", "store_id", "store__name", "store__slug", "store__address", "store__city", "store__district",
+        "store__latitude", "store__longitude",
     )
     out: dict = {}
     for r in rows:
         out.setdefault(r["product_variant_id"], []).append({
             "store_id": str(r["store_id"]), "name": r["store__name"], "slug": r["store__slug"], "address": r["store__address"],
             "city": r["store__city"], "district": r["store__district"], "available_quantity": max(r["quantity"] - r["reserved_quantity"], 0),
+            # the storefront shows "x km from you" and sorts by distance once the customer shares a location
+            "latitude": r["store__latitude"], "longitude": r["store__longitude"],
         })
     for entries in out.values():
         entries.sort(key=lambda e: (e["available_quantity"] <= 0, -e["available_quantity"], e["name"]))

@@ -115,3 +115,42 @@ def test_dashboard_pages():
     r = c.post("/django-admin/assistant/knowledgeentry/add/", {"topic": "faq", "title": "Ish vaqti", "questions": "soat nechagacha ishlaysiz", "keywords": "ish vaqti",
                                                                "answer_uz": "Har kuni 9:00 dan 21:00 gacha.", "answer_ru": "", "answer_en": "", "priority": "50", "is_active": "on"})
     assert r.status_code == 302 and KnowledgeEntry.objects.filter(title="Ish vaqti", created_by=user.username).exists()
+
+
+class TestOrdersAndPaymentTools:
+    def _user(self):
+        from apps.identity.infrastructure.models import User
+
+        return User.objects.create(id=uuid.uuid4(), phone_number=f"+99891{uuid.uuid4().int % 10000000:07d}", status="active", full_name="Jasur T")
+
+    def _order(self, owner, status="shipped", number=None, **kw):
+        from apps.ordering.infrastructure.models import OrderModel
+
+        return OrderModel.objects.create(order_number=number or f"NZ-{uuid.uuid4().hex[:8].upper()}", customer_id=owner.id, currency="UZS", status=status,
+                                         shipping_recipient_name="A", shipping_line1="B", shipping_city="Toshkent", shipping_country_code="UZ",
+                                         billing_recipient_name="A", billing_line1="B", billing_city="Toshkent", billing_country_code="UZ", **kw)
+
+    def test_my_orders_only_for_the_signed_in_owner(self):
+        out, err = tools.run("get_my_orders", {}, "uz")
+        assert not err and out == {"signed_in": False}
+        me, other = self._user(), self._user()
+        mine = self._order(me, number="NZ-MINE-1")
+        self._order(other, number="NZ-OTHER-1")
+        self._order(me, status="draft")
+        token = tools.CURRENT_CUSTOMER.set(me.id)
+        try:
+            out, _ = tools.run("get_my_orders", {}, "uz")
+            one, _ = tools.run("get_my_orders", {"order_number": "nz-mine-1"}, "uz")
+            foreign, _ = tools.run("get_my_orders", {"order_number": "NZ-OTHER-1"}, "uz")
+        finally:
+            tools.CURRENT_CUSTOMER.reset(token)
+        assert [o["number"] for o in out["orders"]] == [mine.order_number]  # drafts and other people's orders never show
+        assert out["orders"][0]["status_text"] == "on its way" and out["orders"][0]["total"].endswith("so'm")
+        assert one["orders"][0]["number"] == "NZ-MINE-1"
+        assert foreign["orders"] == [] and "note" in foreign
+
+    def test_store_info_lists_only_switched_on_payment_methods(self):
+        out, _ = tools.run("get_store_info", {}, "uz")
+        pm = out["payment_methods"]
+        assert set(pm) == {"available", "coming_soon"} and not set(pm["available"]) & set(pm["coming_soon"])
+        assert "Payme" not in out["online"]  # never a hard-coded promise

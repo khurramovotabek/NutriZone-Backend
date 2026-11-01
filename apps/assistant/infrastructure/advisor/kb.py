@@ -178,11 +178,10 @@ def catalog_text(kind: str, locale: str) -> str:
 
 
 def payment_text(locale: str) -> str:
-    from apps.payment.infrastructure.models import PaymentProviderConfig
+    from apps.payment.infrastructure.providers import registry
 
-    names = {"payme": "Payme", "click": "Click", "uzum": "Uzum Bank", "uzcard": "Uzcard", "humo": "Humo", "cash": None}
-    online = [names.get(p) or p for p in PaymentProviderConfig.objects.filter(is_enabled=True).order_by("sort_order").values_list("provider", flat=True) if p != "cash"]
-    online = [x for x in online if x]
+    # what checkout really accepts: enabled AND configured (registry status "active") -- never a switched-off method
+    online = [str(s.spec.name) for s in registry.all_states() if s.status == "active" and s.spec.online]
     cash = {"uz": "naqd pul (yetkazib berishda yoki do'konda)", "ru": "наличные (при доставке или в магазине)", "en": "cash (on delivery or in store)"}[locale]
     head = {"uz": "💳 **To'lov usullari**", "ru": "💳 **Способы оплаты**", "en": "💳 **Payment methods**"}[locale]
     items = ([", ".join(online)] if online else []) + [cash]
