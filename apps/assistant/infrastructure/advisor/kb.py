@@ -109,9 +109,9 @@ FAQ = {
         "en": "✅ **100% original guarantee**\nWe buy only from official distributors and keep the documents for every batch. Ask for any product's certificate in the chat, and verify the code on the pack on the manufacturer's site.",
     },
     "faq_returns": {
-        "uz": "↩️ **Qaytarish**\nBuyurtma sahifasida (Buyurtmalarim) qaytarish so'rovini yuborishingiz mumkin. Ochilmagan, qadoqi buzilmagan mahsulot qabul qilinadi; nuqsonli mahsulot almashtiriladi. Savol bo'lsa — chatga yozing.",
-        "ru": "↩️ **Возврат**\nЗапрос на возврат можно отправить на странице заказа (Мои заказы). Принимаем невскрытый товар с целой упаковкой; бракованный — обменяем. Вопросы — в чат.",
-        "en": "↩️ **Returns**\nRequest a return on the order page (My orders). Unopened products with intact packaging are accepted; defective items are exchanged. Questions — write in the chat.",
+        "uz": "↩️ **Qaytarish**\nMahsulot yetkazilganidan keyin **14 kun** ichida buyurtma sahifasida (Buyurtmalarim) qaytarish so'rovini yuborishingiz mumkin. Ochilmagan, qadoqi buzilmagan mahsulot qabul qilinadi; nuqsonli mahsulot almashtiriladi. Savol bo'lsa — chatga yozing.",
+        "ru": "↩️ **Возврат**\nВ течение **14 дней** после доставки запрос на возврат можно отправить на странице заказа (Мои заказы). Принимаем невскрытый товар с целой упаковкой; бракованный — обменяем. Вопросы — в чат.",
+        "en": "↩️ **Returns**\nRequest a return on the order page (My orders) within **14 days** of delivery. Unopened products with intact packaging are accepted; defective items are exchanged. Questions — write in the chat.",
     },
     "faq_order": {
         "uz": "📦 Buyurtmangiz holatini **Buyurtmalarim** sahifasida yoki Telegram botdagi **Buyurtmalarim** tugmasi orqali ko'rasiz. Har bir o'zgarish haqida bildirishnoma keladi.",

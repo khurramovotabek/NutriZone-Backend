@@ -80,7 +80,8 @@ TOOLS = [
             "NutriZone's branches (address, district, phones, opening hours, map link) and the shop's contact details. "
             "Use for questions about where to buy, the nearest branch, a branch's location or phone, pickup or contacting "
             "the shop. Pass `city` (e.g. 'Samarqand') or the customer's coordinates to get the closest branches first "
-            "with their distance. Give the branch's map_url when the customer asks where it is."
+            "with their distance. Give the branch's map_url when the customer asks where it is. Also returns the live "
+            "payment methods and `policies` (cancelling, returns window, pickup, delivery days, paying with coins)."
         ),
         "input_schema": {
             "type": "object",
@@ -364,10 +365,39 @@ def get_store_info(args: dict, locale: str) -> dict:
             contact = {k: getattr(site, k) for k in ("support_phone", "support_email", "address", "working_hours", "telegram_username", "telegram_channel_url", "instagram_url") if getattr(site, k, "")}
     except Exception:  # noqa: BLE001 - contact details are a nice-to-have
         contact = {}
-    result = {"branches": out, "contact": contact, "online": "Delivery across Uzbekistan from the website.", "payment_methods": _payment_methods()}
+    result = {"branches": out, "contact": contact, "online": "Delivery across Uzbekistan from the website.", "payment_methods": _payment_methods(),
+              "policies": _policies()}
     if place and not out:
         result["note"] = "No branch in that place -- offer delivery or the closest city's branches."
     return result
+
+
+def _policies() -> dict:
+    """The shop's live rules, read from the same settings checkout and the order desk use (never a stale copy)."""
+    from apps.ordering.infrastructure.after_sales import RETURN_WINDOW_DAYS
+
+    out = {
+        "cancel": "Customers cancel instantly on the order page (My orders) while the order is awaiting payment or confirmed; "
+                  "once it is being packed or is on the way they send a cancellation request and the store answers.",
+        "returns": f"Return request on the order page within {RETURN_WINDOW_DAYS} days of delivery; unopened products with intact "
+                   "packaging are accepted, a defective product is exchanged.",
+        "pickup": "Free. Choose a branch that has every item at checkout; the customer is notified when the order is ready to collect.",
+    }
+    try:
+        from apps.chat.infrastructure.automation import chat_settings
+
+        out["delivery_days"] = f"Usually {chat_settings().delivery_days} days after the order (Sunday moves to Monday); the exact price is shown at checkout."
+    except Exception:  # noqa: BLE001 - a nice-to-have
+        pass
+    try:
+        from apps.loyalty.infrastructure.services import programme
+
+        cfg = programme()
+        if cfg.redeem_enabled:
+            out["coins"] = f"1 coin = 1 so'm; coins can pay up to {cfg.max_redeem_percent}% of an order (at least {cfg.min_redeem_coins} coins)."
+    except Exception:  # noqa: BLE001 - a nice-to-have
+        pass
+    return out
 
 
 def _payment_methods() -> dict:

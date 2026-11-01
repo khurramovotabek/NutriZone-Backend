@@ -154,3 +154,21 @@ class TestOrdersAndPaymentTools:
         pm = out["payment_methods"]
         assert set(pm) == {"available", "coming_soon"} and not set(pm["available"]) & set(pm["coming_soon"])
         assert "Payme" not in out["online"]  # never a hard-coded promise
+
+    def test_store_info_carries_the_live_shop_rules(self):
+        from apps.chat.infrastructure.automation import chat_settings
+
+        cfg = chat_settings()
+        cfg.delivery_days = 3
+        cfg.save()
+        out, _ = tools.run("get_store_info", {}, "uz")
+        rules = out["policies"]
+        assert "14 days" in rules["returns"] and "3 days" in rules["delivery_days"]
+        assert {"cancel", "pickup"} <= set(rules)
+
+    def test_service_questions_find_the_shop_answers(self):
+        from apps.assistant.infrastructure import knowledge
+
+        assert knowledge.search("buyurtmani qanday bekor qilaman")[0].entry.title == "Buyurtmani bekor qilish"
+        assert knowledge.search("где мой заказ")[0].entry.title == "Buyurtmam qayerda"
+        assert knowledge.search("o'zim olib ketsam bo'ladimi")[0].entry.title == "Do'kondan olib ketish"
