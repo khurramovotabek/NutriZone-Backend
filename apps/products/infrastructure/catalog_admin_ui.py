@@ -84,12 +84,25 @@ def kpi(label: str, value, icon: str, tone: str, sub: str = "", change: int | No
     return {"label": label, "value": value, "icon": icon, "tone": tone, "sub": sub, "change": ca.change_badge(change)}
 
 
+class _TranslatedRelatedFilter(admin.RelatedFieldListFilter):
+    """Brand / category choices with their translations in one query (their __str__ reads translations, so Django's
+    own filter ran one query per brand and per category -- seconds on the product list in production)."""
+
+    def field_choices(self, field, request, model_admin):
+        rows = field.related_model._default_manager.prefetch_related("translations")
+        return sorted(((obj.pk, str(obj)) for obj in rows), key=lambda r: r[1].lower())
+
+
 def titled(title: str):
     """`list_filter = (("brand", titled("Brend")),)` -- Django's own filter for the field, with a human (Uzbek) title."""
 
     class _Titled(admin.FieldListFilter):
         def __new__(cls, field, request, params, model, model_admin, field_path):
-            inst = admin.FieldListFilter.create(field, request, params, model, model_admin, field_path)
+            related = getattr(field, "related_model", None)
+            if related is not None and hasattr(related, "translations") and not getattr(field, "many_to_many", False):
+                inst = _TranslatedRelatedFilter(field, request, params, model, model_admin, field_path)
+            else:
+                inst = admin.FieldListFilter.create(field, request, params, model, model_admin, field_path)
             inst.title = title
             return inst
 

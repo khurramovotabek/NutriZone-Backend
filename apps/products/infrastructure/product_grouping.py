@@ -71,20 +71,37 @@ def _flavour_index() -> list[tuple[str, int]]:
     return sorted(out.items(), key=lambda kv: -len(kv[0]))
 
 
+_INDEX_RE: dict[tuple, re.Pattern] = {}
+
+
+def _index_re(index) -> re.Pattern:
+    """Every flavour name of the index in one compiled pattern (longest first), built once per index -- one regex
+    per name per product recompiled ~1.5 million patterns on the full catalogue and the grouping page timed out."""
+    names = tuple(name for name, _fid in index)
+    pattern = _INDEX_RE.get(names)
+    if pattern is None:
+        body = "|".join(re.escape(n) for n in names) or r"(?!)"
+        pattern = _INDEX_RE[names] = re.compile(rf"(?<![\w])(?:{body})(?![\w])", re.I)
+        if len(_INDEX_RE) > 8:
+            _INDEX_RE.pop(next(iter(_INDEX_RE)))
+    return pattern
+
+
 def _find_flavour(text: str, index) -> tuple[uuid.UUID | None, str]:
-    low = f" {(text or '').lower()} "
-    for name, fid in index:
-        if re.search(rf"(?<![\w]){re.escape(name)}(?![\w])", low):
-            return fid, name
-    return None, ""
+    """The longest flavour name found anywhere in the text (the index is sorted longest first)."""
+    rank = {name: (i, fid) for i, (name, fid) in enumerate(index)}
+    found = [rank[m.group(0).lower()] for m in _index_re(index).finditer((text or "").lower()) if m.group(0).lower() in rank]
+    if not found:
+        return None, ""
+    i, fid = min(found)
+    return fid, index[i][0]
 
 
 def base_name(name: str, index=None) -> str:
     """The family name: sizes, serving counts and flavour names removed -- "Olimp Complex Whey 2.27 kg Chocolate" → "Olimp Complex Whey"."""
     text = _SIZE.sub(" ", name or "")
     text = _SERVINGS.sub(" ", text)
-    for flavour, _fid in (index if index is not None else _flavour_index()):
-        text = re.sub(rf"(?<![\w]){re.escape(flavour)}(?![\w])", " ", text, flags=re.I)
+    text = _index_re(index if index is not None else _flavour_index()).sub(" ", text)
     text = re.sub(r"\(\s*\)|\[\s*\]", " ", text)
     text = re.sub(r"\s{2,}", " ", text)
     previous = None

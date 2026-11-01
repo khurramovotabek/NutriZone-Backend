@@ -84,3 +84,19 @@ class TestPrefilledTransfer:
         assert response.status_code == 200
         t = StockTransfer.objects.get(source=wh, destination=shop)
         assert not StockTransferItem.objects.filter(transfer=t).exists()
+
+
+class TestStockTablePages:
+    def test_long_table_is_paged_but_totals_cover_every_line(self, monkeypatch):
+        from apps.stores.infrastructure import warehouse_admin
+
+        monkeypatch.setattr(warehouse_admin, "STOCK_PAGE", 2)
+        wh = _store("warehouse", "WH")
+        for qty in (5, 6, 7):
+            _put(wh, _variant(), qty)
+        boss = _client(superuser=True)
+        first = boss.get(f"/django-admin/wms/stock/?location={wh.id}").content.decode()
+        assert first.count('class="nzd-tr" role="row"') == 2 and "1 / 2" in first
+        assert "page=2" in first
+        last = boss.get(f"/django-admin/wms/stock/?location={wh.id}&page=9").content.decode()  # past the end -> the last page
+        assert last.count('class="nzd-tr" role="row"') == 1 and "2 / 2" in last

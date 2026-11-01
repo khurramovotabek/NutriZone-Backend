@@ -1037,6 +1037,9 @@ class StockMovementAdmin(admin.ModelAdmin):
 LOW_STOCK = 5  # "running low" threshold (units available)
 
 
+STOCK_PAGE = 150
+
+
 def stock_view(request):
     """
     Ombor → Qoldiqlar: stock per location (on hand / reserved / available, value at cost and at selling price,
@@ -1140,10 +1143,20 @@ def stock_view(request):
         "cost_value": _som(sum((r["cost_value"] or 0 for r in rows), Decimal(0))), "retail_value": _som(sum((r["retail_value"] or 0 for r in rows), Decimal(0))),
         "unpriced": sum(1 for r in rows if r["cost_value"] is None),
     }
+    # totals and counts cover every row; the table shows one page (the main warehouse holds ~1000 lines -- one 2 MB page)
+    pages = max(1, -(-len(rows) // STOCK_PAGE))
+    try:
+        page = min(max(1, int(request.GET.get("page") or 1)), pages)
+    except ValueError:
+        page = 1
+    rows = rows[(page - 1) * STOCK_PAGE:page * STOCK_PAGE]
     for r in rows:
         r["cost_value"] = _som(r["cost_value"]) if r["cost_value"] is not None else ""
         r["retail_value"] = _som(r["retail_value"]) if r["retail_value"] is not None else ""
-    return render(request, "admin/wms/stock.html", {**ctx, "rows": rows, "totals": totals, "counts": counts, "sort": sort})
+    keep = request.GET.copy()
+    keep.pop("page", None)
+    pager = {"page": page, "pages": pages, "qs": keep.urlencode(), "prev": page - 1 if page > 1 else None, "next": page + 1 if page < pages else None}
+    return render(request, "admin/wms/stock.html", {**ctx, "rows": rows, "totals": totals, "counts": counts, "sort": sort, "pager": pager})
 
 
 def _exact_variant(code: str):
