@@ -173,7 +173,7 @@ def product_answer(text: str, loc: str, aspects: list[str], focus: str | None) -
         what = {"uz": "Bu nomda bir nechta mahsulot bor — qaysi biri haqida so'rayapsiz?", "ru": "С таким названием несколько продуктов — о каком речь?",
                 "en": "Several products share that name — which one do you mean?"}[loc]
         ask = ASK_AGAIN.get(aspects[0], ASK_AGAIN["about"])[loc] if aspects else ""  # the chip repeats the question for the one tapped
-        return Answer(f"{what}\n{names}", [o["id"] for o in options], [f"{o['name'][:60]} {ask}".strip() for o in options[:3]])
+        return Answer(f"{what}\n{names}", [o["id"] for o in options], [f"{o['name'][:60]} {ask}".strip() for o in options])  # one chip per option -- none left out
     pid = _find_product(text, loc, focus)
     if not pid:
         return None
