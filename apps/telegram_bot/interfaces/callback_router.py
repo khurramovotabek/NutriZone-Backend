@@ -48,6 +48,7 @@ def _main_menu_keyboard(lang: str) -> list:
         [{"text": t("menu_products", lang), "callback_data": "menu:products"}, {"text": t("menu_catalog", lang), "callback_data": "menu:catalog"}],
         [{"text": t("menu_brands", lang), "callback_data": "menu:brands"}, {"text": t("menu_cart", lang), "callback_data": "menu:cart"}],
         [{"text": t("menu_orders", lang), "callback_data": "menu:orders"}, {"text": t("menu_loyalty", lang), "callback_data": "menu:loyalty"}],
+        *_invite_row(lang),
         [{"text": t("menu_find", lang), "callback_data": "menu:find"}, {"text": t("menu_stores", lang), "callback_data": "menu:stores"}],
         [{"text": t("menu_chat", lang), "callback_data": "menu:chat"}, {"text": t("menu_news", lang), "callback_data": "menu:news"}],
         [{"text": t("menu_autologin", lang), "callback_data": "menu:autologin"}],
@@ -55,6 +56,20 @@ def _main_menu_keyboard(lang: str) -> list:
         [{"text": t("menu_social", lang), "callback_data": "menu:social"}, {"text": "\U0001F310 Til / Язык / Language", "callback_data": "menu:lang"}],
     ]
     return rows
+
+
+def _invite_row(lang: str) -> list:
+    """"Invite a friend (+N coins)" straight from the menu while the referral programme runs -- it was two taps deep."""
+    try:
+        from apps.loyalty.infrastructure import services as loyalty_services
+
+        cfg = loyalty_services.programme()
+        if not cfg.referral_enabled:
+            return []
+        coins = f"{cfg.referrer_reward:,}".replace(",", " ")
+    except Exception:  # noqa: BLE001 -- the menu never fails because of the loyalty settings
+        return []
+    return [[{"text": t("menu_invite", lang, coins=coins), "callback_data": "menu:loyalty_ref"}]]
 
 
 def _send(chat_id: int, text: str, keyboard: list | None = None) -> None:

@@ -219,6 +219,11 @@ _TRANSLATIONS: dict[str, dict[str, str]] = {
         "ru": "\U0001F3EA Магазины",
         "en": "\U0001F3EA Stores",
     },
+    "menu_invite": {
+        "uz": "\U0001F381 Do'stni taklif qiling \u2014 +{coins} coin",
+        "ru": "\U0001F381 Пригласите друга \u2014 +{coins} монет",
+        "en": "\U0001F381 Invite a friend \u2014 +{coins} coins",
+    },
     "menu_loyalty": {
         "uz": "\U0001FA99 Bonuslarim",
         "ru": "\U0001FA99 Мои бонусы",
