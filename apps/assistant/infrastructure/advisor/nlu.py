@@ -28,7 +28,7 @@ INTENTS: dict[str, tuple[str, ...]] = {
     "faq_original": ("original", "sertifikat", "qalbaki", "soxta", "оригинал", "подделк", "сертификат", "fake", "genuine", "authentic", "certificate"),
     "faq_returns": ("qaytar", "almashtir", "vozvrat", "возврат", "обмен", "return", "refund", "exchange"),
     "faq_order": ("buyurtmam", "zakazim", "заказ", "где мой", "my order", "order status", "track"),
-    "usage": ("qanday ich", "qanday qabul", "qachon qabul", "qancha ich", "necha mg", "necha gramm", "kuniga qancha", "сколько пить", "сколько принимать", "сколько мг", "how many mg", "how much a day", "qachon ich", "doza", "dozirovka", "как приним", "как пить", "когда пить", "дозиров", "how to take", "how to use", "when to take", "dosage", "how much should", "per day", "a day", "в день", "в сутки", "daily dose"),
+    "usage": ("qanday ich", "qanday qabul", "qachon qabul", "qancha ich", "necha mg", "necha gramm", "kuniga qancha", "сколько пить", "сколько принимать", "сколько мг", "how many mg", "how much a day", "qachon ich", "doza", "dozirovka", "как приним", "как пить", "когда пить", "дозиров", "how to take", "how to use", "when to take", "dosage", "how much should", "per day", "a day", "в день", "в сутки", "daily dose", "should i take", "should take", "do i take", "need to take", "нужно принимать", "надо принимать"),
     "recommend": ("tavsiya", "maslahat", "tanlab", "nima ich", "qaysi", "taklif", "kerak bo'l", "nima olay", "посовет", "что выбрать", "какой", "какую", "рекоменд", "подбер", "recommend", "suggest", "which", "what should", "advise", "best for", "maqsad"),
     "profile": ("bo'y", "vazn", "yosh", "рост", "вес", "лет", "height", "weight", "years old"),
 }

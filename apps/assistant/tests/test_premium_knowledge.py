@@ -42,3 +42,13 @@ def test_condition_note_comes_first_then_the_entry_for_that_condition():
 @pytest.mark.django_db
 def test_opening_hours_still_understood_in_russian():
     assert answer({}, "до скольки вы работаете", "ru")[3]["last"] == "hours"
+
+
+@pytest.mark.django_db
+def test_dose_question_with_the_product_in_stock_is_not_a_price_list():
+    from apps.assistant.tests.test_teaching import _product
+
+    _product("Zorvex Vitamin D3 2000 IU", 90000)  # with nothing in stock the price branch fell through and hid this
+    for text, loc in (("how much vitamin d should I take", "en"), ("сколько витамина д нужно принимать", "ru"), ("d vitamini qancha ichish kerak", "uz")):
+        reply = answer({}, text, loc)[0]
+        assert "Prices" not in reply and "Цены" not in reply and "Narxlar" not in reply, text
