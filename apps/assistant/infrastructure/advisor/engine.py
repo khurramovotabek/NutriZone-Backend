@@ -106,6 +106,9 @@ def _kind_ids(concept: str | None, loc: str) -> list[str]:
     return [x["id"] for x in tools.search_products({"query": reco.QUERIES.get(concept, concept), "limit": 3, "in_stock_only": True}, loc)["products"]]
 
 
+ADVICE_FIRST = ("sleep",)  # topics whose how-to is the answer itself, shown above the products
+
+
 def _on_topic(entry, concept: str | None) -> bool:
     if not concept:
         return True
@@ -155,7 +158,9 @@ def answer(conv_meta: dict, text: str, loc: str) -> tuple[str, list[str], list[s
     if p.intent == "operator":
         return kb.T["operator"][loc].format(contacts=kb.contacts(loc)), [], [], meta
     small = talk.intent(text)
-    if small and not (p.facts or p.concept or brain.understand(text).health):  # "uyqum yomon" is about sleep, not a complaint  # how are you / who are you / complaints / bye ...
+    seen = brain.understand(text) if small else None
+    # "uyqum yomon" is about sleep, not a complaint; "Zorvex yoki Kalmar qaysi biri yaxshi" compares brands, it isn't praise
+    if small and not (p.facts or p.concept or seen.health or seen.brands):  # how are you / who are you / complaints / bye ...
         meta["last"] = f"talk_{small}"
         reply, chips = talk.reply(small, loc, name, kb.contacts(loc) if small == "complaint" else "")
         return reply, [], chips, meta
@@ -177,6 +182,8 @@ def answer(conv_meta: dict, text: str, loc: str) -> tuple[str, list[str], list[s
         return taught[0].entry.answer(loc), smart.product_ids, smart.chips or CHIPS["after_reco"][loc], meta
     if smart is not None:
         meta["last"] = smart.last
+        if smart.last == "listing" and not smart.product_ids:  # "kollagen bormi" -- asked for, not in stock: a buying signal
+            meta["_gap"] = "out_of_stock"
         if smart.query:
             meta["last_query"] = smart.query
         if smart.venues:
@@ -258,6 +265,9 @@ def answer(conv_meta: dict, text: str, loc: str) -> tuple[str, list[str], list[s
                                  {"uz": f"_{money(budget)} so'mgacha:_", "ru": f"_До {money(budget)} сум:_", "en": f"_Up to {money(budget)} UZS:_"})[loc]
             if p.facts.get("sex") == "f" and p.concept in ("protein", "creatine", "bcaa", "gainer", "preworkout", "carnitine"):
                 head = kb.FOR_WOMEN[loc] + "\n\n" + head
+            if p.concept in ADVICE_FIRST:  # "uyqum yomon" -- the routine matters more than the tub
+                head = (f"**{kb.T['kind_name'][loc][p.concept]}** — {kb.T['why'][loc][p.concept]}.\n\n{kb.T['usage'][loc][p.concept]}\n\n"
+                        + {"uz": "Ombordagi variantlar:", "ru": "В наличии:", "en": "In stock:"}[loc])
             return f"{head}\n\n{tail}", [x["id"] for x in found], CHIPS["after_reco"][loc], meta
     if p.intent == "recommend" or (p.goal and not p.concept):
         gaps = needs.missing(profile)

@@ -21,6 +21,8 @@ class TestUnderstanding:
         ("how much creatine per day", "usage"),
         ("сколько креатина в день", "usage"),
         ("menga protein taklif qiling", "recommend"),  # "taklif" alone still means "suggest"
+        ("mahsulot sertifikati bormi", "faq_original"),
+        ("sovg'a sertifikati sotasizlarmi", "search"),  # a gift certificate, not the product's certificate
     ])
     def test_intents(self, text, intent):
         assert nlu.parse(text).intent == intent
@@ -111,6 +113,19 @@ class TestAnswers:
         reply, ids, _chips, meta = answer({}, "Zorvex whey yoki Kalmar whey qaysi biri yaxshi", "uz")
         assert meta["last"] == "compare" and ids == [str(a.id), str(b.id)] and "200 000 so'm arzonroq" in reply
 
+    def test_comparison_is_like_for_like(self):
+        zorvex, kalmar = _brand("Zorvex"), _brand("Kalmar")
+        whey = _product("Zorvex Gold Whey Protein", 900000, brand=zorvex)
+        _product("Kalmar Mass Gainer", 500000, brand=kalmar)
+        kalmar_whey = _product("Kalmar Whey Protein", 700000, brand=kalmar)
+        ids = answer({}, "Zorvex Gold yoki Kalmar qaysi biri yaxshi", "uz")[1]
+        assert ids == [str(whey.id), str(kalmar_whey.id)]  # whey vs whey, not whey vs Kalmar's gainer
+
+    def test_sleep_advice_comes_with_the_products(self):
+        _product("Zorvex Magnesium Bisglycinate", 120000)
+        reply, ids, _chips, _meta = answer({}, "uyqum yomon nima tavsiya qilasiz", "uz")
+        assert ids and "magniy" in reply and "kofein" in reply
+
     def test_milk_or_water_is_not_a_product_comparison(self):
         _product("Zorvex Creatine Monohydrate", 150000)
         assert answer({}, "kreatinni suv bilan ichsa bo'ladimi yoki sut bilan", "uz")[2] is not None
@@ -135,6 +150,14 @@ class TestTeachingLoop:
         _turn_sync(conv.id, "Qwzx plorbt vendaxi qanaqa ishlaydi?")
         gap = AdvisorGap.objects.get()
         assert (gap.count, gap.reason, gap.status) == (2, "unclear", "open") and gap.answer
+
+    def test_a_kind_out_of_stock_is_a_buying_signal(self):
+        from apps.products.infrastructure import models as p
+
+        cat = p.Category.objects.create()
+        p.CategoryTranslation.objects.create(category=cat, locale_code="uz", name="Kollagen", slug=f"k-{uuid.uuid4().hex[:6]}")
+        _turn_sync(self._conv().id, "kollagen bormi")
+        assert AdvisorGap.objects.get().reason == "out_of_stock"
 
     def test_answered_questions_leave_no_gap(self):
         _turn_sync(self._conv().id, "salom")

@@ -379,9 +379,16 @@ def _compare_products(text: str, loc: str) -> Reply | None:
     parts = [_clean_query(COMPARE_TAIL.sub(" ", x)) for x in COMPARE_SPLIT.split(nlu.normalize(text), maxsplit=1)]
     if len(parts) != 2 or not all(len(x) >= 2 for x in parts):
         return None
+    from apps.assistant.infrastructure.advisor import reco
+
+    # like for like: "ON Gold Standard yoki Rule 1" is whey vs whey, not whey vs Rule 1's gainer -- the kind named in the
+    # question, else the kind of the first product found, is added to the other side's search
+    kinds = nlu.concepts_in(nlu.normalize(text))
     picks = []
     for part in parts:
-        found = _search(part, loc, limit=1, sort="-popularity") or _search(part, loc, limit=1, in_stock=False)
+        kind = kinds[0] if kinds else next(iter(nlu.concepts_in(nlu.normalize(picks[0]["name"] or ""))), None) if picks else None
+        query = part if not kind or kind in nlu.concepts_in(part) else f"{part} {reco.QUERIES.get(kind, kind)}"
+        found = _search(query, loc, limit=1) or _search(query, loc, limit=1, in_stock=False) or _search(part, loc, limit=1, in_stock=False)
         if not found or any(found[0]["id"] == x["id"] for x in picks):
             return None
         picks.append(found[0])
