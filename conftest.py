@@ -9,9 +9,21 @@ conversation state. Each xdist worker owns a Redis database (config/settings/tes
 """
 from __future__ import annotations
 
+import importlib
+
 import pytest
 
 _PATTERNS = ("nutrizone:ratelimit:*", "*throttle_*", "nutrizone:identity:permissions:*", "nutrizone:telegram_bot:*")
+
+
+def pytest_configure(config):  # noqa: ARG001 - pytest hook signature
+    """
+    Load the project's Celery app (config/celery.py), as a worker does with `-A config`. Nothing in config/ imports it,
+    so without this `.delay()` ran on Celery's unconfigured default app: CELERY_TASK_ALWAYS_EAGER from testing.py was
+    ignored and tasks went to the broker in CELERY_BROKER_URL from .env -- queued on the dev Redis, or, where that host
+    does not resolve, retried forever (apps/loyalty hung on the first notification).
+    """
+    importlib.import_module("config.celery")
 
 
 @pytest.fixture(autouse=True)
