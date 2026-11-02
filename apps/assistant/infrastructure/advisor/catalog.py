@@ -272,6 +272,26 @@ def product_answer(text: str, loc: str, aspects: list[str], focus: str | None) -
     return Answer("\n\n".join(lines), [pid], chips, focus=pid, missing=missing)
 
 
+def card_numbers(product_id, loc: str) -> dict:
+    """The numbers a comparison needs from one product's card: protein and size of a serving, servings, price, flavours
+    (only what the card has)."""
+    from apps.assistant.infrastructure import tools
+
+    try:
+        d = tools.get_product_details({"product_id": product_id}, loc)
+    except tools.ToolError:
+        return {}
+    nutrition = d.get("nutrition") or {}
+    facts = d.get("supplement_facts") if isinstance(d.get("supplement_facts"), str) else ""
+    out = {"protein": _protein_grams(facts), "serving_g": nutrition.get("serving_size_grams"), "servings": nutrition.get("servings_per_container"),
+           "price": d.get("price_uzs"), "flavours": len(d.get("flavours") or [])}
+    if out["price"] and out["servings"]:
+        out["per_serving"] = out["price"] / out["servings"]
+        if out["protein"]:
+            out["per_gram"] = out["per_serving"] / out["protein"]
+    return out
+
+
 def _brand_country(product_id, loc: str) -> str:
     from apps.products.infrastructure import models as orm
 

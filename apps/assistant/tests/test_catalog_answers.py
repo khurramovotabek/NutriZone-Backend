@@ -138,3 +138,20 @@ class TestBrandAndCategory:
         product = _product("Kalmar Mass Gainer", category=cat)
         reply, ids, _chips, meta = answer({}, "geynerlar bo'limi haqida", "uz")
         assert meta["last"] == "catalog" and "vazn qiyin oshadiganlar" in reply and ids == [str(product.id)]
+
+
+@pytest.mark.django_db
+def test_comparison_shows_value_per_gram_of_protein(gold):
+    kalmar = _product("Kalmar Whey Protein", brand=_brand("Kalmar"), price=900_000)
+    reply, ids, _chips, meta = answer({}, "zorvex gold standard whey yoki kalmar whey qaysi biri yaxshi", "uz")
+    assert meta["last"] == "compare" and ids == [str(gold.id), str(kalmar.id)], reply
+    assert "24 g oqsil/porsiya" in reply and "porsiya ≈ 16 216" in reply and "1 g oqsil ≈ 675" in reply  # 1 200 000 / 74 / 24 = 675.7
+    assert "foydaliroq: **Kalmar Whey Protein** (~25% tejamkor)" in reply
+
+
+@pytest.mark.django_db
+def test_comparison_without_card_numbers_falls_back_to_tub_prices():
+    a = _product("Zorvex Plain Whey", brand=_brand("Zorvex"), card=False)
+    b = _product("Kalmar Plain Whey", brand=_brand("Kalmar"), price=900_000, card=False)
+    reply, ids, _chips, _meta = answer({}, "zorvex plain whey yoki kalmar plain whey", "uz")
+    assert ids == [str(a.id), str(b.id)] and "300 000 so'm arzonroq" in reply and "1 g oqsil" not in reply

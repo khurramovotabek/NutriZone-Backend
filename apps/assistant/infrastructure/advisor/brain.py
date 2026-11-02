@@ -398,14 +398,50 @@ def _compare_products(text: str, loc: str) -> Reply | None:
         pa, pb = float(a["price"]), float(b["price"])
     except (TypeError, ValueError):
         pa = pb = 0
-    if pa and pb and pa != pb:
+    value = _value_lines(a, b, loc)  # per serving and per gram of protein, from the cards
+    if value:
+        text_out += "\n\n" + value
+    elif pa and pb and pa != pb:
         cheap, gap = (a, pb - pa) if pa < pb else (b, pa - pb)
         text_out += "\n\n" + _l(loc, f"💸 **{cheap['name']}** {_money(gap)} arzonroq.", f"💸 **{cheap['name']}** дешевле на {_money(gap)}.",
                                  f"💸 **{cheap['name']}** is {_money(gap)} cheaper.")
-    text_out += "\n\n" + _l(loc, "Ikkalasi ham original. Tanlashda qarang: **bir porsiyadagi oqsil/modda miqdori va porsiya narxi** (kartochkadagi tarkibda), **ta'm** va **maqsadingiz** (massa, ozish, laktozasiz). Maqsadingizni yozsangiz, aniq bittasini tanlab beraman.",
+    text_out += "\n\n" + (_l(loc, "Ikkalasi ham original. Ta'm va maqsadingizni (massa, ozish, laktozasiz) yozsangiz, aniq bittasini tanlab beraman.",
+                              "Оба оригинальные. Напишите вкус и цель (масса, похудение, без лактозы) — выберу один точно.",
+                              "Both are genuine. Tell me your flavour and goal (muscle, fat loss, lactose-free) and I'll pick one.") if value else
+                            _l(loc, "Ikkalasi ham original. Tanlashda qarang: **bir porsiyadagi oqsil/modda miqdori va porsiya narxi** (kartochkadagi tarkibda), **ta'm** va **maqsadingiz** (massa, ozish, laktozasiz). Maqsadingizni yozsangiz, aniq bittasini tanlab beraman.",
                               "Оба оригинальные. Сравнивайте: **количество белка/вещества в порции и цену порции** (состав в карточке), **вкус** и **цель** (масса, похудение, без лактозы). Напишите цель — выберу один точно.",
-                              "Both are genuine. Compare **protein/active amount per serving and price per serving** (ingredients on the card), **flavour** and **your goal** (muscle, fat loss, lactose-free). Tell me your goal and I'll pick one.")
+                              "Both are genuine. Compare **protein/active amount per serving and price per serving** (ingredients on the card), **flavour** and **your goal** (muscle, fat loss, lactose-free). Tell me your goal and I'll pick one."))
     return Reply(text_out, [a["id"], b["id"]], [_l(loc, "Massa uchun qaysi biri?", "Какой для массы?", "Which for muscle?"), _l(loc, "Qanday ichiladi?", "Как принимать?", "How to take it?")], last="compare")
+
+
+def _value_lines(a: dict, b: dict, loc: str) -> str:
+    """"Which is better value" from the two cards: protein per serving, price per serving and per gram of protein; the
+    cheaper gram of protein wins. Empty when a card lacks the numbers (then only the tub prices are compared)."""
+    from apps.assistant.infrastructure.advisor import catalog
+
+    na, nb = catalog.card_numbers(a["id"], loc), catalog.card_numbers(b["id"], loc)
+    if not (na.get("per_serving") and nb.get("per_serving")):
+        return ""
+    rows = []
+    for p, n in ((a, na), (b, nb)):
+        bits = [_l(loc, f"{n['protein']:g} g oqsil/porsiya", f"{n['protein']:g} г белка/порция", f"{n['protein']:g} g protein/serving")] if n.get("protein") else []
+        bits.append(_l(loc, f"{n['servings']:g} porsiya", f"{n['servings']:g} порций", f"{n['servings']:g} servings"))
+        bits.append(_l(loc, f"porsiya ≈ {_money(n['per_serving'])}", f"порция ≈ {_money(n['per_serving'])}", f"serving ≈ {_money(n['per_serving'])}"))
+        if n.get("per_gram"):
+            bits.append(_l(loc, f"1 g oqsil ≈ {_money(n['per_gram'])}", f"1 г белка ≈ {_money(n['per_gram'])}", f"1 g protein ≈ {_money(n['per_gram'])}"))
+        rows.append(f"• **{p['name']}**: " + " · ".join(bits))
+    key = "per_gram" if na.get("per_gram") and nb.get("per_gram") else "per_serving"
+    (win, nw), (_lose, nl) = sorted(((a, na), (b, nb)), key=lambda x: x[1][key])
+    saving = round((1 - nw[key] / nl[key]) * 100) if nl[key] else 0
+    if saving >= 3:
+        what = _l(loc, "oqsil narxi bo'yicha", "по цене белка", "on the price of protein") if key == "per_gram" else _l(loc, "porsiya narxi bo'yicha", "по цене порции",
+                                                                                                                        "on price per serving")
+        rows.append("\n💡 " + _l(loc, f"{what.capitalize()} foydaliroq: **{win['name']}** (~{saving}% tejamkor).", f"Выгоднее {what}: **{win['name']}** (~{saving}% экономии).",
+                                 f"Better value {what}: **{win['name']}** (~{saving}% less)."))
+    else:
+        rows.append("\n💡 " + _l(loc, "Narx/oqsil nisbati deyarli bir xil — ta'm va maqsadga qarab tanlang.", "По цене белка почти одинаковы — выбирайте по вкусу и цели.",
+                                 "Value is about the same — choose by flavour and goal."))
+    return "\n".join(rows)
 
 
 def _branch_stock(seen: Seen, loc: str, query: str) -> Reply | None:
