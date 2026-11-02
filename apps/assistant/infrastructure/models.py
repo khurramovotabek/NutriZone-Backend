@@ -11,6 +11,7 @@ from __future__ import annotations
 import uuid
 
 from django.db import models
+from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
 
 
@@ -123,3 +124,36 @@ class KnowledgeEntry(models.Model):
             if kwargs.get("update_fields") is not None:
                 kwargs["update_fields"] = {*kwargs["update_fields"], "slug"}
         super().save(*args, **kwargs)
+
+
+class AdvisorGap(models.Model):
+    """
+    A question the free advisor couldn't answer well -- it didn't understand it, the catalogue had nothing for it, the
+    kind asked for is out of stock, or the shopper voted the answer 👎. One row per wording (normalized), counted, so
+    the Dashboard (AI maslahatchi → O'qitish) shows what to teach first; teaching it creates a KnowledgeEntry and the
+    row is closed.
+    """
+
+    REASONS = (("unclear", _("Tushunmadi")), ("not_found", _("Hech narsa topilmadi")), ("out_of_stock", _("Mahsulot yo'q")), ("disliked", _("👎 baholandi")))
+    STATUSES = (("open", _("O'rgatilmagan")), ("taught", _("O'rgatildi")), ("ignored", _("E'tiborsiz")))
+
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    key = models.CharField(max_length=200, unique=True)  # normalized wording -- the same question asked twice is one row
+    text = models.CharField(_("Savol"), max_length=300)
+    answer = models.TextField(_("Maslahatchi javobi"), blank=True, default="")  # the last reply given, so staff see what went wrong
+    locale = models.CharField(_("Til"), max_length=5, default="uz")
+    reason = models.CharField(_("Sabab"), max_length=16, choices=REASONS, db_index=True)
+    count = models.PositiveIntegerField(_("Necha marta"), default=1)
+    status = models.CharField(_("Holat"), max_length=10, choices=STATUSES, default="open", db_index=True)
+    knowledge = models.ForeignKey(KnowledgeEntry, on_delete=models.SET_NULL, null=True, blank=True, related_name="gaps", verbose_name=_("Bilim"))
+    first_seen = models.DateTimeField(auto_now_add=True)
+    last_seen = models.DateTimeField(default=timezone.now, db_index=True)
+
+    class Meta:
+        db_table = "assistant_advisor_gaps"
+        ordering = ("-count", "-last_seen")
+        verbose_name = _("O'rgatiladigan savol")
+        verbose_name_plural = _("AI maslahatchini o'qitish")
+
+    def __str__(self) -> str:  # pragma: no cover
+        return self.text

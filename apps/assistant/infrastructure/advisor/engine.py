@@ -106,6 +106,27 @@ def _kind_ids(concept: str | None, loc: str) -> list[str]:
     return [x["id"] for x in tools.search_products({"query": reco.QUERIES.get(concept, concept), "limit": 3, "in_stock_only": True}, loc)["products"]]
 
 
+def _on_topic(entry, concept: str | None) -> bool:
+    if not concept:
+        return True
+    about = nlu.concepts_in(nlu.normalize(" ".join((entry.title, entry.questions or "", entry.keywords or ""))))
+    return not about or concept in about
+
+
+def _taught(text: str, concept: str | None) -> list:
+    """The best taught entry for the question, as a 0/1-item list. An entry about another product kind never answers
+    just because the wording is close ("gainer ichsam semiramanmi" is not "Mashg'ulot qilmasam protein ichsa bo'ladimi";
+    "how much creatine per day" is not "Kuniga qancha oqsil kerak") -- only when nothing about the asked kind was taught
+    and the match is very strong."""
+    hits = knowledge.search(text, limit=3)
+    if not hits or hits[0].exact or _on_topic(hits[0].entry, concept):
+        return hits[:1]
+    on = [h for h in hits if _on_topic(h.entry, concept)]
+    if on:
+        return on[:1]
+    return hits[:1] if hits[0].score >= DEEP_MATCH else []
+
+
 def answer(conv_meta: dict, text: str, loc: str) -> tuple[str, list[str], list[str], dict]:
     """(reply text, product ids to show, quick-reply chips, updated meta). Pure sync -- DB reads only."""
     meta = dict(conv_meta or {})
@@ -134,12 +155,12 @@ def answer(conv_meta: dict, text: str, loc: str) -> tuple[str, list[str], list[s
     if p.intent == "operator":
         return kb.T["operator"][loc].format(contacts=kb.contacts(loc)), [], [], meta
     small = talk.intent(text)
-    if small and not (p.facts or brain.understand(text).health):  # how are you / who are you / complaints / bye ...
+    if small and not (p.facts or p.concept or brain.understand(text).health):  # "uyqum yomon" is about sleep, not a complaint  # how are you / who are you / complaints / bye ...
         meta["last"] = f"talk_{small}"
         reply, chips = talk.reply(small, loc, name, kb.contacts(loc) if small == "complaint" else "")
         return reply, [], chips, meta
     meta.pop("_venues", None)
-    taught = knowledge.search(text, limit=1)
+    taught = _taught(text, p.concept)
     if taught and taught[0].exact and not brain.understand(text).health:
         # the shop taught this very question on the dashboard -- its answer wins over everything automatic
         knowledge.mark_used([taught[0].entry])
@@ -186,6 +207,9 @@ def answer(conv_meta: dict, text: str, loc: str) -> tuple[str, list[str], list[s
         return kb.payment_text(loc), [], CHIPS["faq"][loc], meta
     if p.intent == "faq_loyalty":
         return kb.loyalty_text(loc), [], CHIPS["faq"][loc], meta
+    if p.intent == "faq_referral":
+        meta["last"] = p.intent
+        return kb.referral_text(loc), [], CHIPS["faq"][loc], meta
     if p.intent == "usage" and p.concept:
         found = tools.search_products({"query": reco.QUERIES.get(p.concept, p.concept), "limit": 3, "in_stock_only": True}, loc)["products"]
         head = f"**{kb.T['kind_name'][loc][p.concept]}** — {kb.T['why'][loc][p.concept]}.\n\n{kb.T['usage'][loc][p.concept]}"
@@ -195,12 +219,24 @@ def answer(conv_meta: dict, text: str, loc: str) -> tuple[str, list[str], list[s
         kinds = meta.get("last_kinds") or []
         body = "\n".join(f"• **{kb.T['kind_name'][loc][k]}:** {kb.T['usage'][loc][k]}" for k in kinds)
         return body + "\n\n" + kb.T["disclaimer"][loc], [], CHIPS["after_reco"][loc], meta
-    if p.concept and not p.facts and p.intent in ("recommend", "search"):
+    if p.concept and not nlu.body_facts(p.facts) and p.intent in ("recommend", "search"):
         # "qaysi protein yaxshi?", "что лучше для суставов" -- show the best of that kind right away, offer a personal pick instead of interrogating
         q = reco.QUERIES.get(p.concept, p.concept)
-        found = tools.search_products({"query": q, "limit": 4, "in_stock_only": True}, loc)["products"] or tools.search_products({"query": q, "limit": 4, "in_stock_only": False}, loc)["products"]
+        budget = p.facts.get("budget")  # "300 ming so'mgacha protein"
+        args = {"query": q, "limit": 4, "in_stock_only": True, **({"max_price": budget} if budget else {})}
+        found = tools.search_products(args, loc)["products"] or tools.search_products({**args, "in_stock_only": False}, loc)["products"]
+        over_budget = False
+        if not found and budget:  # nothing that cheap: the cheapest of the kind, and say so
+            found = sorted(tools.search_products({"query": q, "limit": 8, "in_stock_only": True}, loc)["products"], key=lambda x: x.get("price_uzs") or 0)[:3]
+            over_budget = bool(found)
+        if taught and taught[0].score >= WEAK_MATCH and _on_topic(taught[0].entry, p.concept) and brain.asks(text):
+            # "gainer ichsam semiramanmi?" -- a question about the kind: the taught answer, with what's in stock below it
+            knowledge.mark_used([taught[0].entry])
+            meta["last"] = "knowledge"
+            return taught[0].entry.answer(loc), [x["id"] for x in found], CHIPS["after_reco"][loc], meta
         if not found:
             meta["last"] = "kind_missing"
+            meta["_gap"] = "out_of_stock"
             name = kb.T["kind_name"][loc][p.concept]
             msg = {"uz": f"**{name}** — {kb.T['why'][loc][p.concept]}.\n\n{kb.T['usage'][loc][p.concept]}\n\nHozir bu mahsulot sotuvda yo'q. Saytdagi «Mahsulot topib bering» orqali so'rov qoldiring — kelishi bilan xabar beramiz.",
                    "ru": f"**{name}** — {kb.T['why'][loc][p.concept]}.\n\n{kb.T['usage'][loc][p.concept]}\n\nСейчас этого нет в продаже. Оставьте заявку «Найти товар» на сайте — сообщим, как только появится.",
@@ -215,6 +251,13 @@ def answer(conv_meta: dict, text: str, loc: str) -> tuple[str, list[str], list[s
             tail = {"uz": "Bo'y, vazn va maqsadingizni yozsangiz, aynan sizga mos dozani va variantni hisoblab beraman.",
                     "ru": "Напишите рост, вес и цель — рассчитаю дозировку и подберу вариант под вас.",
                     "en": "Tell me your height, weight and goal and I'll work out the dose and the right option for you."}[loc]
+            if budget:
+                head += "\n" + ({"uz": f"_Byudjetingizga ({money(budget)} so'm) mos keladigani hozir yo'q — eng arzonlarini ko'rsatdim._",
+                                  "ru": f"_В бюджет {money(budget)} сум сейчас ничего не укладывается — показал самые доступные._",
+                                  "en": f"_Nothing fits {money(budget)} UZS right now — these are the most affordable._"} if over_budget else
+                                 {"uz": f"_{money(budget)} so'mgacha:_", "ru": f"_До {money(budget)} сум:_", "en": f"_Up to {money(budget)} UZS:_"})[loc]
+            if p.facts.get("sex") == "f" and p.concept in ("protein", "creatine", "bcaa", "gainer", "preworkout", "carnitine"):
+                head = kb.FOR_WOMEN[loc] + "\n\n" + head
             return f"{head}\n\n{tail}", [x["id"] for x in found], CHIPS["after_reco"][loc], meta
     if p.intent == "recommend" or (p.goal and not p.concept):
         gaps = needs.missing(profile)
@@ -248,9 +291,11 @@ def answer(conv_meta: dict, text: str, loc: str) -> tuple[str, list[str], list[s
     meta["last"] = "search"
     if not found and talk.looks_like_a_sentence(text):  # a sentence that matched nothing: ask, don't say "nothing found for <sentence>"
         meta["last"] = "unclear"
+        meta["_gap"] = "unclear"
         reply, chips = talk.reply("unclear", loc, name)
         return reply, [], chips, meta
     if not found:
+        meta["_gap"] = "not_found"
         return kb.T["nothing"][loc].format(q=query[:60]), [], CHIPS["start"][loc], meta
     lines = [kb.T["found"][loc]]
     for x in found:
@@ -327,6 +372,7 @@ def _turn_sync(conversation_id, user_text: str) -> dict:
         start.setdefault("name", first_name(conv.customer_id))
     reply, ids, chips, meta = answer(start, user_text, loc)
     venues = meta.pop("_venues", None) or []
+    gap = meta.pop("_gap", None)
     if conv.customer_id:
         save_account_facts(conv.customer_id, meta.get("profile") or {})
     cards = tools.cards([tools._uuid(i) for i in ids], loc) if ids else []
@@ -348,6 +394,10 @@ def _turn_sync(conversation_id, user_text: str) -> dict:
         row.last_message = user_text[:300]
         row.save()
         row.refresh_from_db(fields=["turns"])
+    if gap:  # Dashboard → AI maslahatchini o'qitish
+        from apps.assistant.infrastructure import gaps
+
+        gaps.record(user_text, loc, gap, reply)
     return {"reply": reply, "cards": cards, "chips": chips, "turns": row.turns, "venues": venues}
 
 

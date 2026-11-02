@@ -252,7 +252,7 @@ def _hours_line(s, loc: str) -> str:
 # --------------------------------------------------------------------------- answers
 
 
-def _health(seen: Seen, loc: str) -> Reply:
+def _health(seen: Seen, loc: str) -> Reply:  # noqa: C901 - one plain branch per condition
     conds = set(seen.health)
     parts = []
     if "pregnant" in conds:
@@ -267,6 +267,10 @@ def _health(seen: Seen, loc: str) -> Reply:
         parts.append(_l(loc, "Bolalar va 18 yoshgacha o'smirlarga sport ozuqasi (pre-workout, kreatin, yog' yoqiruvchi) berilmaydi. Vitamin va omega-3 uchun **bolalar uchun mo'ljallangan** mahsulotni pediatr tavsiyasi bilan tanlang.",
                         "Детям и подросткам до 18 лет спортивное питание (предтрены, креатин, жиросжигатели) не дают. Витамины и омега-3 — только **детские формы** и по совету педиатра.",
                         "Children and teens under 18 shouldn't take sports supplements (pre-workouts, creatine, fat burners). For vitamins and omega-3, choose **kids' formulas** with a paediatrician's advice."))
+    if "child" in conds and "protein" in seen.concepts:
+        parts.append(_l(loc, "**Protein** esa oddiy oziq-ovqat oqsili (sutdan): 14–17 yoshda ovqatdan oqsil yetmasa, kuniga 1 porsiya (20–25 g) ichish mumkin — ota-ona bilan kelishib. Asosiysi baribir oddiy ovqat: go'sht, tuxum, tvorog, dukkaklilar.",
+                        "**Протеин** — это обычный пищевой белок (из молока): в 14–17 лет, если белка из еды не хватает, можно 1 порцию (20–25 г) в день — по согласованию с родителями. Основа всё равно обычная еда: мясо, яйца, творог, бобовые.",
+                        "**Protein** is ordinary food protein (from milk): at 14–17, if food doesn't cover it, 1 serving (20–25 g) a day is fine — agreed with a parent. Regular food still comes first: meat, eggs, cottage cheese, beans."))
     if "kidney" in conds:
         parts.append(_l(loc, "Buyrak yoki jigar kasalligida protein, kreatin va boshqa qo'shimchalarni faqat shifokor ruxsati bilan ichish mumkin.",
                         "При болезнях почек или печени протеин, креатин и другие добавки — только с разрешения врача.",
@@ -363,6 +367,38 @@ def _compare(seen: Seen, loc: str) -> Reply | None:
         found = _search(reco.QUERIES.get(k, k), loc, limit=1)
         ids += [p["id"] for p in found]
     return Reply(text, ids, [_l(loc, "Massa uchun", "Для массы", "For muscle"), _l(loc, "Ozish uchun", "Для похудения", "For fat loss")], last="compare")
+
+
+COMPARE_SPLIT = re.compile(r"\s(?:yoki|или|or|vs\.?|versus|против)\s")
+COMPARE_TAIL = re.compile(r"\b(?:qaysi\w*|biri\w*|yaxshi\w*|zo'r\w*|farq\w*|nima|solishtir\w*|taqqosla\w*|что|лучше|какой|какая|разниц\w*|which|one|is|better|best|difference)\b")
+
+
+def _compare_products(text: str, loc: str) -> Reply | None:
+    """"ON Gold Standard yoki Rule 1?", "Olimp whey или Myprotein" -- the two products side by side with live prices.
+    Only facts from the catalogue: which one is cheaper and by how much; taste and goal are left to the shopper."""
+    parts = [_clean_query(COMPARE_TAIL.sub(" ", x)) for x in COMPARE_SPLIT.split(nlu.normalize(text), maxsplit=1)]
+    if len(parts) != 2 or not all(len(x) >= 2 for x in parts):
+        return None
+    picks = []
+    for part in parts:
+        found = _search(part, loc, limit=1, sort="-popularity") or _search(part, loc, limit=1, in_stock=False)
+        if not found or any(found[0]["id"] == x["id"] for x in picks):
+            return None
+        picks.append(found[0])
+    a, b = picks
+    text_out = _l(loc, "⚖️ **Taqqoslash:**", "⚖️ **Сравнение:**", "⚖️ **Comparison:**") + "\n" + _lines(picks, loc)
+    try:
+        pa, pb = float(a["price"]), float(b["price"])
+    except (TypeError, ValueError):
+        pa = pb = 0
+    if pa and pb and pa != pb:
+        cheap, gap = (a, pb - pa) if pa < pb else (b, pa - pb)
+        text_out += "\n\n" + _l(loc, f"💸 **{cheap['name']}** {_money(gap)} arzonroq.", f"💸 **{cheap['name']}** дешевле на {_money(gap)}.",
+                                 f"💸 **{cheap['name']}** is {_money(gap)} cheaper.")
+    text_out += "\n\n" + _l(loc, "Ikkalasi ham original. Tanlashda qarang: **bir porsiyadagi oqsil/modda miqdori va porsiya narxi** (kartochkadagi tarkibda), **ta'm** va **maqsadingiz** (massa, ozish, laktozasiz). Maqsadingizni yozsangiz, aniq bittasini tanlab beraman.",
+                              "Оба оригинальные. Сравнивайте: **количество белка/вещества в порции и цену порции** (состав в карточке), **вкус** и **цель** (масса, похудение, без лактозы). Напишите цель — выберу один точно.",
+                              "Both are genuine. Compare **protein/active amount per serving and price per serving** (ingredients on the card), **flavour** and **your goal** (muscle, fat loss, lactose-free). Tell me your goal and I'll pick one.")
+    return Reply(text_out, [a["id"], b["id"]], [_l(loc, "Massa uchun qaysi biri?", "Какой для массы?", "Which for muscle?"), _l(loc, "Qanday ichiladi?", "Как принимать?", "How to take it?")], last="compare")
 
 
 def _branch_stock(seen: Seen, loc: str, query: str) -> Reply | None:
@@ -479,12 +515,24 @@ def _why(seen: Seen, loc: str) -> Reply | None:
                  _l(loc, "Menga tanlab bering", "Подберите мне", "Pick one for me")], last="why", query=_kind_query(seen))
 
 
+YES_NO = re.compile(r"\w{3,}(?:mi|mikan|misiz)\b")  # Uzbek yes/no questions: "semiramanmi", "bo'ladimi", "zararlimi"
+
+
+def asks(text: str) -> bool:
+    """A question about the thing ("gainer ichsam semiramanmi?", "можно ли...", "is it safe"), not a request to list it."""
+    t = nlu.normalize(text)
+    return "?" in t or bool(YES_NO.search(t)) or _has(f"{t} {t.translate(nlu.LATIN_FROM_CYR)}", CAN_I + WHY)
+
+
 def respond(meta: dict, text: str, loc: str) -> Reply | None:
     """An answer from live shop data for the questions Brain v2 understands, else None."""
     loc = loc if loc in LOCALES else "uz"
     seen = understand(text)
     b = seen.both
     parsed = nlu.parse(text)
+    body = nlu.body_facts(parsed.facts)
+    if 0 < (body.get("age") or 99) < 18 and "child" not in seen.health:  # "16 yoshman, protein ichsam bo'ladimi?"
+        seen.health.append("child")
     if seen.health and (seen.concepts or seen.cats or _has(b, CAN_I)):
         return _health(seen, loc)
     if _has(b, CONTACT) and not seen.concepts:
@@ -499,6 +547,10 @@ def respond(meta: dict, text: str, loc: str) -> Reply | None:
     if len(seen.concepts) >= 2 and _has(b, COMPARE):
         if (r := _compare(seen, loc)) is not None:
             return r
+    # a brand must be named: "kreatinni suv bilan ichsa bo'ladimi yoki sut bilan" is a usage question, not two products
+    if (_has(b, COMPARE) and COMPARE_SPLIT.search(seen.text) and (seen.brands or re.search(r"\bon\b", seen.text)) and not seen.stores
+            and (r := _compare_products(text, loc)) is not None):
+        return r
     query = _clean_query(text)
     for s in seen.stores:  # the branch's own words aren't part of the product name
         for k in ({nlu.normalize(x) for x in (s.city, s.district, s.name) if x}):
@@ -507,16 +559,16 @@ def respond(meta: dict, text: str, loc: str) -> Reply | None:
     if seen.stores and (seen.concepts or seen.cats or seen.brands or (query and _has(b, HAVE))):
         if (r := _branch_stock(seen, loc, query)) is not None:
             return r
-    if _has(b, CHEAP) and meta.get("last") != "recommend" and not parsed.facts:
+    if _has(b, CHEAP) and meta.get("last") != "recommend" and not body:
         if (r := _cheapest(seen, loc, query, meta)) is not None:
             return r
-    if _has(b, PRICE):
+    if _has(b, PRICE) and parsed.intent != "usage":  # "how much creatine per day" asks for a dose
         if (r := _price(seen, loc, query)) is not None:
             return r
-    if _has(b, BEST) and (seen.concepts or seen.cats or seen.brands) and parsed.intent != "usage" and not parsed.facts:
+    if _has(b, BEST) and (seen.concepts or seen.cats or seen.brands) and parsed.intent != "usage" and not body:
         if (r := _best(seen, loc)) is not None:
             return r
-    if (_has(b, HAVE) or (len(seen.text.split()) <= 3 and (seen.cats or seen.brands))) and parsed.intent not in ("usage",) and not parsed.facts:
+    if (_has(b, HAVE) or (len(seen.text.split()) <= 3 and (seen.cats or seen.brands) and not asks(text))) and parsed.intent not in ("usage",) and not body and not parsed.facts.get("sex"):  # "ayollar uchun protein bormi" gets the women note (engine)
         if (r := _listing(seen, loc)) is not None:
             return r
         if query and (items := _search(query, loc, limit=4, in_stock=False)):

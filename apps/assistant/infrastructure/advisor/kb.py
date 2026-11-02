@@ -202,6 +202,36 @@ def loyalty_text(locale: str) -> str:
     return f"{head}\n{body}\n{levels}{tail}" if levels else f"{head}\n{body}{tail}"
 
 
+def referral_text(locale: str) -> str:
+    """Invite-a-friend terms as set on the dashboard (Bonuslar → Sozlamalar), never hard-coded amounts."""
+    from apps.loyalty.infrastructure.services import programme
+
+    s = programme()
+    if not s.referral_enabled:
+        return {"uz": "Do'st taklif qilish dasturi hozir to'xtatilgan. Har bir xariddan coin olishda davom etasiz — batafsil **Bonuslar** sahifasida.",
+                "ru": "Программа «Пригласи друга» сейчас приостановлена. Коины за каждую покупку начисляются как обычно — подробнее на странице **Бонусы**.",
+                "en": "The invite-a-friend programme is paused right now. You still earn coins on every purchase — see the **Loyalty** page."}[locale]
+    you, friend = f"{s.referrer_reward:,}".replace(",", " "), f"{s.referee_reward:,}".replace(",", " ")
+    minimum = int(s.referral_min_order or 0)
+    cond = {"uz": f" (kamida {minimum:,} so'mlik)".replace(",", " "), "ru": f" (от {minimum:,} сум)".replace(",", " "), "en": f" (at least {minimum:,} UZS)".replace(",", " ")}[locale] if minimum else ""
+    return {
+        "uz": f"🎁 **Do'stingizni taklif qiling — ikkalangizga coin**\n• Siz: **+{you} coin**\n• Do'stingiz: **+{friend} coin**\n\n"
+              f"Coinlar do'stingizning birinchi buyurtmasi{cond} yetkazilganda beriladi. Havolangiz: saytda **Bonuslar → Do'st taklif qilish** yoki Telegram botda «🎁 Do'stni taklif qiling» tugmasi. 1 coin = 1 so'm.",
+        "ru": f"🎁 **Пригласите друга — коины обоим**\n• Вам: **+{you} коинов**\n• Другу: **+{friend} коинов**\n\n"
+              f"Начисляются, когда первый заказ друга{cond} доставлен. Ваша ссылка: на сайте **Бонусы → Пригласить друга** или в Telegram-боте кнопка «🎁 Пригласить друга». 1 коин = 1 сум.",
+        "en": f"🎁 **Invite a friend — coins for both of you**\n• You: **+{you} coins**\n• Your friend: **+{friend} coins**\n\n"
+              f"Paid once your friend's first order{cond} is delivered. Your link: **Loyalty → Invite a friend** on the site, or the «🎁 Invite a friend» button in the Telegram bot. 1 coin = 1 UZS.",
+    }[locale]
+
+
+# "ayollar uchun protein", "можно ли креатин женщинам" -- shown above the products of that kind
+FOR_WOMEN = {
+    "uz": "Ha, ayollar uchun ham xuddi shunday xavfsiz va foydali — erkak/ayol mahsuloti degan farq yo'q, faqat dozasi vazn va maqsadga qarab olinadi. Protein va kreatin «erkakcha» mushak o'stirmaydi: natija mashg'ulot va ovqatlanishga bog'liq.",
+    "ru": "Да, женщинам это так же безопасно и полезно — «мужских» и «женских» версий нет, доза зависит от веса и цели. Протеин и креатин не делают фигуру «мужской»: результат определяют тренировки и питание.",
+    "en": "Yes, it's just as safe and useful for women — there's no men's or women's version, the dose follows your weight and goal. Protein and creatine won't make you bulky: training and diet decide the result.",
+}
+
+
 def contacts(locale: str) -> str:
     from apps.platform.infrastructure.models import SiteSettings
 
@@ -394,6 +424,23 @@ KINDS = {
         "en": ("Melatonin", "helps you fall asleep faster and adjust to time zones",
                "adults who struggle to fall asleep, shift workers, after long flights",
                "0.5–3 mg 30–60 minutes before bed, short term. Don't drive after taking it; pregnancy and children only with a doctor."),
+    },
+    "sleep": {
+        "uz": ("Uyqu uchun", "uyquga ketishni yengillashtiradi va tiklanishni yaxshilaydi; avval rejim, keyin qo'shimcha",
+               "kech uxlaydigan, uyquga qiynalib ketadigan yoki og'ir mashg'ulotdan keyin yaxshi tiklanmaydiganlarga",
+               "Avval asoslar: har kuni bir vaqtda yoting, uxlashdan 6 soat oldin kofein (qahva, energetik, pre-workout) ichmang, kechqurun ekranni kamaytiring. "
+               "Qo'shimchalardan: **magniy** (200–400 mg, uxlashdan oldin) yoki **ZMA**; tez uxlab qolish uchun qisqa muddat **melatonin** 0,5–3 mg. "
+               "Uyqusizlik 3 haftadan oshsa yoki xurrak, nafas to'xtashi bo'lsa — shifokorga."),
+        "ru": ("Для сна", "помогает быстрее засыпать и лучше восстанавливаться; сначала режим, потом добавки",
+               "тем, кто поздно ложится, долго засыпает или плохо восстанавливается после тяжёлых тренировок",
+               "Сначала основа: ложитесь в одно время, без кофеина (кофе, энергетики, предтрен) за 6 часов до сна, меньше экрана вечером. "
+               "Из добавок: **магний** (200–400 мг перед сном) или **ZMA**; чтобы быстрее уснуть — коротким курсом **мелатонин** 0,5–3 мг. "
+               "Если бессонница дольше 3 недель, храп или остановки дыхания — к врачу."),
+        "en": ("For sleep", "helps you fall asleep and recover better; routine first, supplements second",
+               "people who go to bed late, struggle to fall asleep or recover poorly after hard training",
+               "Basics first: the same bedtime every day, no caffeine (coffee, energy drinks, pre-workout) within 6 hours of bed, less screen time at night. "
+               "Supplements: **magnesium** (200–400 mg before bed) or **ZMA**; to fall asleep faster, short-term **melatonin** 0.5–3 mg. "
+               "If insomnia lasts over 3 weeks, or with snoring or breathing pauses, see a doctor."),
     },
     "probiotic": {
         "uz": ("Probiotik", "ichak mikroflorasini qo'llab-quvvatlaydi; samarasi shtammga bog'liq",

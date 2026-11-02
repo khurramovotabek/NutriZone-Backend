@@ -5,6 +5,7 @@ Read-only: conversations are written by the assistant only.
 """
 from __future__ import annotations
 
+import contextlib
 from datetime import timedelta
 from decimal import Decimal
 
@@ -163,7 +164,9 @@ class KnowledgeEntryAdmin(PremiumListMixin, PremiumFormMixin, admin.ModelAdmin):
     def nz_hero_actions(self, request):
         from django.urls import reverse
 
-        return [{"label": "AI suhbatlar", "url": reverse("admin:assistant_assistantconversation_changelist"), "icon": "fa-comments"},
+        open_gaps = AdvisorGap.objects.filter(status="open").count()
+        return [{"label": f"O'rgatish ({open_gaps})" if open_gaps else "O'rgatish", "url": reverse("admin:assistant_advisorgap_changelist"), "icon": "fa-graduation-cap"},
+                {"label": "AI suhbatlar", "url": reverse("admin:assistant_assistantconversation_changelist"), "icon": "fa-comments"},
                 {"label": "Yangi bilim", "url": reverse("admin:assistant_knowledgeentry_add"), "icon": "fa-plus", "primary": True}]
 
     def nz_row(self, e):
@@ -185,7 +188,122 @@ class KnowledgeEntryAdmin(PremiumListMixin, PremiumFormMixin, admin.ModelAdmin):
             return {"subtitle": "Savol shakllarini mijozlar qanday yozsa, shunday kiriting (uch tilda ham bo'ladi). Javob qisqa va aniq bo'lsin — maslahatchi uni o'zi moslab beradi."}
         return {"title": obj.title, "subtitle": f"{obj.get_topic_display()} · {obj.uses} marta ishlatilgan"}
 
+    def get_changeform_initial_data(self, request):
+        initial = super().get_changeform_initial_data(request)
+        initial.pop("gap", None)  # "O'rgatish" from AI maslahatchini o'qitish: the question arrives prefilled, `gap` is not a field
+        return initial
+
     def save_model(self, request, obj, form, change):
+        from django.contrib import messages
+
+        from apps.assistant.infrastructure import gaps
+        from apps.assistant.infrastructure.models import AdvisorGap
+
         if not change:
             obj.created_by = request.user.get_full_name() or request.user.get_username()
         super().save_model(request, obj, form, change)
+        if (gap_id := request.GET.get("gap")) and obj.is_active:  # taught from that very question -- close it whatever the wording
+            with contextlib.suppress(ValueError, TypeError, ValidationError):  # a hand-edited ?gap= is just ignored
+                AdvisorGap.objects.filter(pk=gap_id, status="open").update(status="taught", knowledge=obj)
+        closed = gaps.resolve(obj)
+        if closed:
+            messages.success(request, f"Maslahatchi o'rgandi: {closed} ta javobsiz savol endi shu bilim bilan javob oladi.")
+
+
+# ---------------------------------------------------------------- AI maslahatchini o'qitish
+
+from django.core.exceptions import ValidationError  # noqa: E402
+
+from apps.assistant.infrastructure.models import AdvisorGap  # noqa: E402
+
+GAP_STYLE = {"unclear": ("#e11d48", "fa-circle-question"), "not_found": ("#f59e0b", "fa-magnifying-glass"),
+             "out_of_stock": ("#0ea5e9", "fa-box-open"), "disliked": ("#7c3aed", "fa-thumbs-down")}
+
+
+@admin.register(AdvisorGap)
+class AdvisorGapAdmin(PremiumListMixin, admin.ModelAdmin):
+    list_display = ("text", "reason", "count", "last_seen", "status")
+    search_fields = ("text", "answer")
+    ordering = ("-count", "-last_seen")
+    list_per_page = 50
+    actions = None
+
+    nz_icon, nz_tone, nz_title = "fa-graduation-cap", "#e11d48", "AI maslahatchini o'qitish"
+    nz_subtitle = ("Maslahatchi tushunmagan, javob topa olmagan yoki mijoz 👎 bosgan savollar — ko'p so'ralgani tepada. Savolni bosing: "
+                   "u oldindan yozilgan holda «Yangi bilim» ochiladi. Javobni yozib saqlasangiz, maslahatchi shu zahoti o'rganadi va shunga o'xshash savollar ham yopiladi. "
+                   "«Mahsulot yo'q» — mijozlar so'ragan, lekin sotuvda yo'q tur: ombor uchun signal.")
+    nz_columns = (("Savol", ""), ("Sabab", ""), ("Necha marta", "r"), ("Oxirgi marta", ""), ("Holat", ""))
+    nz_grid = "minmax(260px,3fr) 170px 110px 140px 150px"
+    nz_search = "Savol yoki javob…"
+    nz_empty = ("Javobsiz savol yo'q", "Maslahatchi hamma savolga javob bermoqda. Yangi savollar paydo bo'lsa, shu yerda ko'rinadi.")
+    nz_sorts = (("Ko'p so'ralgan", ""), ("Yaqinda", "-4"))
+
+    def has_add_permission(self, request):
+        return False
+
+    def has_change_permission(self, request, obj=None):
+        return False
+
+    def has_delete_permission(self, request, obj=None):
+        return request.user.is_superuser
+
+    def get_queryset(self, request):
+        qs = super().get_queryset(request)
+        tab = request.GET.get("nz") or "open"
+        if tab in ("open", "taught"):
+            qs = qs.filter(status=tab)
+        elif tab in dict(AdvisorGap.REASONS):
+            qs = qs.filter(status="open", reason=tab)
+        return qs
+
+    def get_changelist(self, request, **kwargs):
+        from django.contrib.admin.views.main import ChangeList
+
+        class _CL(ChangeList):
+            def get_filters_params(self, params=None):  # `nz` is the tab shortcut, applied in get_queryset
+                out = super().get_filters_params(params)
+                out.pop("nz", None)
+                return out
+
+        return _CL
+
+    def nz_href(self, g):
+        from urllib.parse import urlencode
+
+        from django.urls import reverse
+
+        if g.status == "taught" and g.knowledge_id:
+            return reverse("admin:assistant_knowledgeentry_change", args=[g.knowledge_id])
+        return reverse("admin:assistant_knowledgeentry_add") + "?" + urlencode({"questions": g.text, "title": g.text[:200], "gap": str(g.pk)})
+
+    def nz_tabs(self, request):
+        open_ = AdvisorGap.objects.filter(status="open")
+        counts = dict(open_.values_list("reason").annotate(n=Count("id")))
+        options = [("", "O'rgatilmagan", open_.count())] + [(k, str(label), counts[k]) for k, label in AdvisorGap.REASONS if counts.get(k)]
+        options.append(("taught", "O'rgatildi", AdvisorGap.objects.filter(status="taught").count()))
+        return ui.tabs_for(request, "nz", options, {**{k: v[0] for k, v in GAP_STYLE.items()}, "taught": "#16a34a"})
+
+    def nz_stats(self, request):
+        week = timezone.now() - timedelta(days=7)
+        agg = AdvisorGap.objects.aggregate(open=Count("id", filter=Q(status="open")), asked=Sum("count", filter=Q(status="open")),
+                                           taught=Count("id", filter=Q(status="taught")), week=Count("id", filter=Q(last_seen__gte=week)),
+                                           stock=Count("id", filter=Q(status="open", reason="out_of_stock")))
+        return [ui.stat_card("O'rgatilmagan savollar", agg["open"], "#e11d48" if agg["open"] else "#16a34a", "fa-circle-question", f"jami {agg['asked'] or 0} marta so'ralgan"),
+                ui.stat_card("O'rgatildi", agg["taught"], "#16a34a", "fa-graduation-cap", "bilimlar bazasi orqali"),
+                ui.stat_card("Sotuvda yo'q tur", agg["stock"], "#0ea5e9", "fa-box-open", "so'ralgan, lekin omborda yo'q", "?nz=out_of_stock"),
+                ui.stat_card("7 kunda", agg["week"], "#7c3aed", "fa-clock-rotate-left", "xil savol")]
+
+    def nz_hero_actions(self, request):
+        from django.urls import reverse
+
+        return [{"label": "AI bilimlar bazasi", "url": reverse("admin:assistant_knowledgeentry_changelist"), "icon": "fa-brain"},
+                {"label": "AI suhbatlar", "url": reverse("admin:assistant_assistantconversation_changelist"), "icon": "fa-comments"}]
+
+    def nz_row(self, g):
+        color, icon = GAP_STYLE.get(g.reason, ("#64748b", "fa-tag"))
+        reply = (g.answer or "").replace("**", "").replace("\n", " ")
+        question = format_html("<b>{}</b><small>{} · javob: {}</small>", g.text, g.locale.upper(), (reply[:110] + "…") if len(reply) > 110 else reply or "—")
+        state = (ui.chip("O'rgatildi", "#16a34a", "fa-circle-check") if g.status == "taught" else
+                 ui.chip("E'tiborsiz", "#94a3b8", "fa-eye-slash") if g.status == "ignored" else ui.chip("O'rgatish →", "#e11d48", "fa-graduation-cap"))
+        return [question, ui.chip(g.get_reason_display(), color, icon), format_html("<b>{}</b>", g.count),
+                format_html("{}<small>{}</small>", ui.ago(g.last_seen), ui.local(g.first_seen)), state]

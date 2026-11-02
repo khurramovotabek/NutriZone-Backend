@@ -240,6 +240,11 @@ def _feedback(conv, index, value) -> bool:
         conv.feedback_up = max(0, conv.feedback_up + (value == "up") - (old == "up"))
         conv.feedback_down = max(0, conv.feedback_down + (value == "down") - (old == "down"))
         conv.save(update_fields=["transcript", "feedback_up", "feedback_down"])
+    question = next((m.get("text") for m in reversed(transcript[:index]) if m.get("role") == "user"), "")
+    if value == "down" and old != "down" and question:  # the shop sees it under AI maslahatchini o'qitish
+        from apps.assistant.infrastructure import gaps
+
+        gaps.record(question, conv.locale, "disliked", transcript[index].get("text") or "")
     return True
 
 

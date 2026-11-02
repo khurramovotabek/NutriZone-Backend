@@ -22,11 +22,13 @@ INTENTS: dict[str, tuple[str, ...]] = {
     "faq_stores": ("do'kon", "dokon", "filial", "manzil", "qayerda", "joylash", "адрес", "магазин", "филиал", "где наход", "store", "shop location", "address", "where are you", "дўкон"),
     "faq_brands": ("brendlar", "qaysi brend", "brendingiz", "бренды", "какие бренды", "brands", "which brand"),
     "faq_flavours": ("ta'mlar", "qanday ta'm", "qaysi ta'm", "вкусы", "какие вкусы", "каком вкус", "flavours", "flavors", "which flavour", "which flavor"),
+    "faq_referral": ("do'stimni taklif", "do'stni taklif", "do'st taklif", "do'stingizni taklif", "do'stlarimni taklif", "taklif qilsam", "taklif havola", "referal", "referral",
+                     "invite", "приглас", "реферал", "привести друга", "привёл друга", "дўстимни"),
     "faq_loyalty": ("coin", "bonus", "keshbek", "cashback", "кешбэк", "бонус", "баллы", "loyalty", "points", "коин"),
     "faq_original": ("original", "sertifikat", "qalbaki", "soxta", "оригинал", "подделк", "сертификат", "fake", "genuine", "authentic", "certificate"),
     "faq_returns": ("qaytar", "almashtir", "vozvrat", "возврат", "обмен", "return", "refund", "exchange"),
     "faq_order": ("buyurtmam", "zakazim", "заказ", "где мой", "my order", "order status", "track"),
-    "usage": ("qanday ich", "qanday qabul", "qachon qabul", "qancha ich", "necha mg", "necha gramm", "kuniga qancha", "сколько пить", "сколько принимать", "сколько мг", "how many mg", "how much a day", "qachon ich", "doza", "dozirovka", "как приним", "как пить", "когда пить", "дозиров", "how to take", "how to use", "when to take", "dosage", "how much should"),
+    "usage": ("qanday ich", "qanday qabul", "qachon qabul", "qancha ich", "necha mg", "necha gramm", "kuniga qancha", "сколько пить", "сколько принимать", "сколько мг", "how many mg", "how much a day", "qachon ich", "doza", "dozirovka", "как приним", "как пить", "когда пить", "дозиров", "how to take", "how to use", "when to take", "dosage", "how much should", "per day", "a day", "в день", "в сутки", "daily dose"),
     "recommend": ("tavsiya", "maslahat", "tanlab", "nima ich", "qaysi", "taklif", "kerak bo'l", "nima olay", "посовет", "что выбрать", "какой", "какую", "рекоменд", "подбер", "recommend", "suggest", "which", "what should", "advise", "best for", "maqsad"),
     "profile": ("bo'y", "vazn", "yosh", "рост", "вес", "лет", "height", "weight", "years old"),
 }
@@ -57,6 +59,7 @@ CONCEPT_WORDS: dict[str, tuple[str, ...]] = {
     "calcium": ("kalsiy", "kalciy", "kaltsiy", "calcium", "кальци"),
     "electrolytes": ("elektrolit", "electrolyt", "электролит", "izotonik", "isotonic", "изотоник"),
     "melatonin": ("melatonin", "мелатонин"),
+    "sleep": ("uyqu", "uxlay", "uxlol", "uxlash", "uyqusiz", "бессонниц", "засып", "плохо сплю", "не могу уснуть", "sleep", "insomnia"),
     "probiotic": ("probiotik", "probiotic", "пробиотик", "prebiotik", "пребиотик"),
     "glucosamine": ("glyukozamin", "glukozamin", "glucosamin", "глюкозамин", "xondroitin", "chondroitin", "хондроитин", "msm"),
     "omega": ("omega", "baliq yog'", "fish oil", "омега", "рыбий жир"),
@@ -71,6 +74,16 @@ SPECIFIC: dict[str, re.Pattern] = {
     "vitamin_b12": re.compile(r"(?:\b[bв]\s*-?\s*12\b|\b(?:vitamin\w*|витамин\w*)\s*[bв]\s*-?\s*12|kobalamin|кобаламин|cobalamin)"),
     "zinc": re.compile(r"\b(?:rux|ruxni|ruxli|sink|zinc\w*|цинк\w*)\b"),
 }
+
+
+BODY_FACTS = ("height", "weight", "age")
+
+
+def body_facts(facts: dict) -> dict:
+    """Height / weight / age -- what a personal stack is computed from. Sex, budget, activity and diet flags only refine a
+    pick ("ayollar uchun protein", "300 ming so'mgacha kreatin", "best protein for beginners"), so they never trigger the
+    "tell me your height and weight" questionnaire on their own."""
+    return {k: v for k, v in facts.items() if k in BODY_FACTS}
 
 
 def concepts_in(text: str) -> list[str]:
@@ -168,7 +181,7 @@ def parse(text: str) -> Parsed:
     p = Parsed(text=t, facts=extract_facts(t))
     p.goal = next((g for g, stems in GOALS.items() if _has(both, stems)), None)
     p.concept = next(iter(concepts_in(both)), None)
-    for intent in ("operator", "faq_order", "faq_returns", "faq_original", "faq_loyalty", "faq_payment", "faq_delivery", "faq_stores", "faq_brands", "faq_flavours", "usage", "recommend"):
+    for intent in ("operator", "faq_order", "faq_returns", "faq_original", "faq_referral", "faq_loyalty", "faq_payment", "faq_delivery", "faq_stores", "faq_brands", "faq_flavours", "usage", "recommend"):
         if _has(both, INTENTS[intent]):
             p.intent = intent
             break

@@ -108,6 +108,7 @@ JAZZMIN_SETTINGS = {
         "assistant": "fas fa-robot",
         "assistant.assistantconversation": "fas fa-comments",
         "assistant.knowledgeentry": "fas fa-brain",
+        "assistant.advisorgap": "fas fa-graduation-cap",
         "ordering": "fas fa-receipt",
         "payment": "fas fa-credit-card",
         "payment.PaymentProviderConfig": "fas fa-building-columns",
