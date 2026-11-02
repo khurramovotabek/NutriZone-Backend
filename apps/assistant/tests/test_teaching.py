@@ -159,6 +159,13 @@ class TestTeachingLoop:
         _turn_sync(self._conv().id, "kollagen bormi")
         assert AdvisorGap.objects.get().reason == "out_of_stock"
 
+    def test_gift_certificate_goes_to_a_person_until_taught(self):
+        _product("Solgar Zinc Picolinate", 150000)
+        out = _turn_sync(self._conv().id, "sovg'a sertifikati sotasizlarmi")
+        assert not out["cards"] and "aniq ma'lumot yo'q" in out["reply"] and AdvisorGap.objects.get().reason == "not_found"
+        _entry("Sovg'a sertifikati", "sovg'a sertifikati sotasizlarmi", "sovg'a, sertifikat", "TAUGHT-GIFT")
+        assert _turn_sync(self._conv().id, "sovg'a sertifikati sotasizlarmi")["reply"] == "TAUGHT-GIFT"
+
     def test_answered_questions_leave_no_gap(self):
         _turn_sync(self._conv().id, "salom")
         assert not AdvisorGap.objects.exists()

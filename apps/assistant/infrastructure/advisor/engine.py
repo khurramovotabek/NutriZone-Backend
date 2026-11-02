@@ -172,6 +172,14 @@ def answer(conv_meta: dict, text: str, loc: str) -> tuple[str, list[str], list[s
         meta["last"] = "knowledge"
         ids = _kind_ids(p.concept, loc)
         return taught[0].entry.answer(loc), ids, (CHIPS["after_reco"] if ids else CHIPS["faq"])[loc], meta
+    if nlu._has(f"{p.text} {p.text.translate(nlu.LATIN_FROM_CYR)}", nlu.GIFT) and not p.concept:
+        # "sovg'a sertifikati bormi" -- the catalogue's fuzzy search would answer with random tubs; the shop knows (and
+        # once it teaches this under AI maslahatchini o'qitish, the taught answer above wins)
+        meta["last"] = "gift"
+        meta["_gap"] = "not_found"
+        unsure = {"uz": "Bu haqida menda aniq ma'lumot yo'q — xodimlarimiz aniq aytib berishadi.", "ru": "Точной информации об этом у меня нет — сотрудники подскажут.",
+                  "en": "I don't have exact information on that — our team will tell you."}[loc]
+        return f"{unsure}\n\n" + kb.T["operator"][loc].format(contacts=kb.contacts(loc)), [], CHIPS["faq"][loc], meta
     smart = brain.respond(meta, text, loc)  # live-data answers: price, branch stock, best sellers, compare, promo, contacts, hours, safety
     if smart is not None and taught and ((smart.last in ("why", "compare") and taught[0].score >= DEEP_MATCH)
                                          or (smart.last == "listing" and not smart.product_ids and taught[0].score >= STRONG_MATCH)):
