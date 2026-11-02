@@ -204,3 +204,30 @@ class TestMeaningVocabulary:
     def test_inflected_vocabulary_word_matches_without_a_suggestion(self):
         outcome = ss.search("протеин для массы", self.INDEX)
         assert outcome.product_ids == [self.WHEY.id] and outcome.suggestion is None
+
+
+class TestRunTogetherAndShorthand:
+    """Shoppers glue words, drop spaces and type brand shorthand: "goldstandart" must still be Optimum Nutrition Gold Standard."""
+
+    GSW = _entry("Optimum Nutrition Gold Standard 100% Whey 2.27 kg", brand="Optimum Nutrition", category="Protein", popularity=50)
+    MASS = _entry("Optimum Nutrition Serious Mass 5.4 kg", brand="Optimum Nutrition", category="Gainer")
+    PRE = _entry("Cellucor C4 Original", brand="Cellucor", category="Pre-workout")
+    R1 = _entry("Rule 1 R1 Whey Blend", brand="Rule 1", category="Protein")
+    INDEX = [GSW, MASS, PRE, R1]
+
+    @pytest.mark.parametrize("query", ["goldstandart", "goldstandard", "gold standart", "goldstandartwhey", "голд стандарт", "gsw", "on gold"])
+    def test_gold_standard_found_however_it_is_typed(self, query):
+        assert ss.search(query, self.INDEX).product_ids[0] == self.GSW.id
+
+    def test_run_together_typo_suggests_the_label_spelling(self):
+        assert ss.search("goldstandart", self.INDEX).suggestion == "gold standard"
+
+    @pytest.mark.parametrize("query, expected", [("seriousmass", "MASS"), ("preworkout", "PRE"), ("rule one", "R1")])
+    def test_glued_category_and_number_words(self, query, expected):
+        assert ss.search(query, self.INDEX).product_ids[0] == getattr(self, expected).id
+
+    def test_on_alone_means_optimum_nutrition(self):
+        assert set(ss.search("ON", self.INDEX).product_ids) == {self.GSW.id, self.MASS.id}
+
+    def test_one_unknown_word_shows_the_nearest_products_instead_of_nothing(self):
+        assert ss.search("gold zzqx", self.INDEX).product_ids == [self.GSW.id]

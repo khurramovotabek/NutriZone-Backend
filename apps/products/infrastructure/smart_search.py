@@ -84,7 +84,7 @@ def phonetic(word: str) -> str:
     if word.isdigit():
         return word
     w = word
-    for src, dst in (("sh", "\x01"), ("ch", "\x02"), ("ph", "f"), ("ck", "k"), ("kh", "g"), ("ts", "s"), ("x", "ks")):
+    for src, dst in (("tion", "\x01n"), ("sion", "\x01n"), ("wh", "w"), ("sh", "\x01"), ("ch", "\x02"), ("ph", "f"), ("ck", "k"), ("kh", "g"), ("ts", "s"), ("x", "ks")):
         w = w.replace(src, dst)
     w = w.translate(str.maketrans({"c": "k", "q": "k", "y": "i", "w": "v", "h": "g", "j": "j"}))
     w = w.replace("\x01", "sh").replace("\x02", "ch")
@@ -198,6 +198,13 @@ GOAL_TERMS: dict[str, tuple[str, ...]] = {
     "weight_loss": ("ozish", "ozdirish", "ozg'in", "vazn", "yog'", "yoqish", "weight", "loss", "fat", "slim", "похудение", "похудеть", "сжигание", "жира", "сушка"),
     "endurance": ("chidamlilik", "energiya", "kuch", "endurance", "energy", "stamina", "выносливость", "энергия", "сила"),
     "health": ("salomatlik", "sog'liq", "immunitet", "health", "immunity", "wellness", "здоровье", "иммунитет"),
+}
+
+# Shorthand shoppers type for brands and lines -> the words on the label (every alias word is replaced by its expansion).
+ALIASES: dict[str, str] = {
+    "on": "optimum nutrition", "optimum": "optimum", "gsw": "gold standard whey", "gs": "gold standard",
+    "r1": "rule 1", "one": "1", "bir": "1", "iso": "iso", "smass": "serious mass", "bcaa": "bcaa",
+    "predtrenik": "predtren", "pretren": "predtren", "предтрен": "predtren", "предтреник": "predtren",
 }
 
 # Words that carry no product meaning in a query ("ozish uchun", "протеин для массы", "protein for women" keeps "women").
@@ -370,11 +377,20 @@ def _index_entry(product, popularity: int, in_stock: bool) -> IndexedProduct:
     entry.phrases = [normalize(t.name) for t in product.translations.all() if t.name]
     best_field: dict[str, str] = {}
     for text, field_name in _searchable_texts(product):
-        keys = [phonetic(word) for word in normalize(text).split()]
+        words = normalize(text).split()
+        keys = [phonetic(word) for word in words]
+        for key, word in zip(keys, words, strict=False):
+            entry.display_words.setdefault(key, word)
         if field_name == "code":
             keys.append(normalize(text).replace(" ", ""))  # the whole code, typed with or without its punctuation
-        for key, word in zip(keys, normalize(text).split() + [""], strict=False):
-            entry.display_words.setdefault(key, word or key)
+        else:
+            # neighbours written as one word -- "goldstandard", "preworkout", "seriousmass", "iso100"
+            for n in (2, 3):
+                for start in range(len(words) - n + 1):
+                    joined = "".join(words[start : start + n])
+                    if len(joined) >= 5:
+                        keys.append(phonetic(joined))
+                        entry.display_words.setdefault(phonetic(joined), " ".join(words[start : start + n]))
         for key in keys:
             if key not in best_field or _FIELD_WEIGHTS[field_name] > _FIELD_WEIGHTS[best_field[key]]:
                 best_field[key] = field_name
@@ -432,10 +448,56 @@ def search(query: str, index: list[IndexedProduct] | None = None) -> SearchOutco
     if not tokens:
         return SearchOutcome([], None)
     index = get_index() if index is None else index
-    token_keys = [phonetic(t) for t in tokens]
-    joined_code = normalized.replace(" ", "")
-
     prepared = _prepared(index)
+    joined_code = normalized.replace(" ", "")
+    tokens = _expand_aliases(tokens)
+    tokens = [part for t in tokens for part in _split_compound(prepared, t)]
+    token_keys = [phonetic(t) for t in tokens]
+    normalized = " ".join(tokens)
+
+    outcome = _rank(index, prepared, tokens, token_keys, normalized, joined_code, relaxed=False)
+    if not outcome.product_ids and len(tokens) > 1:
+        # nothing matched every word: the nearest products (most words matched) beat an empty page
+        outcome = _rank(index, prepared, tokens, token_keys, normalized, joined_code, relaxed=True)
+    return outcome
+
+
+def _expand_aliases(tokens: list[str]) -> list[str]:
+    if len(tokens) == 1 and tokens[0] in ("on", "one", "bir"):
+        return ["optimum", "nutrition"] if tokens[0] == "on" else tokens
+    out: list[str] = []
+    for t in tokens:
+        out.extend(ALIASES.get(t, t).split() if t in ALIASES else [t])
+    return out
+
+
+def _best_word_score(prepared: _Prepared, token: str) -> float:
+    scores = _scores_for(prepared, phonetic(token))
+    return max(scores.values(), default=0.0)
+
+
+def _split_compound(prepared: _Prepared, token: str) -> list[str]:
+    """A word that matches nothing as typed but is two indexed words run together ("goldstandartwhey" -> "goldstandart whey")."""
+    if len(token) < 7 or token.isdigit() or _best_word_score(prepared, token) >= 0.8:
+        return [token]
+    best: tuple[float, list[str]] | None = None
+    for cut in range(3, len(token) - 2):
+        left, right = token[:cut], token[cut:]
+        ls = _best_word_score(prepared, left)
+        if ls < 0.7:
+            continue
+        rs = _best_word_score(prepared, right)
+        parts = [left, right]
+        if rs < 0.7 and len(right) >= 7:
+            sub = _split_compound(prepared, right)
+            if len(sub) > 1:
+                rs, parts = min(_best_word_score(prepared, p) for p in sub), [left, *sub]
+        if rs >= 0.7 and (best is None or ls + rs > best[0]):
+            best = (ls + rs, parts)
+    return best[1] if best else [token]
+
+
+def _rank(index, prepared, tokens, token_keys, normalized, joined_code, relaxed: bool) -> SearchOutcome:
     # Per query word: entry position -> its best (word, weighted score), built from the postings of the words it matches.
     best_by_token: list[dict[int, tuple[str, float]]] = []
     for tk in token_keys:
@@ -462,7 +524,7 @@ def search(query: str, index: list[IndexedProduct] | None = None) -> SearchOutco
             per_token = [(joined_code, 1.0)] * len(token_keys)
 
         matched = [s for _, s in per_token if s >= MATCH_THRESHOLD]
-        tolerated_misses = 1 if len(token_keys) >= 3 else 0
+        tolerated_misses = len(token_keys) - 1 if relaxed else 1 if len(token_keys) >= 3 else 0
         if len(matched) < len(token_keys) - tolerated_misses or not matched:
             continue
 
