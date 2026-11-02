@@ -36,7 +36,7 @@ CHEAP_WORDS = re.compile(r"\b(eng|arzon\w*|hamyonbop\w*|qimmat|emas|qaysi\w*|bir
                          r"вариант\w*|the|cheap\w*|affordable|lowest|price|which|one|option|is|what)\b")
 PROMO = ("chegirma", "aksiya", "skidka", "arzonlash", "sale", "скидк", "акци", "распродаж", "discount", "promo", "deal")
 CONTACT = ("telefon", "raqam", "nomer", "aloqa", "bog'lan", "qo'ng'iroq", "телефон", "номер", "контакт", "связ", "позвон", "phone", "contact", "call you", "number")
-HOURS = ("ish vaqt", "soat nechagacha", "soat nechada", "nechagacha", "ochiqmi", "ochiq", "yopiq", "ishlaysiz", "dam olish", "время работ", "график", "до скольки", "во сколько", "открыт", "работает", "работаете", "hours", "open", "close", "working time")
+HOURS = ("ish vaqt", "soat nechagacha", "soat nechada", "nechagacha", "ochiqmi", "ochiq", "yopiq", "ishlaysiz", "dam olish", "время работ", "график", "до скольки", "во сколько", "открыт", "работаете", "hours", "open", "close", "working time")
 CAN_I = ("bo'ladimi", "mumkinmi", "ichsam", "ichsa", "beraversa", "bersam", "bersa", "можно ли", "можно", "безопасно", "can i", "is it safe", "safe to", "should i")
 HEALTH = {
     "heart": ("yurak", "bosim", "gipertoni", "aritmi", "сердц", "давлен", "гипертон", "аритм", "heart", "blood pressure", "hypertension"),

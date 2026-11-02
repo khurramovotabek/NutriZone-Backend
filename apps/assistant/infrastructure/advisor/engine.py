@@ -113,7 +113,16 @@ def _on_topic(entry, concept: str | None) -> bool:
     if not concept:
         return True
     about = nlu.concepts_in(nlu.normalize(" ".join((entry.title, entry.questions or "", entry.keywords or ""))))
-    return not about or concept in about
+    # "vitamin" in general vs an entry about vitamin D / C / B12 ("K2 vitamini nima uchun" → "K2 vitamini va D3 bilan birga")
+    return not about or concept in about or (concept == "vitamin" and any(a.startswith("vitamin_") for a in about))
+
+
+def _about_condition(entry, text: str) -> bool:
+    """The entry is written for the condition the shopper named (pregnancy, teens, kidneys...)."""
+    conds = brain.understand(text).health
+    body = nlu.normalize(" ".join((entry.title, entry.questions or "", entry.keywords or "")))
+    body = f"{body} {body.translate(nlu.LATIN_FROM_CYR)}"
+    return any(nlu._has(body, brain.HEALTH[c]) for c in conds)
 
 
 def _taught(text: str, concept: str | None) -> list:
@@ -188,6 +197,13 @@ def answer(conv_meta: dict, text: str, loc: str) -> tuple[str, list[str], list[s
         knowledge.mark_used([taught[0].entry])
         meta["last"] = "knowledge"
         return taught[0].entry.answer(loc), smart.product_ids, smart.chips or CHIPS["after_reco"][loc], meta
+    if smart is not None and smart.last == "health" and taught and taught[0].score >= STRONG_MATCH and _about_condition(taught[0].entry, text):
+        # "витамины при планировании беременности" -- the safety note first, then what was taught about that very condition
+        # (never a general "yes, protein is fine" after "homiladorman")
+        knowledge.mark_used([taught[0].entry])
+        meta["last"] = "health"
+        note = smart.text.rsplit("\n\n", 1)[0]  # without the closing "ask me about safe options" line
+        return f"{note}\n\n{taught[0].entry.answer(loc)}", smart.product_ids, smart.chips or CHIPS["faq"][loc], meta
     if smart is not None:
         meta["last"] = smart.last
         if smart.last == "listing" and not smart.product_ids:  # "kollagen bormi" -- asked for, not in stock: a buying signal
