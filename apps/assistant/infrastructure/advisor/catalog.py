@@ -43,8 +43,10 @@ ASK_AGAIN = {  # how a chip re-asks each aspect, so tapping a product name keeps
 }
 ORDER = ("about", "facts", "protein", "calories", "servings", "per_serving", "directions", "flavours", "sizes", "warnings", "origin")
 FOLLOW_UP = ("uning", "shuning", "bunda", "bu mahsulot", "shu mahsulot", "unda", "его", "у него", "в нём", "в нем", "этого", "it's", "its ", "this one", "this product")
-FACT_WORDS = {"protein": ("oqsil", "белок", "белка", "protein"), "calories": ("energiya", "kkal", "kaloriya", "uglevod", "shakar", "yog'", "калори", "ккал", "углевод",
-                                                                           "сахар", "жир", "calorie", "kcal", "carbohydrate", "sugar", "fat")}
+FACT_WORDS = {  # "белки — 26 г", "белка 24 г": the Russian stem is "белк"
+    "protein": ("oqsil", "белок", "белк", "protein"),
+    "calories": ("energiya", "kkal", "kaloriya", "uglevod", "shakar", "yog'", "калори", "ккал", "углевод", "сахар", "жир", "calorie", "kcal", "carbohydrate", "sugar", "fat"),
+}
 ASPECT_WORDS = re.compile(r"\b(tarkib\w*|haqida|nima|bu|qanaqa|qanday|qancha|necha|nechta|gramm|oqsil\w*|kaloriya\w*|shakar\w*|porsiya\w*|ta'm\w*|hajm\w*|qadoq\w*|"
                           r"ich\w*|qabul|davlat\w*|ishlab|chiqar\w*|allergi\w*|yaxshi\w*|bor|mi|kim\w*|mumkin|emas|uning|shu\w*|"
                           r"состав|сколько|белка?|калори\w*|сахар\w*|порци\w*|вкус\w*|размер\w*|как|принимать|пить|страна|производ\w*|расскажи|что|за|про|о|его|"

@@ -209,7 +209,7 @@ def _answer(conv_meta: dict, text: str, loc: str) -> tuple[str, list[str], list[
             meta["_gap"] = "not_found"
         return about.text, about.product_ids, about.chips, meta
     smart = brain.respond(meta, text, loc)  # live-data answers: price, branch stock, best sellers, compare, promo, contacts, hours, safety
-    if smart is not None and taught and ((smart.last in ("why", "compare") and taught[0].score >= DEEP_MATCH)
+    if smart is not None and not smart.named and taught and ((smart.last in ("why", "compare") and taught[0].score >= DEEP_MATCH)
                                          or (smart.last == "listing" and not smart.product_ids and taught[0].score >= STRONG_MATCH)):
         # a dedicated expert entry ("Kreatin haqida miflar", "BCAA yoki EAA") explains more than the one-line kind summary;
         # the products Brain found still come along

@@ -155,3 +155,21 @@ def test_comparison_without_card_numbers_falls_back_to_tub_prices():
     b = _product("Kalmar Plain Whey", brand=_brand("Kalmar"), price=900_000, card=False)
     reply, ids, _chips, _meta = answer({}, "zorvex plain whey yoki kalmar plain whey", "uz")
     assert ids == [str(a.id), str(b.id)] and "300 000 so'm arzonroq" in reply and "1 g oqsil" not in reply
+
+
+@pytest.mark.django_db
+def test_named_products_comparison_is_not_replaced_by_a_taught_entry(gold):
+    from apps.assistant.infrastructure.models import KnowledgeEntry
+
+    KnowledgeEntry.objects.create(topic="usage", title="Protein (whey) qanday ichiladi", questions="protein qanday ichiladi\nwhey protein yaxshi",
+                                  keywords="protein, whey, yaxshi, porsiya", answer_uz="TAUGHT-GENERAL")
+    _product("Kalmar Whey Protein", brand=_brand("Kalmar"), price=900_000)
+    reply, *_rest, meta = answer({}, "zorvex gold standard whey yoki kalmar whey protein qaysi biri yaxshi", "uz")
+    assert meta["last"] == "compare" and reply != "TAUGHT-GENERAL"
+
+
+def test_protein_line_in_russian_facts():
+    from apps.assistant.infrastructure.advisor.catalog import _protein_grams
+
+    assert _protein_grams("На 1 порцию (~35 г):\n\nБелки — 26 г\n\nУглеводы — 3,9 г") == 26
+    assert _protein_grams("1 porsiya uchun:\nOqsil — 24 g\nOqsil manbai: izolyat") == 24

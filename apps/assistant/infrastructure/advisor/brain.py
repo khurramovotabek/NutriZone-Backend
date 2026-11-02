@@ -61,6 +61,7 @@ class Reply:
     venues: list = field(default_factory=list)  # [{"title", "address", "lat", "lng"}] -- the bot sends real map pins
     last: str = "brain"
     query: str = ""  # what was searched -- a follow-up "arzonroq?" reuses it
+    named: bool = False  # about the very products the shopper named -- a taught general entry never replaces it
 
 
 def _l(loc: str, uz: str, ru: str, en: str) -> str:
@@ -411,7 +412,7 @@ def _compare_products(text: str, loc: str) -> Reply | None:
                             _l(loc, "Ikkalasi ham original. Tanlashda qarang: **bir porsiyadagi oqsil/modda miqdori va porsiya narxi** (kartochkadagi tarkibda), **ta'm** va **maqsadingiz** (massa, ozish, laktozasiz). Maqsadingizni yozsangiz, aniq bittasini tanlab beraman.",
                               "Оба оригинальные. Сравнивайте: **количество белка/вещества в порции и цену порции** (состав в карточке), **вкус** и **цель** (масса, похудение, без лактозы). Напишите цель — выберу один точно.",
                               "Both are genuine. Compare **protein/active amount per serving and price per serving** (ingredients on the card), **flavour** and **your goal** (muscle, fat loss, lactose-free). Tell me your goal and I'll pick one."))
-    return Reply(text_out, [a["id"], b["id"]], [_l(loc, "Massa uchun qaysi biri?", "Какой для массы?", "Which for muscle?"), _l(loc, "Qanday ichiladi?", "Как принимать?", "How to take it?")], last="compare")
+    return Reply(text_out, [a["id"], b["id"]], [_l(loc, "Massa uchun qaysi biri?", "Какой для массы?", "Which for muscle?"), _l(loc, "Qanday ichiladi?", "Как принимать?", "How to take it?")], last="compare", named=True)
 
 
 def _value_lines(a: dict, b: dict, loc: str) -> str:
