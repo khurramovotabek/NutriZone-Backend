@@ -15,7 +15,7 @@ from asgiref.sync import sync_to_async
 from django.utils import timezone
 
 from apps.assistant.infrastructure import knowledge, tools
-from apps.assistant.infrastructure.advisor import brain, kb, needs, nlu, reco, talk
+from apps.assistant.infrastructure.advisor import brain, catalog, kb, needs, nlu, reco, talk
 
 logger = logging.getLogger("nutrizone.assistant.local")
 LOCALES = ("uz", "ru", "en")
@@ -141,6 +141,17 @@ def _taught(text: str, concept: str | None) -> list:
 
 def answer(conv_meta: dict, text: str, loc: str) -> tuple[str, list[str], list[str], dict]:
     """(reply text, product ids to show, quick-reply chips, updated meta). Pure sync -- DB reads only."""
+    reply, ids, chips, meta = _answer(conv_meta, text, loc)
+    # the product a follow-up ("uning tarkibi qanday?") is about: the one just shown, or none when several were
+    if meta.get("last") != "catalog":
+        if len(ids) == 1:
+            meta["focus"] = ids[0]
+        elif ids:
+            meta.pop("focus", None)
+    return reply, ids, chips, meta
+
+
+def _answer(conv_meta: dict, text: str, loc: str) -> tuple[str, list[str], list[str], dict]:
     meta = dict(conv_meta or {})
     profile = dict(meta.get("profile") or {})
     p = nlu.parse(text)
@@ -189,6 +200,14 @@ def answer(conv_meta: dict, text: str, loc: str) -> tuple[str, list[str], list[s
         unsure = {"uz": "Bu haqida menda aniq ma'lumot yo'q — xodimlarimiz aniq aytib berishadi.", "ru": "Точной информации об этом у меня нет — сотрудники подскажут.",
                   "en": "I don't have exact information on that — our team will tell you."}[loc]
         return f"{unsure}\n\n" + kb.T["operator"][loc].format(contacts=kb.contacts(loc)), [], CHIPS["faq"][loc], meta
+    about = catalog.respond(meta, text, loc)  # what the catalogue says about one product, a brand or a category
+    if about is not None:
+        meta["last"] = "catalog"
+        if about.focus:
+            meta["focus"] = about.focus
+        if about.missing:  # the card lacks what was asked -- the shop sees it under AI maslahatchini o'qitish
+            meta["_gap"] = "not_found"
+        return about.text, about.product_ids, about.chips, meta
     smart = brain.respond(meta, text, loc)  # live-data answers: price, branch stock, best sellers, compare, promo, contacts, hours, safety
     if smart is not None and taught and ((smart.last in ("why", "compare") and taught[0].score >= DEEP_MATCH)
                                          or (smart.last == "listing" and not smart.product_ids and taught[0].score >= STRONG_MATCH)):

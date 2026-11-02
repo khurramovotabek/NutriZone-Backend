@@ -99,7 +99,9 @@ MAX_WORDS = 7  # longer messages are questions, not small talk
 
 
 def _matches(text: str, stems) -> bool:
-    return nlu._has(text, stems)
+    """Word-prefix match, but a stem of 3 letters or fewer must be the whole word ("zor" is praise, "Zorvex" is a brand)."""
+    short = [s for s in stems if len(s) <= 3]
+    return nlu._has(text, [s for s in stems if len(s) > 3]) or any(re.search(rf"(?<![\w']){re.escape(s)}(?![\w'])", text) for s in short)
 
 
 def _exact_short(text: str, words) -> bool:
