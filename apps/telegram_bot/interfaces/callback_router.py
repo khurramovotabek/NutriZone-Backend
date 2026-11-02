@@ -627,6 +627,10 @@ def _handle_onboarding_action(telegram_user_id: int, chat_id: int, action: str, 
             from apps.telegram_bot.interfaces import news_menu
 
             news_menu.apply_pending(user, telegram_user_id, chat_id, final_lang)
+            from apps.telegram_bot.interfaces.api.v1.views import resume_parked_auth_login
+
+            if resume_parked_auth_login(telegram_user_id, chat_id):
+                return  # they came from the site's "Continue with Telegram": the login confirmation is the next step
         send_main_menu(chat_id, final_lang)
         return
 

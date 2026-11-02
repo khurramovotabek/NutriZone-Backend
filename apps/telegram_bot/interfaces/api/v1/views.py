@@ -210,7 +210,15 @@ def _handle_telegram_auth_start(payload: str, from_user: dict, chat: dict) -> No
         return
 
     if customer_id is None:
-        _reply_text(chat["id"], t("auth_login_not_linked", lang))
+        # A new customer pressed "Continue with Telegram" on the site: register them right here (language, name,
+        # phone -- ~30 s) and put the same login request in front of them the moment the account exists, instead
+        # of a dead end that sends them back to the site to start over.
+        from apps.telegram_bot.interfaces import onboarding_state
+
+        park_auth_login(from_user["id"], payload)
+        _reply_text(chat["id"], t("auth_login_register_first", _tg_lang(from_user)))
+        _send_language_selection(chat["id"])
+        onboarding_state.set_awaiting_language(chat["id"])
         return
 
     if session.telegram_user_id is not None and session.telegram_user_id != from_user["id"]:
@@ -232,6 +240,40 @@ def _handle_telegram_auth_start(payload: str, from_user: dict, chat: dict) -> No
         [{"text": t("auth_login_cancel_button", lang), "callback_data": f"authlogin:cancel:{session.id}"}],
     ]
     _send(chat["id"], t("auth_login_confirm_prompt", lang), keyboard)
+
+
+_AUTH_LOGIN_PENDING_TTL = 15 * 60
+
+
+def _auth_login_key(telegram_user_id: int) -> str:
+    return f"tg:authlogin:pending:{telegram_user_id}"
+
+
+def park_auth_login(telegram_user_id: int, raw_token: str) -> None:
+    """A website login request from a Telegram user who has no account yet -- resumed once onboarding creates it."""
+    from core.caching.redis_client import get_redis_client
+
+    try:
+        get_redis_client().set(_auth_login_key(telegram_user_id), raw_token, ex=_AUTH_LOGIN_PENDING_TTL)
+    except Exception:  # noqa: BLE001 -- without Redis the customer just signs in from the site again
+        logger.warning("Telegram bot: could not park the website login of telegram_user_id=%s", telegram_user_id)
+
+
+def resume_parked_auth_login(telegram_user_id: int, chat_id: int) -> bool:
+    """Called right after onboarding: show the parked website login confirmation. True when there was one."""
+    from core.caching.redis_client import get_redis_client
+
+    try:
+        client = get_redis_client()
+        raw = client.get(_auth_login_key(telegram_user_id))
+        if not raw:
+            return False
+        client.delete(_auth_login_key(telegram_user_id))
+    except Exception:  # noqa: BLE001
+        return False
+    token = raw.decode() if isinstance(raw, bytes) else str(raw)
+    _handle_telegram_auth_start(token, {"id": telegram_user_id}, {"id": chat_id})
+    return True
 
 
 def _handle_full_name_reply(message: dict) -> None:

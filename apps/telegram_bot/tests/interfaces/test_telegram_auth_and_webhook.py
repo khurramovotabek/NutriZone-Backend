@@ -664,3 +664,39 @@ class TestAllMainMenuButtonsAreFunctional:
                 update = {"update_id": idx, "callback_query": {"id": f"mcov{idx}", "from": {"id": tg_user_id}, "message": {"chat": {"id": chat_id}}, "data": f"menu:{action}"}}
                 response = client.post("/api/v1/telegram/webhook", data=json.dumps(update), content_type="application/json", **webhook_auth)
                 assert response.status_code == 200, f"menu:{action} did not return 200"
+
+
+class TestWebsiteLoginForANewCustomer:
+    def test_new_customer_registers_in_the_bot_and_is_then_asked_to_confirm_the_same_website_login(self, settings):
+        """A shopper without an account taps "Continue with Telegram" on the site: the bot registers them and then
+        shows the very same login confirmation -- the site (still polling) signs in without starting over."""
+        settings.TELEGRAM_BOT_TOKEN = "123456:TEST-TOKEN"
+        settings.TELEGRAM_BOT_USERNAME = "nutrizone_test_bot"
+        settings.TELEGRAM_WEBHOOK_SECRET = "test-webhook-secret"
+        settings.NUTRIZONE_TELEGRAM_GATEWAY = "live"
+
+        tg_user_id = uuid.uuid4().int % 900000000
+        client = Client()
+        created = json.loads(client.post("/api/v1/identity/auth/telegram/session", data=json.dumps({}), content_type="application/json").content)["data"]
+        session_id, raw_token = created["session_id"], created["telegram_url"].split("start=")[1]
+        webhook_auth = {"HTTP_X_TELEGRAM_BOT_API_SECRET_TOKEN": "test-webhook-secret"}
+
+        def post(update):
+            client.post("/api/v1/telegram/webhook", data=json.dumps(update), content_type="application/json", **webhook_auth)
+
+        chat = {"id": tg_user_id, "type": "private"}
+        with patch("apps.telegram_bot.interfaces.callback_router._send") as mock_send, \
+                patch("apps.telegram_bot.interfaces.api.v1.views._reply_text"), \
+                patch("apps.telegram_bot.interfaces.api.v1.views._answer_callback_query"), \
+                patch("apps.notifications.infrastructure.gateways.LiveTelegramGateway.send_contact_request", return_value="1"):
+            post({"update_id": 1, "message": {"message_id": 1, "chat": chat, "from": {"id": tg_user_id}, "text": f"/start {raw_token}"}})
+            post({"update_id": 2, "callback_query": {"id": "c1", "from": {"id": tg_user_id}, "message": {"chat": chat}, "data": "onboarding:lang:uz"}})
+            post({"update_id": 3, "message": {"message_id": 3, "chat": chat, "from": {"id": tg_user_id}, "text": "Sardor Aliyev"}})
+            post({"update_id": 4, "message": {"message_id": 4, "chat": chat, "from": {"id": tg_user_id}, "contact": {"phone_number": f"99890{uuid.uuid4().int % 10000000:07d}", "user_id": tg_user_id}}})
+            post({"update_id": 5, "callback_query": {"id": "c2", "from": {"id": tg_user_id}, "message": {"chat": chat}, "data": "onboarding:confirm"}})
+            keyboards = [c.args[2] for c in mock_send.call_args_list if len(c.args) > 2 and c.args[2]]
+            assert any(f"authlogin:confirm:{session_id}" in json.dumps(k) for k in keyboards)
+            post({"update_id": 6, "callback_query": {"id": "c3", "from": {"id": tg_user_id}, "message": {"chat": chat}, "data": f"authlogin:confirm:{session_id}"}})
+
+        poll = json.loads(client.get(f"/api/v1/identity/auth/telegram/session/{session_id}").content)["data"]
+        assert poll["status"] == "verified" and "access_token" in poll

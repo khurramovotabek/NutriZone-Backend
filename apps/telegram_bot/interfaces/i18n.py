@@ -535,14 +535,14 @@ _TRANSLATIONS: dict[str, dict[str, str]] = {
         "en": "\U0001F389 Your order has been placed!\n\n\U0001F9FE Order \u2116 {order_number}\n\U0001F4B0 Total: {total} {currency}\n\U0001F4B5 Payment: Cash\n\nAn operator will contact you shortly.",
     },
     "auth_login_confirm_prompt": {
-        "uz": "\U0001F510 NutriZone saytiga kirish\n\nSaytga kirish uchun so'rov yuborildi.\n\nDavom etishni xohlaysizmi?",
-        "ru": "\U0001F510 Вход в NutriZone\n\nПоступил запрос на вход на сайт.\n\nВы хотите продолжить?",
-        "en": "\U0001F510 NutriZone login\n\nA login request was made from the website.\n\nDo you want to continue?",
+        "uz": "\U0001F510 <b>nutrizone.uz saytiga kirish</b>\n\nPastdagi \u00ab\u2705 Saytga kirish\u00bb tugmasini bosing \u2014 sayt avtomatik ochiladi, kod kiritish shart emas.\n\n<i>Agar bu so'rovni siz yubormagan bo'lsangiz, \u00abBekor qilish\u00bbni bosing.</i>",
+        "ru": "\U0001F510 <b>Вход на nutrizone.uz</b>\n\nНажмите \u00ab\u2705 Войти на сайт\u00bb ниже \u2014 сайт войдёт автоматически, код вводить не нужно.\n\n<i>Если это были не вы, нажмите \u00abОтменить\u00bb.</i>",
+        "en": "\U0001F510 <b>Sign in to nutrizone.uz</b>\n\nTap \u00ab\u2705 Sign in to the website\u00bb below \u2014 the site signs you in automatically, no code needed.\n\n<i>If this wasn't you, tap \u00abCancel\u00bb.</i>",
     },
     "auth_login_confirm_button": {
-        "uz": "\u2705 Tasdiqlash",
-        "ru": "\u2705 Подтвердить",
-        "en": "\u2705 Confirm login",
+        "uz": "\u2705 Saytga kirish",
+        "ru": "\u2705 Войти на сайт",
+        "en": "\u2705 Sign in to the website",
     },
     "auth_login_cancel_button": {
         "uz": "\u274C Bekor qilish",
@@ -550,9 +550,9 @@ _TRANSLATIONS: dict[str, dict[str, str]] = {
         "en": "\u274C Cancel",
     },
     "auth_login_confirmed": {
-        "uz": "\u2705 Saytga muvaffaqiyatli kirdingiz. Endi saytga qaytishingiz mumkin.",
-        "ru": "\u2705 Вы успешно вошли на сайт. Теперь можете вернуться на сайт.",
-        "en": "\u2705 You have successfully logged in. You can now return to the website.",
+        "uz": "\u2705 Tayyor! Saytga kirdingiz \u2014 brauzerga qayting, sahifa o'zi yangilanadi.",
+        "ru": "\u2705 Готово! Вы вошли \u2014 вернитесь в браузер, страница обновится сама.",
+        "en": "\u2705 Done! You're signed in \u2014 go back to the browser, the page updates by itself.",
     },
     "auth_login_cancelled": {
         "uz": "Kirish so'rovi bekor qilindi.",
@@ -568,6 +568,11 @@ _TRANSLATIONS: dict[str, dict[str, str]] = {
         "uz": "Kirish havolasi yaroqsiz yoki allaqachon ishlatilgan.",
         "ru": "Ссылка для входа недействительна или уже использована.",
         "en": "This login link is invalid or has already been used.",
+    },
+    "auth_login_register_first": {
+        "uz": "\U0001F44B Xush kelibsiz! Saytga kirish uchun avval 30 soniyada ro'yxatdan o'ting: til, ism va telefon raqam. Tugagach, saytga bir tugma bilan kirasiz.",
+        "ru": "\U0001F44B Добро пожаловать! Чтобы войти на сайт, сначала зарегистрируйтесь за 30 секунд: язык, имя и номер телефона. Затем вход — одной кнопкой.",
+        "en": "\U0001F44B Welcome! To sign in to the website, first register in 30 seconds: language, name and phone number. Then sign in with one tap.",
     },
     "auth_login_not_linked": {
         "uz": "Bu Telegram akkaunti hech qanday NutriZone akkauntiga ulanmagan. Avval telefon raqamingizni yuboring.",
