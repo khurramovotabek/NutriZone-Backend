@@ -33,6 +33,14 @@ ASPECTS: dict[str, tuple[str, ...]] = {
                "where is it made", "who makes"),
     "about": ("haqida", "nima bu", "qanaqa mahsulot", "yaxshimi", "расскажи", "что за", "про ", "отзыв", "about", "tell me", "is it good", "review", "worth it"),
 }
+ASK_AGAIN = {  # how a chip re-asks each aspect, so tapping a product name keeps the question
+    "about": {"uz": "haqida", "ru": "— расскажи", "en": "— tell me about it"}, "facts": {"uz": "tarkibi", "ru": "состав", "en": "what's in it"},
+    "protein": {"uz": "necha gramm oqsil", "ru": "сколько белка", "en": "how much protein"}, "calories": {"uz": "kaloriyasi", "ru": "калорийность", "en": "calories"},
+    "servings": {"uz": "necha porsiya", "ru": "сколько порций", "en": "servings"}, "per_serving": {"uz": "porsiya narxi", "ru": "цена порции", "en": "price per serving"},
+    "directions": {"uz": "qanday ichiladi", "ru": "как принимать", "en": "how to take"}, "flavours": {"uz": "ta'mlari", "ru": "вкусы", "en": "flavours"},
+    "sizes": {"uz": "hajmlari", "ru": "фасовки", "en": "sizes"}, "warnings": {"uz": "allergiya", "ru": "противопоказания", "en": "side effects"},
+    "origin": {"uz": "qaysi davlatniki", "ru": "страна", "en": "country"},
+}
 ORDER = ("about", "facts", "protein", "calories", "servings", "per_serving", "directions", "flavours", "sizes", "warnings", "origin")
 FOLLOW_UP = ("uning", "shuning", "bunda", "bu mahsulot", "shu mahsulot", "unda", "его", "у него", "в нём", "в нем", "этого", "it's", "its ", "this one", "this product")
 FACT_WORDS = {"protein": ("oqsil", "белок", "белка", "protein"), "calories": ("energiya", "kkal", "kaloriya", "uglevod", "shakar", "yog'", "калори", "ккал", "углевод",
@@ -91,13 +99,26 @@ def _only_kind_words(query: str) -> bool:
     return not rest or len(rest) < 3
 
 
-def _find_product(text: str, loc: str, focus: str | None) -> str | None:
+def _candidates(query: str, loc: str) -> list[dict]:
+    """Products the question names. More than one when the words don't tell them apart: "goldstandart" is Gold Standard
+    Whey, Casein, Isolate and Pro Gainer alike -- "gold standard whey" is one of them."""
     from apps.assistant.infrastructure.advisor import brain
 
+    hits = [h for h in brain._search(query, loc, limit=5, in_stock=False) if _names_it(h["name"] or "", query)]
+    if len(hits) < 2:
+        return hits[:1]
+    words = [_compact(w) for w in query.split() if len(_compact(w)) >= 3]
+    names = [_compact(h["name"] or "") for h in hits]
+    # a word only some of them carry ("whey", "casein", "isolate") picks the top hit; otherwise they're all equally meant
+    telling = any(sum(w[:5] in n for n in names) < len(names) for w in words)
+    return hits[:1] if telling else hits[:4]
+
+
+def _find_product(text: str, loc: str, focus: str | None) -> str | None:
     query = _product_query(text)
     if query and not _only_kind_words(query):
-        found = brain._search(query, loc, limit=1, in_stock=False)
-        if found and _names_it(found[0]["name"] or "", query):
+        found = _candidates(query, loc)
+        if found:
             return found[0]["id"]
     t = nlu.normalize(text)
     if focus and (not query or nlu._has(t, FOLLOW_UP)):  # "kreatin qanday ichiladi" is about creatine, not the tub shown before
@@ -145,6 +166,14 @@ def _sentences(text: str, limit: int = 380) -> str:
 def product_answer(text: str, loc: str, aspects: list[str], focus: str | None) -> Answer | None:  # noqa: C901 - one plain branch per aspect, in the order answered
     from apps.assistant.infrastructure import tools
 
+    query = _product_query(text)
+    options = _candidates(query, loc) if query and not _only_kind_words(query) else []
+    if len(options) > 1:  # several products share the name -- ask, don't guess
+        names = "\n".join(f"{i}. **{o['name']}**" for i, o in enumerate(options, 1))
+        what = {"uz": "Bu nomda bir nechta mahsulot bor — qaysi biri haqida so'rayapsiz?", "ru": "С таким названием несколько продуктов — о каком речь?",
+                "en": "Several products share that name — which one do you mean?"}[loc]
+        ask = ASK_AGAIN.get(aspects[0], ASK_AGAIN["about"])[loc] if aspects else ""  # the chip repeats the question for the one tapped
+        return Answer(f"{what}\n{names}", [o["id"] for o in options], [f"{o['name'][:60]} {ask}".strip() for o in options[:3]])
     pid = _find_product(text, loc, focus)
     if not pid:
         return None

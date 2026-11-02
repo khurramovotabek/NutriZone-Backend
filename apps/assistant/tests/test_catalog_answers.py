@@ -90,6 +90,16 @@ class TestProductCard:
         for bit in expected:
             assert bit in reply, (bit, reply)
 
+    def test_a_name_several_products_share_asks_which_one(self, gold):
+        casein = _product("Zorvex Gold Standard Casein", brand=gold.brand)
+        reply, ids, chips, meta = answer({}, "zorvex gold standard tarkibi qanday", "uz")
+        assert "qaysi biri" in reply and set(ids) == {str(gold.id), str(casein.id)} and len(chips) == 2
+        reply, ids, _chips, _meta = answer({}, "zorvex gold standard casein tarkibi qanday", "uz")
+        assert ids == [str(casein.id)] and "Oqsil: 24 g" in reply
+        assert all(c.endswith("tarkibi") for c in chips)  # tapping one keeps the question
+        reply, ids, _chips, meta = answer({}, chips[0], "uz")
+        assert len(ids) == 1 and meta["last"] == "catalog" and "Oqsil: 24 g" in reply
+
     def test_follow_up_is_about_the_product_just_shown(self, gold):
         _reply, ids, _chips, meta = answer({}, "zorvex gold standard bormi", "uz")
         assert ids == [str(gold.id)] and meta["focus"] == str(gold.id)
