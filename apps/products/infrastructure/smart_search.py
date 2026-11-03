@@ -48,6 +48,7 @@ import re
 import time
 import unicodedata
 from dataclasses import dataclass, field
+from functools import lru_cache
 
 from django.core.cache import cache
 
@@ -91,9 +92,14 @@ def phonetic(word: str) -> str:
     return re.sub(r"(.)\1+", r"\1", w)
 
 
+_VOWELS = re.compile(r"[aeiou]")
+_VOWEL_SET = frozenset("aeiou")
+
+
+@lru_cache(maxsize=65536)
 def skeleton(key: str) -> str:
-    """Consonants of a phonetic key -- survives vowel typos ("applayd" ~ "applied")."""
-    return re.sub(r"[aeiou]", "", key)
+    """Consonants of a phonetic key -- survives vowel typos ("applayd" ~ "applied"). Cached: every query word is compared with every indexed word."""
+    return _VOWELS.sub("", key)
 
 
 def damerau(a: str, b: str, limit: int | None = None) -> int:
@@ -103,21 +109,36 @@ def damerau(a: str, b: str, limit: int | None = None) -> int:
     la, lb = len(a), len(b)
     if limit is not None and abs(la - lb) > limit:
         return limit + 1
-    prev2 = None
+    prev2: list[int] | None = None
     prev = list(range(lb + 1))
     for i in range(1, la + 1):
+        ai = a[i - 1]
         cur = [i] + [0] * lb
         for j in range(1, lb + 1):
-            cost = 0 if a[i - 1] == b[j - 1] else 1
-            cur[j] = min(prev[j] + 1, cur[j - 1] + 1, prev[j - 1] + cost)
-            if prev2 is not None and i > 1 and j > 1 and a[i - 1] == b[j - 2] and a[i - 2] == b[j - 1]:
-                cur[j] = min(cur[j], prev2[j - 2] + 1)
+            bj = b[j - 1]
+            best = prev[j - 1] if ai == bj else prev[j - 1] + 1
+            if prev[j] + 1 < best:
+                best = prev[j] + 1
+            if cur[j - 1] + 1 < best:
+                best = cur[j - 1] + 1
+            if prev2 is not None and j > 1 and ai == b[j - 2] and a[i - 2] == bj and prev2[j - 2] + 1 < best:
+                best = prev2[j - 2] + 1
+            cur[j] = best
+        # a row's minimum never decreases further down the table: once every cell is past the limit, so is the answer
+        if limit is not None and min(cur) > limit:
+            return limit + 1
         prev2, prev = prev, cur
     return prev[lb]
 
 
 def _allowed_typos(length: int) -> int:
     return 0 if length < 4 else 1 if length < 7 else 2
+
+
+@lru_cache(maxsize=131072)
+def _prefix_distance(query_key: str, prefix: str, limit: int) -> int:
+    """damerau() of a typed word against the start of an indexed word -- thousands of indexed words share each prefix, so it is computed once per distinct prefix."""
+    return damerau(query_key, prefix, limit)
 
 
 def _prefix_typo_score(query_key: str, word_key: str) -> float:
@@ -127,11 +148,11 @@ def _prefix_typo_score(query_key: str, word_key: str) -> float:
     if not typos or wl < ql:
         return 0.0
     best = 0.0
-    d = damerau(query_key, word_key[:ql], typos)
+    d = _prefix_distance(query_key, word_key[:ql], typos)
     if d <= typos:
         best = 0.82 - 0.08 * d
     if wl > ql:  # one inserted/deleted letter inside the typed prefix
-        d = damerau(query_key, word_key[: ql + 1], typos)
+        d = _prefix_distance(query_key, word_key[: ql + 1], typos)
         if d <= typos:
             best = max(best, 0.8 - 0.08 * d)
     return best
@@ -142,7 +163,8 @@ def _whole_word_score(query_key: str, word_key: str) -> float:
     if len(query_key) < 4:
         return 0.0
     longest = max(len(query_key), len(word_key))
-    similarity = 1 - damerau(query_key, word_key, max(2, longest // 3)) / longest
+    # similarity >= 0.7 means at most 30% of the letters differ -- a tighter limit lets damerau() stop early on everything else
+    similarity = 1 - damerau(query_key, word_key, int(longest * 0.3)) / longest
     return 0.85 * similarity if similarity >= 0.7 else 0.0
 
 
@@ -268,6 +290,7 @@ class _Prepared:
 
     postings: dict[str, list[tuple[int, str]]]
     token_scores: dict[str, dict[str, float]] = field(default_factory=dict)  # memo: query word -> {matching word: raw score}
+    letters: dict[str, frozenset] = field(default_factory=dict)  # indexed word -> its set of letters (pre-filter)
 
 
 _PREPARED: dict = {}
@@ -289,7 +312,17 @@ def _scores_for(prepared: _Prepared, token_key: str) -> dict[str, float]:
     scores = prepared.token_scores.get(token_key)
     if scores is None:
         scores = {}
-        for wk in prepared.postings:
+        if not prepared.letters:
+            prepared.letters = {wk: frozenset(wk) for wk in prepared.postings}
+        query_letters = frozenset(token_key)
+        lq = len(token_key)
+        typos = _allowed_typos(lq)
+        for wk, letters in prepared.letters.items():
+            missing = query_letters - letters
+            # Cheap exact pre-filter: each of the query's letters absent from the word costs at least one edit, so a word
+            # missing more than any rule tolerates -- and missing a consonant, which the skeleton/stem rules need -- cannot match.
+            if missing and len(missing) > max(typos, int(max(lq, len(wk)) * 0.3)) and not missing <= _VOWEL_SET:
+                continue
             s = word_score(token_key, wk)
             if s > 0 or _same_stem(token_key, wk):
                 scores[wk] = s

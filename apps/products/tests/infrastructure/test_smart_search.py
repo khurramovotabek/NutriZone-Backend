@@ -231,3 +231,40 @@ class TestRunTogetherAndShorthand:
 
     def test_one_unknown_word_shows_the_nearest_products_instead_of_nothing(self):
         assert ss.search("gold zzqx", self.INDEX).product_ids == [self.GSW.id]
+
+
+class TestEditDistanceSpeedups:
+    """damerau()'s early exit and the letter pre-filter in _scores_for() are speedups only -- they must never change a score."""
+
+    @staticmethod
+    def _reference(a: str, b: str) -> int:
+        prev2, prev = None, list(range(len(b) + 1))
+        for i in range(1, len(a) + 1):
+            cur = [i] + [0] * len(b)
+            for j in range(1, len(b) + 1):
+                cur[j] = min(prev[j] + 1, cur[j - 1] + 1, prev[j - 1] + (a[i - 1] != b[j - 1]))
+                if prev2 is not None and j > 1 and a[i - 1] == b[j - 2] and a[i - 2] == b[j - 1]:
+                    cur[j] = min(cur[j], prev2[j - 2] + 1)
+            prev2, prev = prev, cur
+        return prev[-1]
+
+    def test_limited_distance_agrees_with_the_full_table(self):
+        import random
+
+        rng = random.Random(7)
+        for _ in range(3000):
+            a = "".join(rng.choice("aekrtns") for _ in range(rng.randint(0, 9)))
+            b = "".join(rng.choice("aekrtns") for _ in range(rng.randint(0, 9)))
+            exact = self._reference(a, b)
+            for limit in (0, 1, 2, 3):
+                got = ss.damerau(a, b, limit)
+                assert got == exact if exact <= limit else got > limit, (a, b, limit)
+            assert ss.damerau(a, b) == exact
+
+    def test_prefilter_keeps_every_match(self):
+        words = ["kreatin", "kreatine", "proteini", "protein", "goldstandard", "gold", "standard", "vitamin", "massa", "mas", "aplied", "pld", "izolat"]
+        prepared = ss._Prepared({w: [(0, "name")] for w in words})
+        for query in ("kraet", "creatne", "protien", "goldstandart", "vitamini", "massu", "applayd", "izolyat", "xyz"):
+            key = ss.phonetic(query)
+            expected = {w: ss.word_score(key, w) for w in words if ss.word_score(key, w) > 0 or ss._same_stem(key, w)}
+            assert ss._scores_for(prepared, key) == expected, query
