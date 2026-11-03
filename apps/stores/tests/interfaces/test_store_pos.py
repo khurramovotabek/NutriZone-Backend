@@ -124,6 +124,10 @@ def test_customer_by_phone_is_found_or_created(shop):
     assert need_name.status_code == 422
     ok = c.post(f"/api/v1/my-store/pos/sales/{sale['id']}/customer", {"phone_number": "+998901112233", "full_name": "Ali Karimov"}, format="json")
     assert ok.json()["data"]["customer"]["full_name"] == "Ali Karimov"
+    # a kassa sign-up is a full customer: same role as a website/bot sign-up, so orders and cart work once they log in online
+    from apps.identity.infrastructure.models import UserRole
+
+    assert list(UserRole.objects.filter(user__phone_number="+998901112233").values_list("role__code", flat=True)) == ["customer"]
 
 
 def test_another_owner_cannot_touch_my_sale(shop, monkeypatch):

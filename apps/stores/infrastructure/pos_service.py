@@ -624,6 +624,10 @@ def set_customer(store: Store, cashier_id: uuid.UUID, sale_id: uuid.UUID, phone_
                 err.code = "NEW_CUSTOMER_NAME_REQUIRED"
                 raise err
             user = User.objects.create(phone_number=phone, full_name=full_name.strip()[:255], status="active")
+            # the same role a website/bot sign-up gets -- without it this customer's orders and cart answer 403 once they sign in online
+            from apps.identity.infrastructure.composition import _assign_default_customer_role
+
+            _assign_default_customer_role(user.id)
     sale = _load(store, sale_id)
     return pos.build_set_sale_customer(cashier_id).execute(sale_id=sale.id, customer_id=user.id)
 
