@@ -426,7 +426,7 @@ def _order_card(order_id) -> dict | None:
     agg = OrderLineItemModel.objects.filter(order=order, status="active").aggregate(total=Sum(expr), items=Count("id"), units=Sum("quantity"))
     return {
         "kind": "order", "id": str(order.id), "title": order.order_number, "status": order.status, "status_label": ORDER_STATUS.get(order.status, order.status),
-        "total": str(agg["total"] or 0), "currency": order.currency, "items": agg["items"] or 0, "units": agg["units"] or 0,
+        "total": str((agg["total"] or 0) + (order.shipping_amount or 0)), "currency": order.currency, "items": agg["items"] or 0, "units": agg["units"] or 0,
         "date": timezone.localtime(order.created_at, TZ).strftime("%d.%m.%Y"), "url": f"/orders/{order.order_number}",
         "eta": (lambda d: d.strftime("%d.%m.%Y") if d else None)(delivery_eta(order)), "customer_id": str(order.customer_id) if order.customer_id else None,
     }

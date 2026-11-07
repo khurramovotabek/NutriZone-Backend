@@ -102,3 +102,20 @@ class ReplenishmentView(APIView):
             for f in soon if str(f.product_id) in cards
         ]
         return success_response(data=data)
+
+
+class DeliveryOptionsView(APIView):
+    """`GET /ordering/delivery-options` -- public: what delivery costs (Tashkent city by Yandex Delivery, the regions
+    by BTS, pickup free), as priced on the dashboard. Shown on the cart, product and checkout pages."""
+
+    from rest_framework.permissions import AllowAny
+
+    permission_classes = [AllowAny]
+    authentication_classes: list = []
+
+    @extend_schema(tags=["Orders"], summary="Delivery prices (Tashkent city / regions / pickup)")
+    def get(self, request):
+        from apps.ordering.infrastructure import delivery_pricing
+
+        lang = (request.query_params.get("lang") or getattr(request, "LANGUAGE_CODE", "uz") or "uz")[:2]
+        return success_response(data=delivery_pricing.public_options(lang))

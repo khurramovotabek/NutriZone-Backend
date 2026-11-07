@@ -460,11 +460,15 @@ def order_doc(order_number: str, customer_id, lang: str = "uz") -> R.RichDoc | N
     totals = order.compute_total()
     cash = totals.grand_total.amount
     coins = Decimal(coins_spent_on_order(order.id) or 0)
-    money_rows = [[R.e(tr(lang, "items")), num(cash + totals.discount_total.amount)]]
+    ship = totals.shipping_total.amount
+    money_rows = [[R.e(tr(lang, "items")), num(cash - ship + totals.discount_total.amount)]]
     if totals.discount_total.amount - coins > 0:
         money_rows.append([R.e(tr(lang, "discount_row")), f"−{num(totals.discount_total.amount - coins)}"])
     if coins:
         money_rows.append([R.e(tr(lang, "coins_used")), f"−{num(coins)}"])
+    if not pickup:
+        money_rows.append([R.e("🚚 " + {"ru": "Доставка", "en": "Delivery"}.get(lang, "Yetkazib berish")),
+                           num(ship) if ship else {"ru": "Бесплатно", "en": "Free"}.get(lang, "Bepul")])
     money_rows.append([R.b(tr(lang, "to_pay")), R.b(money(cash, lang))])
 
     doc = R.RichDoc()

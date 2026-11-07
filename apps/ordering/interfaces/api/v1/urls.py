@@ -20,6 +20,7 @@ urlpatterns = [
     # --- Orders ---
     path("", views.OrderListCreateView.as_view(), name="order-list-create"),
     path("search", views.OrderSearchView.as_view(), name="order-search"),
+    path("delivery-options", customer_views.DeliveryOptionsView.as_view(), name="delivery-options"),
     path("replenishment", customer_views.ReplenishmentView.as_view(), name="order-replenishment"),
     path("admin", views.AdminOrderListView.as_view(), name="admin-order-list"),
     path("statistics", views.OrderStatisticsView.as_view(), name="order-statistics"),

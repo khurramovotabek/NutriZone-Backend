@@ -605,6 +605,9 @@ LABELS: dict[str, tuple[str, str]] = {
     "order status history entry models": ("Holatlar tarixi", "История статусов"),
     "sale line item model": ("Chek qatori", "Позиция чека"),
     "sale line item models": ("Chek qatorlari", "Позиции чека"),
+    "delivery prices": ("Yetkazib berish narxlari", "Цены доставки"),
+    "region delivery rate": ("Viloyat tarifi", "Тариф региона"),
+    "region delivery rates": ("Viloyatlar bo'yicha BTS tariflari", "Тарифы BTS по регионам"),
 }
 
 

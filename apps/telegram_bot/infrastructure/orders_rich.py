@@ -254,11 +254,15 @@ def order_doc(order_id, banner: str | None = None, audience: str = "channel") ->
     totals = order.compute_total()
     cash = totals.grand_total.amount
     coins = Decimal(coins_spent_on_order(order.id) or 0)
-    gross = cash + totals.discount_total.amount
+    ship = totals.shipping_total.amount
+    gross = cash - ship + totals.discount_total.amount
     other_discount = totals.discount_total.amount - coins
     money_rows = [[R.e("Mahsulotlar"), num(gross)]]
     if other_discount > 0:
         money_rows.append([R.e("Chegirma / kupon"), f"−{num(other_discount)}"])
+    if not pickup:
+        carrier = OrderModel.objects.filter(pk=order.id).values_list("delivery_carrier", flat=True).first() or ""
+        money_rows.append([R.e("🚚 Yetkazib berish" + (f" ({carrier})" if carrier else "")), num(ship) if ship else "Bepul"])
     money_rows.append([R.b("JAMI"), R.b(som(cash + coins))])
     pay_rows = []
     if coins:
@@ -339,14 +343,17 @@ def customer_receipt_doc(order_number: str, lang: str = "uz") -> R.RichDoc | Non
     coins = Decimal(coins_spent_on_order(order.id) or 0)
     basket = [[R.b(infos[ln.product_variant_id].name if ln.product_variant_id in infos else "Mahsulot") + (f" · {R.e(infos[ln.product_variant_id].size)}" if ln.product_variant_id in infos and infos[ln.product_variant_id].size else ""),
                str(ln.quantity), num(ln.unit_price.amount * ln.quantity)] for ln in lines]
-    money = [[R.e("Mahsulotlar"), num(cash + totals.discount_total.amount)]]
+    ship = totals.shipping_total.amount
+    pickup = row["fulfilment_method"] == "pickup"
+    money = [[R.e("Mahsulotlar"), num(cash - ship + totals.discount_total.amount)]]
     if totals.discount_total.amount - coins > 0:
         money.append([R.e("Chegirma"), f"−{num(totals.discount_total.amount - coins)}"])
     if coins:
         money.append([R.e("🪙 Coins bilan to'landi"), f"−{num(coins)}"])
+    if not pickup:
+        money.append([R.e("🚚 Yetkazib berish"), num(ship) if ship else "Bepul"])
     money.append([R.b("To'lanadi"), R.b(som(cash))])
     addr = order.shipping_address
-    pickup = row["fulfilment_method"] == "pickup"
     doc = R.RichDoc()
     doc.image("head", charts.receipt_banner("BUYURTMA QABUL QILINDI", order.order_number.value, "Olib ketish" if pickup else "Yetkazib berish", som(cash),
                                             f"Coins {num(coins)} ishlatildi" if coins else "To'lov: qabul qilishda", charts.GREEN))

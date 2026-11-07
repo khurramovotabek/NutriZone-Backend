@@ -84,7 +84,10 @@ def _real_order(monkeypatch, phone_suffix, unit_amount=Decimal("50000.00"), quan
     r = client.post(f"/api/v1/cart/{cart['code']}/checkout", {"shipping_address_id": str(address.id)}, format="json", HTTP_X_CART_TOKEN=cart["token"], HTTP_IDEMPOTENCY_KEY=str(uuid.uuid4()))
     assert r.status_code == 201, r.json()
     order_id = r.json()["data"]["id"]
-    return client, user_id, order_id, unit_amount * quantity
+    # the customer pays the goods plus the delivery fee frozen at checkout (DeliverySettings; regions -> BTS from 30 000)
+    shipping = Decimal(r.json()["data"]["shipping_amount"])
+    assert shipping > 0
+    return client, user_id, order_id, unit_amount * quantity + shipping
 
 
 def _use_fake_gateway(monkeypatch):

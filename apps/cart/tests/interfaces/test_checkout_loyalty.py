@@ -60,9 +60,19 @@ def test_checkout_with_coins_discounts_the_order_and_debits_the_wallet(monkeypat
     line = ordering_orm.OrderLineItemModel.objects.get(order_id=order_id)
     assert line.discount_amount == Decimal("60000.00")
     order = ordering_composition.build_order_repository().get_by_id(uuid.UUID(order_id))
-    assert compute_order_payable_amount(order) == Decimal("140000.00")  # what the customer is charged
+    assert order.shipping_amount >= Decimal("30000.00")  # outside Tashkent city -> BTS, from 30 000 (by parcel weight)
+    assert compute_order_payable_amount(order) == Decimal("140000.00") + order.shipping_amount  # goods after coins + delivery
     assert Wallet.objects.get(user_id=user_id).balance == 40_000
     assert WalletTransaction.objects.get(order_id=order_id, kind="spend").amount == -60_000
+
+    # the customer's receipt takes the coins off once (the lines' discount already carries them)
+    from apps.receipts.infrastructure.builders import order_data
+
+    receipt = order_data(ordering_orm.OrderModel.objects.get(pk=order_id))
+    assert Decimal(receipt["coins"]) == Decimal("60000")
+    assert Decimal(receipt["discount"]) == Decimal("0")
+    assert Decimal(receipt["delivery"]) == order.shipping_amount
+    assert Decimal(receipt["total"]) == Decimal("140000.00") + order.shipping_amount
 
 
 def test_checkout_rejects_coins_above_the_cap_and_creates_nothing(monkeypatch):

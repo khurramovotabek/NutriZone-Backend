@@ -100,8 +100,11 @@ def order_data(order) -> dict:
         items.append({"name": names.get(v.product_id) if v else "—", "variant_label": _variant_label(v) if v else None, "sku": v.sku if v else None,
                       "quantity": li.quantity, "unit_price": str(li.unit_price_amount), "line_total": str(line_total), "refunded_quantity": 0})
     coins = -sum((t.amount for t in WalletTransaction.objects.filter(order_id=order.id, kind="spend")), 0)
-    delivery = Decimal(getattr(order, "shipping_estimated_amount", None) or 0)
-    total = max(Decimal(0), subtotal - discount - Decimal(coins) + delivery)
+    delivery = Decimal(getattr(order, "shipping_amount", None) or 0)  # the delivery fee frozen at checkout (0 for pickup)
+    # Checkout spreads the coupon AND the coins over the lines' discount_amount, so the lines already carry the coins:
+    # the total takes the line discounts once, and the "discount" row shows only the coupon part (coins have their own row).
+    total = max(Decimal(0), subtotal - discount + delivery)
+    discount = max(Decimal(0), discount - Decimal(coins))
     pay = PaymentModel.objects.filter(order_id=order.id, status__in=("captured", "paid", "performed", "succeeded")).order_by("-created_at").first()
     method = pay.provider if pay else "cash"
     return {

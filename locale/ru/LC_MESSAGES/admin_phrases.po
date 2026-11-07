@@ -5945,3 +5945,164 @@ msgstr "{0}% от спрошенных"
 
 msgid "hali so'rov yo'q"
 msgstr "запросов ещё не было"
+
+# Yetkazib berish narxlari (ordering DeliverySettings dashboard page)
+msgid "Yetkazib berish narxlari"
+msgstr "Цены доставки"
+
+msgid "Yetkazib berish narxlari saqlandi — yangi buyurtmalarga darhol qo'llanadi (oldingi buyurtmalar o'zgarmaydi)."
+msgstr "Цены доставки сохранены — сразу действуют для новых заказов (прежние заказы не меняются)."
+
+msgid "Toshkent shahri — Yandex Dostavka (masofaga qarab, maksimal narxgacha), viloyatlar — BTS (og'irlikka qarab). Do'kondan olib ketish bepul."
+msgstr "Ташкент — Яндекс Доставка (по расстоянию, не дороже максимальной цены), регионы — BTS (по весу). Самовывоз из филиала бесплатный."
+
+msgid "Toshkent shahri — masofa bo'yicha, maksimal narxgacha"
+msgstr "Ташкент — по расстоянию, до максимальной цены"
+
+msgid "Toshkent shahri: yetkazish xizmati"
+msgstr "Ташкент: служба доставки"
+
+msgid "Toshkent shahri: boshlang'ich narx (so'm)"
+msgstr "Ташкент: начальная цена (сум)"
+
+msgid "Eng yaqin filialga yaqin manzillar uchun eng kam narx."
+msgstr "Минимальная цена — для адресов рядом с ближайшим филиалом."
+
+msgid "Toshkent shahri: har km uchun (so'm)"
+msgstr "Ташкент: за км (сум)"
+
+msgid "Eng yaqin filialdan yo'l masofasi (taxminan) bo'yicha qo'shiladi. {0} — har doim maksimal narx."
+msgstr "Добавляется за каждый км (примерного) пути от ближайшего филиала. {0} — всегда максимальная цена."
+
+msgid "Toshkent shahri: maksimal narx (so'm)"
+msgstr "Ташкент: максимальная цена (сум)"
+
+msgid "Mijoz Toshkent ichida bundan ko'p to'lamaydi («{0} so'mgacha»). Manzil xaritada belgilanmagan bo'lsa shu narx olinadi."
+msgstr "В Ташкенте клиент не платит больше этой суммы («до {0} сум»). Если адрес не отмечен на карте, берётся эта цена."
+
+msgid "Toshkent: muddat (uz)"
+msgstr "Ташкент: срок (uz)"
+
+msgid "Toshkent: muddat (ru)"
+msgstr "Ташкент: срок (ru)"
+
+msgid "Toshkent: muddat (en)"
+msgstr "Ташкент: срок (en)"
+
+msgid "Viloyatlar (Toshkent viloyati ham) — og'irlik bo'yicha"
+msgstr "Регионы (включая Ташкентскую область) — по весу"
+
+msgid "Viloyatlar: yetkazish xizmati"
+msgstr "Регионы: служба доставки"
+
+msgid "Viloyatlar: boshlang'ich narx (so'm)"
+msgstr "Регионы: начальная цена (сум)"
+
+msgid "Posilka og'irligi quyidagi chegaragacha bo'lsa shu narx («{0} so'mdan»)."
+msgstr "Эта цена — для посылки до веса, указанного ниже («от {0} сум»)."
+
+msgid "Viloyatlar: boshlang'ich narxdagi og'irlik (kg)"
+msgstr "Регионы: вес, входящий в начальную цену (кг)"
+
+msgid "Viloyatlar: har qo'shimcha kg uchun (so'm)"
+msgstr "Регионы: за каждый доп. кг (сум)"
+
+msgid "Chegaradan oshgan har boshlangan kilogramm uchun qo'shiladi (BTS tarifiga moslang)."
+msgstr "Добавляется за каждый начатый килограмм сверх лимита (сверьте с тарифом BTS)."
+
+msgid "Og'irligi noma'lum mahsulot (kg)"
+msgstr "Товар с неизвестным весом (кг)"
+
+msgid "Og'irligi gramm/kg/ml da kiritilmagan mahsulotlar (tabletkalar va h.k.) shu og'irlikda hisoblanadi."
+msgstr "Товары без веса в г/кг/мл (таблетки и т. п.) считаются с этим весом."
+
+msgid "Qadoq og'irligi (kg, har posilka)"
+msgstr "Вес упаковки (кг, на посылку)"
+
+msgid "Viloyatlar: muddat (uz)"
+msgstr "Регионы: срок (uz)"
+
+msgid "Viloyatlar: muddat (ru)"
+msgstr "Регионы: срок (ru)"
+
+msgid "Viloyatlar: muddat (en)"
+msgstr "Регионы: срок (en)"
+
+msgid "Bepul yetkazish"
+msgstr "Бесплатная доставка"
+
+msgid "Bepul yetkazish chegarasi (so'm)"
+msgstr "Порог бесплатной доставки (сум)"
+
+msgid "Shu summadan (chegirmalardan keyin) qimmat buyurtmalar bepul yetkaziladi. Bo'sh — har doim pulli."
+msgstr "Заказы дороже этой суммы (после скидок) доставляются бесплатно. Пусто — доставка всегда платная."
+
+msgid "Toshkent shahri"
+msgstr "г. Ташкент"
+
+msgid "Ko'rinishi"
+msgstr "Предпросмотр"
+
+msgid "{0} so'm + {1} so'm/km"
+msgstr "{0} сум + {1} сум/км"
+
+msgid "{0} so'mgacha"
+msgstr "до {0} сум"
+
+msgid "{0} so'mdan"
+msgstr "от {0} сум"
+
+msgid "{0} kg gacha"
+msgstr "до {0} кг"
+
+msgid "har qo'shimcha kg +{0} so'm"
+msgstr "+{0} сум за каждый доп. кг"
+
+msgid "Do'kondan olib ketish"
+msgstr "Самовывоз из филиала"
+
+msgid "Filialdan"
+msgstr "В филиале"
+
+msgid "tayyor bo'lgach"
+msgstr "когда будет готов"
+
+msgid "Bepul"
+msgstr "Бесплатно"
+
+msgid "{0} so'm va undan qimmat buyurtmalar bepul yetkaziladi."
+msgstr "Заказы от {0} сум доставляются бесплатно."
+
+msgid "Bepul yetkazish chegarasi o'rnatilmagan — yetkazib berish har doim pulli."
+msgstr "Порог бесплатной доставки не задан — доставка всегда платная."
+
+msgid "Narx buyurtma berilgan paytda belgilanadi va buyurtma jami summasiga qo'shiladi (onlayn to'lov ham, naqd ham). Oldingi buyurtmalar o'zgarmaydi."
+msgstr "Цена фиксируется при оформлении заказа и добавляется к его сумме (и при онлайн-оплате, и наличными). Прежние заказы не меняются."
+
+msgid "Viloyatlar bo'yicha BTS tariflari (bo'sh viloyat — umumiy tarif)"
+msgstr "Тарифы BTS по регионам (регион без строки — общий тариф)"
+
+msgid "Viloyat"
+msgstr "Регион"
+
+msgid "Boshlang'ich narx (so'm)"
+msgstr "Начальная цена (сум)"
+
+msgid "Har qo'shimcha kg (so'm)"
+msgstr "За каждый доп. кг (сум)"
+
+msgid "Bo'sh — umumiy tarifdagi qiymat."
+msgstr "Пусто — значение из общего тарифа."
+
+msgid "Narx o'zgarishlari"
+msgstr "Изменения цен"
+
+msgid "Support paneli"
+msgstr "Панель поддержки"
+
+msgid "AI maslahatchini o'qitish"
+msgstr "Обучение ИИ-консультанта"
+
+msgid "saqlab, tahrirda qolish"
+msgstr "сохранить и продолжить"
+

@@ -34,7 +34,8 @@ def compute_order_payable_amount(order) -> Decimal:
         if line.status.value != "active":
             continue
         total += (line.unit_price.amount * line.quantity) - line.discount_amount.amount + line.tax_amount.amount
-    return total
+    # the delivery fee frozen at checkout (0 for pickup) is part of what the customer pays
+    return total + (getattr(order, "shipping_amount", None) or Decimal("0"))
 
 
 class CreatePayment:

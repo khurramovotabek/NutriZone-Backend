@@ -91,6 +91,8 @@ class Order:
     placed_at: datetime | None = None
     lock_reason: OrderLockReason | None = None
     is_archived: bool = False
+    # Delivery fee the customer pays (frozen at checkout; 0 for pickup) -- part of the grand total.
+    shipping_amount: Decimal = Decimal("0")
 
     # --- Internal helpers ------------------------------------------------
 
@@ -117,17 +119,18 @@ class Order:
         subtotal = sum((l.unit_price.amount * l.quantity for l in lines), start=Decimal("0"))
         discount = sum((l.discount_amount.amount for l in lines), start=Decimal("0"))
         tax = sum((l.tax_amount.amount for l in lines), start=Decimal("0"))
-        return OrderTotal.compute(Money(amount=subtotal, currency=self.currency), Money(amount=discount, currency=self.currency), Money(amount=tax, currency=self.currency), Money(amount=Decimal("0"), currency=self.currency))
+        return OrderTotal.compute(Money(amount=subtotal, currency=self.currency), Money(amount=discount, currency=self.currency), Money(amount=tax, currency=self.currency), Money(amount=self.shipping_amount or Decimal("0"), currency=self.currency))
 
     # --- Creation from Cart ------------------------------------------------
 
     @staticmethod
-    def create_from_cart_data(order_id: uuid.UUID, order_number: OrderNumber, cart_id: uuid.UUID | None, customer_id: uuid.UUID | None, shipping_address: AddressSnapshot, billing_address: AddressSnapshot, currency: str, lines: list[OrderLineItem], coupon_ids: set, channel: OrderChannel, at: datetime) -> tuple["Order", OrderCreated]:
+    def create_from_cart_data(order_id: uuid.UUID, order_number: OrderNumber, cart_id: uuid.UUID | None, customer_id: uuid.UUID | None, shipping_address: AddressSnapshot, billing_address: AddressSnapshot, currency: str, lines: list[OrderLineItem], coupon_ids: set, channel: OrderChannel, at: datetime, shipping_amount: Decimal = Decimal("0")) -> tuple["Order", OrderCreated]:
         if not lines:
             raise EmptyOrder("Cannot create an order with zero line items.")
         order = Order(
             id=order_id, order_number=order_number, customer_id=customer_id, cart_id=cart_id, shipping_address=shipping_address, billing_address=billing_address,
             currency=currency, channel=channel, status=OrderStatus.PENDING_PAYMENT, lines={l.id: l for l in lines}, coupon_ids=coupon_ids, placed_at=at,
+            shipping_amount=Decimal(shipping_amount or 0),
         )
         order._record_transition(OrderStatus.PENDING_PAYMENT, at, reason="order_created")
         event = OrderCreated(order_id=order.id, order_number=order_number.value, cart_id=cart_id, customer_id=customer_id)

@@ -93,6 +93,7 @@ def desk_payload(stage: str = "prepare", q: str = "", city: str = "", courier: s
             total += net
             items.append({"name": info.name if info else _("Unknown product"), "size": info.size if info else "", "sku": info.sku if info else "",
                           "image": info.image_url if info else "", "qty": l.quantity, "unit": money(l.unit_price_amount), "total": money(net)})
+        total += o.shipping_amount or 0  # the delivery fee is collected with the goods
         got = paid.get(o.id, Decimal(0))
         collect = max(total - got, Decimal(0))
         u = users.get(o.customer_id)
@@ -129,6 +130,7 @@ def desk_payload(stage: str = "prepare", q: str = "", city: str = "", courier: s
 
         expr = ExpressionWrapper(F("unit_price_amount") * F("quantity") - F("discount_amount") + F("tax_amount"), output_field=DecimalField(max_digits=16, decimal_places=2))
         road_total = orm.OrderLineItemModel.objects.filter(order_id__in=road, status="active").aggregate(t=Sum(expr))["t"] or Decimal(0)
+        road_total += orm.OrderModel.objects.filter(pk__in=road).aggregate(t=Sum("shipping_amount"))["t"] or Decimal(0)
         road_total -= sum(_paid_by_order(road).values(), Decimal(0))
     active = _base_qs().filter(status__in=STAGES["prepare"] + STAGES["road"])
     stats = {
@@ -203,8 +205,11 @@ def waybill(order: orm.OrderModel) -> dict:
         total += net
         items.append({"name": info.name if info else "—", "size": info.size if info else "", "sku": info.sku if info else "", "qty": l.quantity,
                       "unit": money(l.unit_price_amount), "total": money(net)})
+    shipping = order.shipping_amount or Decimal(0)
+    total += shipping
     got = _paid_by_order([order.id]).get(order.id, Decimal(0))
     d = orm.DeliveryAssignment.objects.filter(order=order).select_related("courier").first()
     return {"order": order, "items": items, "units": sum(i["qty"] for i in items), "total": money(total), "paid": money(got),
+            "shipping": money(shipping), "carrier": order.delivery_carrier or "",
             "collect": money(max(total - got, Decimal(0))), "is_paid": total > 0 and got >= total, "address": _full_address(order), "delivery": d,
             "placed": timezone.localtime(order.placed_at) if order.placed_at else None, "printed": timezone.localtime()}

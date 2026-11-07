@@ -448,7 +448,7 @@ def get_my_orders(args: dict, locale: str) -> dict:
     out = []
     for o in orders:
         lines = OrderLineItemModel.objects.filter(order=o, status="active")
-        total = lines.aggregate(t=Sum(expr))["t"] or 0
+        total = (lines.aggregate(t=Sum(expr))["t"] or 0) + (o.shipping_amount or 0)  # with the delivery fee
         row = {"number": o.order_number, "status": o.status, "status_text": ORDER_STATUS_TEXT.get(o.status, o.status),
                "placed": (o.placed_at or o.created_at).strftime("%d.%m.%Y"), "total": f"{int(total):,}".replace(",", " ") + " so'm",
                "items": int(lines.aggregate(q=Sum("quantity"))["q"] or 0), "fulfilment": o.fulfilment_method}

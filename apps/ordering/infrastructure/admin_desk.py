@@ -253,7 +253,8 @@ def order_snapshot(order: orm.OrderModel) -> dict:
             "cancellable": max(l.quantity - cancelled.get(l.id, 0), 0) if active else 0,
         })
     coins = _coins(order.id)
-    total = subtotal - discount + tax
+    shipping = order.shipping_amount or Decimal(0)  # delivery fee frozen at checkout (0 for pickup)
+    total = subtotal - discount + tax + shipping
     style = status_style(order.status)
     flow_index = ORDER_FLOW.index(order.status) if order.status in ORDER_FLOW else None
     steps = []
@@ -269,6 +270,8 @@ def order_snapshot(order: orm.OrderModel) -> dict:
         "order": order, "style": style, "steps": steps, "lines": lines, "units": sum(l["quantity"] for l in lines if l["active"]),
         "totals": {
             "subtotal": money(subtotal), "discount": money(discount), "tax": money(tax), "total": money(total),
+            "shipping": money(shipping), "has_shipping": order.fulfilment_method != "pickup", "carrier": order.delivery_carrier or "",
+            "zone": {"tashkent": "Toshkent shahri", "regions": "Viloyat"}.get(order.delivery_zone or "", ""),
             # Line discounts hold coupon + coins together (cart allocates both); split them back for display.
             "coupon": money(max(discount - coins["spent"], Decimal(0))), "coins": money(coins["spent"]), "has_coins": coins["spent"] > 0,
             "cash": money(total),

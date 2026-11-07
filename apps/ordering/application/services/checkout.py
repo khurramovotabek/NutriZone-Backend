@@ -52,7 +52,7 @@ class CreateOrderFromCart:
     def execute(
         self, cart_id: uuid.UUID | None, customer_id: uuid.UUID | None, currency: str,
         shipping_address: dict, billing_address: dict, line_items: list[dict], coupon_ids: list[uuid.UUID] | None = None,
-        channel: str = OrderChannel.WEB.value, customer_comment: str | None = None,
+        channel: str = OrderChannel.WEB.value, customer_comment: str | None = None, shipping_amount: Decimal | str | int = 0,
     ) -> Order:
         with self._ctx.timer("order_create_from_cart_duration"):
             problems = OrderCreationPolicy.validate_preconditions(len(line_items), bool(shipping_address), bool(billing_address))
@@ -76,6 +76,7 @@ class CreateOrderFromCart:
                 order_id=uuid.uuid4(), order_number=OrderNumber(_generate_order_number()), cart_id=cart_id, customer_id=customer_id,
                 shipping_address=AddressSnapshot(**shipping_address), billing_address=AddressSnapshot(**billing_address),
                 currency=currency, lines=lines, coupon_ids=set(coupon_ids or []), channel=OrderChannel(channel), at=now,
+                shipping_amount=Decimal(str(shipping_amount or 0)),
             )
             if customer_comment and customer_comment.strip():
                 # The note the customer typed at checkout (delivery hints etc.) -- shown to staff as "From the customer".

@@ -72,7 +72,7 @@ class DjangoOrderRepository:
                     "lock_reason": order.lock_reason.value if order.lock_reason else None, "is_archived": order.is_archived,
                     "coupon_ids": [str(c) for c in order.coupon_ids], "promotion_ids": [str(p) for p in order.promotion_ids],
                     "note": order.note.text if order.note else None, "customer_comment": order.customer_comment.text if order.customer_comment else None,
-                    "placed_at": order.placed_at,
+                    "placed_at": order.placed_at, "shipping_amount": order.shipping_amount,
                     **_address_to_fields(order.shipping_address, "shipping"), **_address_to_fields(order.billing_address, "billing"),
                     "invoice_id": order.invoice.id if order.invoice else None, "invoice_number": order.invoice.invoice_number if order.invoice else None,
                     "invoice_total_amount": order.invoice.total_amount.amount if order.invoice else None, "invoice_status": order.invoice.status.value if order.invoice else None,
@@ -174,6 +174,7 @@ class DjangoOrderRepository:
             payment_references=payment_references, fulfillment_references=fulfillment_references, invoice=invoice, failures=failures, status_history=status_history,
             note=OrderNote(row.note) if row.note else None, customer_comment=CustomerComment(row.customer_comment) if row.customer_comment else None,
             placed_at=row.placed_at, lock_reason=OrderLockReason(row.lock_reason) if row.lock_reason else None, is_archived=row.is_archived,
+            shipping_amount=row.shipping_amount,
         )
 
 

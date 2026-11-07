@@ -315,7 +315,7 @@ def _profile(conv) -> dict:
         out["order_count"] = OrderModel.objects.filter(customer_id=u.id).exclude(status="draft").count()
         out["spent"] = int(OrderLineItemModel.objects.filter(order__customer_id=u.id, order__status__in=("delivered", "completed"), status="active").aggregate(t=Sum(expr))["t"] or 0)
         out["orders"] = [{"id": str(o.pk), "number": o.order_number, "status": ORDER_STATUS.get(o.status, (o.status, "#64748b"))[0], "color": ORDER_STATUS.get(o.status, ("", "#64748b"))[1],
-                          "total": int(totals.get(o.pk) or 0), "date": o.created_at.strftime("%d.%m.%Y"), "url": reverse("admin:ordering_ordermodel_change", args=[o.pk])} for o in orders]
+                          "total": int((totals.get(o.pk) or 0) + (o.shipping_amount or 0)), "date": o.created_at.strftime("%d.%m.%Y"), "url": reverse("admin:ordering_ordermodel_change", args=[o.pk])} for o in orders]
     except Exception:  # noqa: BLE001
         pass
     out["other_chats"] = ConversationModel.objects.filter(participants__user_id=u.id).exclude(id=conv.id).distinct().count()

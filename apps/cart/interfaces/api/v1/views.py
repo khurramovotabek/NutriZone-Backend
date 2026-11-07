@@ -645,6 +645,13 @@ class CheckoutCartView(APIView):
 
         line_discounts, coins_to_redeem, payable_before_coins, applied_coupon_ids, gross = _checkout_discounts(cart, active_items, actor_id, serializer.validated_data.get("coins_to_redeem") or 0)
 
+        # Delivery fee (pickup is free): Tashkent city by Yandex Delivery, the regions by BTS -- priced on the
+        # dashboard (DeliverySettings) and frozen onto the order; the free threshold looks at the goods after discounts.
+        from apps.ordering.infrastructure import delivery_pricing
+
+        delivery_quote = None if pickup is not None else delivery_pricing.quote_for_address(
+            shipping_address_id, payable_before_coins, getattr(request, "LANGUAGE_CODE", "uz"), items=[(i.product_variant_id, i.quantity.value) for i in active_items])
+
         line_items = [
             {
                 "product_variant_id": str(item.product_variant_id),
@@ -675,7 +682,12 @@ class CheckoutCartView(APIView):
                     # correct type.
                     line_items=line_items, coupon_ids=list(cart.coupon_ids),
                     customer_comment=cart.note.text if cart.note else None,
+                    shipping_amount=delivery_quote.fee if delivery_quote else 0,
                 )
+                if delivery_quote is not None:
+                    from apps.ordering.infrastructure.models import OrderModel
+
+                    OrderModel.objects.filter(pk=order.id).update(delivery_zone=delivery_quote.zone, delivery_carrier=delivery_quote.carrier[:60])
                 # Phase 09.7: closes a real, confirmed gap -- CreateOrderFromCart
                 # never transitions PriceSnapshot LOCKED -> CONSUMED on its own
                 # (confirmed directly: no ConsumePriceSnapshot reference anywhere
@@ -709,6 +721,7 @@ class CheckoutCartView(APIView):
             return {
                 "id": str(order.id), "order_number": order.order_number.value, "status": order.status.value,
                 "currency": order.currency, "line_count": len(line_items),
+                "shipping_amount": str(order.shipping_amount), "total": str(order.compute_total().grand_total.amount),
             }
 
         return protect_with_idempotency(
@@ -961,7 +974,35 @@ class CheckoutPreviewView(APIView):
             "currency": cart.currency.value,
             "expires_at": cart.expires_at.isoformat() if cart.expires_at else None,
             "loyalty": _loyalty_preview(_actor_id(request), total_after_discount or subtotal),
+            "delivery": _delivery_preview(request, total_after_discount or subtotal, [(i.product_variant_id, i.quantity.value) for i in active_items]),
         })
+
+
+def _delivery_preview(request, goods_total: dict | None, items) -> dict | None:
+    """The delivery line of the summary: ?method=pickup -> free; ?address_id=<own address> -> that zone's price
+    (Tashkent city / regions, DeliverySettings). Without either the storefront shows both zones' prices."""
+    from apps.ordering.infrastructure import delivery_pricing
+
+    if goods_total is None:
+        return None
+    method = request.query_params.get("method") or "delivery"
+    if method == "pickup":
+        return {"method": "pickup", "zone": None, "carrier": "", "fee": "0", "base_fee": "0", "eta": "", "free_from": None}
+    raw = request.query_params.get("address_id")
+    if not raw:
+        return None
+    try:
+        address_id = uuid.UUID(raw)
+    except ValueError:
+        return None
+    from apps.geo.infrastructure.models import Address
+
+    if not Address.objects.filter(pk=address_id, owner_type="user", owner_id=_actor_id(request)).exists():
+        return None
+    lang = (request.query_params.get("lang") or getattr(request, "LANGUAGE_CODE", "uz") or "uz")[:2]
+    q = delivery_pricing.quote_for_address(address_id, Decimal(goods_total["amount"]), lang, items=items)
+    return {"method": "delivery", "zone": q.zone, "carrier": q.carrier, "fee": str(q.fee), "base_fee": str(q.base_fee), "eta": q.eta,
+            "free_from": str(q.free_from) if q.free_from is not None else None, "weight_kg": q.weight_kg, "distance_km": q.distance_km}
 
 
 class CartSnapshotHistoryView(APIView):

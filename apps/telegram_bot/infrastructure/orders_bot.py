@@ -59,7 +59,10 @@ def _orders(store_ids, start=None, end=None, statuses=None):
         qs = qs.filter(placed_at__gte=start, placed_at__lt=end)
     if statuses:
         qs = qs.filter(status__in=statuses)
-    return list(qs.annotate(amount=Sum(line_total, filter=Q(lines__status="active"))).order_by("-placed_at").values("id", "order_number", "status", "placed_at", "amount", "fulfilment_method", "fulfilment_store_id", "shipping_recipient_name")[:40])
+    rows = list(qs.annotate(amount=Sum(line_total, filter=Q(lines__status="active"))).order_by("-placed_at").values("id", "order_number", "status", "placed_at", "amount", "shipping_amount", "fulfilment_method", "fulfilment_store_id", "shipping_recipient_name")[:40])
+    for r in rows:  # the order's total includes its delivery fee
+        r["amount"] = (r["amount"] or 0) + (r.pop("shipping_amount") or 0)
+    return rows
 
 
 def _no_access(chat_id) -> R.RichDoc:

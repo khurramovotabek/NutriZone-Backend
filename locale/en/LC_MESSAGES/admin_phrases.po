@@ -5906,3 +5906,164 @@ msgstr "{0}% of those asked"
 
 msgid "hali so'rov yo'q"
 msgstr "none sent yet"
+
+# Yetkazib berish narxlari (ordering DeliverySettings dashboard page)
+msgid "Yetkazib berish narxlari"
+msgstr "Delivery prices"
+
+msgid "Yetkazib berish narxlari saqlandi — yangi buyurtmalarga darhol qo'llanadi (oldingi buyurtmalar o'zgarmaydi)."
+msgstr "Delivery prices saved — they apply to new orders right away (earlier orders don't change)."
+
+msgid "Toshkent shahri — Yandex Dostavka (masofaga qarab, maksimal narxgacha), viloyatlar — BTS (og'irlikka qarab). Do'kondan olib ketish bepul."
+msgstr "Tashkent city — Yandex Delivery (by distance, up to the maximum price), regions — BTS (by weight). Pickup from a branch is free."
+
+msgid "Toshkent shahri — masofa bo'yicha, maksimal narxgacha"
+msgstr "Tashkent city — by distance, up to the maximum price"
+
+msgid "Toshkent shahri: yetkazish xizmati"
+msgstr "Tashkent city: delivery service"
+
+msgid "Toshkent shahri: boshlang'ich narx (so'm)"
+msgstr "Tashkent city: starting price (UZS)"
+
+msgid "Eng yaqin filialga yaqin manzillar uchun eng kam narx."
+msgstr "The lowest price — for addresses close to the nearest branch."
+
+msgid "Toshkent shahri: har km uchun (so'm)"
+msgstr "Tashkent city: per km (UZS)"
+
+msgid "Eng yaqin filialdan yo'l masofasi (taxminan) bo'yicha qo'shiladi. {0} — har doim maksimal narx."
+msgstr "Added per km of (estimated) road distance from the nearest branch. {0} — always the maximum price."
+
+msgid "Toshkent shahri: maksimal narx (so'm)"
+msgstr "Tashkent city: maximum price (UZS)"
+
+msgid "Mijoz Toshkent ichida bundan ko'p to'lamaydi («{0} so'mgacha»). Manzil xaritada belgilanmagan bo'lsa shu narx olinadi."
+msgstr "Within Tashkent the customer never pays more than this («up to {0} UZS»). An address without a map point pays this price."
+
+msgid "Toshkent: muddat (uz)"
+msgstr "Tashkent: delivery time (uz)"
+
+msgid "Toshkent: muddat (ru)"
+msgstr "Tashkent: delivery time (ru)"
+
+msgid "Toshkent: muddat (en)"
+msgstr "Tashkent: delivery time (en)"
+
+msgid "Viloyatlar (Toshkent viloyati ham) — og'irlik bo'yicha"
+msgstr "Regions (Tashkent region too) — by weight"
+
+msgid "Viloyatlar: yetkazish xizmati"
+msgstr "Regions: delivery service"
+
+msgid "Viloyatlar: boshlang'ich narx (so'm)"
+msgstr "Regions: starting price (UZS)"
+
+msgid "Posilka og'irligi quyidagi chegaragacha bo'lsa shu narx («{0} so'mdan»)."
+msgstr "This price covers a parcel up to the weight below («from {0} UZS»)."
+
+msgid "Viloyatlar: boshlang'ich narxdagi og'irlik (kg)"
+msgstr "Regions: weight included in the starting price (kg)"
+
+msgid "Viloyatlar: har qo'shimcha kg uchun (so'm)"
+msgstr "Regions: per extra kg (UZS)"
+
+msgid "Chegaradan oshgan har boshlangan kilogramm uchun qo'shiladi (BTS tarifiga moslang)."
+msgstr "Added for every started kilogram above the limit (match it to the BTS tariff)."
+
+msgid "Og'irligi noma'lum mahsulot (kg)"
+msgstr "Item of unknown weight (kg)"
+
+msgid "Og'irligi gramm/kg/ml da kiritilmagan mahsulotlar (tabletkalar va h.k.) shu og'irlikda hisoblanadi."
+msgstr "Items without a weight in g/kg/ml (tablets etc.) are counted at this weight."
+
+msgid "Qadoq og'irligi (kg, har posilka)"
+msgstr "Packaging weight (kg, per parcel)"
+
+msgid "Viloyatlar: muddat (uz)"
+msgstr "Regions: delivery time (uz)"
+
+msgid "Viloyatlar: muddat (ru)"
+msgstr "Regions: delivery time (ru)"
+
+msgid "Viloyatlar: muddat (en)"
+msgstr "Regions: delivery time (en)"
+
+msgid "Bepul yetkazish"
+msgstr "Free delivery"
+
+msgid "Bepul yetkazish chegarasi (so'm)"
+msgstr "Free delivery threshold (UZS)"
+
+msgid "Shu summadan (chegirmalardan keyin) qimmat buyurtmalar bepul yetkaziladi. Bo'sh — har doim pulli."
+msgstr "Orders above this amount (after discounts) are delivered free. Empty — delivery is always paid."
+
+msgid "Toshkent shahri"
+msgstr "Tashkent city"
+
+msgid "Ko'rinishi"
+msgstr "Preview"
+
+msgid "{0} so'm + {1} so'm/km"
+msgstr "{0} UZS + {1} UZS/km"
+
+msgid "{0} so'mgacha"
+msgstr "up to {0} UZS"
+
+msgid "{0} so'mdan"
+msgstr "from {0} UZS"
+
+msgid "{0} kg gacha"
+msgstr "up to {0} kg"
+
+msgid "har qo'shimcha kg +{0} so'm"
+msgstr "+{0} UZS per extra kg"
+
+msgid "Do'kondan olib ketish"
+msgstr "Pickup from a branch"
+
+msgid "Filialdan"
+msgstr "At the branch"
+
+msgid "tayyor bo'lgach"
+msgstr "once ready"
+
+msgid "Bepul"
+msgstr "Free"
+
+msgid "{0} so'm va undan qimmat buyurtmalar bepul yetkaziladi."
+msgstr "Orders of {0} UZS and more are delivered free."
+
+msgid "Bepul yetkazish chegarasi o'rnatilmagan — yetkazib berish har doim pulli."
+msgstr "No free delivery threshold set — delivery is always paid."
+
+msgid "Narx buyurtma berilgan paytda belgilanadi va buyurtma jami summasiga qo'shiladi (onlayn to'lov ham, naqd ham). Oldingi buyurtmalar o'zgarmaydi."
+msgstr "The price is fixed when the order is placed and added to the order total (online and cash payments alike). Earlier orders don't change."
+
+msgid "Viloyatlar bo'yicha BTS tariflari (bo'sh viloyat — umumiy tarif)"
+msgstr "BTS rates by region (a region without a row uses the general rate)"
+
+msgid "Viloyat"
+msgstr "Region"
+
+msgid "Boshlang'ich narx (so'm)"
+msgstr "Starting price (UZS)"
+
+msgid "Har qo'shimcha kg (so'm)"
+msgstr "Per extra kg (UZS)"
+
+msgid "Bo'sh — umumiy tarifdagi qiymat."
+msgstr "Empty — the general rate's value."
+
+msgid "Narx o'zgarishlari"
+msgstr "Price changes"
+
+msgid "Support paneli"
+msgstr "Support desk"
+
+msgid "AI maslahatchini o'qitish"
+msgstr "Train the AI advisor"
+
+msgid "saqlab, tahrirda qolish"
+msgstr "save and keep editing"
+

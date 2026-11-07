@@ -59,6 +59,8 @@ def _totals(order) -> list[str]:
     out = []
     if other_discount > 0:
         out.append(f"🎟 Chegirma: −{money(other_discount, cash.currency)}")
+    if totals.shipping_total.amount:
+        out.append(f"🚚 Yetkazib berish: {money(totals.shipping_total.amount, cash.currency)}")
     if coins:
         out.append(f"🪙 Coins bilan: −{money(coins, cash.currency)}")
         out.append(f"💰 <b>Olinadigan summa: {money(cash.amount, cash.currency)}</b>  <i>(jami {money(cash.amount + coins, cash.currency)})</i>")

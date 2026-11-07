@@ -101,7 +101,13 @@ def _order_payload(order) -> dict:
         "note": order.note.text if order.note else None,
         "customer_comment": order.customer_comment.text if order.customer_comment else None, "placed_at": order.placed_at.isoformat() if order.placed_at else None,
         **_fulfilment_payload(order.id),
+        "totals": _totals_payload(order),
     }
+
+
+def _totals_payload(order) -> dict:
+    t = order.compute_total()
+    return {k: str(getattr(t, k).amount) for k in ("subtotal", "discount_total", "tax_total", "shipping_total", "grand_total")}
 
 
 def _fulfilment_payload(order_id) -> dict:
@@ -109,7 +115,7 @@ def _fulfilment_payload(order_id) -> dict:
     from apps.ordering.infrastructure.models import OrderModel
     from apps.stores.infrastructure.models import Store
 
-    row = OrderModel.objects.filter(pk=order_id).values("fulfilment_method", "fulfilment_store_id").first() or {}
+    row = OrderModel.objects.filter(pk=order_id).values("fulfilment_method", "fulfilment_store_id", "shipping_amount", "delivery_zone", "delivery_carrier").first() or {}
     method = row.get("fulfilment_method") or "delivery"
     store = Store.objects.filter(pk=row.get("fulfilment_store_id")).first() if method == "pickup" and row.get("fulfilment_store_id") else None
     pickup = None
@@ -118,7 +124,9 @@ def _fulfilment_payload(order_id) -> dict:
         pickup = {"name": store.name, "slug": store.slug, "address": ", ".join(x for x in (store.address, store.district, store.city) if x), "landmark": store.landmark,
                   "latitude": store.latitude, "longitude": store.longitude, "phone": (store.phone_numbers or [""])[0] if store.phone_numbers else "",
                   "note": store.pickup_note, "is_open_now": store.is_open_now(), "today": "" if today.get("closed") else f"{today.get('open', '')}–{today.get('close', '')}".strip("–")}
-    return {"fulfilment_method": method, "pickup_store": pickup}
+    return {"fulfilment_method": method, "pickup_store": pickup,
+            # what delivery costs on this order (0 for pickup) and how it travels: Tashkent city -> Yandex, regions -> BTS
+            "shipping_amount": str(row.get("shipping_amount") or 0), "delivery_zone": row.get("delivery_zone") or None, "delivery_carrier": row.get("delivery_carrier") or ""}
 
 
 def _line_payload(line) -> dict:

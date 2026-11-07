@@ -50,6 +50,12 @@ class OrderModel(BaseModel):
     fulfilment_method = models.CharField(max_length=10, default="delivery", db_index=True, choices=[("delivery", "Yetkazib berish"), ("pickup", "Olib ketish")])
     fulfilment_store_id = models.UUIDField(null=True, blank=True, db_index=True)
     store_assigned_at = models.DateTimeField(null=True, blank=True)
+    # What the customer pays for delivery, frozen at checkout from DeliverySettings (pickup = 0). Part of the order's
+    # grand total (Order.shipping_amount -> compute_total). Zone/carrier say how it travels: Tashkent city by Yandex
+    # Delivery, the regions by BTS (apps/ordering/infrastructure/delivery_pricing.py).
+    shipping_amount = models.DecimalField(_("Delivery fee"), max_digits=14, decimal_places=2, default=0)
+    delivery_zone = models.CharField(_("Delivery zone"), max_length=16, blank=True, default="", choices=[("", "—"), ("tashkent", "Toshkent shahri"), ("regions", "Viloyatlar")])
+    delivery_carrier = models.CharField(_("Delivery service"), max_length=60, blank=True, default="")
     # Address snapshots -- frozen copies, embedded directly (never a ForeignKey to geo.Address).
     shipping_recipient_name = models.CharField(max_length=255)
     shipping_line1 = models.CharField(max_length=255)
@@ -341,3 +347,75 @@ class DeliveryAssignment(BaseModel):
         db_table = "ordering_delivery_assignments"
         verbose_name = _("Delivery")
         verbose_name_plural = _("Deliveries")
+
+
+class DeliverySettings(models.Model):
+    """Singleton (pk=1): what delivery costs the customer. Tashkent city goes by Yandex Delivery, every other region by
+    BTS; picking up at a branch is always free. Edited on the dashboard (Buyurtmalar -> Yetkazib berish narxlari);
+    checkout freezes the fee onto the order (OrderModel.shipping_amount)."""
+
+    # Tashkent city (Yandex Delivery): the price grows with the distance from the nearest branch and never exceeds the cap.
+    tashkent_fee = models.DecimalField(_("Toshkent shahri: maksimal narx (so'm)"), max_digits=12, decimal_places=2, default=30000,
+                                       help_text=_("Mijoz Toshkent ichida bundan ko'p to'lamaydi («30 000 so'mgacha»). Manzil xaritada belgilanmagan bo'lsa shu narx olinadi."))
+    tashkent_min_fee = models.DecimalField(_("Toshkent shahri: boshlang'ich narx (so'm)"), max_digits=12, decimal_places=2, default=15000,
+                                           help_text=_("Eng yaqin filialga yaqin manzillar uchun eng kam narx."))
+    tashkent_per_km = models.DecimalField(_("Toshkent shahri: har km uchun (so'm)"), max_digits=12, decimal_places=2, default=1500,
+                                          help_text=_("Eng yaqin filialdan yo'l masofasi (taxminan) bo'yicha qo'shiladi. 0 — har doim maksimal narx."))
+    tashkent_carrier = models.CharField(_("Toshkent shahri: yetkazish xizmati"), max_length=60, default="Yandex Dostavka")
+    tashkent_eta_uz = models.CharField(_("Toshkent: muddat (uz)"), max_length=80, blank=True, default="Bugun yoki ertaga")
+    tashkent_eta_ru = models.CharField(_("Toshkent: muddat (ru)"), max_length=80, blank=True, default="Сегодня или завтра")
+    tashkent_eta_en = models.CharField(_("Toshkent: muddat (en)"), max_length=80, blank=True, default="Today or tomorrow")
+    # Regions (BTS): a base price for the first kilograms, then a price for every further started kilogram.
+    regions_fee = models.DecimalField(_("Viloyatlar: boshlang'ich narx (so'm)"), max_digits=12, decimal_places=2, default=30000,
+                                      help_text=_("Posilka og'irligi quyidagi chegaragacha bo'lsa shu narx («30 000 so'mdan»)."))
+    regions_base_kg = models.DecimalField(_("Viloyatlar: boshlang'ich narxdagi og'irlik (kg)"), max_digits=6, decimal_places=2, default=1)
+    regions_extra_per_kg = models.DecimalField(_("Viloyatlar: har qo'shimcha kg uchun (so'm)"), max_digits=12, decimal_places=2, default=10000,
+                                               help_text=_("Chegaradan oshgan har boshlangan kilogramm uchun qo'shiladi (BTS tarifiga moslang)."))
+    unknown_item_kg = models.DecimalField(_("Og'irligi noma'lum mahsulot (kg)"), max_digits=6, decimal_places=2, default=0.5,
+                                          help_text=_("Og'irligi gramm/kg/ml da kiritilmagan mahsulotlar (tabletkalar va h.k.) shu og'irlikda hisoblanadi."))
+    packaging_kg = models.DecimalField(_("Qadoq og'irligi (kg, har posilka)"), max_digits=6, decimal_places=2, default=0.1)
+    regions_carrier = models.CharField(_("Viloyatlar: yetkazish xizmati"), max_length=60, default="BTS")
+    regions_eta_uz = models.CharField(_("Viloyatlar: muddat (uz)"), max_length=80, blank=True, default="2–4 ish kuni")
+    regions_eta_ru = models.CharField(_("Viloyatlar: muddat (ru)"), max_length=80, blank=True, default="2–4 рабочих дня")
+    regions_eta_en = models.CharField(_("Viloyatlar: muddat (en)"), max_length=80, blank=True, default="2–4 working days")
+    free_from = models.DecimalField(_("Bepul yetkazish chegarasi (so'm)"), max_digits=14, decimal_places=2, null=True, blank=True,
+                                    help_text=_("Shu summadan (chegirmalardan keyin) qimmat buyurtmalar bepul yetkaziladi. Bo'sh — har doim pulli."))
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        db_table = "ordering_delivery_settings"
+        verbose_name = "Delivery prices"  # uz/ru via apps/platform/infrastructure/admin_labels.py
+        verbose_name_plural = "Delivery prices"
+
+    def __str__(self) -> str:
+        return str(_("Yetkazib berish narxlari"))
+
+    def save(self, *args, **kwargs):
+        self.pk = 1
+        super().save(*args, **kwargs)
+
+    @classmethod
+    def load(cls) -> "DeliverySettings":
+        obj, created = cls.objects.get_or_create(pk=1)
+        if created:
+            obj.refresh_from_db()
+        return obj
+
+
+class RegionDeliveryRate(models.Model):
+    """BTS price for one region when it differs from the general regions tariff (e.g. Nukus costs more than
+    Samarqand). Edited as a table on the delivery prices page; regions without a row use the general tariff."""
+
+    settings = models.ForeignKey(DeliverySettings, on_delete=models.CASCADE, related_name="region_rates")
+    region = models.OneToOneField("geo.Region", on_delete=models.CASCADE, related_name="delivery_rate", verbose_name=_("Viloyat"))
+    base_fee = models.DecimalField(_("Boshlang'ich narx (so'm)"), max_digits=12, decimal_places=2)
+    extra_per_kg = models.DecimalField(_("Har qo'shimcha kg (so'm)"), max_digits=12, decimal_places=2, null=True, blank=True,
+                                       help_text=_("Bo'sh — umumiy tarifdagi qiymat."))
+
+    class Meta:
+        db_table = "ordering_region_delivery_rates"
+        verbose_name = "Region delivery rate"  # uz/ru via apps/platform/infrastructure/admin_labels.py
+        verbose_name_plural = "Region delivery rates"
+
+    def __str__(self) -> str:
+        return str(self.region)

@@ -102,7 +102,7 @@ def board_payload() -> dict:
     totals: dict = {key: Decimal(0) for key in cards}
     for o in orders:
         ls = lines_by_order.get(o.id, [])
-        total = sum((l.unit_price_amount * l.quantity - l.discount_amount + l.tax_amount for l in ls), Decimal(0))
+        total = sum((l.unit_price_amount * l.quantity - l.discount_amount + l.tax_amount for l in ls), Decimal(0)) + (o.shipping_amount or 0)
         totals[o.status] += total
         u = users.get(o.customer_id)
         name = (u.full_name if u else "") or o.shipping_recipient_name or _("Customer")

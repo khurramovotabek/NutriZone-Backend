@@ -185,7 +185,7 @@ class OrderAdmin(ExcelExportMixin, admin.ModelAdmin):
         who, where = xl.people(o.customer_id for o in objs), xl.stores(o.fulfilment_store_id for o in objs)
         for o in objs:
             r = sums.get(o.id, {})
-            o.x_total, o.x_units, o.x_discount = r.get("total") or Decimal(0), r.get("units") or 0, r.get("discount") or Decimal(0)
+            o.x_total, o.x_units, o.x_discount = (r.get("total") or Decimal(0)) + (o.shipping_amount or 0), r.get("units") or 0, r.get("discount") or Decimal(0)
             o.x_customer, o.x_store = who.get(o.customer_id, ("", "")), where.get(o.fulfilment_store_id, "")
 
     # The buyer is shown by name and phone (never the raw customer UUID); payment type is cash-only for now.
@@ -603,7 +603,7 @@ class OrderAdmin(ExcelExportMixin, admin.ModelAdmin):
     @admin.display(description=_("Summa"))
     def total_col(self, obj: orm.OrderModel) -> str:
         active = [line for line in obj.lines.all() if line.status == "active"]
-        total = sum((line.unit_price_amount * line.quantity - line.discount_amount + line.tax_amount for line in active), Decimal("0"))
+        total = sum((line.unit_price_amount * line.quantity - line.discount_amount + line.tax_amount for line in active), Decimal("0")) + (obj.shipping_amount or 0)
         return format_html('<b class="nz-num">{}</b> <span class="nz-text-muted">{}</span>', _money(total), _("so'm") if obj.currency == "UZS" else obj.currency)
 
     @admin.display(description=_("Sana"), ordering="placed_at")
@@ -637,7 +637,7 @@ class OrderAdmin(ExcelExportMixin, admin.ModelAdmin):
     def order_total(self, obj: orm.OrderModel) -> str:
         """Same formula as financial_summary (subtotal - discount + tax over active lines), from the prefetched lines."""
         active = [line for line in obj.lines.all() if line.status == "active"]
-        total = sum((line.unit_price_amount * line.quantity - line.discount_amount + line.tax_amount for line in active), Decimal("0"))
+        total = sum((line.unit_price_amount * line.quantity - line.discount_amount + line.tax_amount for line in active), Decimal("0")) + (obj.shipping_amount or 0)
         return format_html('<strong class="nz-num">{}</strong> <span class="nz-text-muted">{}</span>', _money(total), _("so'm") if obj.currency == "UZS" else obj.currency)
 
     @admin.display(description=_("To'lov"))
@@ -683,15 +683,18 @@ class OrderAdmin(ExcelExportMixin, admin.ModelAdmin):
         subtotal = sum((line.unit_price_amount * line.quantity for line in active_lines), Decimal("0"))
         discount = sum((line.discount_amount for line in active_lines), Decimal("0"))
         tax = sum((line.tax_amount for line in active_lines), Decimal("0"))
-        total = subtotal - discount + tax
+        shipping = obj.shipping_amount or Decimal("0")
+        total = subtotal - discount + tax + shipping
+        how = "Olib ketish (bepul)" if obj.fulfilment_method == "pickup" else ("Yetkazib berish" + (f" · {obj.delivery_carrier}" if obj.delivery_carrier else ""))
         return format_html(
             '<table class="nz-financial-summary">'
             '<tr><td>Subtotal</td><td>{} {}</td></tr>'
             '<tr><td>Discount</td><td>-{} {}</td></tr>'
             '<tr><td>Tax</td><td>+{} {}</td></tr>'
+            '<tr><td>{}</td><td>+{} {}</td></tr>'
             '<tr class="nz-financial-total"><td>Total</td><td>{} {}</td></tr>'
             "</table>",
-            subtotal, obj.currency, discount, obj.currency, tax, obj.currency, total, obj.currency,
+            subtotal, obj.currency, discount, obj.currency, tax, obj.currency, how, shipping, obj.currency, total, obj.currency,
         )
 
     financial_summary.short_description = "Financial Summary"
@@ -1246,3 +1249,92 @@ class CourierAdmin(PremiumListMixin, PremiumFormMixin, admin.ModelAdmin):
         if obj is None:
             return {"subtitle": "Ism va telefon — yetkazib berish markazida ko'rinadi"}
         return {"title": obj.name, "subtitle": " · ".join(p for p in (obj.phone, obj.vehicle) if p)}
+
+
+class RegionDeliveryRateInline(admin.TabularInline):
+    model = orm.RegionDeliveryRate
+    extra = 0
+    fields = ("region", "base_fee", "extra_per_kg")
+    verbose_name_plural = "Viloyatlar bo'yicha BTS tariflari (bo'sh viloyat — umumiy tarif)"  # en/ru: locale/*/admin_phrases.po
+
+    def formfield_for_foreignkey(self, db_field, request, **kwargs):
+        if db_field.name == "region":
+            from django import forms
+            from django.utils.translation import get_language
+
+            from apps.geo.infrastructure.models import Region
+
+            class RegionField(forms.ModelChoiceField):
+                def label_from_instance(self, obj):  # the region's name in the staff member's language
+                    names = {t.locale_code: t.name for t in obj.translations.all()}
+                    lang = (get_language() or "uz")[:2]
+                    return names.get(lang) or names.get("uz") or names.get("en") or obj.code
+
+            return RegionField(queryset=Region.objects.exclude(code__in=("TGCITYR",)).prefetch_related("translations").order_by("code"), label="Viloyat")
+        return super().formfield_for_foreignkey(db_field, request, **kwargs)
+
+
+@admin.register(orm.DeliverySettings)
+class DeliverySettingsAdmin(PremiumFormMixin, admin.ModelAdmin):
+    """Yetkazib berish narxlari: the singleton -- what delivery costs the customer (Tashkent city / regions; pickup is
+    always free). Checkout freezes the price onto each new order, so a change never alters orders already placed."""
+
+    fieldsets = (
+        ("Toshkent shahri — masofa bo'yicha, maksimal narxgacha", {"fields": ("tashkent_carrier", "tashkent_min_fee", "tashkent_per_km", "tashkent_fee",
+                                                                       ("tashkent_eta_uz", "tashkent_eta_ru", "tashkent_eta_en"))}),
+        ("Viloyatlar (Toshkent viloyati ham) — og'irlik bo'yicha", {"fields": ("regions_carrier", "regions_fee", "regions_base_kg", "regions_extra_per_kg",
+                                                                          "unknown_item_kg", "packaging_kg", ("regions_eta_uz", "regions_eta_ru", "regions_eta_en"))}),
+        ("Bepul yetkazish", {"fields": ("free_from",)}),
+        ("Mijoz uchun qanday ko'rinadi", {"classes": ("nzi-panel",), "fields": ("preview_panel",)}),
+    )
+    readonly_fields = ("preview_panel",)
+    inlines = (RegionDeliveryRateInline,)
+    hero_icon, hero_tone, hero_noun = "fa-truck-fast", "#0ea5e9", "sozlama"
+
+    def has_add_permission(self, request) -> bool:
+        return False
+
+    def has_delete_permission(self, request, obj=None) -> bool:
+        return False
+
+    def changelist_view(self, request, extra_context=None):
+        from django.http import HttpResponseRedirect
+        from django.urls import reverse
+
+        orm.DeliverySettings.load()
+        return HttpResponseRedirect(reverse("admin:ordering_deliverysettings_change", args=[1]))
+
+    def response_change(self, request, obj):
+        from django.contrib import messages
+        from django.http import HttpResponseRedirect
+
+        messages.success(request, "Yetkazib berish narxlari saqlandi — yangi buyurtmalarga darhol qo'llanadi (oldingi buyurtmalar o'zgarmaydi).")
+        return HttpResponseRedirect(request.path)
+
+    def form_hero(self, request, obj):
+        return {"title": "Yetkazib berish narxlari", "subtitle": "Toshkent shahri — Yandex Dostavka (masofaga qarab, maksimal narxgacha), viloyatlar — BTS (og'irlikka qarab). Do'kondan olib ketish bepul.",
+                "icon": "fa-truck-fast", "tone": "#0ea5e9"}
+
+    @admin.display(description="Ko'rinishi")
+    def preview_panel(self, obj):
+        from django.utils.html import format_html_join
+        from django.utils.translation import get_language
+
+        def money(v):
+            return f"{int(v or 0):,}".replace(",", " ") + " so'm"
+
+        def eta(zone):  # the delivery time in the staff member's language
+            lang = (get_language() or "uz")[:2]
+            return getattr(obj, f"{zone}_eta_{lang if lang in ('uz', 'ru', 'en') else 'uz'}", "") or getattr(obj, f"{zone}_eta_uz")
+
+        rows = format_html_join("", "<div style='display:flex;justify-content:space-between;gap:12px;padding:10px 0;border-bottom:1px solid rgba(148,163,184,.25)'>"
+                                    "<span><i class='fas {}' style='width:20px'></i> <b>{}</b><br><small style='opacity:.7'>{} · {}</small></span><b style='white-space:nowrap'>{}</b></div>", (
+            ("fa-city", "Toshkent shahri", obj.tashkent_carrier, f"{money(obj.tashkent_min_fee)} + {money(obj.tashkent_per_km)}/km · {eta('tashkent')}", money(obj.tashkent_fee) + "gacha"),
+            ("fa-truck", "Viloyatlar", obj.regions_carrier, f"{obj.regions_base_kg.normalize() if obj.regions_base_kg is not None else 0:f} kg gacha · har qo'shimcha kg +{money(obj.regions_extra_per_kg)} · {eta('regions')}", money(obj.regions_fee) + "dan"),
+            ("fa-store", "Do'kondan olib ketish", "Filialdan", "tayyor bo'lgach", "Bepul"),
+        ))
+        # one text node per sentence, so the dashboard's phrase layer (locale/*/admin_phrases.po) can translate it whole
+        free = (format_html("<p style='margin-top:8px'><i class='fas fa-gift'></i> {}</p>", f"{money(obj.free_from)} va undan qimmat buyurtmalar bepul yetkaziladi.")
+                if obj.free_from else mark_safe("<p style='margin-top:8px;opacity:.75'>Bepul yetkazish chegarasi o'rnatilmagan — yetkazib berish har doim pulli.</p>"))
+        return format_html("<div class='nzi-panel-body'>{}{}<p style='margin-top:8px;opacity:.75'>Narx buyurtma berilgan paytda belgilanadi va buyurtma jami summasiga "
+                           "qo'shiladi (onlayn to'lov ham, naqd ham). Oldingi buyurtmalar o'zgarmaydi.</p></div>", rows, free)

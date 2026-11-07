@@ -153,6 +153,8 @@
           {% if d.totals.coupon != "0" %}<div><dt>{% translate "Discount" %}</dt><dd class="nzd-minus">−{{ d.totals.coupon }} {% translate "so'm" %}</dd></div>{% endif %}
           {% if d.totals.has_coins %}<div><dt><i class="fas fa-coins" aria-hidden="true"></i> {% translate "Paid with NutriZone Coins" %}</dt><dd class="nzd-coins">−{{ d.totals.coins }}</dd></div>{% endif %}
           {% if d.totals.tax != "0" %}<div><dt>{% translate "Tax" %}</dt><dd>+{{ d.totals.tax }} {% translate "so'm" %}</dd></div>{% endif %}
+          {% if d.totals.has_shipping %}<div><dt><i class="fas fa-truck-fast" aria-hidden="true"></i> Yetkazib berish{% if d.totals.zone %} · {{ d.totals.zone }}{% endif %}{% if d.totals.carrier %} <small>({{ d.totals.carrier }})</small>{% endif %}</dt><dd>{% if d.totals.shipping == "0" %}Bepul{% else %}+{{ d.totals.shipping }} {% translate "so'm" %}{% endif %}</dd></div>
+          {% else %}<div><dt><i class="fas fa-store" aria-hidden="true"></i> Olib ketish</dt><dd>Bepul</dd></div>{% endif %}
           <div class="nzd-total-row"><dt>{% translate "To pay in cash" %}</dt><dd>{{ d.totals.cash }} {% translate "so'm" %}</dd></div>
         </dl>
         {% if d.coins.earned %}

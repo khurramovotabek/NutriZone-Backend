@@ -141,7 +141,7 @@ def assigned_store(order_number: str) -> Store | None:
 
 def _order_total(order_row) -> Decimal:
     expr = ExpressionWrapper(F("unit_price_amount") * F("quantity") - F("discount_amount") + F("tax_amount"), output_field=DecimalField(max_digits=16, decimal_places=2))
-    return order_row.lines.filter(status="active").aggregate(t=Sum(expr))["t"] or Decimal(0)
+    return (order_row.lines.filter(status="active").aggregate(t=Sum(expr))["t"] or Decimal(0)) + (order_row.shipping_amount or 0)  # + delivery fee
 
 
 def _notify_owner(store_id, order_pk) -> None:
@@ -185,7 +185,8 @@ def _payload(o, lines_by_order: dict, products: dict) -> dict:
         "placed_at": (o.placed_at or o.created_at).isoformat(), "assigned_at": o.store_assigned_at.isoformat() if o.store_assigned_at else None,
         "customer": {"name": o.shipping_recipient_name, "phone": o.shipping_phone or ""},
         "address": {"line1": o.shipping_line1, "line2": o.shipping_line2 or "", "city": o.shipping_city, "latitude": o.shipping_latitude, "longitude": o.shipping_longitude},
-        "comment": o.customer_comment or "", "lines": lines, "units": sum(l["quantity"] for l in lines), "total": str(total), "currency": o.currency,
+        "comment": o.customer_comment or "", "lines": lines, "units": sum(l["quantity"] for l in lines), "total": str(total + (o.shipping_amount or 0)), "currency": o.currency,
+        "shipping_amount": str(o.shipping_amount or 0), "delivery_carrier": o.delivery_carrier or "",
         "steps": steps,
     }
 

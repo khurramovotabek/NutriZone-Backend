@@ -59,12 +59,13 @@ def find_order(order_number: str):
 
 
 def payable(order) -> Decimal:
-    """What the customer owes in so'm: active lines (unit × qty − discount + tax); coins/coupons already sit in the line discounts."""
+    """What the customer owes in so'm: active lines (unit × qty − discount + tax) plus the delivery fee; coins/coupons already sit in the line discounts."""
     o = _orders()
     total = o.OrderLineItemModel.objects.filter(order_id=order.id, status="active").aggregate(
         t=Sum(ExpressionWrapper(F("unit_price_amount") * F("quantity") - F("discount_amount") + F("tax_amount"), output_field=DecimalField(max_digits=16, decimal_places=2)))
     )["t"]
-    return (total or Decimal("0")).quantize(Decimal("0.01"))
+    shipping = o.OrderModel.objects.filter(pk=order.id).values_list("shipping_amount", flat=True).first() or Decimal("0")  # delivery fee (0 for pickup)
+    return ((total or Decimal("0")) + shipping).quantize(Decimal("0.01"))
 
 
 CLOSED_ORDER_STATUSES = ("cancelled", "returned", "failed")
