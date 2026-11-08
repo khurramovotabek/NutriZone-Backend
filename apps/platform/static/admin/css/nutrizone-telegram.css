@@ -104,3 +104,15 @@
 .nzt-owners .nzt-tr { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
   .nzt-tr > span:nth-child(4), .nzt-tr > span:nth-child(5), .nzt-th > span:nth-child(4), .nzt-th > span:nth-child(5) { display: none; }
 }
+
+/* phones: branch owners as compact cards -- branch + owner, then status, then the next step with its invite
+   button (the 4th column used to be hidden here, so an owner could not be invited from a phone) */
+@media (max-width: 640px) {
+  .nzt-owners { overflow-x: visible; }
+  .nzt-owners .nzt-tr { min-width: 0; grid-template-columns: minmax(0, 1fr) auto; row-gap: 6px; padding: 12px 2px; }
+  .nzt-owners .nzt-th { display: none; }
+  .nzt-owners .nzt-tr > span:nth-child(2) { text-align: right; font-weight: 600; }
+  .nzt-owners .nzt-tr > span:nth-child(3) { grid-column: 1 / -1; }
+  .nzt-owners .nzt-tr > span:nth-child(4) { display: block; grid-column: 1 / -1; }
+  .nzt-owners .nzt-invite-btn { width: 100%; justify-content: center; padding: 9px 12px; }
+}

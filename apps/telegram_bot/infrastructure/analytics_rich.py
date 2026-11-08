@@ -115,9 +115,12 @@ def build_doc(r: dict, *, scheduled: bool = False, dashboard_url: str | None = N
         if len(st) > 1 and doc.image("stores", charts.hbar("Filiallar reytingi", "Tushum bo'yicha",
                                                            [(x["name"], float(x["revenue"]), charts.hex_rgb(x["color"]), f"{charts.compact(float(x['revenue']))} · {x['purchases']} ta") for x in st])):
             doc.add(R.figure("stores"))
-        rows = [[str(x["rank"]), R.b(x["name"]), num(x["revenue"]), str(x["purchases"]), num(x["average"]), pct(x["share"]), _trend_cell(x["change"])] for x in st]
-        doc.add(R.h(2, "🏪 Filiallar"), R.table(["#", "Filial", "Tushum", "Xarid", "O'rtacha", "Ulush", "O'zg."], rows,
-                                                 align=["center", "left", "right", "center", "right", "center", "center"]))
+        # 4 columns: a phone fits no more (7 columns broke every header mid-word). Purchases and the average check
+        # ride along under the branch name.
+        rows = [[f'{x["rank"]}. ' + R.b(x["name"]) + R.e(f' · {x["purchases"]} xarid'
+                                                       + (f' · o\'rt. {charts.compact(float(x["average"]))}' if x["average"] else "")),
+                 num(x["revenue"]), pct(x["share"]), _trend_cell(x["change"])] for x in st]
+        doc.add(R.h(2, "🏪 Filiallar"), R.table(["Filial", "Tushum", "Ulush", "O'zg."], rows, align=["left", "right", "center", "center"]))
 
     # ---- products
     pr = r.get("products")
@@ -138,9 +141,10 @@ def build_doc(r: dict, *, scheduled: bool = False, dashboard_url: str | None = N
     # ---- cashiers
     sellers = r.get("sellers") or []
     if sellers:
-        rows = [[str(k), R.b(x["name"]), R.e(x["branch"]), str(x["count"]), num(x["average"]), num(x["revenue"])] for k, x in enumerate(sellers, 1)]
-        doc.add(R.details(f"🧑‍💼 Kassirlar — {len(sellers)} ta", R.table(["#", "Kassir", "Filial", "Chek", "O'rtacha", "Tushum"], rows,
-                                                                           align=["center", "left", "left", "center", "right", "right"]), open_=p.key in ("today", "yesterday")))
+        rows = [[f"{k}. " + R.b(x["name"]) + (R.e(f' · {x["branch"]}') if x["branch"] else ""), str(x["count"]), num(x["average"]), num(x["revenue"])]
+                for k, x in enumerate(sellers, 1)]
+        doc.add(R.details(f"🧑‍💼 Kassirlar — {len(sellers)} ta", R.table(["Kassir", "Chek", "O'rtacha", "Tushum"], rows,
+                                                                           align=["left", "center", "right", "right"]), open_=p.key in ("today", "yesterday")))
 
     # ---- money
     if fin:
