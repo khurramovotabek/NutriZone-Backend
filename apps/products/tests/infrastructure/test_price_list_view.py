@@ -180,3 +180,109 @@ class TestProductListQuickPriceEditor:
     def test_unknown_product_is_404_and_staff_only(self):
         assert _staff_client().get(f"/django-admin/products/price-list/api/product/{uuid.uuid4()}").status_code == 404
         assert Client().get(f"/django-admin/products/price-list/api/product/{uuid.uuid4()}").status_code == 302
+
+
+class TestPriceListBulk:
+    """Bulk price changes (a size group, a selection): every variant goes through SetPrice; the rules per operation."""
+
+    def _priced(self, name, prices):
+        from decimal import Decimal
+
+        from apps.pricing.infrastructure import composition as pc
+        from apps.products.infrastructure.admin import _get_or_create_default_price_list
+
+        pl = _get_or_create_default_price_list()
+        product = p_models.Product.objects.create(id=uuid.uuid4(), status="published")
+        p_models.ProductTranslation.objects.create(id=uuid.uuid4(), product=product, locale_code="en", name=name, slug=f"{name.lower().replace(' ', '-')}-{uuid.uuid4().hex[:6]}")
+        variants = []
+        for i, (price, old) in enumerate(prices):
+            v = p_models.ProductVariant.objects.create(id=uuid.uuid4(), product=product, sku=f"BLK-{uuid.uuid4().hex[:6]}", is_default=i == 0, weight_value=Decimal("2.27"), weight_unit="kg")
+            if price is not None:
+                pc.build_set_price().execute(price_list_id=pl.id, product_variant_id=v.id, base_amount=Decimal(price), currency=pl.currency, compare_at_amount=Decimal(old) if old else None)
+            variants.append(v)
+        return variants
+
+    def _entry(self, v):
+        from apps.pricing.infrastructure.models import PriceListEntryModel
+
+        return PriceListEntryModel.objects.filter(product_variant_id=v.id).first()
+
+    def _post(self, client, ids, op, value=None):
+        import json
+
+        return client.post("/django-admin/products/price-list/api/bulk", json.dumps({"variant_ids": [str(v.id) for v in ids], "op": op, "value": value}), content_type="application/json")
+
+    def test_set_prices_every_variant_and_records_history(self):
+        from apps.pricing.infrastructure.models import PriceHistoryEntryModel
+
+        a, b, c = self._priced("Bulk Set Whey", [(1000000, None), (1100000, 1300000), (None, None)])
+        response = self._post(_staff_client(), [a, b, c], "set", 1250000)
+
+        assert response.status_code == 200 and len(response.json()["data"]["updated"]) == 3
+        assert [int(self._entry(v).base_price_amount) for v in (a, b, c)] == [1250000] * 3
+        assert int(self._entry(b).compare_at_price_amount) == 1300000  # still above the new price -> kept
+        assert PriceHistoryEntryModel.objects.filter(product_variant_id=c.id).exists()
+
+    def test_pct_rounds_to_thousands_and_skips_unpriced(self):
+        a, b = self._priced("Bulk Pct Whey", [(333000, None), (None, None)])
+        data = self._post(_staff_client(), [a, b], "pct", 10).json()["data"]
+
+        assert int(self._entry(a).base_price_amount) == 366000
+        assert data["skipped"] == [{"id": str(b.id), "reason": "no_price"}]
+
+    def test_discount_moves_price_to_old_price_and_clear_removes_it(self):
+        (a,) = self._priced("Bulk Discount Whey", [(1000000, None)])
+        client = _staff_client()
+        self._post(client, [a], "discount", 15)
+        e = self._entry(a)
+        assert (int(e.base_price_amount), int(e.compare_at_price_amount)) == (850000, 1000000)
+
+        self._post(client, [a], "discount", 20)  # a second discount is taken from the regular (old) price, not stacked
+        e = self._entry(a)
+        assert (int(e.base_price_amount), int(e.compare_at_price_amount)) == (800000, 1000000)
+
+        self._post(client, [a], "clear_discount")
+        e = self._entry(a)
+        assert (int(e.base_price_amount), e.compare_at_price_amount) == (800000, None)
+
+    def test_invalid_values_are_rejected(self):
+        (a,) = self._priced("Bulk Invalid Whey", [(1000000, None)])
+        client = _staff_client()
+        assert self._post(client, [a], "discount", 100).status_code == 422
+        assert self._post(client, [a], "set", 0).status_code == 422
+        assert self._post(client, [a], "explode", 5).status_code == 400
+        assert self._post(client, [], "set", 5).status_code == 422
+        assert int(self._entry(a).base_price_amount) == 1000000
+
+    def test_page_groups_variants_by_size_and_finds_a_variant_by_barcode(self):
+        a, b, c = self._priced("Bulk Group Whey", [(1250000, None), (1250000, None), (1250000, None)])
+        b.barcode = "4600000000123"
+        b.save(update_fields=["barcode"])
+
+        body = _staff_client().get("/django-admin/products/price-list/", {"q": "4600000000123"}).content.decode()
+
+        assert f'data-variant-id="{a.id}"' in body
+        assert f'data-group-ids="{",".join(str(v.id) for v in sorted([a, b, c], key=lambda v: v.sku))}"' in body or "data-group-ids=" in body
+        assert "wx-pl-sub is-match" in body or "is-match" in body.split(f'data-sub-variant-id="{b.id}"')[0][-200:]
+
+
+class TestPriceListRepositoryWritesOnlyChangedEntries:
+    def test_setting_one_price_does_not_rewrite_the_other_entries(self):
+        from decimal import Decimal
+
+        from django.db import connection
+        from django.test.utils import CaptureQueriesContext
+
+        from apps.pricing.infrastructure import composition as pc
+        from apps.products.infrastructure.admin import _get_or_create_default_price_list
+
+        pl = _get_or_create_default_price_list()
+        variants = [_make_variant(f"Repo Speed {i}") for i in range(15)]
+        for v in variants:
+            pc.build_set_price().execute(price_list_id=pl.id, product_variant_id=v.id, base_amount=Decimal(100000), currency=pl.currency)
+
+        with CaptureQueriesContext(connection) as ctx:
+            pc.build_set_price().execute(price_list_id=pl.id, product_variant_id=variants[0].id, base_amount=Decimal(120000), currency=pl.currency)
+
+        writes = [q["sql"] for q in ctx.captured_queries if "pricing_price_list_entr" in q["sql"].lower() and q["sql"].lstrip().upper().startswith(("UPDATE", "INSERT"))]
+        assert len(writes) <= 1

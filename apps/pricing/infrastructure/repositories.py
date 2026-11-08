@@ -69,18 +69,31 @@ class DjangoPriceListRepository:
         except IntegrityError as exc:
             raise ConflictError("A price list with conflicting unique fields already exists.") from exc
 
-        existing_entry_ids = set(row.entries.values_list("id", flat=True))
+        # Only write the entries that actually changed: a price list holds one entry per variant (≈2 000 on the live
+        # catalogue), and rewriting every one of them made a single SetPrice take ~6 s. One read of the stored values,
+        # then an update for the new/changed rows only.
+        stored = {
+            r[0]: r[1:]
+            for r in row.entries.values_list("id", "product_variant_id", "base_price_amount", "cost_price_amount", "sale_price_amount", "compare_at_price_amount")
+        }
         for entry in price_list.entries.values():
+            values = (
+                entry.product_variant_id, entry.base_price.amount,
+                entry.cost_price.amount if entry.cost_price else None, entry.sale_price.amount if entry.sale_price else None,
+                entry.compare_at_price.amount if entry.compare_at_price else None,
+            )
+            if stored.get(entry.id) == values:
+                continue
             orm.PriceListEntryModel.objects.update_or_create(
                 id=entry.id,
                 defaults={
-                    "price_list": row, "product_variant_id": entry.product_variant_id, "base_price_amount": entry.base_price.amount,
-                    "cost_price_amount": entry.cost_price.amount if entry.cost_price else None, "sale_price_amount": entry.sale_price.amount if entry.sale_price else None,
-                    "compare_at_price_amount": entry.compare_at_price.amount if entry.compare_at_price else None,
+                    "price_list": row, "product_variant_id": values[0], "base_price_amount": values[1],
+                    "cost_price_amount": values[2], "sale_price_amount": values[3], "compare_at_price_amount": values[4],
                 },
             )
-        if price_list.entries:
-            row.entries.exclude(id__in=[e.id for e in price_list.entries.values()]).delete()
+        stale = set(stored) - set(price_list.entries)
+        if price_list.entries and stale:
+            row.entries.filter(id__in=stale).delete()
 
         existing_history_ids = set(row.history.values_list("id", flat=True))
         for h in price_list.history:

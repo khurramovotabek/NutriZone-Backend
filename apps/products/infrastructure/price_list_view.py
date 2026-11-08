@@ -334,7 +334,7 @@ def _rows_sorted_by_price(qs, sort: str, page: int):
 _SORT_HANDLERS = {"name": _rows_sorted_by_name, "recent": _rows_sorted_by_recent}
 
 
-def _build_rows(page_products, default_variant_by_product, prices_by_variant, variant_count_by_product) -> list:
+def _build_rows(page_products, default_variant_by_product, prices_by_variant, variant_count_by_product, query: str = "") -> list:
     """
     Real, product-required simplification: this page's own unit is now
     a Product, not a ProductVariant -- a Product with several variants
@@ -391,7 +391,7 @@ def _build_rows(page_products, default_variant_by_product, prices_by_variant, va
                 "size": _variant_size(variant),
             }
         )
-    _attach_other_variants(rows, page_products, default_variant_by_product)
+    _attach_other_variants(rows, page_products, default_variant_by_product, query)
     return rows
 
 
@@ -404,18 +404,38 @@ def _variant_size(v) -> str:
     return " · ".join(x for x in (size, flavour) if x)
 
 
-def _attach_other_variants(rows: list, page_products, default_variant_by_product) -> None:
-    """Each row also carries the product's other variants with their own prices (priced in the expandable panel)."""
+def _attach_other_variants(rows: list, page_products, default_variant_by_product, query: str = "") -> None:
+    """
+    Each row also carries the product's other variants with their own prices, stock and barcode, sorted by size then
+    flavour and grouped by size (`size_groups`) -- every flavour of one size usually sells at one price, so the panel
+    can price a whole size group at once. A variant whose SKU/barcode matches the search opens the panel by itself.
+    """
     from apps.pricing.infrastructure.models import PriceListEntryModel
+    from apps.products.infrastructure.variant_labels import size_text, translated_name
     from apps.stores.infrastructure.warehouse_admin import _last_costs
 
     by_product = {r["product_id"]: r for r in rows}
-    others = list(orm.ProductVariant.objects.filter(product_id__in=[p.id for p in page_products]).order_by("product_id", "created_at"))
+    others = list(
+        orm.ProductVariant.objects.filter(product_id__in=[p.id for p in page_products])
+        .select_related("flavour").prefetch_related("flavour__translations", "extra_barcodes")
+    )
+    flavour_of = {v.id: (translated_name(v.flavour) if v.flavour_id else "") for v in others}
+    scale = {"kg": 1000, "l": 1000}
+
+    def _size_key(v):
+        return float(v.weight_value or 0) * scale.get(v.weight_unit or "", 1)
+
+    others.sort(key=lambda v: (str(v.product_id), _size_key(v), (flavour_of[v.id] or "").lower(), v.sku or ""))
     defaults = {v.id for v in default_variant_by_product.values()}
-    entries = {e.product_variant_id: e for e in PriceListEntryModel.objects.filter(product_variant_id__in=[v.id for v in others])}
-    last = _last_costs([v.id for v in others])
+    ids = [v.id for v in others]
+    entries = {e.product_variant_id: e for e in PriceListEntryModel.objects.filter(product_variant_id__in=ids)}
+    last = _last_costs(ids)
+    stock = _bulk_stock_by_variant(ids)
+    needle = (query or "").strip().lower()
     for r in rows:
-        r["variants"], r["last_cost"], r["unpriced_variants"] = [], last.get(_uuid(r["id"])), 0
+        r["variants"], r["last_cost"], r["unpriced_variants"], r["size_groups"], r["open"] = [], last.get(_uuid(r["id"])), 0, [], False
+        r["all_ids"] = []
+    groups: dict = {}
     for v in others:
         row = by_product.get(str(v.product_id))
         if row is None:
@@ -423,10 +443,37 @@ def _attach_other_variants(rows: list, page_products, default_variant_by_product
         e = entries.get(v.id)
         if e is None:
             row["unpriced_variants"] += 1
+        row["all_ids"].append(str(v.id))
+        size = size_text(v.weight_value, v.weight_unit or "") or ""
+        group = groups.get((row["product_id"], size))
+        if group is None:
+            group = groups[(row["product_id"], size)] = {"size": size, "ids": [], "prices": set(), "variants": []}
+            row["size_groups"].append(group)
+        group["ids"].append(str(v.id))
+        group["prices"].add(e.base_price_amount if e else None)
+        barcodes = [b for b in [v.barcode, *[x.barcode for x in v.extra_barcodes.all()]] if b]
+        matched = bool(needle) and (needle in (v.sku or "").lower() or any(needle == b.lower() for b in barcodes))
         if v.id in defaults:
+            row["barcode"], row["matched"] = (barcodes[0] if barcodes else ""), matched
             continue
-        row["variants"].append({"id": str(v.id), "sku": v.sku, "size": _variant_size(v), "status": v.status, "price": e.base_price_amount if e else None,
-                                "base_price": e.cost_price_amount if e else None, "old_price": e.compare_at_price_amount if e else None, "last_cost": last.get(v.id)})
+        info = stock.get(v.id)
+        sub = {"id": str(v.id), "sku": v.sku, "size": size, "flavour": flavour_of[v.id], "status": v.status, "barcode": barcodes[0] if barcodes else "",
+               "price": e.base_price_amount if e else None, "base_price": e.cost_price_amount if e else None, "old_price": e.compare_at_price_amount if e else None,
+               "last_cost": last.get(v.id), "stock": info["quantity"] if info else None,
+               "stock_state": _stock_state(info["quantity"] if info else None, info["low_stock_at"] if info else None), "matched": matched}
+        row["variants"].append(sub)
+        group["variants"].append(sub)
+        if matched:
+            row["open"] = True
+    for group in groups.values():
+        prices = group.pop("prices")
+        group["count"] = len(group["ids"])
+        group["same_price"] = next(iter(prices)) if len(prices) == 1 else None
+        group["same_price_text"] = f"{int(group['same_price']):,}".replace(",", " ") if group["same_price"] is not None else ""
+        group["mixed"] = len(prices) > 1
+    for r in rows:
+        # Size headers only help when at least one size has several flavours; otherwise a flat list reads better.
+        r["grouped"] = any(g["count"] > 1 for g in r["size_groups"])
 
 
 def _uuid(v):
@@ -528,6 +575,13 @@ def _build_active_filter_chips(
     return chips
 
 
+def _filter_querystring(params) -> str:
+    from urllib.parse import urlencode
+
+    keys = ("q", "brand", "category", "stock", "discount", "price_min", "price_max", "missing")
+    return urlencode({k: params.get(k) for k in keys if params.get(k)})
+
+
 @staff_member_required
 def price_list_view(request):
     query = (request.GET.get("q") or "").strip()
@@ -558,7 +612,8 @@ def price_list_view(request):
         from django.db.models import Q
 
         qs = qs.filter(
-            Q(variants__sku__icontains=query) | Q(id__icontains=query) | Q(translations__name__icontains=query)
+            Q(variants__sku__icontains=query) | Q(variants__barcode=query) | Q(variants__extra_barcodes__barcode=query)
+            | Q(id__icontains=query) | Q(translations__name__icontains=query)
         ).distinct()
     if request.GET.get("missing") == "1":
         qs = qs.filter(id__in=missing_price_product_ids())
@@ -574,7 +629,7 @@ def price_list_view(request):
     page_products, default_variant_by_product, prices_by_variant, total = sort_fn(qs, sort, page)
 
     variant_count_by_product = _bulk_variant_counts([p.id for p in page_products])
-    rows = _build_rows(page_products, default_variant_by_product, prices_by_variant, variant_count_by_product)
+    rows = _build_rows(page_products, default_variant_by_product, prices_by_variant, variant_count_by_product, query)
 
     total_pages = max(math.ceil(total / _PAGE_SIZE), 1)
     page = min(page, total_pages)
@@ -648,6 +703,9 @@ def price_list_view(request):
         "active_filters": active_filters,
         "kpi": price_list_kpis(),
         "missing": request.GET.get("missing") == "1",
+        # Every active filter as a querystring (without page/sort) -- paging and column sorting keep the filters.
+        "filter_qs": _filter_querystring(request.GET),
+        "bulk_url": "/django-admin/products/price-list/api/bulk",
     }
     return render(request, "admin/price_list.html", context)
 
@@ -805,3 +863,121 @@ def price_list_api_product(request, product_id: str):
             "last_cost": s(last.get(v.id)), "stock": stock.get(v.id, 0),
         } for v in variants],
     }})
+
+
+_BULK_OPS = {"set", "pct", "discount", "clear_discount"}
+_BULK_LIMIT = 500
+
+
+def _round_som(value: Decimal, step: int = 1000) -> Decimal:
+    """Round a computed price to the nearest `step` so'm (prices are quoted in whole thousands)."""
+    from decimal import ROUND_HALF_UP
+
+    return (value / step).quantize(Decimal(1), rounding=ROUND_HALF_UP) * step
+
+
+def bulk_new_prices(op: str, value: Decimal | None, price: Decimal | None, old_price: Decimal | None):
+    """
+    The new (price, old price) of one variant under a bulk operation, or a reason string when it must be skipped.
+    set            -- price = value; an old price that is no longer above it is dropped.
+    pct            -- price ± value % (rounded to 1 000); an old price no longer above it is dropped.
+    discount       -- start a value % discount: the old price becomes the regular price (or the existing old price
+                      when a discount already runs), the price becomes that minus value % (rounded to 1 000).
+    clear_discount -- drop the old price, the price stays.
+    """
+    if op == "set":
+        new_price = value
+    elif op == "clear_discount":
+        if price is None:
+            return "no_price"
+        return price, None
+    elif price is None:
+        return "no_price"
+    elif op == "pct":
+        new_price = _round_som(price * (1 + value / 100))
+    else:  # discount
+        regular = old_price if old_price is not None and old_price > price else price
+        new_price = _round_som(regular * (1 - value / 100))
+        if new_price <= 0 or new_price >= regular:
+            return "bad_value"
+        return new_price, regular
+    if new_price is None or new_price <= 0:
+        return "bad_value"
+    return new_price, (old_price if old_price is not None and old_price > new_price else None)
+
+
+@staff_member_required
+@require_POST
+def price_list_api_bulk(request):
+    """
+    One price change for many variants at once (a size group, a selection, a whole product). Every variant goes
+    through the same SetPrice service as the single save (history, events, cache), all in one transaction.
+    Body: {"variant_ids": [...], "op": "set|pct|discount|clear_discount", "value": number}.
+    """
+    import json
+
+    from django.db import transaction
+
+    from apps.pricing.domain.exceptions import PriceListArchived
+    from apps.pricing.infrastructure import composition as pricing_composition
+    from apps.pricing.infrastructure.models import PriceListEntryModel
+    from apps.products.infrastructure.admin import _get_or_create_default_price_list
+    from common.exceptions import ConflictError
+
+    try:
+        body = json.loads(request.body or "{}")
+    except json.JSONDecodeError:
+        return _err("Malformed request body.", status=400)
+    op = body.get("op")
+    if op not in _BULK_OPS:
+        return _err("Unknown operation.", status=400)
+    ids = [u for u in (_uuid(x) for x in (body.get("variant_ids") or [])) if u]
+    ids = list(dict.fromkeys(ids))
+    if not ids:
+        return _err(str(_("Select at least one variant.")))
+    if len(ids) > _BULK_LIMIT:
+        return _err(str(_("Too many variants at once (max 500).")))
+    value = None
+    if op != "clear_discount":
+        try:
+            value = _parse_decimal(body.get("value")) if op != "pct" else Decimal(str(body.get("value")))
+        except (ValueError, InvalidOperation):
+            return _err(str(_("Enter a valid number.")))
+        valid = value is not None and {
+            "set": lambda x: x > 0,
+            "pct": lambda x: x != 0 and -90 <= x <= 500,
+            "discount": lambda x: 0 < x < 100,
+        }[op](value)
+        if not valid:
+            return _err(str(_("Enter a valid number.")))
+
+    price_list = _get_or_create_default_price_list()
+    existing_ids = set(orm.ProductVariant.objects.filter(id__in=ids).values_list("id", flat=True))
+    entries = {e.product_variant_id: e for e in PriceListEntryModel.objects.filter(price_list=price_list, product_variant_id__in=ids)}
+    service = pricing_composition.build_set_price()
+    updated, skipped = [], []
+    try:
+        with transaction.atomic():
+            for vid in ids:
+                if vid not in existing_ids:
+                    skipped.append({"id": str(vid), "reason": "not_found"})
+                    continue
+                e = entries.get(vid)
+                result = bulk_new_prices(op, value, e.base_price_amount if e else None, e.compare_at_price_amount if e else None)
+                if isinstance(result, str):
+                    skipped.append({"id": str(vid), "reason": result})
+                    continue
+                new_price, new_old = result
+                if e is not None and e.base_price_amount == new_price and e.compare_at_price_amount == new_old:
+                    updated.append({"id": str(vid), "price": str(new_price), "old_price": str(new_old) if new_old is not None else None,
+                                    "base_price": str(e.cost_price_amount) if e.cost_price_amount is not None else None})
+                    continue
+                service.execute(
+                    price_list_id=price_list.id, product_variant_id=vid, base_amount=new_price, currency=price_list.currency,
+                    cost_amount=e.cost_price_amount if e else None, sale_amount=e.sale_price_amount if e else None, compare_at_amount=new_old,
+                )
+                updated.append({"id": str(vid), "price": str(new_price), "old_price": str(new_old) if new_old is not None else None,
+                                "base_price": str(e.cost_price_amount) if e and e.cost_price_amount is not None else None})
+    except (PriceListArchived, ConflictError) as exc:
+        return _err(str(exc), status=409)
+    return JsonResponse({"success": True, "data": {"updated": updated, "skipped": skipped}})

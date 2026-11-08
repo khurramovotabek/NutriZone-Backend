@@ -446,6 +446,7 @@ def _get_urls_with_reports():
         path("products/price-list/api/save/<str:variant_id>", price_list_view.price_list_api_save, name="nz_price_list_save"),
         path("products/price-list/api/history/<str:variant_id>", price_list_view.price_list_api_history, name="nz_price_list_history"),
         path("products/price-list/api/product/<str:product_id>", price_list_view.price_list_api_product, name="nz_price_list_product"),
+        path("products/price-list/api/bulk", price_list_view.price_list_api_bulk, name="nz_price_list_bulk"),
         path("control/", _control_view, name="nz_control"),
         path("sales-plan/", _growth("sales_plan_view"), name="nz_sales_plan"),
         path("sales-plan/save/", _growth("sales_plan_save_view"), name="nz_sales_plan_save"),

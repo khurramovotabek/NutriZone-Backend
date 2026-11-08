@@ -9745,3 +9745,94 @@ msgstr "masalan Damas 01 A 123 BC, skuter, piyoda"
 
 msgid "not assigned"
 msgstr "biriktirilmagan"
+
+msgid "Tick products or variants, then change their prices together in the panel below. Every flavour of one size can also be priced at once inside a product."
+msgstr "Mahsulot yoki variantlarni belgilang — pastdagi panel orqali narxlarini birdaniga o'zgartiring. Mahsulot ichida bir o'lchamdagi barcha ta'mlarga bitta narx qo'yish ham mumkin."
+
+msgid "Show all variants"
+msgstr "Barcha variantlarni ochish"
+
+msgid "Hide variants"
+msgstr "Variantlarni yopish"
+
+msgid "Select all on this page"
+msgstr "Sahifadagilarning hammasini tanlash"
+
+msgid "Variants"
+msgstr "Variantlar"
+
+msgid "No size"
+msgstr "O'lchamsiz"
+
+msgid "different prices"
+msgstr "narxlar har xil"
+
+msgid "one price"
+msgstr "bitta narx:"
+
+msgid "Price for all"
+msgstr "Hammasiga narx"
+
+msgid "Price for every variant of this size"
+msgstr "Shu o'lchamdagi barcha variantlar narxi"
+
+msgid "Apply to all"
+msgstr "Hammasiga qo'llash"
+
+msgid "Change prices of the selected variants"
+msgstr "Tanlangan variantlar narxini o'zgartirish"
+
+msgid "variants selected"
+msgstr "ta variant tanlandi"
+
+msgid "Operation"
+msgstr "Amal"
+
+msgid "Set price"
+msgstr "Narx belgilash"
+
+msgid "Change price by percent"
+msgstr "Narxni % ga o'zgartirish"
+
+msgid "Start a discount (percent)"
+msgstr "Chegirma boshlash, %"
+
+msgid "Remove the discount"
+msgstr "Chegirmani olib tashlash"
+
+msgid "{n} prices updated"
+msgstr "{n} ta narx yangilandi"
+
+msgid "{n} skipped (no price yet)"
+msgstr "{n} tasi o'tkazib yuborildi (narxi yo'q)"
+
+msgid "Enter a valid number."
+msgstr "To'g'ri son kiriting."
+
+msgid "Set the price {p} so'm for all {n} variants of this size?"
+msgstr "Shu o'lchamdagi {n} ta variantning hammasiga {p} so'm narx qo'yilsinmi?"
+
+msgid "Apply to {n} variants: {o}?"
+msgstr "{n} ta variantga qo'llansinmi: {o}?"
+
+msgid "The same selling price for every selected variant."
+msgstr "Tanlangan barcha variantlarga bir xil sotuv narxi."
+
+msgid "E.g. 10 raises the price by ten percent, -5 lowers it by five percent. Rounded to 1 000."
+msgstr "Masalan, 10 — 10% ga oshiradi, -5 — 5% ga kamaytiradi. 1 000 gacha yaxlitlanadi."
+
+msgid "The current price becomes the crossed-out old price, the new price is lower by this percentage."
+msgstr "Hozirgi narx chizilgan eski narxga aylanadi, yangi narx shu foizga arzon bo'ladi."
+
+msgid "Removes the crossed-out old price; the price stays."
+msgstr "Chizilgan eski narx olib tashlanadi, narx o'zgarmaydi."
+
+msgid "Select at least one variant."
+msgstr "Kamida bitta variantni tanlang."
+
+msgid "Too many variants at once (max 500)."
+msgstr "Bir martada juda ko'p variant (ko'pi bilan 500)."
+
+msgid "%(n)s variant"
+msgid_plural "%(n)s variants"
+msgstr[0] "%(n)s ta variant"

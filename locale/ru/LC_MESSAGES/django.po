@@ -9957,3 +9957,97 @@ msgstr "не назначен"
 
 msgid "Kuryerlar"
 msgstr "Курьеры"
+
+msgid "Tick products or variants, then change their prices together in the panel below. Every flavour of one size can also be priced at once inside a product."
+msgstr "Отметьте товары или варианты и измените их цены вместе в панели снизу. Внутри товара можно задать одну цену сразу всем вкусам одного размера."
+
+msgid "Show all variants"
+msgstr "Показать все варианты"
+
+msgid "Hide variants"
+msgstr "Скрыть варианты"
+
+msgid "Select all on this page"
+msgstr "Выбрать всё на странице"
+
+msgid "Variants"
+msgstr "Варианты"
+
+msgid "No size"
+msgstr "Без размера"
+
+msgid "different prices"
+msgstr "разные цены"
+
+msgid "one price"
+msgstr "одна цена:"
+
+msgid "Price for all"
+msgstr "Цена для всех"
+
+msgid "Price for every variant of this size"
+msgstr "Цена всех вариантов этого размера"
+
+msgid "Apply to all"
+msgstr "Применить ко всем"
+
+msgid "Change prices of the selected variants"
+msgstr "Изменить цены выбранных вариантов"
+
+msgid "variants selected"
+msgstr "вариантов выбрано"
+
+msgid "Operation"
+msgstr "Действие"
+
+msgid "Set price"
+msgstr "Задать цену"
+
+msgid "Change price by percent"
+msgstr "Изменить цену на %"
+
+msgid "Start a discount (percent)"
+msgstr "Начать скидку, %"
+
+msgid "Remove the discount"
+msgstr "Убрать скидку"
+
+msgid "{n} prices updated"
+msgstr "Обновлено цен: {n}"
+
+msgid "{n} skipped (no price yet)"
+msgstr "пропущено {n} (нет цены)"
+
+msgid "Enter a valid number."
+msgstr "Введите корректное число."
+
+msgid "Set the price {p} so'm for all {n} variants of this size?"
+msgstr "Установить цену {p} сум всем {n} вариантам этого размера?"
+
+msgid "Apply to {n} variants: {o}?"
+msgstr "Применить к {n} вариантам: {o}?"
+
+msgid "The same selling price for every selected variant."
+msgstr "Одна цена продажи для всех выбранных вариантов."
+
+msgid "E.g. 10 raises the price by ten percent, -5 lowers it by five percent. Rounded to 1 000."
+msgstr "Например, 10 — поднять на 10%, -5 — снизить на 5%. Округляется до 1 000."
+
+msgid "The current price becomes the crossed-out old price, the new price is lower by this percentage."
+msgstr "Текущая цена становится зачёркнутой старой, новая цена ниже на этот %."
+
+msgid "Removes the crossed-out old price; the price stays."
+msgstr "Убирает зачёркнутую старую цену; цена остаётся."
+
+msgid "Select at least one variant."
+msgstr "Выберите хотя бы один вариант."
+
+msgid "Too many variants at once (max 500)."
+msgstr "Слишком много вариантов за раз (максимум 500)."
+
+msgid "%(n)s variant"
+msgid_plural "%(n)s variants"
+msgstr[0] "%(n)s вариант"
+msgstr[1] "%(n)s варианта"
+msgstr[2] "%(n)s вариантов"
+msgstr[3] "%(n)s варианта"
