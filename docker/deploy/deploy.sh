@@ -60,7 +60,29 @@ deploy_backend() {
     sleep 3
   done
   curl -fsS -o /dev/null -H "X-Forwarded-Proto: https" -w "health/ready %{http_code}\n" http://127.0.0.1:8080/health/ready
+  check_workers
   docker image prune -f >/dev/null
+}
+
+# The web health check says nothing about Celery: on 2026-11-08 an unpinned dependency crash-looped every worker and
+# beat while this script still printed "Done". Every worker must answer a ping and beat must stay up without restarts.
+check_workers() {
+  log "Backend: celery workers + beat"
+  local want=3 got=0 beat restarts
+  for _ in $(seq 1 30); do
+    got=$($DC exec -T celery_worker_default celery -A config inspect ping --timeout 5 2>/dev/null | grep -c "OK" || true)
+    [ "$got" -ge "$want" ] && break
+    sleep 3
+  done
+  beat=$($DC ps -q celery_beat)
+  sleep 20  # a crash-looping beat restarts within seconds
+  restarts=$(docker inspect -f '{{.RestartCount}}' "$beat" 2>/dev/null || echo "?")
+  echo "workers answering: $got/$want, beat restarts: $restarts"
+  if [ "$got" -lt "$want" ] || [ "$restarts" != "0" ]; then
+    echo "CELERY IS NOT HEALTHY -- background jobs (notifications, Telegram, outbox) are not running" >&2
+    $DC logs --tail 30 celery_beat celery_worker_default >&2 || true
+    exit 1
+  fi
 }
 
 wait_http() {  # wait_http URL NAME -- up to 60 s for a 200
