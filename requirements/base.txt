@@ -6,6 +6,11 @@ django-cors-headers==4.6.0
 django-celery-beat==2.9.0
 django-celery-results==2.5.1
 celery==5.4.0
+# celery's own dependencies, pinned: kombu 5.7 (Nov 2026) requires redis-py>=6.1 and crash-looped every worker + beat
+kombu==5.6.2
+amqp==5.4.1
+billiard==4.3.1
+vine==5.1.0
 redis==5.2.1
 channels==4.2.0
 channels-redis==4.2.1
