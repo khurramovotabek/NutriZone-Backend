@@ -4,6 +4,13 @@ x-django-env: &django-env
   env_file:
     - ../../.env
 
+# stdout logs of the app containers (recreated on every deploy): capped, they had no limit -- `docker compose logs`
+# keeps the last 5 x 20 MB. db/redis/nginx don't carry it yet: changing their logging recreates them (a short outage).
+x-logging: &logging
+  logging:
+    driver: json-file
+    options: {max-size: "20m", max-file: "5"}
+
 services:
   db:
     image: postgis/postgis:16-3.4
@@ -39,11 +46,11 @@ services:
   # "python manage.py migrate" -- see docker-compose.yml's own,
   # identical comment for the full rationale.
   migrate:
+    <<: [*logging, *django-env]
     build:
       context: ../../
       dockerfile: docker/django/Dockerfile
       target: production
-    <<: *django-env
     environment:
       DJANGO_ENV: production
     entrypoint: ["/migrate-entrypoint.sh"]
@@ -56,13 +63,14 @@ services:
     networks: [nutrizone_net]
 
   web:
+    <<: [*logging, *django-env]
     build:
       context: ../../
       dockerfile: docker/django/Dockerfile
       target: production
-    <<: *django-env
     environment:
       DJANGO_ENV: production
+      LOG_ROTATION: external  # rotated by the host's logrotate (docker/deploy/host-logrotate.sh)
     # One ASGI server for HTTP and WebSockets (chat) -- gunicorn managing
     # uvicorn workers; there is no separate WebSocket service.
     command: ["gunicorn", "config.asgi:application", "--worker-class", "uvicorn.workers.UvicornWorker", "--bind", "0.0.0.0:8000", "--workers", "4", "--timeout", "60", "--forwarded-allow-ips", "*"]
@@ -73,6 +81,7 @@ services:
       migrate: {condition: service_completed_successfully}
     volumes:
       - media_volume:/app/media  # uploads -- shared by every replica and worker, served by nginx
+      - app_logs:/app/logs  # errors.log & co. survive deploys (containers are recreated every time)
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8000/health/live"]
       interval: 30s
@@ -84,19 +93,21 @@ services:
     networks: [nutrizone_net]
 
   celery_worker_transactional:
+    <<: [*logging, *django-env]
     build:
       context: ../../
       dockerfile: docker/django/Dockerfile
       target: production
-    <<: *django-env
     environment:
       DJANGO_ENV: production
+      LOG_ROTATION: external  # rotated by the host's logrotate (docker/deploy/host-logrotate.sh)
     healthcheck:
       disable: true
     command: ["celery", "-A", "config", "worker", "-Q", "transactional,inventory_critical", "-c", "8", "-l", "info"]
     restart: always
     volumes:
       - media_volume:/app/media
+      - app_logs:/app/logs
     depends_on:
       db: {condition: service_healthy}
       redis: {condition: service_healthy}
@@ -104,19 +115,21 @@ services:
     networks: [nutrizone_net]
 
   celery_worker_default:
+    <<: [*logging, *django-env]
     build:
       context: ../../
       dockerfile: docker/django/Dockerfile
       target: production
-    <<: *django-env
     environment:
       DJANGO_ENV: production
+      LOG_ROTATION: external  # rotated by the host's logrotate (docker/deploy/host-logrotate.sh)
     healthcheck:
       disable: true
     command: ["celery", "-A", "config", "worker", "-Q", "default", "-c", "4", "-l", "info"]
     restart: always
     volumes:
       - media_volume:/app/media
+      - app_logs:/app/logs
     depends_on:
       db: {condition: service_healthy}
       redis: {condition: service_healthy}
@@ -124,19 +137,21 @@ services:
     networks: [nutrizone_net]
 
   celery_worker_bulk:
+    <<: [*logging, *django-env]
     build:
       context: ../../
       dockerfile: docker/django/Dockerfile
       target: production
-    <<: *django-env
     environment:
       DJANGO_ENV: production
+      LOG_ROTATION: external  # rotated by the host's logrotate (docker/deploy/host-logrotate.sh)
     healthcheck:
       disable: true
     command: ["celery", "-A", "config", "worker", "-Q", "bulk,dead_letter", "-c", "2", "-l", "info"]
     restart: always
     volumes:
       - media_volume:/app/media
+      - app_logs:/app/logs
     depends_on:
       db: {condition: service_healthy}
       redis: {condition: service_healthy}
@@ -144,17 +159,20 @@ services:
     networks: [nutrizone_net]
 
   celery_beat:
+    <<: [*logging, *django-env]
     build:
       context: ../../
       dockerfile: docker/django/Dockerfile
       target: production
-    <<: *django-env
     environment:
       DJANGO_ENV: production
+      LOG_ROTATION: external  # rotated by the host's logrotate (docker/deploy/host-logrotate.sh)
     healthcheck:
       disable: true
     command: ["celery", "-A", "config", "beat", "-l", "info", "--scheduler", "django_celery_beat.schedulers:DatabaseScheduler"]
     restart: always
+    volumes:
+      - app_logs:/app/logs
     depends_on:
       db: {condition: service_healthy}
       redis: {condition: service_healthy}
@@ -203,3 +221,4 @@ volumes:
   static_volume:
   media_volume:
   backups:
+  app_logs:

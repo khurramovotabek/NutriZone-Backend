@@ -54,6 +54,7 @@ deploy_backend() {
   log "Backend: workers, beat, the rest"
   $DC up -d --no-deps --remove-orphans celery_worker_transactional celery_worker_default celery_worker_bulk celery_beat
   $DC up -d --no-deps db redis db_backup nginx
+  bash "$ROOT/backend/docker/deploy/host-logrotate.sh"  # rotation of the app_logs volume (idempotent)
   log "Backend: health"
   for i in $(seq 1 30); do
     if curl -fsS -o /dev/null -H "X-Forwarded-Proto: https" http://127.0.0.1:8080/health/ready; then echo "ready"; break; fi

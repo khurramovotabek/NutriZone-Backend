@@ -18,7 +18,20 @@ JSON_LOGS = os.environ.get("JSON_LOGS", "false").lower() == "true"
 _formatter = "json" if JSON_LOGS else "human"
 
 
+# "external": the files are rotated by the host's logrotate (production -- several gunicorn workers, replicas and
+# Celery processes append to the same files on the shared logs volume; RotatingFileHandler in each of them would race
+# and lose lines). WatchedFileHandler reopens the file once logrotate has moved it.
+LOG_ROTATION = os.environ.get("LOG_ROTATION", "internal")
+
+
 def _file_handler(filename: str) -> dict:
+    if LOG_ROTATION == "external":
+        return {
+            "class": "logging.handlers.WatchedFileHandler",
+            "filename": os.path.join(LOG_DIR, filename),
+            "formatter": _formatter,
+            "filters": ["context"],
+        }
     return {
         "class": "logging.handlers.RotatingFileHandler",
         "filename": os.path.join(LOG_DIR, filename),
