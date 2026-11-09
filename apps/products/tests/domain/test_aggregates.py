@@ -92,6 +92,21 @@ class TestProductMediaManagement:
         assert product.media[first.id].media_role == MediaRole.GALLERY
         assert product.media[second.id].media_role == MediaRole.PRIMARY
 
+    def test_variant_primary_keeps_product_primary(self):
+        product = _product()
+        variant = _variant()
+        product.add_variant(variant)
+        main = _primary_media()
+        product.add_media(main)
+        flavour = ProductMedia(id=uuid.uuid4(), media_id=uuid.uuid4(), media_role=MediaRole.PRIMARY, variant_id=variant.id)
+        product.add_media(flavour)
+        assert product.media[main.id].media_role == MediaRole.PRIMARY
+        assert product.media[flavour.id].media_role == MediaRole.PRIMARY
+        newer = ProductMedia(id=uuid.uuid4(), media_id=uuid.uuid4(), media_role=MediaRole.PRIMARY, variant_id=variant.id)
+        product.add_media(newer)
+        assert product.media[flavour.id].media_role == MediaRole.GALLERY
+        assert product.media[main.id].media_role == MediaRole.PRIMARY
+
     def test_max_12_images_enforced(self):
         product = _product()
         for _ in range(12):

@@ -123,9 +123,11 @@ class Product:
             raise MediaLimitExceeded(f"A product may have at most {MAX_VIDEOS} videos.")
 
         if media.media_role == MediaRole.PRIMARY:
-            # Exactly one PRIMARY at a time -- demote any existing one to GALLERY.
+            # Exactly one PRIMARY per scope (the product itself, or one variant) --
+            # demote the existing one in the same scope to GALLERY. A variant's own
+            # flavour photo must not knock out the product's main photo.
             for m in self.media.values():
-                if m.media_role == MediaRole.PRIMARY:
+                if m.media_role == MediaRole.PRIMARY and m.variant_id == media.variant_id:
                     m.media_role = MediaRole.GALLERY
 
         self.media[media.id] = media
