@@ -230,7 +230,14 @@ ALIASES: dict[str, str] = {
 }
 
 # Words that carry no product meaning in a query ("ozish uchun", "протеин для массы", "protein for women" keeps "women").
-STOPWORDS = frozenset({"uchun", "va", "bilan", "eng", "yaxshi", "ham", "для", "и", "с", "лучший", "for", "and", "with", "the", "best", "of", "a"})
+STOPWORDS = frozenset({
+    "uchun", "va", "bilan", "eng", "yaxshi", "ham", "для", "и", "с", "лучший", "for", "and", "with", "the", "best", "of", "a",
+    # question words a shopper (or the AI advisor) wraps around the product words: "massa olish uchun nima ichay",
+    # "какой протеин лучше" -- never a product's name, and each one was a fuzzy scan of the whole vocabulary
+    "nima", "qaysi", "qanday", "qancha", "bormi", "kerak", "menga", "tavsiya", "qilasiz", "maslahat", "ichay", "ichsam", "olsam",
+    "что", "какой", "какая", "какие", "лучше", "нужно", "есть", "посоветуйте", "мне", "сколько",
+    "what", "which", "need", "recommend", "me", "is", "there",
+})
 MATCH_THRESHOLD = 0.6
 
 
@@ -311,6 +318,17 @@ def _scores_for(prepared: _Prepared, token_key: str) -> dict[str, float]:
     """Every indexed word the query word matches, scored once per distinct word (not once per product)."""
     scores = prepared.token_scores.get(token_key)
     if scores is None:
+        # shared across the web workers: a new query word costs a full fuzzy scan of the vocabulary (~0.3 s at 23k words)
+        # (only for the shared index of the current version -- an index passed in by a caller has its own words)
+        shared = _LOCAL.get("index") is not None and _PREPARED.get("index") is _LOCAL.get("index")
+        shared_key = f"{_LOCAL['key']}:ts:{token_key}" if shared else None
+        try:
+            scores = cache.get(shared_key) if shared_key else None
+        except Exception:  # noqa: BLE001 -- the shared memo is an optimisation, never a failure
+            scores = None
+        if scores is not None:
+            prepared.token_scores[token_key] = scores
+            return scores
         scores = {}
         if not prepared.letters:
             prepared.letters = {wk: frozenset(wk) for wk in prepared.postings}
@@ -329,6 +347,11 @@ def _scores_for(prepared: _Prepared, token_key: str) -> dict[str, float]:
         if len(prepared.token_scores) > 2000:
             prepared.token_scores.clear()
         prepared.token_scores[token_key] = scores
+        if shared_key:
+            try:
+                cache.set(shared_key, scores, _CACHE_TTL)
+            except Exception:  # noqa: BLE001
+                pass
     return scores
 
 

@@ -7,6 +7,7 @@ Deliberately rule-based: predictable, instant, free, never invents facts.
 """
 from __future__ import annotations
 
+import functools
 import re
 from dataclasses import dataclass, field
 
@@ -118,8 +119,16 @@ def normalize(text: str) -> str:
     return re.sub(r"\s+", " ", (text or "").lower().translate(APOS)).strip()
 
 
+@functools.lru_cache(maxsize=4096)
+def _stems_pattern(stems: tuple) -> re.Pattern:
+    # one compiled alternation per keyword list: the per-stem re.search overflowed re's 512-pattern cache and
+    # recompiled thousands of patterns per answer
+    return re.compile(r"(?:^|[\s,.!?;:(\"'-])(?:" + "|".join(re.escape(s) for s in stems) + ")")
+
+
 def _has(text: str, stems) -> bool:
-    return any(re.search(r"(?:^|[\s,.!?;:(\"'-])" + re.escape(s), text) for s in stems)
+    stems = tuple(stems)
+    return bool(stems) and _stems_pattern(stems).search(text) is not None
 
 
 def _num(pattern: str, text: str) -> float | None:
