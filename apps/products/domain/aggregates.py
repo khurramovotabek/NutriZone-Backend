@@ -40,6 +40,7 @@ from apps.products.domain.exceptions import (
 from apps.products.domain.value_objects import SKU, Barcode, NutritionFacts, SEOData, Slug
 
 MAX_IMAGES = 12
+MAX_VARIANT_IMAGES = 6  # per variant (its own flavour/size photos), counted apart from the product's 12
 MAX_VIDEOS = 4
 
 
@@ -114,11 +115,14 @@ class Product:
     # --- Media management -------------------------------------------------
 
     def add_media(self, media: ProductMedia) -> ProductMediaUploaded:
-        image_count = sum(1 for m in self.media.values() if m.media_role in (MediaRole.PRIMARY, MediaRole.GALLERY))
+        # Images are capped per scope: the product's own photos, and each variant's own photos separately --
+        # a 10-flavour family must be able to carry one photo per flavour on top of its main gallery.
+        image_count = sum(1 for m in self.media.values() if m.media_role in (MediaRole.PRIMARY, MediaRole.GALLERY) and m.variant_id == media.variant_id)
+        image_cap = MAX_IMAGES if media.variant_id is None else MAX_VARIANT_IMAGES
         video_count = sum(1 for m in self.media.values() if m.media_role == MediaRole.VIDEO)
 
-        if media.media_role in (MediaRole.PRIMARY, MediaRole.GALLERY) and image_count >= MAX_IMAGES:
-            raise MediaLimitExceeded(f"A product may have at most {MAX_IMAGES} images.")
+        if media.media_role in (MediaRole.PRIMARY, MediaRole.GALLERY) and image_count >= image_cap:
+            raise MediaLimitExceeded(f"A product may have at most {MAX_IMAGES} images (and {MAX_VARIANT_IMAGES} per variant).")
         if media.media_role == MediaRole.VIDEO and video_count >= MAX_VIDEOS:
             raise MediaLimitExceeded(f"A product may have at most {MAX_VIDEOS} videos.")
 

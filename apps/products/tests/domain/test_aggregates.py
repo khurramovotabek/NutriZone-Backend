@@ -107,6 +107,17 @@ class TestProductMediaManagement:
         assert product.media[flavour.id].media_role == MediaRole.GALLERY
         assert product.media[main.id].media_role == MediaRole.PRIMARY
 
+    def test_variant_photos_have_their_own_cap(self):
+        product = _product()
+        variant = _variant()
+        product.add_variant(variant)
+        for _ in range(12):
+            product.add_media(ProductMedia(id=uuid.uuid4(), media_id=uuid.uuid4(), media_role=MediaRole.GALLERY))
+        for _ in range(6):
+            product.add_media(ProductMedia(id=uuid.uuid4(), media_id=uuid.uuid4(), media_role=MediaRole.GALLERY, variant_id=variant.id))
+        with pytest.raises(MediaLimitExceeded):
+            product.add_media(ProductMedia(id=uuid.uuid4(), media_id=uuid.uuid4(), media_role=MediaRole.GALLERY, variant_id=variant.id))
+
     def test_max_12_images_enforced(self):
         product = _product()
         for _ in range(12):
