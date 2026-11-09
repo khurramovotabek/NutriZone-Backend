@@ -861,7 +861,7 @@ def price_list_api_product(request, product_id: str):
     """
     from apps.pricing.infrastructure.models import PriceListEntryModel
     from apps.products.infrastructure.admin import _display_name
-    from apps.products.infrastructure.variant_labels import size_text
+    from apps.products.infrastructure.variant_labels import size_text, translated_name
     from apps.stores.infrastructure.models import StoreProductStock
     from apps.stores.infrastructure.online_fulfilment import fulfilment_store
     from apps.stores.infrastructure.warehouse_admin import _last_costs
@@ -872,7 +872,9 @@ def price_list_api_product(request, product_id: str):
         return _err("Product not found.", status=404)
     variants = list(orm.ProductVariant.objects.filter(product_id=pid).select_related("package", "flavour").prefetch_related("flavour__translations"))
     scale = {"kg": 1000, "l": 1000}
-    flavours = _bulk_flavor_names(variants)
+    legacy = _bulk_flavor_names(variants)
+    # the flavour catalogue (Flavour FK) first, the older attribute-based flavour name second
+    flavours = {v.id: (translated_name(v.flavour) if v.flavour_id else "") or legacy.get(v.id, "") for v in variants}
     variants.sort(key=lambda v: (float(v.weight_value or 0) * scale.get(v.weight_unit or "", 1), (flavours.get(v.id) or "").lower(), v.created_at))
     ids = [v.id for v in variants]
     entries = {e.product_variant_id: e for e in PriceListEntryModel.objects.filter(product_variant_id__in=ids, price_list__status="active")}
