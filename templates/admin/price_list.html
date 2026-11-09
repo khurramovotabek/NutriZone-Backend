@@ -1,7 +1,7 @@
 {% extends "admin/base_site.html" %}
 {% load i18n static %}
-{# Price list: pricing health KPIs, filters, one row per product (its default variant) with inline cost / price / old price, margin, discount, stock; other variants in an expandable panel; price history. Saves via price_list_api_save (SetPrice). #}
-{% block extrastyle %}{{ block.super }}<link rel="stylesheet" href="{% static 'admin/css/nutrizone-platform.css' %}?v=5"><link rel="stylesheet" href="{% static 'admin/css/nutrizone-orderdesk.css' %}?v=5"><link rel="stylesheet" href="{% static 'admin/css/nutrizone-wmsx.css' %}?v=15">{% endblock %}
+{# Price list: pricing health KPIs, filters; a single-variant product is one editable row, a product with several variants is a header (price range, total stock) followed by one editable row per variant, grouped by size; inline cost / price / old price, margin, discount, stock; price history. Saves via price_list_api_save (SetPrice). #}
+{% block extrastyle %}{{ block.super }}<link rel="stylesheet" href="{% static 'admin/css/nutrizone-platform.css' %}?v=5"><link rel="stylesheet" href="{% static 'admin/css/nutrizone-orderdesk.css' %}?v=5"><link rel="stylesheet" href="{% static 'admin/css/nutrizone-wmsx.css' %}?v=16">{% endblock %}
 {% block breadcrumbs %}<ol class="breadcrumb"><li class="breadcrumb-item"><a href="{% url 'admin:index' %}">{% translate "Home" %}</a></li><li class="breadcrumb-item">{% translate "Narxlash" %}</li><li class="breadcrumb-item active">{% translate "Narxlar ro'yxati" %}</li></ol>{% endblock %}
 {% block content_title %}{% endblock %}
 {% block content %}
@@ -43,8 +43,8 @@
   {% if active_filters %}<div class="wx-type-chips">{% for chip in active_filters %}<a href="{{ chip.remove_url }}" class="on" style="--t:#2563eb"><i></i>{{ chip.label }} ×</a>{% endfor %}<a href="{% url 'admin:nz_price_list' %}" style="--t:#64748b"><i></i>{% translate "Clear all" %}</a></div>{% endif %}
 
   <div class="wx-pl-bar">
-    <span class="wx-pl-bar-hint"><i class="fas fa-circle-info" aria-hidden="true"></i> {% translate "Tick products or variants, then change their prices together in the panel below. Every flavour of one size can also be priced at once inside a product." %}</span>
-    <button type="button" class="nzp-btn nzp-btn-ghost nzp-btn-sm" data-expand-all><i class="fas fa-layer-group" aria-hidden="true"></i> <span data-expand-label>{% translate "Show all variants" %}</span></button>
+    <span class="wx-pl-bar-hint"><i class="fas fa-circle-info" aria-hidden="true"></i> {% translate "Every variant has its own row: type a price and press Enter. Tick products or variants to change prices together; every flavour of one size can also be priced at once." %}</span>
+    <button type="button" class="nzp-btn nzp-btn-ghost nzp-btn-sm" data-expand-all><i class="fas fa-layer-group" aria-hidden="true"></i> <span data-expand-label>{% translate "Hide variants" %}</span></button>
   </div>
   <section class="nzp-card nzp-inbox">
     {% if rows %}
@@ -60,19 +60,36 @@
         <span></span>
       </div>
       {% for row in rows %}
-      <div class="wx-pl-group{% if row.open %} is-open{% endif %}" style="--i:{{ forloop.counter0 }}" data-all-ids="{{ row.all_ids|join:',' }}">
+      <div class="wx-pl-group{% if row.open %} is-open{% endif %}{% if row.multi %} is-multi{% endif %}" style="--i:{{ forloop.counter0 }}" data-all-ids="{{ row.all_ids|join:',' }}">
+        {% if row.multi %}
+        {# several variants: the product line is a header (price range, total stock); each variant below is its own editable row #}
+        <div class="nzd-tr wx-pl-row wx-pl-head{% if row.unpriced_variants %} has-unpriced{% endif %}" role="row" data-product-head>
+          <span class="wx-pl-check"><input type="checkbox" data-check-product aria-label="{% translate 'Select every variant' %}"></span>
+          <span class="wx-prod"><span class="wx-pl-thumb">{{ row.image_html }}</span><span><b>{{ row.product_name }} <span class="nz-badge nz-badge-neutral nz-price-list-variant-count" title="{% blocktranslate count counter=row.variant_count %}This product has {{ counter }} variant.{% plural %}This product has {{ counter }} variants.{% endblocktranslate %}">&times;{{ row.variant_count }}</span></b>
+            <small>{% blocktranslate count n=row.variant_count %}{{ n }} variant{% plural %}{{ n }} variants{% endblocktranslate %}{% if row.size_count > 1 %} · {% blocktranslate count n=row.size_count %}{{ n }} size{% plural %}{{ n }} sizes{% endblocktranslate %}{% endif %}{% if row.unpriced_variants %} · <span class="wx-minus">{% blocktranslate count n=row.unpriced_variants %}{{ n }} variant without price{% plural %}{{ n }} variants without price{% endblocktranslate %}</span>{% endif %}</small></span></span>
+          <span class="r wx-pl-sum"><small>{% translate "Variants" %}</small></span>
+          <span class="r wx-pl-sum">{% if row.price_range_text %}<b class="wx-pl-range">{{ row.price_range_text }}</b>{% else %}<b class="wx-minus">{% translate "no price" %}</b>{% endif %}<small>{% translate "price range" %}</small></span>
+          <span class="r wx-pl-sum">{% if row.discounted_variants %}<span class="nzd-tag" style="--t:#e11d48">{% blocktranslate count n=row.discounted_variants %}{{ n }} discounted{% plural %}{{ n }} discounted{% endblocktranslate %}</span>{% else %}<small>—</small>{% endif %}</span>
+          <span class="r wx-pl-sum"><small>—</small></span>
+          <span class="r">{% if row.stock_total is None %}<span class="wx-muted">—</span>{% elif row.stock_total == 0 %}<span class="wx-state out">0</span>{% else %}<b class="wx-num" title="{% translate 'Total stock of all variants' %}">{{ row.stock_total }}</b>{% endif %}</span>
+          <span class="wx-row-actions">
+            <a href="#" data-toggle-variants class="wx-pl-vbtn{% if row.open %} on{% endif %}" title="{% translate 'Variants' %}" aria-label="{% translate 'Variants' %}"><i class="fas fa-chevron-down" aria-hidden="true"></i></a>
+            <a href="{% url 'admin:products_product_change' row.product_id %}" title="{% translate 'Edit product' %}" aria-label="{% translate 'Edit product' %}"><i class="fas fa-pen" aria-hidden="true"></i></a>
+          </span>
+        </div>
+        {% else %}
         <div class="nzd-tr wx-pl-row{% if row.price is None %} is-unpriced{% endif %}{% if row.matched %} is-match{% endif %}" role="row" data-variant-id="{{ row.id }}" data-price="{{ row.price|default_if_none:'' }}">
           <span class="wx-pl-check"><input type="checkbox" data-check-product aria-label="{% translate 'Select' %}"></span>
-          <span class="wx-prod"><span class="wx-pl-thumb">{{ row.image_html }}</span><span><b>{{ row.name|linebreaksbr }}{% if row.variant_count > 1 %} <span class="nz-badge nz-badge-neutral nz-price-list-variant-count" title="{% blocktranslate count counter=row.variant_count %}This product has {{ counter }} variant.{% plural %}This product has {{ counter }} variants.{% endblocktranslate %}">&times;{{ row.variant_count }}</span>{% endif %}</b>
-            <small>{{ row.sku }}{% if row.size %} · {{ row.size }}{% endif %}{% if row.barcode %} · <span class="wx-pl-bc">{{ row.barcode }}</span>{% endif %}{% if row.unpriced_variants %} · <span class="wx-minus">{% blocktranslate count n=row.unpriced_variants %}{{ n }} variant without price{% plural %}{{ n }} variants without price{% endblocktranslate %}</span>{% endif %}</small></span></span>
+          <span class="wx-prod"><span class="wx-pl-thumb">{{ row.image_html }}</span><span><b>{{ row.name|linebreaksbr }}</b>
+            <small>{{ row.sku }}{% if row.size %} · {{ row.size }}{% endif %}{% if row.barcode %} · <span class="wx-pl-bc">{{ row.barcode }}</span>{% endif %}</small></span></span>
           {% include "admin/_price_cells.html" with v=row %}
           <span class="r">{% if row.stock is None %}<span class="nz-stock-untracked wx-muted">{% translate "Not tracked" %}</span>{% elif row.stock == 0 %}<span class="wx-state out nz-stock-out">{% translate "Out of stock" %}</span>{% elif row.stock_state == "low" %}<span class="wx-state low nz-stock-low">{{ row.stock }}</span>{% else %}<b class="wx-num"><span class="nz-stock-value">{{ row.stock }}</span></b>{% endif %}</span>
           <span class="wx-row-actions">
             <a href="#" data-history-for="{{ row.id }}" title="{% translate 'Price history' %}" aria-label="{% translate 'Price history' %}"><i class="fas fa-clock-rotate-left" aria-hidden="true"></i></a>
-            {% if row.variants %}<a href="#" data-toggle-variants class="wx-pl-vbtn{% if row.open %} on{% endif %}" title="{% translate 'Variants' %}" aria-label="{% translate 'Variants' %}"><i class="fas fa-chevron-down" aria-hidden="true"></i></a>{% endif %}
             <a href="{% url 'admin:products_product_change' row.product_id %}" title="{% translate 'Edit product' %}" aria-label="{% translate 'Edit product' %}"><i class="fas fa-pen" aria-hidden="true"></i></a>
           </span>
         </div>
+        {% endif %}
         {% if row.variants %}
         <div class="wx-pl-variants"{% if not row.open %} hidden{% endif %}>
           {% for g in row.size_groups %}{% if g.variants %}{% if row.grouped %}
@@ -84,7 +101,7 @@
           {% for v in g.variants %}
           <div class="nzd-tr wx-pl-row wx-pl-sub{% if v.price is None %} is-unpriced{% endif %}{% if v.matched %} is-match{% endif %}" role="row" data-sub-variant-id="{{ v.id }}">
             <span class="wx-pl-check"><input type="checkbox" data-check-variant aria-label="{% translate 'Select' %}"></span>
-            <span class="wx-prod"><span class="ph"><i class="fas fa-turn-up fa-rotate-90" aria-hidden="true"></i></span><span><b>{{ v.flavour|default:v.size|default:v.sku }}</b><small>{{ v.sku }}{% if v.barcode %} · <span class="wx-pl-bc">{{ v.barcode }}</span>{% endif %}{% if v.status != "active" %} · <span class="wx-minus">{{ v.status }}</span>{% endif %}</small></span></span>
+            <span class="wx-prod"><span class="ph"><i class="fas fa-turn-up fa-rotate-90" aria-hidden="true"></i></span><span><b>{{ v.label }}{% if v.is_default %} <span class="wx-pl-main" title="{% translate 'Shown first on the storefront' %}">{% translate "main" %}</span>{% endif %}</b><small>{{ v.sku }}{% if v.barcode %} · <span class="wx-pl-bc">{{ v.barcode }}</span>{% endif %}{% if v.status != "active" %} · <span class="wx-minus">{{ v.status }}</span>{% endif %}</small></span></span>
             {% include "admin/_price_cells.html" with v=v %}
             <span class="r">{% if v.stock is None %}<span class="wx-muted">—</span>{% elif v.stock == 0 %}<span class="wx-state out">0</span>{% elif v.stock_state == "low" %}<span class="wx-state low">{{ v.stock }}</span>{% else %}<b class="wx-num">{{ v.stock }}</b>{% endif %}</span>
             <span class="wx-row-actions"><a href="#" data-history-for="{{ v.id }}" title="{% translate 'Price history' %}" aria-label="{% translate 'Price history' %}"><i class="fas fa-clock-rotate-left" aria-hidden="true"></i></a></span>

@@ -10051,3 +10051,35 @@ msgstr[0] "%(n)s вариант"
 msgstr[1] "%(n)s варианта"
 msgstr[2] "%(n)s вариантов"
 msgstr[3] "%(n)s варианта"
+
+msgid "Select every variant"
+msgstr "Выбрать все варианты"
+
+msgid "price range"
+msgstr "диапазон цен"
+
+msgid "main"
+msgstr "основной"
+
+msgid "Shown first on the storefront"
+msgstr "Показывается на сайте первым"
+
+msgid "Total stock of all variants"
+msgstr "Общий остаток всех вариантов"
+
+msgid "%(n)s size"
+msgid_plural "%(n)s sizes"
+msgstr[0] "%(n)s размер"
+msgstr[1] "%(n)s размера"
+msgstr[2] "%(n)s размеров"
+msgstr[3] "%(n)s размеров"
+
+msgid "%(n)s discounted"
+msgid_plural "%(n)s discounted"
+msgstr[0] "%(n)s со скидкой"
+msgstr[1] "%(n)s со скидкой"
+msgstr[2] "%(n)s со скидкой"
+msgstr[3] "%(n)s со скидкой"
+
+msgid "Every variant has its own row: type a price and press Enter. Tick products or variants to change prices together; every flavour of one size can also be priced at once."
+msgstr "У каждого варианта своя строка: введите цену и нажмите Enter. Отметьте товары или варианты, чтобы изменить цены вместе; всем вкусам одного размера можно задать одну цену сразу."

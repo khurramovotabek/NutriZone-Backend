@@ -377,6 +377,7 @@ def _build_rows(page_products, default_variant_by_product, prices_by_variant, va
                 "id_short": str(p.id)[:8],
                 "sku": variant.sku,
                 "name": f"{product_name}\n{flavour_name}" if flavour_name else product_name,
+                "product_name": product_name,
                 "variant_count": variant_count_by_product.get(p.id, 1),
                 "image_html": _direct_thumbnail_html(storage_path, thumbnail_paths),
                 "product_id": str(p.id),
@@ -455,16 +456,14 @@ def _attach_other_variants(rows: list, page_products, default_variant_by_product
         matched = bool(needle) and (needle in (v.sku or "").lower() or any(needle == b.lower() for b in barcodes))
         if v.id in defaults:
             row["barcode"], row["matched"] = (barcodes[0] if barcodes else ""), matched
-            continue
+        # every variant -- the default one too -- gets its own editable row; single-variant products drop it below
         info = stock.get(v.id)
         sub = {"id": str(v.id), "sku": v.sku, "size": size, "flavour": flavour_of[v.id], "status": v.status, "barcode": barcodes[0] if barcodes else "",
                "price": e.base_price_amount if e else None, "base_price": e.cost_price_amount if e else None, "old_price": e.compare_at_price_amount if e else None,
-               "last_cost": last.get(v.id), "stock": info["quantity"] if info else None,
+               "last_cost": last.get(v.id), "stock": info["quantity"] if info else None, "is_default": v.id in defaults,
                "stock_state": _stock_state(info["quantity"] if info else None, info["low_stock_at"] if info else None), "matched": matched}
         row["variants"].append(sub)
         group["variants"].append(sub)
-        if matched:
-            row["open"] = True
     for group in groups.values():
         prices = group.pop("prices")
         group["count"] = len(group["ids"])
@@ -474,6 +473,32 @@ def _attach_other_variants(rows: list, page_products, default_variant_by_product
     for r in rows:
         # Size headers only help when at least one size has several flavours; otherwise a flat list reads better.
         r["grouped"] = any(g["count"] > 1 for g in r["size_groups"])
+        r["multi"] = len(r["variants"]) > 1
+        if not r["multi"]:
+            # one variant: the product row itself is the editable row
+            r["variants"], r["size_groups"], r["open"] = [], [], False
+            continue
+        r["open"] = True  # the price list is read and edited per variant -- every variant is visible from the start
+        for v in r["variants"]:
+            # inside a size header the flavour names the row; without headers the row needs size and flavour
+            v["label"] = (v["flavour"] or v["size"] or v["sku"]) if r["grouped"] else (" · ".join(x for x in (v["size"], v["flavour"]) if x) or v["sku"])
+        _summarize_variants(r)
+
+
+def _money_text(value) -> str:
+    return f"{int(value):,}".replace(",", " ")
+
+
+def _summarize_variants(row: dict) -> None:
+    """Header numbers of a multi-variant product: price range, how many are discounted / unpriced, total stock."""
+    prices = [v["price"] for v in row["variants"] if v["price"] is not None]
+    low, high = (min(prices), max(prices)) if prices else (None, None)
+    row["price_min"], row["price_max"] = low, high
+    row["price_range_text"] = "" if low is None else (_money_text(low) if low == high else f"{_money_text(low)} – {_money_text(high)}")
+    row["discounted_variants"] = sum(1 for v in row["variants"] if v["price"] is not None and v["old_price"] and v["old_price"] > v["price"])
+    stocks = [v["stock"] for v in row["variants"] if v["stock"] is not None]
+    row["stock_total"] = sum(stocks) if stocks else None
+    row["size_count"] = len(row["size_groups"])
 
 
 def _uuid(v):

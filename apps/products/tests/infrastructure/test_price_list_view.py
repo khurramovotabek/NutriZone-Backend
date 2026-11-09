@@ -84,27 +84,32 @@ class TestPriceListViewGroupedByProduct:
         PriceListEntryModel.objects.create(id=uuid.uuid4(), price_list=price_list, product_variant_id=other_variant.id, base_price_amount="300000")
         return product, default_variant, other_variant
 
-    def test_a_product_with_two_variants_renders_exactly_one_row(self):
-        product, default_variant, _other = self._make_product_with_two_variants("Two Variant Product")
+    def test_a_product_with_two_variants_is_one_header_and_one_editable_row_per_variant(self):
+        product, default_variant, other_variant = self._make_product_with_two_variants("Two Variant Product")
 
         response = _staff_client().get("/django-admin/products/price-list/", {"q": "Two Variant Product"})
 
         assert response.status_code == 200
         body = response.content.decode()
-        assert body.count('data-variant-id="') == 1
-        assert f'data-variant-id="{default_variant.id}"' in body
+        assert body.count("data-product-head") == 1
+        assert 'data-variant-id="' not in body  # the header carries no price inputs of its own
+        assert body.count('data-sub-variant-id="') == 2
+        assert f'data-sub-variant-id="{default_variant.id}"' in body and f'data-sub-variant-id="{other_variant.id}"' in body
+        panel = body.split('class="wx-pl-variants"')[1][:20]
+        assert "hidden" not in panel  # every variant is visible from the start
 
-    def test_the_row_shows_the_default_variants_price_not_the_other_variants(self):
+    def test_each_variant_row_carries_its_own_price_and_the_header_the_range(self):
         product, default_variant, other_variant = self._make_product_with_two_variants("Default Price Product")
 
         response = _staff_client().get("/django-admin/products/price-list/", {"q": "Default Price Product"})
 
         body = response.content.decode()
-        # the product row carries the default variant's price; the other variant is priced in its own expandable sub-row
-        assert f'data-variant-id="{default_variant.id}" data-price="500000.00"' in body
-        assert f'data-sub-variant-id="{other_variant.id}"' in body
-        main_row = body.split(f'data-variant-id="{default_variant.id}"')[1].split("wx-pl-variants")[0]
-        assert 'value="500000"' in main_row and 'value="300000"' not in main_row
+        default_row = body.split(f'data-sub-variant-id="{default_variant.id}"')[1].split('role="row"')[0]
+        other_row = body.split(f'data-sub-variant-id="{other_variant.id}"')[1].split('role="row"')[0]
+        assert 'value="500000"' in default_row and 'value="300000"' not in default_row
+        assert 'value="300000"' in other_row
+        assert "wx-pl-main" in default_row and "wx-pl-main" not in other_row
+        assert "300 000 – 500 000" in body
 
     def test_a_product_with_more_than_one_variant_shows_a_real_variant_count(self):
         product, _default, _other = self._make_product_with_two_variants("Variant Count Product")
@@ -261,7 +266,7 @@ class TestPriceListBulk:
 
         body = _staff_client().get("/django-admin/products/price-list/", {"q": "4600000000123"}).content.decode()
 
-        assert f'data-variant-id="{a.id}"' in body
+        assert f'data-sub-variant-id="{a.id}"' in body
         assert f'data-group-ids="{",".join(str(v.id) for v in sorted([a, b, c], key=lambda v: v.sku))}"' in body or "data-group-ids=" in body
         assert "wx-pl-sub is-match" in body or "is-match" in body.split(f'data-sub-variant-id="{b.id}"')[0][-200:]
 

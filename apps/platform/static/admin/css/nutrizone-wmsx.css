@@ -474,3 +474,16 @@ main.app-main:has(.nz-price-list) { overflow-x: clip !important; overflow-y: vis
   .wx-pl-size-set { width: 100%; } .wx-pl-size-set .wx-pl-input { max-width: none; flex: 1; }
   .wx-pl-bulk { bottom: 8px; padding: 10px; } .wx-pl-bulk-help { display: none; }
 }
+
+/* price list, per variant (2026-11-09): a product with several variants is a header line, every variant its own row */
+.wx-pl-head { background: color-mix(in srgb, var(--nz-surface-secondary) 55%, transparent); }
+.wx-pl-head .wx-prod b { font-weight: 800; }
+.wx-pl-sum { display: flex; flex-direction: column; align-items: flex-end; justify-content: center; gap: 2px; }
+.wx-pl-sum small { font-size: .66rem; color: var(--nz-text-muted); white-space: nowrap; }
+.wx-pl-range { color: #10b981; font-variant-numeric: tabular-nums; white-space: nowrap; font-size: .9rem; }
+.wx-pl-head.has-unpriced { box-shadow: inset 3px 0 0 #e11d48; }
+.wx-pl-group.is-multi > .wx-pl-variants { border-top: 1px dashed var(--nz-border); }
+.wx-pl-main { display: inline-block; margin-left: 6px; padding: 1px 7px; border-radius: 999px; font-size: .62rem; font-weight: 700; letter-spacing: .02em; text-transform: uppercase; vertical-align: 2px; color: #2563eb; background: color-mix(in srgb, #2563eb 12%, transparent); }
+@media (max-width: 640px) {
+  .wx-pl-range { font-size: .8rem; white-space: normal; text-align: right; }
+}

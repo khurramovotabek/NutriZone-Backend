@@ -9836,3 +9836,31 @@ msgstr "Bir martada juda ko'p variant (ko'pi bilan 500)."
 msgid "%(n)s variant"
 msgid_plural "%(n)s variants"
 msgstr[0] "%(n)s ta variant"
+
+msgid "Select every variant"
+msgstr "Barcha variantlarni belgilash"
+
+msgid "price range"
+msgstr "narx oralig'i"
+
+msgid "main"
+msgstr "asosiy"
+
+msgid "Shown first on the storefront"
+msgstr "Saytda birinchi ko'rsatiladi"
+
+msgid "Total stock of all variants"
+msgstr "Barcha variantlarning jami qoldig'i"
+
+msgid "%(n)s size"
+msgid_plural "%(n)s sizes"
+msgstr[0] "%(n)s o'lcham"
+msgstr[1] "%(n)s o'lcham"
+
+msgid "%(n)s discounted"
+msgid_plural "%(n)s discounted"
+msgstr[0] "%(n)s ta chegirmada"
+msgstr[1] "%(n)s ta chegirmada"
+
+msgid "Every variant has its own row: type a price and press Enter. Tick products or variants to change prices together; every flavour of one size can also be priced at once."
+msgstr "Har bir variant alohida qatorda: narxni yozib Enter bosing. Bir nechta narxni birdaniga o'zgartirish uchun mahsulot yoki variantlarni belgilang; bir o'lchamdagi barcha ta'mlarga bitta narx qo'yish ham mumkin."
