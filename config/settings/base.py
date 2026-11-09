@@ -30,6 +30,9 @@ SECRET_KEY = os.environ.get("SECRET_KEY", "")
 
 # OpenAPI schema + Swagger/ReDoc. On in development; production keeps the API map private unless explicitly
 # opened with API_DOCS_ENABLED=true (config/settings/production.py).
+# Shared secret our storefront server sends as X-Internal-Token: its calls skip the global anon/user throttle tiers
+# (core.ratelimit.throttles.is_trusted_server). At least 32 characters; empty = no bypass.
+INTERNAL_API_TOKEN = os.environ.get("INTERNAL_API_TOKEN", "")
 API_DOCS_ENABLED = os.environ.get("API_DOCS_ENABLED", "true").lower() == "true"
 if not SECRET_KEY:
     raise RuntimeError(
@@ -244,8 +247,8 @@ REST_FRAMEWORK = {
     "EXCEPTION_HANDLER": "common.exceptions.handlers.nutrizone_exception_handler",
     "DEFAULT_SCHEMA_CLASS": "drf_spectacular.openapi.AutoSchema",
     "DEFAULT_THROTTLE_CLASSES": [
-        "rest_framework.throttling.AnonRateThrottle",
-        "rest_framework.throttling.UserRateThrottle",
+        "core.ratelimit.throttles.AnonRateThrottle",
+        "core.ratelimit.throttles.UserRateThrottle",
     ],
     "DEFAULT_THROTTLE_RATES": {
         # Coarse global tiers (REST API Blueprint §18); endpoint-specific

@@ -9,6 +9,10 @@ duplicating rate-limit bookkeeping per view.
 """
 from __future__ import annotations
 
+import hmac
+
+from django.conf import settings
+from rest_framework import throttling
 from rest_framework.request import Request
 from rest_framework.throttling import BaseThrottle
 from rest_framework.views import APIView
@@ -65,3 +69,32 @@ class ScopedRateLimitThrottle(BaseThrottle):
         if self._last_result is None:
             return None
         return float(self._last_result.retry_after_seconds) or None
+
+
+def is_trusted_server(request) -> bool:
+    """
+    True for a call from our own storefront server (Next.js SSR, route handlers, sitemap), which sends the shared
+    `X-Internal-Token` (settings.INTERNAL_API_TOKEN). Every one of those calls reaches Django from the same address,
+    so the coarse per-IP tier below made the whole storefront share one 100/min budget: 4 867 responses of 429 in
+    the week to 2026-11-09 (catalogue pages, settings, the sitemap cut off at 1 000 of 1 185 products).
+    An empty or short token disables the bypass.
+    """
+    token = getattr(settings, "INTERNAL_API_TOKEN", "") or ""
+    if len(token) < 32:
+        return False
+    sent = request.META.get("HTTP_X_INTERNAL_TOKEN", "")
+    return bool(sent) and hmac.compare_digest(sent.encode(), token.encode())
+
+
+class AnonRateThrottle(throttling.AnonRateThrottle):
+    """DRF's global anonymous tier, skipped for our own storefront server (`is_trusted_server`)."""
+
+    def allow_request(self, request, view) -> bool:
+        return is_trusted_server(request) or super().allow_request(request, view)
+
+
+class UserRateThrottle(throttling.UserRateThrottle):
+    """DRF's global per-user tier, skipped for our own storefront server. Endpoint limits (login, OTP...) still apply."""
+
+    def allow_request(self, request, view) -> bool:
+        return is_trusted_server(request) or super().allow_request(request, view)
