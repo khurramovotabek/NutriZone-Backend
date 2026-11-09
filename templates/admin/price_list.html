@@ -1,7 +1,7 @@
 {% extends "admin/base_site.html" %}
 {% load i18n static %}
 {# Price list: pricing health KPIs, filters; one row per product (a single-variant product edits inline, a multi-variant one shows its price range and total stock with its variants in an expandable panel). Clicking a product name opens the variant editor: a variant select, price / old price / cost and the online warehouse count per variant (price_list_api_save, price_list_api_stock). #}
-{% block extrastyle %}{{ block.super }}<link rel="stylesheet" href="{% static 'admin/css/nutrizone-platform.css' %}?v=5"><link rel="stylesheet" href="{% static 'admin/css/nutrizone-orderdesk.css' %}?v=5"><link rel="stylesheet" href="{% static 'admin/css/nutrizone-wmsx.css' %}?v=17">{% endblock %}
+{% block extrastyle %}{{ block.super }}<link rel="stylesheet" href="{% static 'admin/css/nutrizone-platform.css' %}?v=5"><link rel="stylesheet" href="{% static 'admin/css/nutrizone-orderdesk.css' %}?v=5"><link rel="stylesheet" href="{% static 'admin/css/nutrizone-wmsx.css' %}?v=18">{% endblock %}
 {% block breadcrumbs %}<ol class="breadcrumb"><li class="breadcrumb-item"><a href="{% url 'admin:index' %}">{% translate "Home" %}</a></li><li class="breadcrumb-item">{% translate "Narxlash" %}</li><li class="breadcrumb-item active">{% translate "Narxlar ro'yxati" %}</li></ol>{% endblock %}
 {% block content_title %}{% endblock %}
 {% block content %}
@@ -287,6 +287,7 @@
     variants: "{{ _('variants')|escapejs }}", stockSaved: "{{ _('Stock saved')|escapejs }}", units: "{{ _('pcs')|escapejs }}", loadErr: "{{ _('Could not load the variants.')|escapejs }}" };
   var ve = document.getElementById("wx-ve"), veData = null;
   function esc(t) { return String(t == null ? "" : t).replace(/[&<>"]/g, function (c) { return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]; }); }
+  function clip(t, n) { t = String(t || ""); return t.length > n ? t.slice(0, n - 1) + "…" : t; }
   function n0(v) { return v == null || v === "" ? "" : String(Math.round(Number(v))); }
   function veCard(v) {
     var tags = (v.is_default ? '<span class="wx-pl-main">' + esc(VE.main) + "</span>" : "") + (v.status !== "active" ? '<span class="wx-ve-status">' + esc(v.status) + "</span>" : "");
@@ -339,7 +340,7 @@
       sizes.forEach(function (sz) {
         var vs = veData.variants.filter(function (v) { return v.size === sz; });
         opts += '<optgroup label="' + esc(sz || VE.noSize) + '">' + (sizes.length > 1 && vs.length > 1 ? '<option value="size:' + esc(sz) + '">' + esc((sz || VE.noSize) + " — " + VE.all.toLowerCase()) + "</option>" : "");
-        vs.forEach(function (v) { opts += '<option value="' + esc(v.id) + '">' + esc((v.flavour || v.size || v.sku) + " · " + (v.price ? money(v.price) : "—") + " · " + (v.stock || 0) + " " + VE.units) + "</option>"; });
+        vs.forEach(function (v) { opts += '<option value="' + esc(v.id) + '">' + esc(clip(v.flavour || v.size || v.sku, 48) + " · " + (v.price ? money(v.price) : "—") + " · " + (v.stock || 0) + " " + VE.units) + "</option>"; });
         opts += "</optgroup>";
       });
       sel.innerHTML = opts; sel.value = "";
