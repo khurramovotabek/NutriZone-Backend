@@ -78,3 +78,18 @@ class TestCategoryImageUrl:
         response = client.get("/api/v1/categories/tree")
         matching = next(c for c in response.json()["data"] if c["name"] == "No Image Category")
         assert matching["image_url"] is None
+
+
+class TestManufacturerBrandsWithProducts:
+    def _brand(self, name, manufacturer):
+        brand = p_models.Brand.objects.create(id=uuid.uuid4(), is_active=True, is_manufacturer=manufacturer)
+        p_models.BrandTranslation.objects.create(id=uuid.uuid4(), brand=brand, locale_code="en", name=name, slug=f"m-{uuid.uuid4().hex[:8]}")
+        return brand
+
+    def test_manufacturer_brand_with_published_products_is_listed(self):
+        maker = self._brand("Maker With Products", True)
+        p_models.Product.objects.create(id=uuid.uuid4(), status="published", brand=maker)
+        self._brand("Bare Manufacturer", True)
+        names = {b["name"]: b["product_count"] for b in Client().get("/api/v1/brands").json()["data"]}
+        assert names.get("Maker With Products") == 1
+        assert "Bare Manufacturer" not in names

@@ -315,9 +315,12 @@ class BrandSelector:
         """`locale` optional, defaults to this method's exact prior behavior (`_DEFAULT_LOCALE`) -- added only for `apps.telegram_bot`'s own locale-aware brand listing; the public `GET /brands` REST view still calls this with no locale, unaffected."""
         from django.conf import settings
 
-        rows = orm.Brand.objects.filter(is_active=True, is_manufacturer=False).select_related("country").prefetch_related("translations", "country__translations").annotate(
+        # A brand flagged "manufacturer" (it makes its own products) is still the brand shoppers see on
+        # those products -- hiding it left them without a brand page, filter or card label. Manufacturer
+        # rows that no published product names as its brand stay out of the storefront list.
+        rows = orm.Brand.objects.filter(is_active=True).select_related("country").prefetch_related("translations", "country__translations").annotate(
             published_count=Count("products", filter=Q(products__status=ProductStatus.PUBLISHED.value, products__deleted_at__isnull=True), distinct=True)
-        )
+        ).filter(Q(is_manufacturer=False) | Q(published_count__gt=0))
         result = []
         for r in rows:
             logo_url = None
