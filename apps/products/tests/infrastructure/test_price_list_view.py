@@ -103,8 +103,9 @@ class TestPriceListViewGroupedByProduct:
         response = _staff_client().get("/django-admin/products/price-list/", {"q": "Default Price Product"})
 
         body = response.content.decode()
-        default_row = body.split(f'data-sub-variant-id="{default_variant.id}"')[1].split('role="row"')[0]
-        other_row = body.split(f'data-sub-variant-id="{other_variant.id}"')[1].split('role="row"')[0]
+        # one variant row runs up to its action links (the page's script, further down, also mentions "wx-pl-main")
+        default_row = body.split(f'data-sub-variant-id="{default_variant.id}"')[1].split('class="wx-row-actions"')[0]
+        other_row = body.split(f'data-sub-variant-id="{other_variant.id}"')[1].split('class="wx-row-actions"')[0]
         assert 'value="500000"' in default_row and 'value="300000"' not in default_row
         assert 'value="300000"' in other_row
         assert "wx-pl-main" in default_row and "wx-pl-main" not in other_row

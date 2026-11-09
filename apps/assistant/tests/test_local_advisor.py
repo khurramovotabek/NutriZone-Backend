@@ -67,7 +67,20 @@ class TestAnswers:
 
     def test_faq_and_greeting(self):
         assert "Assalomu" in answer({}, "salom", "uz")[0]
-        assert "Доставка" in answer({}, "как доставка?", "ru")[0]
+        assert "доставк" in answer({}, "как доставка?", "ru")[0].lower()
+
+    def test_delivery_price_question_gets_the_real_tariff(self):
+        # "qancha turadi" used to reach the price handler and list protein tubs; the dashboard tariff answers it
+        from apps.ordering.infrastructure.models import DeliverySettings
+
+        cfg = DeliverySettings.load()
+        cfg.tashkent_min_fee, cfg.tashkent_fee, cfg.regions_fee = 15000, 30000, 30000
+        cfg.save()
+        self._product("Zorvex Whey Protein", 450000)
+        reply, ids, _chips, meta = answer({}, "yetkazib berish qancha turadi", "uz")
+        assert ids == [] and meta["last"] == "faq_delivery"
+        assert "15 000 – 30 000 so'm" in reply and "Viloyatlar" in reply and "bepul" in reply
+        assert "30 000" in answer({}, "сколько стоит доставка в Самарканд", "ru")[0]
 
     def test_votes_teach_the_ranking(self):
         from apps.assistant.infrastructure.advisor.reco import learned_scores, record_feedback, record_shown
@@ -117,3 +130,15 @@ class TestAccountProfile:
 def test_status_is_enabled_without_a_key(client, settings):
     settings.ANTHROPIC_API_KEY = ""
     assert client.get("/api/v1/assistant/status").json()["data"]["enabled"] is True
+
+
+@pytest.mark.django_db
+def test_taught_entry_found_through_synonyms():
+    from apps.assistant.infrastructure import knowledge
+    from apps.assistant.infrastructure.models import KnowledgeEntry
+
+    KnowledgeEntry.objects.create(title="Ayollar uchun protein", questions="ayollar uchun protein bormi", keywords="ayol, protein",
+                                  answer_uz="Ha", answer_ru="Да", answer_en="Yes", is_active=True)
+    for q in ("qizlar uchun protein bormi", "протеин для девушек", "protein for women"):
+        hits = knowledge.search(q)
+        assert hits and hits[0].entry.title == "Ayollar uchun protein", q

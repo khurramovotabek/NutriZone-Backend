@@ -30,6 +30,9 @@ explicit. Only the requested page is turned into full product cards.
 """
 from __future__ import annotations
 
+import copy
+import threading
+import time
 import uuid
 from dataclasses import dataclass, field
 from decimal import Decimal, InvalidOperation
@@ -131,7 +134,36 @@ def _parse_decimal(raw) -> Decimal | None:
         return None
 
 
+_CANDIDATES: dict = {}  # locale -> (expires_at, {product_id: Candidate}) -- this process's copy of the whole catalogue
+_CANDIDATES_LOCK = threading.Lock()
+
+
 def _load_candidates(product_ids: list | None, locale: str) -> dict:
+    """
+    The candidates for one browse: every published product (or `product_ids`), as copies -- browse() writes `rank`.
+    Loading the whole catalogue took ~0.5 s and every catalogue page, search and advisor answer did it, several
+    times per advisor answer; it is now built at most once per CATALOG_CANDIDATES_TTL seconds per process (0 = never
+    cached, as in tests). Prices, stock and popularity may lag by that long -- the storefront caches pages for 60 s anyway.
+    """
+    from django.conf import settings
+
+    ttl = getattr(settings, "CATALOG_CANDIDATES_TTL", 30)
+    if not ttl:
+        return _build_candidates(product_ids, locale)
+    now = time.monotonic()
+    cached = _CANDIDATES.get(locale)
+    if cached is None or cached[0] < now:
+        with _CANDIDATES_LOCK:
+            cached = _CANDIDATES.get(locale)
+            if cached is None or cached[0] < now:
+                cached = (now + ttl, _build_candidates(None, locale))
+                _CANDIDATES[locale] = cached
+    base = cached[1]
+    keys = base.keys() if product_ids is None else (pid for pid in product_ids if pid in base)
+    return {pid: copy.copy(base[pid]) for pid in keys}
+
+
+def _build_candidates(product_ids: list | None, locale: str) -> dict:
     """All attributes needed to filter, count and sort -- bulk, for every candidate."""
     from apps.products.infrastructure.selectors import _bulk_default_variant_prices, _bulk_rating_summary
     from apps.products.infrastructure.smart_search import _units_sold_by_product
@@ -282,7 +314,7 @@ def _sort(rows: list, sort: str) -> list:
 def _facets(candidates: list, preds: dict, locale: str) -> dict:
     from apps.products.infrastructure.goals import GOALS
     from apps.products.infrastructure.goals import label as goal_label
-    from apps.products.infrastructure.selectors import _flavour_summary, _translated_name
+    from apps.products.infrastructure.selectors import _flavour_summary
 
     def pool(dim):
         return [c for c in candidates if _passes(c, preds, skip=dim)]
@@ -319,7 +351,7 @@ def _facets(candidates: list, preds: dict, locale: str) -> dict:
     categories = orm.Category.objects.filter(id__in=category_counts).prefetch_related("translations")
     flavours = orm.Flavour.objects.filter(id__in=flavour_counts, is_active=True).prefetch_related("translations").order_by("sort_order")
     return {
-        "brand": sorted(({"id": str(b.id), "name": _translated_name(b), "count": brand_counts[b.id]} for b in brands), key=lambda x: (-x["count"], x["name"])),
+        "brand": sorted(({"id": str(b.id), "name": _brand_name(b), "count": brand_counts[b.id]} for b in brands), key=lambda x: (-x["count"], x["name"])),
         "category": sorted(({"id": str(c.id), "name": _category_name(c, locale), "count": category_counts[c.id]} for c in categories), key=lambda x: (-x["count"], x["name"])),
         "flavour": [{**_flavour_summary(f, locale), "count": flavour_counts[f.id]} for f in flavours],
         "size": [{"id": s, "count": n} for s, n in sorted(size_counts.items(), key=lambda kv: (_grams(kv[0]), kv[0]))],
@@ -330,6 +362,13 @@ def _facets(candidates: list, preds: dict, locale: str) -> dict:
         "in_stock_count": sum(1 for c in pool("availability") if c.stock > 0),
         "on_sale_count": sum(1 for c in pool("sale") if c.discount > 0),
     }
+
+
+def _brand_name(brand) -> str:
+    """The default-locale brand name from the prefetched translations (selectors._translated_name queries per brand)."""
+    from apps.products.infrastructure.selectors import _DEFAULT_LOCALE
+
+    return next((t.name for t in brand.translations.all() if t.locale_code == _DEFAULT_LOCALE), "")
 
 
 def _category_name(category, locale: str) -> str:

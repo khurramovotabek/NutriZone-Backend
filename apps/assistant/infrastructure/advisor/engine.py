@@ -200,6 +200,10 @@ def _answer(conv_meta: dict, text: str, loc: str) -> tuple[str, list[str], list[
         unsure = {"uz": "Bu haqida menda aniq ma'lumot yo'q — xodimlarimiz aniq aytib berishadi.", "ru": "Точной информации об этом у меня нет — сотрудники подскажут.",
                   "en": "I don't have exact information on that — our team will tell you."}[loc]
         return f"{unsure}\n\n" + kb.T["operator"][loc].format(contacts=kb.contacts(loc)), [], CHIPS["faq"][loc], meta
+    if p.intent == "faq_delivery" and not p.concept and not brain.understand(text).brands:
+        # "yetkazib berish qancha turadi" -- the real tariff from the dashboard, before the price handler lists tubs
+        meta["last"] = "faq_delivery"
+        return kb.delivery_text(loc), [], CHIPS["faq"][loc], meta
     about = catalog.respond(meta, text, loc)  # what the catalogue says about one product, a brand or a category
     if about is not None:
         meta["last"] = "catalog"
@@ -241,6 +245,9 @@ def _answer(conv_meta: dict, text: str, loc: str) -> tuple[str, list[str], list[
         meta["last"] = "knowledge"
         ids = _kind_ids(p.concept, loc)
         return taught[0].entry.answer(loc), ids, (CHIPS["after_reco"] if ids else CHIPS["faq"])[loc], meta
+    if p.intent == "faq_delivery":
+        meta["last"] = p.intent
+        return kb.delivery_text(loc), [], CHIPS["faq"][loc], meta
     if p.intent in kb.FAQ:
         meta["last"] = p.intent
         return kb.FAQ[p.intent][loc], [], CHIPS["faq"][loc], meta

@@ -122,3 +122,4 @@ NUTRIZONE_TELEGRAM_GATEWAY = "disabled"
 # local port: refused instantly instead of a slow 401 round trip to Telegram that, with parallel workers, timed out
 # mid-flow and broke the conversation (lost checkout / chat / filter state, missing orders) at random.
 TELEGRAM_API_BASE_URL = "http://127.0.0.1:9"
+CATALOG_CANDIDATES_TTL = 0  # catalogue candidates are rebuilt on every browse: tests create products and search right away

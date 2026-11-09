@@ -44,8 +44,27 @@ def _norm(text: str) -> str:
     return _VIT_BARE.sub(lambda m: _vit_token(m.group(1)[0], m.group(1)[1:]), t)
 
 
+# words that mean the same to a shopper, folded to one stem so a taught entry worded one way answers the others
+# ("qizlar uchun protein" finds "Ayollar uchun protein"; "похудение" finds "ozish")
+_SAME = {
+    "ayol": ("ayol", "ayoll", "qiz", "qizla", "qizga", "qizim", "женщи", "девуш", "девоч", "аёл", "аёлла", "қиз", "қизла", "woman", "women", "girl", "girls", "femal", "ladie", "lady"),
+    "erkak": ("erkak", "erkal", "yigit", "мужчи", "парен", "парня", "парни", "эркак", "йигит", "man", "men", "male", "guy", "guys"),
+    "ozish": ("ozish", "ozmoq", "ozay", "ozgan", "ozdir", "похуд", "худет", "сброс", "сушка", "озиш", "slim", "fatlo", "cut", "cutti"),
+    "massa": ("massa", "masa", "массу", "масса", "набор", "набра", "bulk", "bulki", "gaine", "гейне", "geyne", "geine"),
+    "narx": ("narx", "narxi", "narxl", "цена", "цену", "стоим", "стоит", "price", "cost", "costs"),
+    "bola": ("bola", "bolal", "bolag", "детей", "детск", "ребен", "ребён", "kid", "kids", "child", "болал", "бола"),
+}
+_SAME_STEM = {alias: canon for canon, aliases in _SAME.items() for alias in aliases}
+
+
 def _stems(text: str) -> set:
-    return {w[:6] if w.startswith("vit") and len(w) <= 6 else w[:5] for w in _WORD.findall(_norm(text)) if w not in STOP and len(w) > 1}
+    out = set()
+    for w in _WORD.findall(_norm(text)):
+        if w in STOP or len(w) <= 1:
+            continue
+        stem = w[:6] if w.startswith("vit") and len(w) <= 6 else w[:5]
+        out.add(_SAME_STEM.get(stem, _SAME_STEM.get(w, stem)))
+    return out
 
 
 @dataclass

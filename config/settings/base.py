@@ -33,6 +33,8 @@ SECRET_KEY = os.environ.get("SECRET_KEY", "")
 # Shared secret our storefront server sends as X-Internal-Token: its calls skip the global anon/user throttle tiers
 # (core.ratelimit.throttles.is_trusted_server). At least 32 characters; empty = no bypass.
 INTERNAL_API_TOKEN = os.environ.get("INTERNAL_API_TOKEN", "")
+# Seconds one process reuses the catalogue candidates of catalog_browse (search, catalogue pages, advisor); 0 = off.
+CATALOG_CANDIDATES_TTL = int(os.environ.get("CATALOG_CANDIDATES_TTL", "30"))
 API_DOCS_ENABLED = os.environ.get("API_DOCS_ENABLED", "true").lower() == "true"
 if not SECRET_KEY:
     raise RuntimeError(

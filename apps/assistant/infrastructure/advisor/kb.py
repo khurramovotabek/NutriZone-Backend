@@ -189,6 +189,44 @@ def payment_text(locale: str) -> str:
     return head + "\n" + "\n".join(f"• {x}" for x in items) + "\n\n" + coins
 
 
+def delivery_text(locale: str) -> str:
+    """The real delivery prices from the dashboard (Buyurtmalar -> Yetkazib berish narxlari), not a generic text:
+    Tashkent city "up to" the cap by Yandex, the regions "from" the base price by BTS, pickup free."""
+    from decimal import Decimal
+
+    from apps.ordering.infrastructure import delivery_pricing
+
+    try:
+        o = delivery_pricing.public_options(locale)
+    except Exception:  # pragma: no cover -- never let a pricing hiccup break the chat
+        return FAQ["faq_delivery"][locale]
+
+    def money(v) -> str:
+        return f"{int(Decimal(v or 0)):,}".replace(",", " ")
+
+    som = {"uz": "so'm", "ru": "сум", "en": "UZS"}[locale]
+    tz, rg = o["zones"].get(delivery_pricing.TASHKENT, {}), o["zones"].get(delivery_pricing.REGIONS, {})
+    head = {"uz": "🚚 **Yetkazib berish narxlari**", "ru": "🚚 **Стоимость доставки**", "en": "🚚 **Delivery prices**"}[locale]
+    lines = []
+    if tz:
+        lines.append({"uz": f"• **Toshkent shahri** ({tz.get('carrier')}): {money(tz.get('min_fee'))} – {money(tz.get('fee'))} {som}, masofaga qarab. {tz.get('eta') or ''}",
+                      "ru": f"• **Ташкент** ({tz.get('carrier')}): {money(tz.get('min_fee'))} – {money(tz.get('fee'))} {som}, по расстоянию. {tz.get('eta') or ''}",
+                      "en": f"• **Tashkent city** ({tz.get('carrier')}): {money(tz.get('min_fee'))} – {money(tz.get('fee'))} {som} by distance. {tz.get('eta') or ''}"}[locale].strip())
+    if rg:
+        lines.append({"uz": f"• **Viloyatlar** ({rg.get('carrier')}): {money(rg.get('fee'))} {som}dan ({rg.get('base_kg')} kg gacha), har qo'shimcha kg +{money(rg.get('extra_per_kg'))} {som}. {rg.get('eta') or ''}",
+                      "ru": f"• **Регионы** ({rg.get('carrier')}): от {money(rg.get('fee'))} {som} (до {rg.get('base_kg')} кг), каждый доп. кг +{money(rg.get('extra_per_kg'))} {som}. {rg.get('eta') or ''}",
+                      "en": f"• **Regions** ({rg.get('carrier')}): from {money(rg.get('fee'))} {som} (up to {rg.get('base_kg')} kg), +{money(rg.get('extra_per_kg'))} {som} per extra kg. {rg.get('eta') or ''}"}[locale].strip())
+    lines.append({"uz": "• **Do'kondan olib ketish** — bepul.", "ru": "• **Самовывоз из магазина** — бесплатно.", "en": "• **In-store pickup** — free."}[locale])
+    if o.get("free_from"):
+        lines.append({"uz": f"🎁 {money(o['free_from'])} {som}dan ortiq buyurtmalar — bepul yetkaziladi.",
+                      "ru": f"🎁 Заказы от {money(o['free_from'])} {som} — доставка бесплатно.",
+                      "en": f"🎁 Orders over {money(o['free_from'])} {som} ship free."}[locale])
+    tail = {"uz": "Aniq narx manzilni xaritada belgilaganingizda rasmiylashtirishda ko'rsatiladi.",
+            "ru": "Точная сумма показывается при оформлении, когда отметите адрес на карте.",
+            "en": "The exact fee is shown at checkout once you pin your address on the map."}[locale]
+    return f"{head}\n" + "\n".join(lines) + f"\n\n{tail}"
+
+
 def loyalty_text(locale: str) -> str:
     from apps.loyalty.infrastructure.models import LoyaltyTier
 
