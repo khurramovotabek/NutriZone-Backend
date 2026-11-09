@@ -163,3 +163,26 @@ class TestProductVariantMediaUpload:
         rows = list(p_models.ProductMedia.objects.filter(product=product).values_list("media_role", "variant_id"))
         assert ("primary", None) in rows
         assert ("primary", variant.id) in rows
+
+    def test_full_variant_shows_message_instead_of_500(self, staff_client):
+        from django.contrib.contenttypes.models import ContentType
+
+        ContentType.objects.clear_cache()
+        product = p_models.Product.objects.create(id=uuid.uuid4(), status="draft")
+        variant = p_models.ProductVariant.objects.create(id=uuid.uuid4(), product=product, sku="VAR-FULL-1")
+        for i in range(6):
+            p_models.ProductMedia.objects.create(id=uuid.uuid4(), product=product, variant=variant, media_role="gallery", sort_order=i, storage_path=f"products/x{i}.jpg")
+        data = {
+            "status": "draft",
+            "translations-TOTAL_FORMS": "0", "translations-INITIAL_FORMS": "0", "translations-MIN_NUM_FORMS": "0", "translations-MAX_NUM_FORMS": "1000",
+            "variants-TOTAL_FORMS": "0", "variants-INITIAL_FORMS": "0", "variants-MIN_NUM_FORMS": "0", "variants-MAX_NUM_FORMS": "1000",
+            "variants-2-TOTAL_FORMS": "0", "variants-2-INITIAL_FORMS": "0", "variants-2-MIN_NUM_FORMS": "0", "variants-2-MAX_NUM_FORMS": "1000",
+            "flavour_links-TOTAL_FORMS": "0", "flavour_links-INITIAL_FORMS": "0", "flavour_links-MIN_NUM_FORMS": "0", "flavour_links-MAX_NUM_FORMS": "1000",
+            "media-TOTAL_FORMS": "1", "media-INITIAL_FORMS": "0", "media-MIN_NUM_FORMS": "0", "media-MAX_NUM_FORMS": "80",
+            "media-0-media_role": "primary", "media-0-sort_order": "0", "media-0-variant": str(variant.id),
+            "media-0-file_upload": SimpleUploadedFile("seventh.jpg", _real_test_image_bytes(), content_type="image/jpeg"),
+        }
+        response = staff_client.post(f"/django-admin/products/product/{product.id}/change/", data=data, follow=True)
+        assert response.status_code == 200
+        assert "seventh.jpg" in response.content.decode()
+        assert p_models.ProductMedia.objects.filter(variant=variant).count() == 6

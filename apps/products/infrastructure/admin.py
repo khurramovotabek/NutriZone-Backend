@@ -13,7 +13,7 @@ from decimal import Decimal
 
 from django import forms
 from django.conf import settings
-from django.contrib import admin
+from django.contrib import admin, messages
 from django.utils.html import format_html, mark_safe
 from django.utils.translation import gettext_lazy as _
 
@@ -26,6 +26,7 @@ from apps.products.application.services.lifecycle import (
     PublishProduct,
     RestoreProduct,
 )
+from apps.products.domain.exceptions import MediaLimitExceeded
 from apps.products.infrastructure import models as orm
 from apps.products.infrastructure.catalog_form_ui import (
     CatalogFormMixin,
@@ -996,10 +997,13 @@ class ProductAdmin(ExcelExportMixin, CatalogFormMixin, CatalogAnalyticsMixin, ad
             uploaded = matching_form.cleaned_data.get("file_upload")
             if uploaded:
                 content = uploaded.read()
-                if instance.media_role == "video":
-                    build_upload_video().execute(product_id=form.instance.id, filename=uploaded.name, content=content, mime_type=uploaded.content_type, duration_seconds=instance.duration_seconds or 0, variant_id=instance.variant_id)
-                else:
-                    build_upload_image().execute(product_id=form.instance.id, filename=uploaded.name, content=content, mime_type=uploaded.content_type, media_role=instance.media_role, variant_id=instance.variant_id)
+                try:
+                    if instance.media_role == "video":
+                        build_upload_video().execute(product_id=form.instance.id, filename=uploaded.name, content=content, mime_type=uploaded.content_type, duration_seconds=instance.duration_seconds or 0, variant_id=instance.variant_id)
+                    else:
+                        build_upload_image().execute(product_id=form.instance.id, filename=uploaded.name, content=content, mime_type=uploaded.content_type, media_role=instance.media_role, variant_id=instance.variant_id)
+                except MediaLimitExceeded:
+                    messages.error(request, _("\"%(name)s\" yuklanmadi: rasm limiti to'lgan (mahsulotga 12 ta, har bir variantga 6 ta). Avval eskisini o'chiring.") % {"name": uploaded.name})
                 # The Application Service above already persisted the real ProductMedia via the domain repository -- this ORM instance (created only because the inline form required a value) must not also be saved, or a duplicate/invalid row would result.
             else:
                 instance.save()
