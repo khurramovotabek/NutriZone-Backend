@@ -10083,3 +10083,42 @@ msgstr[3] "%(n)s со скидкой"
 
 msgid "Every variant has its own row: type a price and press Enter. Tick products or variants to change prices together; every flavour of one size can also be priced at once."
 msgstr "У каждого варианта своя строка: введите цену и нажмите Enter. Отметьте товары или варианты, чтобы изменить цены вместе; всем вкусам одного размера можно задать одну цену сразу."
+
+msgid "Margin"
+msgstr "Маржа"
+
+msgid "variants"
+msgstr "вариантов"
+
+msgid "All variants"
+msgstr "Все варианты"
+
+msgid "Edit prices and stock of every variant"
+msgstr "Изменить цены и остатки всех вариантов"
+
+msgid "Click a product name to edit the price and stock of each variant. Tick products to change prices together."
+msgstr "Нажмите на название товара, чтобы изменить цену и остаток каждого варианта. Отметьте товары, чтобы изменить цены вместе."
+
+msgid "Enter saves the variant, Esc closes."
+msgstr "Enter — сохранить вариант, Esc — закрыть."
+
+msgid "Online warehouse"
+msgstr "Онлайн-склад"
+
+msgid "Sellable everywhere"
+msgstr "Всего в продаже"
+
+msgid "Stock saved"
+msgstr "Остаток сохранён"
+
+msgid "Could not load the variants."
+msgstr "Не удалось загрузить варианты."
+
+msgid "Enter a whole number of units."
+msgstr "Введите целое число штук."
+
+msgid "There is no active online warehouse."
+msgstr "Нет активного онлайн-склада."
+
+msgid "{n} units are reserved for open orders -- the count cannot be lower."
+msgstr "{n} шт. зарезервировано под открытые заказы — остаток не может быть меньше."

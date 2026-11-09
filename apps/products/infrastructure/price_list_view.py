@@ -478,7 +478,7 @@ def _attach_other_variants(rows: list, page_products, default_variant_by_product
             # one variant: the product row itself is the editable row
             r["variants"], r["size_groups"], r["open"] = [], [], False
             continue
-        r["open"] = True  # the price list is read and edited per variant -- every variant is visible from the start
+        r["open"] = any(v["matched"] for v in r["variants"])  # a variant found by SKU / barcode opens its product
         for v in r["variants"]:
             # inside a size header the flavour names the row; without headers the row needs size and flavour
             v["label"] = (v["flavour"] or v["size"] or v["sku"]) if r["grouped"] else (" · ".join(x for x in (v["size"], v["flavour"]) if x) or v["sku"])
@@ -855,39 +855,115 @@ def price_list_api_save(request, variant_id: str):
 
 @staff_member_required
 def price_list_api_product(request, product_id: str):
-    """Every variant of one product with its prices, last purchase cost and stock -- the product list's quick price editor."""
-    from django.db.models import Sum
-
+    """
+    Every variant of one product -- size, flavour, prices, last purchase cost, sellable stock across all locations and
+    the online warehouse's own count -- for the price list's variant editor (and the product list's quick editor).
+    """
     from apps.pricing.infrastructure.models import PriceListEntryModel
     from apps.products.infrastructure.admin import _display_name
+    from apps.products.infrastructure.variant_labels import size_text
     from apps.stores.infrastructure.models import StoreProductStock
+    from apps.stores.infrastructure.online_fulfilment import fulfilment_store
     from apps.stores.infrastructure.warehouse_admin import _last_costs
 
     pid = _uuid(product_id)
     product = orm.Product.objects.filter(id=pid).prefetch_related("translations").first() if pid else None
     if product is None:
         return _err("Product not found.", status=404)
-    variants = list(orm.ProductVariant.objects.filter(product_id=pid).select_related("package").order_by("created_at"))
+    variants = list(orm.ProductVariant.objects.filter(product_id=pid).select_related("package", "flavour").prefetch_related("flavour__translations"))
+    scale = {"kg": 1000, "l": 1000}
+    flavours = _bulk_flavor_names(variants)
+    variants.sort(key=lambda v: (float(v.weight_value or 0) * scale.get(v.weight_unit or "", 1), (flavours.get(v.id) or "").lower(), v.created_at))
     ids = [v.id for v in variants]
     entries = {e.product_variant_id: e for e in PriceListEntryModel.objects.filter(product_variant_id__in=ids, price_list__status="active")}
-    stock = dict(StoreProductStock.objects.filter(product_variant_id__in=ids).values("product_variant_id").annotate(n=Sum("quantity")).values_list("product_variant_id", "n"))
+    sellable = _bulk_stock_by_variant(ids)
+    store = fulfilment_store()
+    online = {}
+    if store is not None:
+        online = {r[0]: (r[1], r[2]) for r in StoreProductStock.objects.filter(store=store, product_variant_id__in=ids).values_list("product_variant_id", "quantity", "reserved_quantity")}
     last = _last_costs(ids)
-    flavours = _bulk_flavor_names(variants)
 
     def s(x):
         return str(x) if x is not None else None
 
+    out = []
+    for v in variants:
+        size = size_text(v.weight_value, v.weight_unit or "") or ""
+        e = entries.get(v.id)
+        on_hand, reserved = online.get(v.id, (0, 0))
+        info = sellable.get(v.id)
+        out.append({
+            "id": str(v.id), "sku": v.sku, "status": v.status, "barcode": getattr(v, "barcode", None) or "",
+            "size": size, "flavour": flavours.get(v.id, "") or "", "is_default": bool(getattr(v, "is_default", False)),
+            "label": " · ".join(x for x in (size, str(v.package) if v.package_id else "", flavours.get(v.id, "")) if x) or v.sku,
+            "cost": s(e.cost_price_amount) if e else None,
+            "price": s(e.base_price_amount) if e else None,
+            "old_price": s(e.compare_at_price_amount) if e else None,
+            "last_cost": s(last.get(v.id)),
+            "stock": info["quantity"] if info else 0,
+            "online_stock": on_hand, "online_reserved": reserved,
+        })
     return JsonResponse({"success": True, "data": {
         "id": str(product.id), "name": _display_name(product.translations.all(), product.id),
-        "variants": [{
-            "id": str(v.id), "sku": v.sku, "status": v.status, "barcode": getattr(v, "barcode", None),
-            "label": " · ".join(x for x in (_variant_size(v), str(v.package) if v.package_id else "", flavours.get(v.id, "")) if x) or v.sku,
-            "cost": s(entries[v.id].cost_price_amount) if v.id in entries else None,
-            "price": s(entries[v.id].base_price_amount) if v.id in entries else None,
-            "old_price": s(entries[v.id].compare_at_price_amount) if v.id in entries else None,
-            "last_cost": s(last.get(v.id)), "stock": stock.get(v.id, 0),
-        } for v in variants],
+        "online_store": store.name if store else None,
+        "variants": out,
     }})
+
+
+@staff_member_required
+@require_POST
+def price_list_api_stock(request, variant_id: str):
+    """
+    Sets the online warehouse's (fulfilment_store) on-hand count of one variant to `quantity`: the difference is one
+    ADJUSTMENT movement in the stock ledger (stock_service.move), never a direct write. It cannot go below the units
+    reserved for open orders. Returns the new count and the variant's sellable stock across all locations.
+    """
+    import json
+
+    from django.db import transaction
+
+    from apps.stores.infrastructure import stock_service
+    from apps.stores.infrastructure.models import StockMovementType, StoreProductStock
+    from apps.stores.infrastructure.online_fulfilment import fulfilment_store
+
+    vid = _uuid(variant_id)
+    if vid is None or not orm.ProductVariant.objects.filter(id=vid).exists():
+        return _err("Variant not found.", status=404)
+    try:
+        body = json.loads(request.body or "{}")
+        target = int(str(body.get("quantity", "")).strip())
+    except (json.JSONDecodeError, ValueError, TypeError):
+        return _err(str(_("Enter a whole number of units.")))
+    if target < 0 or target > 1_000_000:
+        return _err(str(_("Enter a whole number of units.")))
+    store = fulfilment_store()
+    if store is None:
+        return _err(str(_("There is no active online warehouse.")), status=409)
+    actor = request.user.get_full_name() or request.user.get_username()
+    try:
+        with transaction.atomic():
+            row = StoreProductStock.objects.select_for_update().filter(store=store, product_variant_id=vid).first()
+            current, reserved = (row.quantity, row.reserved_quantity) if row else (0, 0)
+            if target < reserved:
+                return _err(str(_("{n} units are reserved for open orders -- the count cannot be lower.")).replace("{n}", str(reserved)), status=409)
+            if target != current:
+                stock_service.move(store, vid, target - current, StockMovementType.ADJUSTMENT, reference="PRICE-LIST", actor=actor,
+                                   note=f"Narxlar ro'yxati: {current} -> {target}"[:255])
+    except Exception as exc:  # noqa: BLE001 -- the ledger refuses impossible counts (conflict); never a 500 page
+        return _err(str(exc) or "Could not save the stock.", status=409)
+    _bump_product_cache()
+    info = _bulk_stock_by_variant([vid]).get(vid)
+    return JsonResponse({"success": True, "data": {"online_stock": target, "online_reserved": reserved, "stock": info["quantity"] if info else 0}})
+
+
+def _bump_product_cache() -> None:
+    """Storefront product payloads (availability) are cached per version -- a stock change must show up at once."""
+    try:
+        from core.caching import CacheDomain, CacheKeyBuilder
+
+        CacheKeyBuilder(domain=CacheDomain.PRODUCT).bump_version()
+    except Exception:  # noqa: BLE001 -- cache trouble never fails the save
+        pass
 
 
 _BULK_OPS = {"set", "pct", "discount", "clear_discount"}

@@ -1,13 +1,13 @@
 {% extends "admin/base_site.html" %}
 {% load i18n static %}
-{# Price list: pricing health KPIs, filters; a single-variant product is one editable row, a product with several variants is a header (price range, total stock) followed by one editable row per variant, grouped by size; inline cost / price / old price, margin, discount, stock; price history. Saves via price_list_api_save (SetPrice). #}
-{% block extrastyle %}{{ block.super }}<link rel="stylesheet" href="{% static 'admin/css/nutrizone-platform.css' %}?v=5"><link rel="stylesheet" href="{% static 'admin/css/nutrizone-orderdesk.css' %}?v=5"><link rel="stylesheet" href="{% static 'admin/css/nutrizone-wmsx.css' %}?v=16">{% endblock %}
+{# Price list: pricing health KPIs, filters; one row per product (a single-variant product edits inline, a multi-variant one shows its price range and total stock with its variants in an expandable panel). Clicking a product name opens the variant editor: a variant select, price / old price / cost and the online warehouse count per variant (price_list_api_save, price_list_api_stock). #}
+{% block extrastyle %}{{ block.super }}<link rel="stylesheet" href="{% static 'admin/css/nutrizone-platform.css' %}?v=5"><link rel="stylesheet" href="{% static 'admin/css/nutrizone-orderdesk.css' %}?v=5"><link rel="stylesheet" href="{% static 'admin/css/nutrizone-wmsx.css' %}?v=17">{% endblock %}
 {% block breadcrumbs %}<ol class="breadcrumb"><li class="breadcrumb-item"><a href="{% url 'admin:index' %}">{% translate "Home" %}</a></li><li class="breadcrumb-item">{% translate "Narxlash" %}</li><li class="breadcrumb-item active">{% translate "Narxlar ro'yxati" %}</li></ol>{% endblock %}
 {% block content_title %}{% endblock %}
 {% block content %}
-<div class="nzp nzd wx nz-price-list" id="wx-prices" data-bulk-url="{{ bulk_url }}" data-save="/django-admin/products/price-list/api/save/" data-history="/django-admin/products/price-list/api/history/">
+<div class="nzp nzd wx nz-price-list" id="wx-prices" data-bulk-url="{{ bulk_url }}" data-product="/django-admin/products/price-list/api/product/" data-stock="/django-admin/products/price-list/api/stock/" data-save="/django-admin/products/price-list/api/save/" data-history="/django-admin/products/price-list/api/history/">
   <header class="nzp-hero">
-    <div class="nzp-hero-main">
+    <div class="nzp-hero-main" data-online-label="{% translate 'Online warehouse' %}">
       <span class="nzp-hero-icon" style="--c:#10b981"><i class="fas fa-tags" aria-hidden="true"></i></span>
       <div><h2>{% translate "Narxlar ro'yxati" %}</h2><p>{% translate "Selling price, old (crossed-out) price and cost of every product in one place. Type and press Enter -- the price is saved and recorded in the price history." %}</p></div>
     </div>
@@ -43,8 +43,8 @@
   {% if active_filters %}<div class="wx-type-chips">{% for chip in active_filters %}<a href="{{ chip.remove_url }}" class="on" style="--t:#2563eb"><i></i>{{ chip.label }} ×</a>{% endfor %}<a href="{% url 'admin:nz_price_list' %}" style="--t:#64748b"><i></i>{% translate "Clear all" %}</a></div>{% endif %}
 
   <div class="wx-pl-bar">
-    <span class="wx-pl-bar-hint"><i class="fas fa-circle-info" aria-hidden="true"></i> {% translate "Every variant has its own row: type a price and press Enter. Tick products or variants to change prices together; every flavour of one size can also be priced at once." %}</span>
-    <button type="button" class="nzp-btn nzp-btn-ghost nzp-btn-sm" data-expand-all><i class="fas fa-layer-group" aria-hidden="true"></i> <span data-expand-label>{% translate "Hide variants" %}</span></button>
+    <span class="wx-pl-bar-hint"><i class="fas fa-circle-info" aria-hidden="true"></i> {% translate "Click a product name to edit the price and stock of each variant. Tick products to change prices together." %}</span>
+    <button type="button" class="nzp-btn nzp-btn-ghost nzp-btn-sm" data-expand-all><i class="fas fa-layer-group" aria-hidden="true"></i> <span data-expand-label>{% translate "Show all variants" %}</span></button>
   </div>
   <section class="nzp-card nzp-inbox">
     {% if rows %}
@@ -65,7 +65,7 @@
         {# several variants: the product line is a header (price range, total stock); each variant below is its own editable row #}
         <div class="nzd-tr wx-pl-row wx-pl-head{% if row.unpriced_variants %} has-unpriced{% endif %}" role="row" data-product-head>
           <span class="wx-pl-check"><input type="checkbox" data-check-product aria-label="{% translate 'Select every variant' %}"></span>
-          <span class="wx-prod"><span class="wx-pl-thumb">{{ row.image_html }}</span><span><b>{{ row.product_name }} <span class="nz-badge nz-badge-neutral nz-price-list-variant-count" title="{% blocktranslate count counter=row.variant_count %}This product has {{ counter }} variant.{% plural %}This product has {{ counter }} variants.{% endblocktranslate %}">&times;{{ row.variant_count }}</span></b>
+          <span class="wx-prod"><span class="wx-pl-thumb">{{ row.image_html }}</span><span><b><button type="button" class="wx-pl-name" data-open-editor="{{ row.product_id }}" title="{% translate 'Edit prices and stock of every variant' %}">{{ row.product_name }}</button> <span class="nz-badge nz-badge-neutral nz-price-list-variant-count" title="{% blocktranslate count counter=row.variant_count %}This product has {{ counter }} variant.{% plural %}This product has {{ counter }} variants.{% endblocktranslate %}">&times;{{ row.variant_count }}</span></b>
             <small>{% blocktranslate count n=row.variant_count %}{{ n }} variant{% plural %}{{ n }} variants{% endblocktranslate %}{% if row.size_count > 1 %} · {% blocktranslate count n=row.size_count %}{{ n }} size{% plural %}{{ n }} sizes{% endblocktranslate %}{% endif %}{% if row.unpriced_variants %} · <span class="wx-minus">{% blocktranslate count n=row.unpriced_variants %}{{ n }} variant without price{% plural %}{{ n }} variants without price{% endblocktranslate %}</span>{% endif %}</small></span></span>
           <span class="r wx-pl-sum"><small>{% translate "Variants" %}</small></span>
           <span class="r wx-pl-sum">{% if row.price_range_text %}<b class="wx-pl-range">{{ row.price_range_text }}</b>{% else %}<b class="wx-minus">{% translate "no price" %}</b>{% endif %}<small>{% translate "price range" %}</small></span>
@@ -80,7 +80,7 @@
         {% else %}
         <div class="nzd-tr wx-pl-row{% if row.price is None %} is-unpriced{% endif %}{% if row.matched %} is-match{% endif %}" role="row" data-variant-id="{{ row.id }}" data-price="{{ row.price|default_if_none:'' }}">
           <span class="wx-pl-check"><input type="checkbox" data-check-product aria-label="{% translate 'Select' %}"></span>
-          <span class="wx-prod"><span class="wx-pl-thumb">{{ row.image_html }}</span><span><b>{{ row.name|linebreaksbr }}</b>
+          <span class="wx-prod"><span class="wx-pl-thumb">{{ row.image_html }}</span><span><b><button type="button" class="wx-pl-name" data-open-editor="{{ row.product_id }}" title="{% translate 'Edit prices and stock of every variant' %}">{{ row.name|linebreaksbr }}</button></b>
             <small>{{ row.sku }}{% if row.size %} · {{ row.size }}{% endif %}{% if row.barcode %} · <span class="wx-pl-bc">{{ row.barcode }}</span>{% endif %}</small></span></span>
           {% include "admin/_price_cells.html" with v=row %}
           <span class="r">{% if row.stock is None %}<span class="nz-stock-untracked wx-muted">{% translate "Not tracked" %}</span>{% elif row.stock == 0 %}<span class="wx-state out nz-stock-out">{% translate "Out of stock" %}</span>{% elif row.stock_state == "low" %}<span class="wx-state low nz-stock-low">{{ row.stock }}</span>{% else %}<b class="wx-num"><span class="nz-stock-value">{{ row.stock }}</span></b>{% endif %}</span>
@@ -135,6 +135,19 @@
   <div class="nzp-note nzp-note-info"><i class="fas fa-lightbulb" aria-hidden="true"></i> {% translate "Cost is what you pay the supplier (staff only); the hint under it is the last goods-receipt cost. Old price is shown crossed out next to the price on the storefront and must be higher than the price." %}</div>
 
   <dialog class="nzd-dialog" id="wx-history"><form method="dialog"><header><span class="nzd-dialog-icon" style="color:#2563eb;background:color-mix(in srgb,#2563eb 13%,transparent)"><i class="fas fa-clock-rotate-left" aria-hidden="true"></i></span><div><h3>{% translate "Price history" %}</h3><p data-history-sub></p></div></header><ul class="wx-history-list" data-history-list></ul><div class="nzd-next-row" style="justify-content:flex-end"><button class="nzp-btn nzp-btn-ghost">{% translate "Close" %}</button></div></form></dialog>
+  <dialog class="nzd-dialog wx-ve" id="wx-ve" aria-labelledby="wx-ve-title">
+    <div class="wx-ve-head">
+      <span class="wx-ve-thumb" data-ve-thumb></span>
+      <div class="wx-ve-title"><h3 id="wx-ve-title" data-ve-name>…</h3><p data-ve-sub></p></div>
+      <button type="button" class="wx-ve-x" data-ve-close aria-label="{% translate 'Close' %}"><i class="fas fa-xmark" aria-hidden="true"></i></button>
+    </div>
+    <div class="wx-ve-tools">
+      <label class="wx-ve-pick"><span>{% translate "Variant" %}</span><select class="nzp-select" data-ve-select aria-label="{% translate 'Variant' %}"></select></label>
+      <div class="wx-ve-sum" data-ve-sum></div>
+    </div>
+    <div class="wx-ve-list" data-ve-list><div class="wx-ve-empty">…</div></div>
+    <div class="wx-ve-foot"><span class="wx-ve-hint"><i class="fas fa-keyboard" aria-hidden="true"></i> {% translate "Enter saves the variant, Esc closes." %}</span><button type="button" class="nzp-btn nzp-btn-ghost" data-ve-close>{% translate "Close" %}</button></div>
+  </dialog>
   <div class="nzp-toast" data-nzp-toast role="status" aria-live="polite" hidden></div>
   {% csrf_token %}
 </div>
@@ -267,6 +280,107 @@
     var btn = this; btn.disabled = true;
     bulk(Array.from(sel), op, v).then(function () { sel.clear(); syncChecks(); }).catch(function (er) { toast(er.message, true); }).then(function () { btn.disabled = false; });
   });
+  // ---- variant editor: product name -> dialog with a variant select and price + stock per variant
+  var VE = { all: "{{ _('All variants')|escapejs }}", noSize: "{{ _('No size')|escapejs }}", price: "{{ _('Price')|escapejs }}", old: "{{ _('Old price')|escapejs }}", cost: "{{ _('Cost')|escapejs }}",
+    online: "{{ _('Online warehouse')|escapejs }}", total: "{{ _('Sellable everywhere')|escapejs }}", reserved: "{{ _('reserved')|escapejs }}", receipt: "{{ _('receipt')|escapejs }}",
+    main: "{{ _('main')|escapejs }}", save: "{{ _('Save')|escapejs }}", saved: "{{ _('Saved')|escapejs }}", margin: "{{ _('Margin')|escapejs }}", noPrice: "{{ _('no price')|escapejs }}",
+    variants: "{{ _('variants')|escapejs }}", stockSaved: "{{ _('Stock saved')|escapejs }}", units: "{{ _('pcs')|escapejs }}", loadErr: "{{ _('Could not load the variants.')|escapejs }}" };
+  var ve = document.getElementById("wx-ve"), veData = null;
+  function esc(t) { return String(t == null ? "" : t).replace(/[&<>"]/g, function (c) { return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]; }); }
+  function n0(v) { return v == null || v === "" ? "" : String(Math.round(Number(v))); }
+  function veCard(v) {
+    var tags = (v.is_default ? '<span class="wx-pl-main">' + esc(VE.main) + "</span>" : "") + (v.status !== "active" ? '<span class="wx-ve-status">' + esc(v.status) + "</span>" : "");
+    return '<article class="wx-ve-card" data-ve-id="' + esc(v.id) + '">' +
+      '<header><div><b>' + esc(v.flavour || v.size || v.sku) + tags + '</b><small>' + esc([v.size && v.flavour ? v.size : "", v.sku, v.barcode].filter(Boolean).join(" · ")) + '</small></div><span class="wx-ve-calc" data-ve-calc></span></header>' +
+      '<div class="wx-ve-fields">' +
+        '<label><span>' + esc(VE.price) + '</span><input class="wx-pl-input wx-pl-price" inputmode="numeric" data-ve="price" value="' + n0(v.price) + '" data-was="' + n0(v.price) + '" placeholder="' + esc(VE.noPrice) + '"></label>' +
+        '<label><span>' + esc(VE.old) + '</span><input class="wx-pl-input wx-pl-old" inputmode="numeric" data-ve="old_price" value="' + n0(v.old_price) + '" data-was="' + n0(v.old_price) + '" placeholder="—"></label>' +
+        '<label><span>' + esc(VE.cost) + (v.last_cost ? ' <em>' + esc(VE.receipt) + ": " + money(v.last_cost) + "</em>" : "") + '</span><input class="wx-pl-input" inputmode="numeric" data-ve="base_price" value="' + n0(v.cost) + '" data-was="' + n0(v.cost) + '" placeholder="—"></label>' +
+        '<label class="wx-ve-stock"><span>' + esc(VE.online) + (v.online_reserved ? ' <em>' + v.online_reserved + " " + esc(VE.reserved) + "</em>" : "") + '</span><span class="wx-ve-step"><button type="button" data-ve-step="-1" aria-label="−1">−</button><input class="wx-pl-input" inputmode="numeric" data-ve="stock" value="' + (v.online_stock || 0) + '" data-was="' + (v.online_stock || 0) + '"><button type="button" data-ve-step="1" aria-label="+1">+</button></span></label>' +
+      '</div>' +
+      '<footer><span class="wx-ve-total">' + esc(VE.total) + ': <b data-ve-total>' + (v.stock || 0) + "</b> " + esc(VE.units) + '</span><button type="button" class="nzp-btn nzp-btn-primary nzp-btn-sm" data-ve-save disabled><i class="fas fa-check" aria-hidden="true"></i> ' + esc(VE.save) + "</button></footer>" +
+      "</article>";
+  }
+  function veCalc(card) {
+    var g = function (f) { return num(card.querySelector("[data-ve=" + f + "]").value); };
+    var price = g("price"), old = g("old_price"), cost = g("base_price"), out = [];
+    if (price && cost !== null) { var m = Math.round((price - cost) * 100 / price); out.push('<b class="' + (m < 15 ? "wx-minus" : "wx-plus") + '">' + esc(VE.margin) + " " + m + "%</b>"); }
+    if (price && old && old > price) out.push('<span class="nzd-tag" style="--t:#e11d48">−' + Math.round((1 - price / old) * 100) + "%</span>");
+    card.querySelector("[data-ve-calc]").innerHTML = out.join("");
+    card.querySelector("[data-ve=old_price]").classList.toggle("is-bad", !!(old && price && old <= price));
+    card.classList.toggle("is-unpriced", !price);
+    var dirty = Array.prototype.some.call(card.querySelectorAll("[data-ve]"), function (i) { return i.value.replace(/\s/g, "") !== (i.getAttribute("data-was") || ""); });
+    card.classList.toggle("is-dirty", dirty); card.querySelector("[data-ve-save]").disabled = !dirty;
+  }
+  function veRender() {
+    var pick = ve.querySelector("[data-ve-select]").value, list = ve.querySelector("[data-ve-list]");
+    var vs = veData.variants.filter(function (v) { return pick === "" || pick === v.id || pick === "size:" + v.size; });
+    var html = "", lastSize = null, showSizes = new Set(veData.variants.map(function (v) { return v.size; })).size > 1;
+    vs.forEach(function (v) { if (showSizes && v.size !== lastSize) { lastSize = v.size; html += '<h4 class="wx-ve-size"><i class="fas fa-weight-hanging" aria-hidden="true"></i> ' + esc(v.size || VE.noSize) + "</h4>"; } html += veCard(v); });
+    list.innerHTML = html; list.querySelectorAll(".wx-ve-card").forEach(veCalc);
+    var first = list.querySelector("[data-ve=price]"); if (first && pick) first.focus();
+  }
+  function veSummary() {
+    var prices = veData.variants.map(function (v) { return v.price == null ? null : Number(v.price); }).filter(function (x) { return x != null; });
+    var lo = Math.min.apply(null, prices), hi = Math.max.apply(null, prices), stock = veData.variants.reduce(function (a, v) { return a + (v.stock || 0); }, 0);
+    ve.querySelector("[data-ve-sum]").innerHTML = (prices.length ? '<span><small>' + esc(VE.price) + "</small><b>" + money(lo) + (hi !== lo ? " – " + money(hi) : "") + "</b></span>" : "") + '<span><small>' + esc(VE.total) + "</small><b>" + stock + " " + esc(VE.units) + "</b></span>";
+  }
+  function veOpen(productId, thumbHtml) {
+    ve.querySelector("[data-ve-list]").innerHTML = '<div class="wx-ve-empty"><i class="fas fa-spinner fa-spin" aria-hidden="true"></i></div>';
+    ve.querySelector("[data-ve-thumb]").innerHTML = thumbHtml || "";
+    ve.querySelector("[data-ve-name]").textContent = "…"; ve.querySelector("[data-ve-sub]").textContent = ""; ve.querySelector("[data-ve-sum]").innerHTML = "";
+    if (!ve.open) ve.showModal();
+    fetch(root.getAttribute("data-product") + productId, { credentials: "same-origin" }).then(function (r) { return r.json(); }).then(function (j) {
+      if (!j.success) throw new Error(); veData = j.data;
+      ve.querySelector("[data-ve-name]").textContent = veData.name;
+      ve.querySelector("[data-ve-sub]").textContent = veData.variants.length + " " + VE.variants + (veData.online_store ? " · " + VE.online + ": " + veData.online_store : "");
+      var sel = ve.querySelector("[data-ve-select]"), sizes = [], opts = '<option value="">' + esc(VE.all) + " (" + veData.variants.length + ")</option>";
+      veData.variants.forEach(function (v) { if (sizes.indexOf(v.size) < 0) sizes.push(v.size); });
+      sizes.forEach(function (sz) {
+        var vs = veData.variants.filter(function (v) { return v.size === sz; });
+        opts += '<optgroup label="' + esc(sz || VE.noSize) + '">' + (sizes.length > 1 && vs.length > 1 ? '<option value="size:' + esc(sz) + '">' + esc((sz || VE.noSize) + " — " + VE.all.toLowerCase()) + "</option>" : "");
+        vs.forEach(function (v) { opts += '<option value="' + esc(v.id) + '">' + esc((v.flavour || v.size || v.sku) + " · " + (v.price ? money(v.price) : "—") + " · " + (v.stock || 0) + " " + VE.units) + "</option>"; });
+        opts += "</optgroup>";
+      });
+      sel.innerHTML = opts; sel.value = "";
+      veSummary(); veRender();
+    }).catch(function () { ve.querySelector("[data-ve-list]").innerHTML = '<div class="wx-ve-empty wx-minus">' + esc(VE.loadErr) + "</div>"; });
+  }
+  function veSave(card) {
+    var id = card.getAttribute("data-ve-id"), v = veData.variants.find(function (x) { return x.id === id; }), jobs = [], btn = card.querySelector("[data-ve-save]");
+    var val = function (f) { return card.querySelector("[data-ve=" + f + "]").value.replace(/\s/g, ""); }, was = function (f) { return card.querySelector("[data-ve=" + f + "]").getAttribute("data-was") || ""; };
+    var priceChanged = ["price", "old_price", "base_price"].some(function (f) { return val(f) !== was(f); });
+    if (priceChanged) {
+      if (!val("price")) { toast(L.need, true); return; }
+      if (val("old_price") && Number(val("old_price")) <= Number(val("price"))) { toast(L.oldGt, true); return; }
+      jobs.push(fetch(root.getAttribute("data-save") + id, { method: "POST", credentials: "same-origin", headers: { "X-CSRFToken": csrf(), "Content-Type": "application/json" }, body: JSON.stringify({ price: val("price"), old_price: val("old_price") || null, base_price: val("base_price") || null }) })
+        .then(function (r) { return r.json().then(function (j) { if (!r.ok || !j.success) throw new Error((j.error && j.error.message) || L.err); return j.data; }); })
+        .then(function (d) { v.price = d.price; v.old_price = d.old_price; v.cost = d.base_price; ["price", "old_price", "base_price"].forEach(function (f) { var i = card.querySelector("[data-ve=" + f + "]"); i.value = n0(d[f]); i.setAttribute("data-was", n0(d[f])); }); applyResult({ id: id, price: d.price, old_price: d.old_price, base_price: d.base_price }); }));
+    }
+    if (val("stock") !== was("stock")) {
+      jobs.push(fetch(root.getAttribute("data-stock") + id, { method: "POST", credentials: "same-origin", headers: { "X-CSRFToken": csrf(), "Content-Type": "application/json" }, body: JSON.stringify({ quantity: val("stock") }) })
+        .then(function (r) { return r.json().then(function (j) { if (!r.ok || !j.success) throw new Error((j.error && j.error.message) || L.err); return j.data; }); })
+        .then(function (d) { v.online_stock = d.online_stock; v.stock = d.stock; var i = card.querySelector("[data-ve=stock]"); i.value = d.online_stock; i.setAttribute("data-was", String(d.online_stock)); card.querySelector("[data-ve-total]").textContent = d.stock; }));
+    }
+    if (!jobs.length) return;
+    btn.disabled = true; card.classList.add("is-saving");
+    Promise.all(jobs).then(function () { card.classList.remove("is-saving"); card.classList.add("flash"); setTimeout(function () { card.classList.remove("flash"); }, 900); veCalc(card); veSummary(); toast("✓ " + VE.saved); })
+      .catch(function (e) { card.classList.remove("is-saving"); veCalc(card); toast(e.message, true); });
+  }
+  root.addEventListener("click", function (e) {
+    var b = e.target.closest("[data-open-editor]"); if (!b) return;
+    e.preventDefault(); var row = b.closest("[role=row]"), th = row && row.querySelector(".wx-pl-thumb");
+    veOpen(b.getAttribute("data-open-editor"), th ? th.innerHTML : "");
+  });
+  ve.addEventListener("click", function (e) {
+    if (e.target === ve || e.target.closest("[data-ve-close]")) { ve.close(); return; }
+    var st = e.target.closest("[data-ve-step]");
+    if (st) { var i = st.parentNode.querySelector("[data-ve=stock]"); i.value = Math.max(0, (parseInt(i.value, 10) || 0) + Number(st.getAttribute("data-ve-step"))); veCalc(st.closest(".wx-ve-card")); return; }
+    var sv = e.target.closest("[data-ve-save]"); if (sv) veSave(sv.closest(".wx-ve-card"));
+  });
+  ve.addEventListener("input", function (e) { if (e.target.matches("[data-ve]")) { e.target.value = e.target.value.replace(/[^\d\s]/g, ""); veCalc(e.target.closest(".wx-ve-card")); } });
+  ve.addEventListener("keydown", function (e) { if (e.target.matches("[data-ve]") && e.key === "Enter") { e.preventDefault(); veSave(e.target.closest(".wx-ve-card")); } });
+  ve.addEventListener("change", function (e) { if (e.target.matches("[data-ve-select]")) veRender(); });
   opUi();
   var firstMatch = root.querySelector(".wx-pl-sub.is-match"); if (firstMatch) firstMatch.scrollIntoView({ block: "center" });
   root.querySelectorAll("[role=row][data-variant-id], [role=row][data-sub-variant-id]").forEach(recalc);

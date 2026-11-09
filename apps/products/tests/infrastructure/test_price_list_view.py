@@ -95,8 +95,7 @@ class TestPriceListViewGroupedByProduct:
         assert 'data-variant-id="' not in body  # the header carries no price inputs of its own
         assert body.count('data-sub-variant-id="') == 2
         assert f'data-sub-variant-id="{default_variant.id}"' in body and f'data-sub-variant-id="{other_variant.id}"' in body
-        panel = body.split('class="wx-pl-variants"')[1][:20]
-        assert "hidden" not in panel  # every variant is visible from the start
+        assert f'data-open-editor="{product.id}"' in body  # the product name opens the variant editor
 
     def test_each_variant_row_carries_its_own_price_and_the_header_the_range(self):
         product, default_variant, other_variant = self._make_product_with_two_variants("Default Price Product")
@@ -291,3 +290,48 @@ class TestPriceListRepositoryWritesOnlyChangedEntries:
 
         writes = [q["sql"] for q in ctx.captured_queries if "pricing_price_list_entr" in q["sql"].lower() and q["sql"].lstrip().upper().startswith(("UPDATE", "INSERT"))]
         assert len(writes) <= 1
+
+
+class TestPriceListVariantEditorStock:
+    """The variant editor sets the online warehouse count through the stock ledger."""
+
+    def _warehouse(self):
+        from apps.stores.infrastructure.models import Store, StoreKind, StoreStatus
+
+        return Store.objects.create(name=f"Main {uuid.uuid4().hex[:6]}", slug=f"main-{uuid.uuid4().hex[:6]}", kind=StoreKind.WAREHOUSE, status=StoreStatus.ACTIVE)
+
+    def _post(self, client, variant_id, quantity):
+        import json
+
+        return client.post(f"/django-admin/products/price-list/api/stock/{variant_id}", json.dumps({"quantity": quantity}), content_type="application/json")
+
+    def test_sets_the_count_with_one_adjustment_and_reports_it(self):
+        from apps.stores.infrastructure.models import StockMovement, StoreProductStock
+
+        store = self._warehouse()
+        variant = _make_variant("Stock Editor Whey")
+        client = _staff_client()
+
+        r = self._post(client, variant.id, 7)
+        assert r.status_code == 200 and r.json()["data"]["online_stock"] == 7
+        assert StoreProductStock.objects.get(store=store, product_variant_id=variant.id).quantity == 7
+        r = self._post(client, variant.id, 3)
+        assert r.json()["data"]["online_stock"] == 3
+        moves = list(StockMovement.objects.filter(store=store, product_variant_id=variant.id).order_by("created_at").values_list("movement_type", "quantity", "reference"))
+        assert moves == [("adjustment", 7, "PRICE-LIST"), ("adjustment", -4, "PRICE-LIST")]
+        data = client.get(f"/django-admin/products/price-list/api/product/{variant.product_id}").json()["data"]
+        assert data["variants"][0]["online_stock"] == 3 and data["online_store"] == store.name
+
+    def test_rejects_bad_numbers_reserved_units_and_non_staff(self):
+        from apps.stores.infrastructure.models import StoreProductStock
+
+        store = self._warehouse()
+        variant = _make_variant("Stock Editor Reserved")
+        StoreProductStock.objects.create(store=store, product_variant_id=variant.id, quantity=5, reserved_quantity=2)
+        client = _staff_client()
+        assert self._post(client, variant.id, -1).status_code == 422
+        assert self._post(client, variant.id, "abc").status_code == 422
+        assert self._post(client, variant.id, 1).status_code == 409  # 2 units are reserved
+        assert StoreProductStock.objects.get(store=store, product_variant_id=variant.id).quantity == 5
+        assert self._post(client, uuid.uuid4(), 1).status_code == 404
+        assert self._post(Client(), variant.id, 1).status_code == 302

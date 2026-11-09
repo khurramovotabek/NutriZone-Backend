@@ -9864,3 +9864,45 @@ msgstr[1] "%(n)s ta chegirmada"
 
 msgid "Every variant has its own row: type a price and press Enter. Tick products or variants to change prices together; every flavour of one size can also be priced at once."
 msgstr "Har bir variant alohida qatorda: narxni yozib Enter bosing. Bir nechta narxni birdaniga o'zgartirish uchun mahsulot yoki variantlarni belgilang; bir o'lchamdagi barcha ta'mlarga bitta narx qo'yish ham mumkin."
+
+msgid "Margin"
+msgstr "Marja"
+
+msgid "variants"
+msgstr "ta variant"
+
+msgid "Variant"
+msgstr "Variant"
+
+msgid "All variants"
+msgstr "Barcha variantlar"
+
+msgid "Edit prices and stock of every variant"
+msgstr "Har bir variantning narxi va qoldig'ini tahrirlash"
+
+msgid "Click a product name to edit the price and stock of each variant. Tick products to change prices together."
+msgstr "Har bir variantning narxi va qoldig'ini o'zgartirish uchun mahsulot nomini bosing. Bir nechta narxni birdaniga o'zgartirish uchun mahsulotlarni belgilang."
+
+msgid "Enter saves the variant, Esc closes."
+msgstr "Enter — variantni saqlaydi, Esc — yopadi."
+
+msgid "Online warehouse"
+msgstr "Online ombor"
+
+msgid "Sellable everywhere"
+msgstr "Jami sotuvda"
+
+msgid "Stock saved"
+msgstr "Qoldiq saqlandi"
+
+msgid "Could not load the variants."
+msgstr "Variantlarni yuklab bo'lmadi."
+
+msgid "Enter a whole number of units."
+msgstr "Butun son kiriting (dona)."
+
+msgid "There is no active online warehouse."
+msgstr "Faol online ombor yo'q."
+
+msgid "{n} units are reserved for open orders -- the count cannot be lower."
+msgstr "{n} dona ochiq buyurtmalar uchun band qilingan — qoldiq bundan kam bo'lishi mumkin emas."
