@@ -63,3 +63,24 @@ def test_production_settings_use_the_bypassing_classes():
         "core.ratelimit.throttles.AnonRateThrottle",
         "core.ratelimit.throttles.UserRateThrottle",
     ]
+
+
+def test_django_starts_with_the_real_throttle_classes():
+    """
+    The testing settings switch throttling off, so the suite never imported these classes the way production does:
+    on 2026-11-09 a circular import (throttles.py -> rest_framework.views -> DEFAULT_THROTTLE_CLASSES -> throttles.py)
+    stopped a deploy at `migrate`. Boot Django in a fresh process with the development settings (same classes as
+    production) and build APIView's throttles.
+    """
+    import os
+    import subprocess
+    import sys
+
+    code = (
+        "import django; django.setup(); from rest_framework.views import APIView; "
+        "print(','.join(type(t).__name__ for t in APIView().get_throttles()))"
+    )
+    env = {**os.environ, "DJANGO_SETTINGS_MODULE": "config.settings.development"}
+    result = subprocess.run([sys.executable, "-c", code], capture_output=True, text=True, env=env, timeout=120)
+    assert result.returncode == 0, result.stderr[-2000:]
+    assert result.stdout.strip().splitlines()[-1] == "AnonRateThrottle,UserRateThrottle"

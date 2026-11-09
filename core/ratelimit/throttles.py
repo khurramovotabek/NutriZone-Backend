@@ -10,14 +10,19 @@ duplicating rate-limit bookkeeping per view.
 from __future__ import annotations
 
 import hmac
+from typing import TYPE_CHECKING
 
 from django.conf import settings
 from rest_framework import throttling
 from rest_framework.request import Request
 from rest_framework.throttling import BaseThrottle
-from rest_framework.views import APIView
 
 from core.ratelimit.limiter import RateLimiter
+
+if TYPE_CHECKING:
+    # annotation only: importing rest_framework.views here is circular -- APIView's class body reads
+    # DEFAULT_THROTTLE_CLASSES, which names the classes below
+    from rest_framework.views import APIView
 
 
 class ScopedRateLimitThrottle(BaseThrottle):
