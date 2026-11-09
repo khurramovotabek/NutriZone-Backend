@@ -26,4 +26,5 @@ NUTRIZONE_OBJECT_STORAGE_ENDPOINT = os.environ.get("NUTRIZONE_OBJECT_STORAGE_END
 # the `content` app's application-layer validators once implemented;
 # these Django-level ceilings are a defense-in-depth backstop.
 DATA_UPLOAD_MAX_MEMORY_SIZE = 200 * 1024 * 1024  # 200MB, matches the largest allowed type (video)
+DATA_UPLOAD_MAX_NUMBER_FIELDS = 20000  # product change form: variants x media/barcode inlines easily exceed the 1000 default (400 on save)
 FILE_UPLOAD_MAX_MEMORY_SIZE = 10 * 1024 * 1024

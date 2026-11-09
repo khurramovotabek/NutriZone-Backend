@@ -514,7 +514,7 @@ class ProductMediaInline(admin.TabularInline):
     model = orm.ProductMedia
     form = ProductMediaInlineForm
     extra = 0
-    max_num = 80  # 12 product images + 4 videos + per-variant photos (MAX_VARIANT_IMAGES each); the domain enforces the real caps.
+    max_num = 250  # 12 product images + 4 videos + per-variant photos (MAX_VARIANT_IMAGES each); the domain enforces the real caps.
     fields = ("media_role", "variant", "sort_order", "file_upload", "duration_seconds", "preview")
     readonly_fields = ("id", "preview")
 
