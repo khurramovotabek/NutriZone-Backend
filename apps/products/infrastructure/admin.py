@@ -1505,6 +1505,18 @@ class BrandAdmin(ExcelExportMixin, CatalogFormMixin, CatalogAnalyticsMixin, admi
         ("Tizim ma'lumotlari", {"classes": ("nzp-fold",), "fields": ("id", "created_at", "updated_at")}),
     )
 
+    def get_deleted_objects(self, objs, request):
+        """Brands are soft-deleted, so products that are themselves already
+        soft-deleted must not block it (Django's collector sees them through
+        the PROTECT FK). A brand with live products stays protected."""
+        if orm.Product.objects.filter(brand__in=list(objs)).exists():
+            return super().get_deleted_objects(objs, request)
+        return [str(o) for o in objs], {str(self.model._meta.verbose_name_plural): len(objs)}, set(), []
+
+    def delete_queryset(self, request, queryset):
+        for brand in queryset:  # per-row soft delete; QuerySet.delete() would hard-delete
+            brand.delete()
+
     def form_hero(self, request, obj):
         if obj is None:
             return {}

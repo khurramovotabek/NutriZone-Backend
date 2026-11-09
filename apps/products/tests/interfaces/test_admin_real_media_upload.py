@@ -186,3 +186,21 @@ class TestProductVariantMediaUpload:
         assert response.status_code == 200
         assert "seventh.jpg" in response.content.decode()
         assert p_models.ProductMedia.objects.filter(variant=variant).count() == 6
+
+
+class TestBrandDeleteAfterProductsDeleted:
+    def test_brand_with_only_deleted_products_can_be_deleted(self, staff_client):
+        brand = p_models.Brand.objects.create(id=uuid.uuid4())
+        product = p_models.Product.objects.create(id=uuid.uuid4(), status="archived", brand=brand)
+        product.delete()  # soft
+        page = staff_client.get(f"/django-admin/products/brand/{brand.id}/delete/")
+        assert page.status_code == 200 and b"protected related objects" not in page.content
+        staff_client.post(f"/django-admin/products/brand/{brand.id}/delete/", data={"post": "yes"})
+        row = p_models.Brand.all_objects.get(id=brand.id)
+        assert row.is_deleted is True  # soft-deleted, recoverable
+
+    def test_brand_with_live_products_stays_protected(self, staff_client):
+        brand = p_models.Brand.objects.create(id=uuid.uuid4())
+        p_models.Product.objects.create(id=uuid.uuid4(), status="draft", brand=brand)
+        staff_client.post(f"/django-admin/products/brand/{brand.id}/delete/", data={"post": "yes"})
+        assert p_models.Brand.objects.filter(id=brand.id).exists()
