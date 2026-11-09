@@ -302,9 +302,10 @@ class ChatSettingsForm(forms.ModelForm):
 
     class Meta:
         model = orm.ChatSettings
-        fields = ("work_start", "work_end", "auto_reply_enabled", "alert_enabled", "alert_after_minutes", "alert_only_work_hours", "rating_enabled", "low_rating_alert",
+        fields = ("always_open", "work_start", "work_end", "auto_reply_enabled", "alert_enabled", "alert_after_minutes", "alert_only_work_hours", "rating_enabled", "low_rating_alert",
                   "order_bot_enabled", "delivery_days")
         help_texts = {
+            "always_open": "Yoqilgan bo'lsa, chat 24/7 ochiq: ish vaqti hisobga olinmaydi, «ertalab javob beramiz» avtomatik javobi yuborilmaydi va javobsiz suhbatlar haqida ogohlantirish istalgan vaqtda keladi.",
             "work_start": "Toshkent vaqti bilan. Kechasi ishlasangiz (masalan 20:00–02:00) ham to'g'ri hisoblanadi.",
             "auto_reply_enabled": "Mijoz ish vaqtidan tashqari yozsa, bir marta (12 soatda ko'pi bilan bir marta) avtomatik javob oladi; javob oxirida ish vaqti ko'rsatiladi.",
             "alert_enabled": "Mijoz javob kutayotgan suhbat xodimlar Telegram kanaliga (buyurtmalar kanali) «Javob berish» tugmasi bilan yuboriladi.",

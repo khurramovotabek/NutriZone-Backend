@@ -1,7 +1,8 @@
 """
 Support-desk automation around the chat (settings in `ChatSettings`, dashboard → Chat → Chat sozlamalari):
 
-* working hours        -- `is_open(now)`: the desk's hours and days, Tashkent time.
+* working hours        -- `is_open(now)`: always, when the desk is 24/7 (`always_open`, the default); else the
+                          desk's hours and days, Tashkent time.
 * out-of-hours reply   -- a customer writing to Support outside working hours gets one SYSTEM message ("we'll reply
                           from 9:00"), at most once per conversation per 12 hours; sent through SendMessage after the
                           customer's message commits.
@@ -48,6 +49,8 @@ def chat_settings():
 
 def is_open(now: datetime | None = None, cfg=None) -> bool:
     cfg = cfg or chat_settings()
+    if getattr(cfg, "always_open", False):
+        return True  # 24/7 support: every hour is working time
     local = timezone.localtime(now or timezone.now(), TZ)
     if local.weekday() not in (cfg.work_days or []):
         return False
@@ -58,6 +61,8 @@ def is_open(now: datetime | None = None, cfg=None) -> bool:
 
 def hours_label(cfg=None) -> str:
     cfg = cfg or chat_settings()
+    if getattr(cfg, "always_open", False):
+        return "24/7"
     days = sorted(cfg.work_days or [])
     span = f"{DAY_NAMES[days[0]]}–{DAY_NAMES[days[-1]]}" if days and days == list(range(days[0], days[-1] + 1)) else ", ".join(DAY_NAMES[d] for d in days)
     return f"{span} {cfg.work_start:%H:%M}–{cfg.work_end:%H:%M}" if days else "ish kunlari belgilanmagan"

@@ -10122,3 +10122,6 @@ msgstr "Нет активного онлайн-склада."
 
 msgid "{n} units are reserved for open orders -- the count cannot be lower."
 msgstr "{n} шт. зарезервировано под открытые заказы — остаток не может быть меньше."
+
+msgid "24/7 ochiq (ish vaqtiga qaramasdan)"
+msgstr "Открыт 24/7 (без учёта рабочего времени)"

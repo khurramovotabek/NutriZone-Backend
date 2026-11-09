@@ -9906,3 +9906,6 @@ msgstr "Faol online ombor yo'q."
 
 msgid "{n} units are reserved for open orders -- the count cannot be lower."
 msgstr "{n} dona ochiq buyurtmalar uchun band qilingan — qoldiq bundan kam bo'lishi mumkin emas."
+
+msgid "24/7 ochiq (ish vaqtiga qaramasdan)"
+msgstr ""

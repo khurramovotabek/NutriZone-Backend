@@ -144,6 +144,8 @@ def _default_auto_reply() -> dict:
 class ChatSettings(models.Model):
     """Singleton: working hours, the out-of-hours auto-reply, the staff Telegram alert for unanswered chats and the satisfaction rating."""
 
+    # the support chat answers around the clock: no "we'll reply from 9:00" auto-reply, alerts at any hour
+    always_open = models.BooleanField(_("24/7 ochiq (ish vaqtiga qaramasdan)"), default=True)
     work_start = models.TimeField(_("Ish boshlanishi"), default=datetime.time(9, 0))
     work_end = models.TimeField(_("Ish tugashi"), default=datetime.time(21, 0))
     work_days = models.JSONField(_("Ish kunlari"), default=_default_work_days, blank=True)

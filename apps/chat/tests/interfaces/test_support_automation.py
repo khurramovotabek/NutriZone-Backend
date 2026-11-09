@@ -52,8 +52,12 @@ def _staff():
 
 
 class TestWorkingHours:
+    def test_always_open_by_default(self):
+        cfg = _settings(work_days=[])  # even with no working days set
+        assert cfg.always_open and automation.is_open(_at(3), cfg) and automation.hours_label(cfg) == "24/7"
+
     def test_open_closed_and_overnight(self):
-        cfg = _settings(work_start=datetime.time(9), work_end=datetime.time(21), work_days=[0, 1, 2, 3, 4, 5])
+        cfg = _settings(always_open=False, work_start=datetime.time(9), work_end=datetime.time(21), work_days=[0, 1, 2, 3, 4, 5])
         assert automation.is_open(_at(10), cfg) and not automation.is_open(_at(22), cfg) and not automation.is_open(_at(10, weekday=6), cfg)
         night = _settings(work_start=datetime.time(20), work_end=datetime.time(2))
         assert automation.is_open(_at(23), night) and automation.is_open(_at(1), night) and not automation.is_open(_at(12), night)
@@ -62,7 +66,7 @@ class TestWorkingHours:
 
 class TestAutoReply:
     def test_out_of_hours_gets_one_system_reply(self, monkeypatch):
-        _settings(work_days=[])  # closed every day
+        _settings(always_open=False, work_days=[])  # closed every day
         customer = _make_user()
         conv = _support(monkeypatch, customer)
         c = _client(monkeypatch, customer)
@@ -290,7 +294,7 @@ class TestOperatorReport:
     def test_night_message_counts_from_opening(self):
         from apps.chat.infrastructure.reports import next_open
 
-        cfg = _settings(work_start=datetime.time(9), work_end=datetime.time(21), work_days=[0, 1, 2, 3, 4, 5])
+        cfg = _settings(always_open=False, work_start=datetime.time(9), work_end=datetime.time(21), work_days=[0, 1, 2, 3, 4, 5])
         assert next_open(_at(23), cfg) == _at(9, weekday=3)  # Wednesday 23:00 → Thursday 09:00
         assert next_open(_at(22, weekday=5), cfg) == _at(9, weekday=7)  # Saturday night → Monday (Sunday off)
         assert next_open(_at(10), cfg) == _at(10)
