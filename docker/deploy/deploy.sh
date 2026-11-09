@@ -63,6 +63,8 @@ deploy_backend() {
   curl -fsS -o /dev/null -H "X-Forwarded-Proto: https" -w "health/ready %{http_code}\n" http://127.0.0.1:8080/health/ready
   check_workers
   docker image prune -f >/dev/null
+  # the build cache grew with every deploy (18.9 GB by 2026-11-09); a week of it keeps rebuilds fast
+  docker builder prune -f --filter "until=168h" >/dev/null || true
 }
 
 # The web health check says nothing about Celery: on 2026-11-08 an unpinned dependency crash-looped every worker and
