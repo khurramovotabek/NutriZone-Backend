@@ -504,16 +504,26 @@ class ProductMediaInlineForm(forms.ModelForm):
 
     class Meta:
         model = orm.ProductMedia
-        fields = ("media_role", "sort_order", "duration_seconds")
+        fields = ("media_role", "variant", "sort_order", "duration_seconds")
+        labels = {"variant": "Variant (ta'm/hajm)"}
+        help_texts = {"variant": "Bo'sh = butun mahsulot rasmi. Variant tanlansa, shu ta'm/hajm tanlanganda ko'rsatiladi."}
 
 
 class ProductMediaInline(admin.TabularInline):
     model = orm.ProductMedia
     form = ProductMediaInlineForm
     extra = 0
-    max_num = 8  # Real, explicit cap: up to 8 media items per product, per this phase's own requirement.
-    fields = ("media_role", "sort_order", "file_upload", "duration_seconds", "preview")
+    max_num = 16  # 12 images (domain MAX_IMAGES) + 4 videos (MAX_VIDEOS); the domain enforces the per-kind caps.
+    fields = ("media_role", "variant", "sort_order", "file_upload", "duration_seconds", "preview")
     readonly_fields = ("id", "preview")
+
+    def get_formset(self, request, obj=None, **kwargs):
+        formset = super().get_formset(request, obj, **kwargs)
+        field = formset.form.base_fields.get("variant")
+        if field is not None:
+            field.queryset = orm.ProductVariant.objects.filter(product=obj).select_related("flavour").prefetch_related("flavour__translations").order_by("sku") if obj is not None else orm.ProductVariant.objects.none()
+            field.label_from_instance = _variant_choice_label
+        return formset
 
     def preview(self, obj: orm.ProductMedia) -> str:
         """Image/video/document preview -- per this phase's explicit Admin requirement. Renders an <img> for image roles, a filename+icon for video/document roles (no inline video/PDF player in the engineering-only admin, per Django Implementation Blueprint §13's 'thin debugging tool' scope -- a full media viewer belongs to the real Admin CRM frontend)."""
@@ -526,6 +536,16 @@ class ProductMediaInline(admin.TabularInline):
         return format_html('<i class="fas fa-file" aria-hidden="true"></i> {}', obj.storage_path.rsplit("/", 1)[-1])
 
     preview.short_description = "Ko'rinishi"
+
+
+def _variant_choice_label(variant) -> str:
+    parts = [variant.sku]
+    flavour = getattr(variant, "flavour", None)
+    if flavour is not None:
+        parts.append(str(flavour))
+    if variant.weight_value:
+        parts.append(f"{variant.weight_value:g} {variant.weight_unit}")
+    return " · ".join(p for p in parts if p)
 
 
 def _direct_thumbnail_html(storage_path: str, thumbnail_paths: dict) -> str:

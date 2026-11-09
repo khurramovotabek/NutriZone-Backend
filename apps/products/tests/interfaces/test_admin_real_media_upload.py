@@ -138,3 +138,28 @@ class TestProductMediaUpload:
         media = p_models.ProductMedia.objects.filter(product=product, media_role="video").first()
         assert media is not None
         assert media.duration_seconds == 30.0
+
+
+class TestProductVariantMediaUpload:
+    def test_variant_photo_upload_binds_variant_and_keeps_main_photo(self, staff_client):
+        from django.contrib.contenttypes.models import ContentType
+
+        ContentType.objects.clear_cache()
+        product = p_models.Product.objects.create(id=uuid.uuid4(), status="draft")
+        variant = p_models.ProductVariant.objects.create(id=uuid.uuid4(), product=product, sku="VAR-PHOTO-1")
+        base = {
+            "status": "draft",
+            "translations-TOTAL_FORMS": "0", "translations-INITIAL_FORMS": "0", "translations-MIN_NUM_FORMS": "0", "translations-MAX_NUM_FORMS": "1000",
+            "variants-TOTAL_FORMS": "0", "variants-INITIAL_FORMS": "0", "variants-MIN_NUM_FORMS": "0", "variants-MAX_NUM_FORMS": "1000",
+            "variants-2-TOTAL_FORMS": "0", "variants-2-INITIAL_FORMS": "0", "variants-2-MIN_NUM_FORMS": "0", "variants-2-MAX_NUM_FORMS": "1000",
+            "flavour_links-TOTAL_FORMS": "0", "flavour_links-INITIAL_FORMS": "0", "flavour_links-MIN_NUM_FORMS": "0", "flavour_links-MAX_NUM_FORMS": "1000",
+            "media-TOTAL_FORMS": "1", "media-INITIAL_FORMS": "0", "media-MIN_NUM_FORMS": "0", "media-MAX_NUM_FORMS": "16",
+            "media-0-media_role": "primary", "media-0-sort_order": "0",
+        }
+        page = staff_client.get(f"/django-admin/products/product/{product.id}/change/")
+        assert "VAR-PHOTO-1" in page.content.decode()
+        staff_client.post(f"/django-admin/products/product/{product.id}/change/", data={**base, "media-0-file_upload": SimpleUploadedFile("main.jpg", _real_test_image_bytes(), content_type="image/jpeg")}, follow=True)
+        staff_client.post(f"/django-admin/products/product/{product.id}/change/", data={**base, "media-0-variant": str(variant.id), "media-0-file_upload": SimpleUploadedFile("flavour.jpg", _real_test_image_bytes(), content_type="image/jpeg")}, follow=True)
+        rows = list(p_models.ProductMedia.objects.filter(product=product).values_list("media_role", "variant_id"))
+        assert ("primary", None) in rows
+        assert ("primary", variant.id) in rows
