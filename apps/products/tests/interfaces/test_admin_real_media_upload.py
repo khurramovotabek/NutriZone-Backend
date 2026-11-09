@@ -204,3 +204,39 @@ class TestBrandDeleteAfterProductsDeleted:
         p_models.Product.objects.create(id=uuid.uuid4(), status="draft", brand=brand)
         staff_client.post(f"/django-admin/products/brand/{brand.id}/delete/", data={"post": "yes"})
         assert p_models.Brand.objects.filter(id=brand.id).exists()
+
+
+class TestVariantPhotoFilters:
+    def _setup(self):
+        done = p_models.Product.objects.create(id=uuid.uuid4(), status="draft")
+        gap = p_models.Product.objects.create(id=uuid.uuid4(), status="draft")
+        single = p_models.Product.objects.create(id=uuid.uuid4(), status="draft")
+        vs = {}
+        for prod, tag in ((done, "DONE"), (gap, "GAP")):
+            for i in (1, 2):
+                vs[f"{tag}{i}"] = p_models.ProductVariant.objects.create(id=uuid.uuid4(), product=prod, sku=f"VPF-{tag}-{i}")
+        p_models.ProductVariant.objects.create(id=uuid.uuid4(), product=single, sku="VPF-SINGLE-1")
+        for key in ("DONE1", "DONE2", "GAP1"):
+            v = vs[key]
+            p_models.ProductMedia.objects.create(id=uuid.uuid4(), product=v.product, variant=v, media_role="primary", storage_path=f"products/{key}.jpg")
+        return done, gap, single
+
+    def test_variant_list_shows_only_multi_variant_rows_without_own_photo(self, staff_client):
+        self._setup()
+        html = staff_client.get("/django-admin/products/productvariant/", {"variant_photo": "missing"}).content.decode()
+        assert "VPF-GAP-2" in html
+        for sku in ("VPF-GAP-1", "VPF-DONE-1", "VPF-DONE-2", "VPF-SINGLE-1"):
+            assert sku not in html
+
+    def test_product_filter_splits_missing_and_complete(self, staff_client):
+        from django.contrib.admin.sites import site
+        from django.test import RequestFactory
+
+        done, gap, single = self._setup()
+        admin_obj = site._registry[p_models.Product]
+        flt_cls = admin_obj.list_filter[-1]
+        req = RequestFactory().get("/")
+        for value, expected in (("missing", {gap.id}), ("complete", {done.id})):
+            flt = flt_cls(req, {flt_cls.parameter_name: [value]}, p_models.Product, admin_obj)
+            ids = set(flt.queryset(req, p_models.Product.objects.filter(id__in=[done.id, gap.id, single.id])).values_list("id", flat=True))
+            assert ids == expected

@@ -690,6 +690,47 @@ def _category_formfield(field):
     return field
 
 
+class VariantPhotoFilter(admin.SimpleListFilter):
+    """Finds variants of multi-variant products that still show the shared
+    product photo (no variant-bound media) -- the owner's to-do list for
+    per-flavour/size photos."""
+    title = "Variant rasmi"
+    parameter_name = "variant_photo"
+
+    def lookups(self, request, model_admin):
+        return (("missing", "Rasmi yo'q"), ("has", "Rasmi bor"))
+
+    def queryset(self, request, queryset):
+        from django.db.models import Count, Exists, OuterRef
+        own = Exists(orm.ProductMedia.objects.filter(variant=OuterRef("pk")))
+        multi = orm.Product.objects.annotate(n=Count("variants")).filter(n__gt=1).values("pk")
+        if self.value() == "missing":
+            return queryset.filter(product__in=multi).exclude(own)
+        if self.value() == "has":
+            return queryset.filter(own)
+        return queryset
+
+
+class ProductVariantPhotoFilter(admin.SimpleListFilter):
+    """Products with more than one variant where at least one variant has no own photo."""
+    title = "Variant rasmlari"
+    parameter_name = "variant_photos"
+
+    def lookups(self, request, model_admin):
+        return (("missing", "Yetishmaydi"), ("complete", "To'liq"))
+
+    def queryset(self, request, queryset):
+        from django.db.models import Count, Exists, OuterRef
+        bare = orm.ProductVariant.objects.filter(product=OuterRef("pk")).exclude(
+            Exists(orm.ProductMedia.objects.filter(variant=OuterRef("pk"))))
+        multi = queryset.annotate(nv=Count("variants", distinct=True)).filter(nv__gt=1).values("pk")
+        if self.value() == "missing":
+            return queryset.filter(pk__in=multi).filter(Exists(bare))
+        if self.value() == "complete":
+            return queryset.filter(pk__in=multi).exclude(Exists(bare))
+        return queryset
+
+
 @admin.register(orm.Product)
 class ProductAdmin(ExcelExportMixin, CatalogFormMixin, CatalogAnalyticsMixin, admin.ModelAdmin):
     excel_title = "Mahsulotlar"
@@ -712,7 +753,7 @@ class ProductAdmin(ExcelExportMixin, CatalogFormMixin, CatalogAnalyticsMixin, ad
     hero_icon, hero_tone, hero_noun = "fa-box", "#10b981", "mahsulot"
     list_display = ("thumbnail_display", "product_col", "status_col", "price_col", "stock_col", "sales_col", "seo_col")
     list_display_links = ("thumbnail_display", "product_col")
-    list_filter = (("status", titled("Holat")), ("brand", titled("Brend")), ("category", titled("Kategoriya")))
+    list_filter = (("status", titled("Holat")), ("brand", titled("Brend")), ("category", titled("Kategoriya")), ProductVariantPhotoFilter)
     analytics_title = "Mahsulotlar"  # Phase 08.3: brand/category filters were a genuine gap -- this phase's own explicit filter requirement
     search_fields = ("translations__name", "variants__sku")
     list_per_page = 25  # Phase 08.3's own explicit default pagination requirement
@@ -1321,7 +1362,7 @@ class ProductVariantAdmin(ExcelExportMixin, CatalogFormMixin, CatalogAnalyticsMi
     list_display = ("variant_col", "product_col", "status_col", "size_col", "stock_col", "sales_col")
     list_display_links = ("variant_col",)
     inlines = [ProductVariantBarcodeInline]
-    list_filter = (("status", titled("Holat")), ("is_default", titled("Asosiy variant")), ("weight_unit", titled("O'lchov birligi")), ("package", titled("Qadoq")))
+    list_filter = (("status", titled("Holat")), ("is_default", titled("Asosiy variant")), ("weight_unit", titled("O'lchov birligi")), ("package", titled("Qadoq")), VariantPhotoFilter)
     analytics_title = "Mahsulot variantlari"
     search_fields = ("sku", "barcode", "extra_barcodes__barcode", "product__translations__name")
     list_per_page = 25
