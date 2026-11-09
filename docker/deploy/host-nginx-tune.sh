@@ -7,6 +7,8 @@
 #     go through Next's /api routes on nutrizone.uz, where nginx's 1 MB default answered 413 to ordinary photos.
 #   * Paths with invalid UTF-8 %-escapes answer 400 (Next.js answered 500).
 #   * Storefront upstream with a backup on :3001: deploy.sh runs a standby there while the live Next.js restarts.
+#   * Disk cache for /_next/static and /_next/image (docker/nginx/host-assets-cache.conf): build assets and optimised
+#     product photos come from nginx instead of Node.js on every request.
 # The site file stays certbot-compatible. A copy is kept and nginx is reloaded only when `nginx -t` passes;
 # otherwise the copy is restored.
 set -euo pipefail
@@ -109,4 +111,34 @@ if ! grep -q 'nz-storefront-upstream' "$SITE"; then
 else
   nginx -t 2>/dev/null && systemctl reload nginx
   echo "storefront upstream already in place"
+fi
+
+# Asset cache: cache zone + image-format key (http level), the two locations (server level, snippet refreshed each run).
+mkdir -p /var/cache/nginx/nz_assets
+chown www-data:www-data /var/cache/nginx/nz_assets 2>/dev/null || true
+cat > /etc/nginx/conf.d/nz-assets-cache.conf <<'CONF'
+proxy_cache_path /var/cache/nginx/nz_assets levels=1:2 keys_zone=nz_assets:20m max_size=3g inactive=30d use_temp_path=off;
+map $http_accept $nz_img_fmt {
+    ~*image/avif avif;
+    ~*image/webp webp;
+    default      other;
+}
+CONF
+cp "$(dirname "$(readlink -f "$0")")/../nginx/host-assets-cache.conf" /etc/nginx/snippets/nz-assets-cache.conf
+if ! grep -q 'nz-assets-cache' "$SITE"; then
+  cp -a "$SITE" "$BACKUP.assets"
+  sed -i -E '0,/^(\s*)include snippets\/nz-utf8-path\.conf;  # nz-utf8-path/s//\1include snippets\/nz-utf8-path.conf;  # nz-utf8-path\n\1include snippets\/nz-assets-cache.conf;  # nz-assets-cache/' "$SITE"
+  if nginx -t 2>/dev/null; then
+    systemctl reload nginx
+    echo "asset cache for /_next/static and /_next/image (backup: $BACKUP.assets)"
+  else
+    cp -a "$BACKUP.assets" "$SITE"
+    rm -f /etc/nginx/conf.d/nz-assets-cache.conf
+    nginx -t
+    echo "nginx -t failed -- restored $BACKUP.assets" >&2
+    exit 1
+  fi
+else
+  if nginx -t 2>/dev/null; then systemctl reload nginx; else nginx -t; exit 1; fi
+  echo "asset cache already included (snippet refreshed)"
 fi
