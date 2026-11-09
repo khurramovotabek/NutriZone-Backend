@@ -227,6 +227,12 @@ ALIASES: dict[str, str] = {
     "on": "optimum nutrition", "optimum": "optimum", "gsw": "gold standard whey", "gs": "gold standard",
     "r1": "rule 1", "one": "1", "bir": "1", "iso": "iso", "smass": "serious mass", "bcaa": "bcaa",
     "predtrenik": "predtren", "pretren": "predtren", "предтрен": "predtren", "предтреник": "predtren",
+    # Cyrillic spellings whose letter-by-letter transliteration misses the Latin name ("бцаа" -> "bsaa")
+    "bsaa": "bcaa", "bsa": "bcaa", "btsaa": "bcaa", "vsaa": "bcaa", "eaa": "eaa", "eaa9": "eaa",
+    # common misspellings of the commonest word (a typo match found "B-Stress" before any protein)
+    "protien": "protein", "protin": "protein", "proteyn": "protein", "proteen": "protein", "protei": "protein",
+    # "спортивное питание" / "спортпит" = the whole shelf: the best-selling proteins, not a word match on "sport"
+    "sportpit": "protein", "sportivnoe": "protein", "pitanie": "protein", "pitaniya": "protein",
 }
 
 # Words that carry no product meaning in a query ("ozish uchun", "протеин для массы", "protein for women" keeps "women").
@@ -523,7 +529,9 @@ def _expand_aliases(tokens: list[str]) -> list[str]:
         return ["optimum", "nutrition"] if tokens[0] == "on" else tokens
     out: list[str] = []
     for t in tokens:
-        out.extend(ALIASES.get(t, t).split() if t in ALIASES else [t])
+        for part in (ALIASES[t].split() if t in ALIASES else [t]):
+            if t not in ALIASES or part not in out:  # "sportivnoe pitanie" -> one "protein"; "2 1 1" keeps its numbers
+                out.append(part)
     return out
 
 

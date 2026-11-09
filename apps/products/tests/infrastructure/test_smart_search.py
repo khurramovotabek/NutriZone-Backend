@@ -268,3 +268,12 @@ class TestEditDistanceSpeedups:
             key = ss.phonetic(query)
             expected = {w: ss.word_score(key, w) for w in words if ss.word_score(key, w) > 0 or ss._same_stem(key, w)}
             assert ss._scores_for(prepared, key) == expected, query
+
+
+def test_cyrillic_bcaa_misspelt_protein_and_sport_nutrition():
+    bcaa, whey, stress = _entry("Olimp BCAA Xplode"), _entry("Optimum Gold Standard Whey Protein", popularity=50), _entry("Solaray Vitamin B-Stress")
+    index = [bcaa, whey, stress]
+    assert ss.search("бцаа", index).product_ids[:1] == [bcaa.id]
+    assert ss.search("protien", index).product_ids[:1] == [whey.id]
+    assert ss.search("спортивное питание", index).product_ids[:1] == [whey.id]
+    assert ss._expand_aliases(["bcaa", "2", "1", "1"]) == ["bcaa", "2", "1", "1"]  # numbers are never collapsed
