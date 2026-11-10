@@ -1,7 +1,7 @@
 {% extends "admin/base_site.html" %}
 {% load i18n static %}
 {# Dashboard → Telegram botlar markazi (apps/platform/infrastructure/telegram_view.py, telegram_center.py). #}
-{% block extrastyle %}{{ block.super }}<link rel="stylesheet" href="{% static 'admin/css/nutrizone-analytics.css' %}?v=5"><link rel="stylesheet" href="{% static 'admin/css/nutrizone-telegram.css' %}?v=6">{% endblock %}
+{% block extrastyle %}{{ block.super }}<link rel="stylesheet" href="{% static 'admin/css/nutrizone-analytics.css' %}?v=5"><link rel="stylesheet" href="{% static 'admin/css/nutrizone-telegram.css' %}?v=8">{% endblock %}
 {% block breadcrumbs %}<ol class="breadcrumb"><li class="breadcrumb-item"><a href="{% url 'admin:index' %}">{% translate "Home" %}</a></li><li class="breadcrumb-item active">{{ title }}</li></ol>{% endblock %}
 {% block content_title %}{% endblock %}
 {% block content %}
@@ -42,6 +42,65 @@
     </article>
     {% endfor %}
   </section>
+
+  {% with oc=orders_channel %}{% if oc %}
+  <section class="nza-card nzt-oc" id="orders-channel">
+    <div class="nza-card-head">
+      <h3><i class="fas fa-bullhorn" aria-hidden="true"></i> Buyurtmalar kanali</h3>
+      {% if oc.connected and not oc.error %}<span class="nzt-pill is-ok"><i class="fas fa-check" aria-hidden="true"></i> Ulangan</span>{% elif oc.connected %}<span class="nzt-pill is-warn"><i class="fas fa-triangle-exclamation" aria-hidden="true"></i> Muammo bor</span>{% else %}<span class="nzt-pill is-bad"><i class="fas fa-xmark" aria-hidden="true"></i> Ulanmagan</span>{% endif %}
+    </div>
+    {% if oc.connected %}
+    <div class="nzt-oc-now">
+      <span class="nzt-oc-avatar"><i class="fas {% if oc.chat_type == 'channel' or not oc.chat_type %}fa-bullhorn{% else %}fa-users{% endif %}" aria-hidden="true"></i></span>
+      <div class="nzt-oc-name">
+        <b>{{ oc.title|default:"Buyurtmalar kanali" }}</b>
+        <small>{% if oc.username %}@{{ oc.username }} · {% endif %}ID {{ oc.chat_id }}{% if oc.source == "env" %} · server sozlamasidan (.env){% endif %}</small>
+        {% if oc.connected_at %}<small>Ulangan: {{ oc.connected_at|date:"d.m.Y H:i" }}{% if oc.connected_by %} · {{ oc.connected_by }}{% endif %}</small>{% endif %}
+      </div>
+      {% if oc.username %}<a class="nzt-open" href="https://t.me/{{ oc.username }}" target="_blank" rel="noopener"><i class="fab fa-telegram" aria-hidden="true"></i> Ochish</a>{% endif %}
+    </div>
+    {% if oc.error %}<p class="nzt-check is-bad"><i class="fas fa-triangle-exclamation" aria-hidden="true"></i> {{ oc.error }}</p>{% endif %}
+    <p class="nzt-about">Yangi onlayn buyurtmalar (Tasdiqlash / Bekor qilish tugmalari bilan), kassa savdolari, qaytarish so'rovlari, smena hisobotlari va chat ogohlantirishlari shu yerga keladi.</p>
+    {% endif %}
+    {% if not oc.token %}<p class="nzt-check is-bad">Orders bot tokeni (TELEGRAM_ORDERS_BOT_TOKEN) serverda sozlanmagan.</p>{% endif %}
+    {% if can_check %}
+    <div class="nzt-oc-actions">
+      {% if oc.connected %}
+      <form method="post" action="{% url 'admin:nz_telegram_orders_channel' %}">{% csrf_token %}<input type="hidden" name="op" value="test"><button type="submit" class="nzt-invite-btn"><i class="fas fa-paper-plane" aria-hidden="true"></i> Test xabar yuborish</button></form>
+      {% if oc.source == "dashboard" %}<form method="post" action="{% url 'admin:nz_telegram_orders_channel' %}" data-confirm="Buyurtmalar kanalini uzasizmi? Yangi buyurtmalar kanalga yuborilmay qoladi.">{% csrf_token %}<input type="hidden" name="op" value="disconnect"><button type="submit" class="nzt-invite-btn is-ghost"><i class="fas fa-link-slash" aria-hidden="true"></i> Uzish</button></form>{% endif %}
+      {% endif %}
+    </div>
+    {% if oc.chats %}
+    <h4 class="nzt-oc-sub">Bot qo'shilgan kanal va guruhlar</h4>
+    <ul class="nzt-oc-chats">
+      {% for c in oc.chats %}
+      <li class="{% if c.current %}is-current{% endif %}">
+        <span class="nzt-oc-ico"><i class="fas {% if c.type == 'channel' %}fa-bullhorn{% else %}fa-users{% endif %}" aria-hidden="true"></i></span>
+        <span class="nzt-oc-ct"><b>{{ c.title }}</b><small>{% if c.type == 'channel' %}Kanal{% else %}Guruh{% endif %}{% if c.username %} · @{{ c.username }}{% endif %} · {% if c.can_post %}bot admin{% else %}xabar yuborish ruxsati yo'q{% endif %}</small></span>
+        {% if c.current %}<em class="nzt-access is-ok">Hozirgi kanal</em>{% elif c.can_post %}<form method="post" action="{% url 'admin:nz_telegram_orders_channel' %}">{% csrf_token %}<input type="hidden" name="op" value="connect_chat"><input type="hidden" name="chat" value="{{ c.id }}"><button type="submit" class="nzt-invite-btn"><i class="fas fa-link" aria-hidden="true"></i> Ulash</button></form>{% endif %}
+      </li>
+      {% endfor %}
+    </ul>
+    {% endif %}
+    <form method="post" action="{% url 'admin:nz_telegram_orders_channel' %}" class="nzt-oc-form">{% csrf_token %}
+      <input type="hidden" name="op" value="connect">
+      <label for="nzt-oc-ref">{% if oc.connected %}Boshqa kanalga o'tkazish{% else %}Kanalni ulash{% endif %}</label>
+      <div class="nzt-oc-row">
+        <input id="nzt-oc-ref" name="ref" type="text" inputmode="text" autocomplete="off" placeholder="@kanal_nomi, t.me/kanal yoki -100…" required>
+        <button type="submit" class="nzt-invite-btn nzt-oc-go"><i class="fas fa-link" aria-hidden="true"></i> Ulash</button>
+      </div>
+    </form>
+    <ol class="nzt-oc-steps">
+      <li>Botni{% if oc.bot_username %} <b>@{{ oc.bot_username }}</b>{% endif %} kanalga <b>admin</b> qilib qo'shing va «Xabar yuborish» ruxsatini yoqing.</li>
+      <li>Ochiq kanal bo'lsa — @username'ini yuqoriga yozib «Ulash»ni bosing.</li>
+      <li>Yopiq (private) kanal bo'lsa — <form method="post" action="{% url 'admin:nz_telegram_orders_channel' %}" class="nzt-inline">{% csrf_token %}<input type="hidden" name="op" value="detect"><button type="submit" class="nzt-link">kanallarni aniqlashni yoqing</button></form>, kanalga istalgan xabar yozing va sahifani yangilang — kanal ro'yxatda chiqadi, «Ulash»ni bosing.</li>
+      <li>«Test xabar yuborish» bilan tekshiring. Eski buyurtmalar kanalga qayta yuborilmaydi — ulangan paytdan boshlab hammasi keladi.</li>
+    </ol>
+    {% else %}
+    <p class="nza-note"><i class="fas fa-lock" aria-hidden="true"></i> Kanalni faqat superadmin ulaydi yoki o'zgartiradi (u yerga mijozlar ismi, telefoni va manzili boradi).</p>
+    {% endif %}
+  </section>
+  {% endif %}{% endwith %}
 
   <section class="nza-card nzt-preview-card">
     <div class="nza-card-head">
@@ -141,6 +200,13 @@
   }
   root.querySelectorAll(".nzt-tab").forEach(function (t) { t.addEventListener("click", function () { load(t.dataset.kind); }); });
   var first = root.querySelector(".nzt-tab"); if (first) load(first.dataset.kind);
+
+  root.querySelectorAll("form[data-confirm]").forEach(function (f) {
+    f.addEventListener("submit", function (e) { if (!window.confirm(f.dataset.confirm)) e.preventDefault(); });
+  });
+  root.querySelectorAll(".nzt-oc form").forEach(function (f) {
+    f.addEventListener("submit", function (e) { if (e.defaultPrevented) return; var b = f.querySelector("button[type=submit]"); if (b) setTimeout(function () { b.disabled = true; }, 0); });
+  });
 
   var btn = root.querySelector("[data-check]");
   if (btn) btn.addEventListener("click", function () {

@@ -381,7 +381,7 @@ class ChatSettingsAdmin(PremiumFormMixin, admin.ModelAdmin):
         from django.db.models import Avg
 
         avg = rated.aggregate(a=Avg("score"))["a"]
-        channel = bool(getattr(dj, "TELEGRAM_ORDERS_CHAT_ID", None))
+        channel = bool(_orders_chat_id())
         return {
             "title": "Chat sozlamalari", "subtitle": f"hozir: {'ish vaqti' if is_open(cfg=obj) else 'ish vaqtidan tashqari'} · {hours_label(obj)}",
             "chips": [ui.chip("Avto-javob yoqilgan" if obj.auto_reply_enabled else "Avto-javob o'chiq", "#16a34a" if obj.auto_reply_enabled else "#64748b", "fa-robot"),
@@ -570,3 +570,10 @@ class ConversationRatingAdmin(ExcelExportMixin, PremiumListMixin, admin.ModelAdm
         if r.review_status == "resolved":
             return format_html('<br><span class="nzi-chip" style="--t:#16a34a" title="{}"><i class="fas fa-check" aria-hidden="true"></i> Hal qilindi</span>', f"{r.reviewed_by}: {r.review_note}".strip(": "))
         return ""
+
+
+def _orders_chat_id() -> str:
+    """The Orders channel (dashboard-connected or env) -- apps/telegram_bot/infrastructure/orders_chat.py decides."""
+    from apps.telegram_bot.infrastructure.orders_chat import chat_id
+
+    return chat_id()

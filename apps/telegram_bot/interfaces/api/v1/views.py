@@ -691,8 +691,10 @@ def telegram_orders_webhook_view(request):
         return HttpResponse(status=200)
 
     try:
-        from apps.telegram_bot.infrastructure import orders_bot
+        from apps.telegram_bot.infrastructure import orders_bot, orders_chat
 
+        if orders_chat.handle_update(update):  # the bot added to / removed from a channel or group, /ulash
+            return HttpResponse(status=200)
         if orders_bot.handle_update(update):  # /start, menu buttons (ob:*), the lists for owners and staff
             return HttpResponse(status=200)
         callback_query = update.get("callback_query")

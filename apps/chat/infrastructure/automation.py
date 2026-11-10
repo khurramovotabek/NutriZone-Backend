@@ -259,7 +259,7 @@ def alert_low_rating(rating_id) -> bool:
     from apps.identity.infrastructure.models import User
 
     rating = ConversationRating.objects.filter(pk=rating_id).first()
-    chat = getattr(settings, "TELEGRAM_ORDERS_CHAT_ID", None)
+    chat = _orders_chat_id()
     if rating is None or not chat or not chat_settings().low_rating_alert or not _log("low_rating", str(rating.pk), rating.conversation_id):
         return False
     u = User.objects.filter(id=rating.customer_id).first()
@@ -331,7 +331,7 @@ def alert_waiting() -> dict:
     from apps.telegram_bot.infrastructure import analytics_bot
 
     cfg = chat_settings()
-    chat = getattr(settings, "TELEGRAM_ORDERS_CHAT_ID", None)
+    chat = _orders_chat_id()
     analytics = analytics_bot.is_configured()
     if not cfg.alert_enabled or not (chat or analytics):
         return {"sent": 0, "reason": "disabled" if not cfg.alert_enabled else "no channel"}
@@ -551,3 +551,10 @@ def maybe_order_bot(message_id) -> bool:
         reply = send.execute(conversation_id=conv.id, sender_id=BOT_ID, message_type=kind, content=content)
         push_message(conv.id, message_payload(reply), BOT_ID, members)
     return True
+
+
+def _orders_chat_id() -> str:
+    """The Orders channel (dashboard-connected or env) -- apps/telegram_bot/infrastructure/orders_chat.py decides."""
+    from apps.telegram_bot.infrastructure.orders_chat import chat_id
+
+    return chat_id()

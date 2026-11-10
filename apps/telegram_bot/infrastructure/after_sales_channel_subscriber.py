@@ -38,7 +38,7 @@ STATUS_UZ = {"pending_payment": "To'lov kutilmoqda", "confirmed": "Tasdiqlangan"
 
 
 def sync_after_sales_channel() -> dict:
-    orders_chat_id = getattr(settings, "TELEGRAM_ORDERS_CHAT_ID", None)
+    orders_chat_id = _orders_chat_id()
     if not orders_chat_id:
         return {"scanned": 0, "posted": 0, "skipped_no_channel": True}
 
@@ -193,3 +193,10 @@ def post_event(event_type: str, payload: dict, chat_id: str) -> str:
     except IntegrityError:
         return "skipped"
     return "posted"
+
+
+def _orders_chat_id() -> str:
+    """The Orders channel (dashboard-connected or env) -- apps/telegram_bot/infrastructure/orders_chat.py decides."""
+    from apps.telegram_bot.infrastructure.orders_chat import chat_id
+
+    return chat_id()

@@ -85,7 +85,7 @@ def send(session_id) -> dict:
         notify(session.store.owner_id, "shift_closed", {"store": session.store.name, "sales": session.sales_count, "revenue": _som(revenue),
                                                         "difference": _som(session.cash_difference)}, dedupe_key=f"shift_closed:{session.id}")
         out["owner"] = True
-    chat = getattr(settings, "TELEGRAM_ORDERS_CHAT_ID", None)
+    chat = _orders_chat_id()
     if chat:
         try:
             from apps.notifications.infrastructure import composition
@@ -95,3 +95,10 @@ def send(session_id) -> dict:
         except Exception:  # noqa: BLE001 - a Telegram hiccup must never affect the closed shift
             logger.exception("Z-report: Telegram channel post failed for session %s", session_id)
     return out
+
+
+def _orders_chat_id() -> str:
+    """The Orders channel (dashboard-connected or env) -- apps/telegram_bot/infrastructure/orders_chat.py decides."""
+    from apps.telegram_bot.infrastructure.orders_chat import chat_id
+
+    return chat_id()

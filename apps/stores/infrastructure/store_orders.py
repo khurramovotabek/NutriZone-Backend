@@ -263,7 +263,7 @@ def _post_hand_back(order_pk, store_name: str, reason: str) -> None:
 
     from apps.ordering.infrastructure.models import OrderModel
 
-    chat = getattr(settings, "TELEGRAM_ORDERS_CHAT_ID", None)
+    chat = _orders_chat_id()
     order = OrderModel.objects.filter(pk=order_pk).first()
     if not chat or order is None:
         return
@@ -281,3 +281,9 @@ def _post_hand_back(order_pk, store_name: str, reason: str) -> None:
 
     transaction.on_commit(send)
 
+
+def _orders_chat_id() -> str:
+    """The Orders channel (dashboard-connected or env) -- apps/telegram_bot/infrastructure/orders_chat.py decides."""
+    from apps.telegram_bot.infrastructure.orders_chat import chat_id
+
+    return chat_id()

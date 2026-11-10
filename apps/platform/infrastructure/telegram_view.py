@@ -6,6 +6,8 @@ Dashboard → Telegram botlar markazi (telegram_center.py):
                                            carry customer and sales data: Analitika viewers only)
   /django-admin/telegram/check/  (POST)    live getMe for every configured bot (superusers)
   /django-admin/telegram/invite-owner/ (POST store=<id>)  (re)send a branch owner the Analytics bot invitation
+  /django-admin/telegram/orders-channel/ (POST op=connect|connect_chat|test|disconnect|detect)  the Orders channel
+                                           (superusers; apps/telegram_bot/infrastructure/orders_chat.py)
 """
 from __future__ import annotations
 
@@ -36,8 +38,62 @@ def telegram_center_view(request):
         "branch_owners": tc.branch_owners() if can_view(request.user) else None,
         "previews": previews,
         "can_check": request.user.is_superuser,
+        "orders_channel": _orders_channel_status(),
     }
     return render(request, "admin/platform/telegram_center.html", context)
+
+
+def _orders_channel_status() -> dict | None:
+    from apps.telegram_bot.infrastructure import orders_chat
+
+    try:
+        return orders_chat.status()
+    except Exception:  # noqa: BLE001 - the rest of the page must still open
+        return None
+
+
+@staff_member_required
+@require_POST
+def telegram_orders_channel_view(request):
+    """Connect / test / disconnect the Orders channel. Customer names, phones and addresses go there -- superusers only."""
+    from django.contrib import messages
+    from django.http import HttpResponseRedirect
+    from django.urls import reverse
+
+    from apps.telegram_bot.infrastructure import orders_chat
+
+    if not request.user.is_superuser:
+        raise PermissionDenied
+    by = f"Dashboard: {request.user.get_username()}"
+    op = request.POST.get("op", "")
+    if op == "connect":
+        ok, text = orders_chat.connect_ref(request.POST.get("ref", ""), by)
+    elif op == "connect_chat":
+        ok, text = orders_chat.connect_ref(request.POST.get("chat", ""), by)
+    elif op == "test":
+        ok, text = orders_chat.send_test(by)
+    elif op == "disconnect":
+        ok, text = orders_chat.disconnect(by)
+    elif op == "detect":
+        ok, text = _register_orders_webhook()
+    else:
+        ok, text = False, "Noma'lum amal."
+    (messages.success if ok else messages.warning)(request, text)
+    return HttpResponseRedirect(reverse("admin:nz_telegram_status") + "#orders-channel")
+
+
+def _register_orders_webhook() -> tuple[bool, str]:
+    """Re-register the Orders bot webhook with my_chat_member/channel_post, so channels it is admin of show up here."""
+    import io
+
+    from django.core.management import call_command
+
+    out = io.StringIO()
+    try:
+        call_command("telegram_set_webhook", bot="orders", stdout=out, stderr=out)
+    except Exception as exc:  # noqa: BLE001 - shown to the superuser, never a 500
+        return False, f"Webhook yangilanmadi: {exc}"
+    return True, "Orders bot endi kanal o'zgarishlarini eshitadi. Kanalga istalgan xabar yozing — u shu ro'yxatda paydo bo'ladi."
 
 
 @staff_member_required

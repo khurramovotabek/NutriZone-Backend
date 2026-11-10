@@ -30,6 +30,7 @@ from django.core.management.base import BaseCommand, CommandError
 
 # The update types the bot handles: messages, button presses and inline-mode queries (`@bot protein`).
 ALLOWED_UPDATES = ["message", "callback_query", "inline_query"]
+ORDERS_ALLOWED_UPDATES = ["message", "callback_query", "my_chat_member", "channel_post"]
 
 class Command(BaseCommand):
     help = "Registers this deployment's public webhook URL with the Telegram Bot API's setWebhook endpoint."
@@ -63,6 +64,8 @@ class Command(BaseCommand):
             default_path = "orders-webhook"
             token_setting_name = "TELEGRAM_ORDERS_BOT_TOKEN"
             secret_setting_name = "TELEGRAM_ORDERS_WEBHOOK_SECRET"
+            # my_chat_member / channel_post: the bot learns which channel it was made admin of (orders_chat.py)
+            allowed_updates = ORDERS_ALLOWED_UPDATES
         else:
             bot_token = getattr(settings, "TELEGRAM_BOT_TOKEN", None)
             webhook_secret = getattr(settings, "TELEGRAM_WEBHOOK_SECRET", None)

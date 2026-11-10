@@ -96,7 +96,9 @@ def _allowlist() -> list[str]:
 
 
 def _orders_chat() -> str:
-    return "Buyurtmalar kanali ulangan" if getattr(settings, "TELEGRAM_ORDERS_CHAT_ID", "") else "Buyurtmalar kanali ulanmagan"
+    from apps.telegram_bot.infrastructure.orders_chat import chat_id
+
+    return "Buyurtmalar kanali ulangan" if chat_id() else "Buyurtmalar kanali ulanmagan — pastdagi «Buyurtmalar kanali» bo'limidan ulang"
 
 
 def subscribers() -> list[dict]:

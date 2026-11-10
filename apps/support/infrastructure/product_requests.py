@@ -158,10 +158,17 @@ def _alert_staff(request_id) -> None:
                 except Exception:  # noqa: BLE001
                     logger.exception("product request alert to %s failed", analytics_bot.mask_chat(chat))
             return
-        chat = getattr(settings, "TELEGRAM_ORDERS_CHAT_ID", None)
+        chat = _orders_chat_id()
         if chat:
             from apps.notifications.infrastructure import composition
 
             composition.build_orders_telegram_gateway().send_message_with_keyboard(str(chat), text, keyboard or [])
     except Exception:  # noqa: BLE001 - an alert must never break the customer's request
         logger.exception("product request %s: staff alert failed", row.number)
+
+
+def _orders_chat_id() -> str:
+    """The Orders channel (dashboard-connected or env) -- apps/telegram_bot/infrastructure/orders_chat.py decides."""
+    from apps.telegram_bot.infrastructure.orders_chat import chat_id
+
+    return chat_id()

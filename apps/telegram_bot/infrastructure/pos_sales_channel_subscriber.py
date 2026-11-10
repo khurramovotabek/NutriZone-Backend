@@ -42,7 +42,7 @@ _STORE_TZ = ZoneInfo("Asia/Tashkent")
 
 
 def sync_pos_sales_channel() -> dict:
-    orders_chat_id = getattr(settings, "TELEGRAM_ORDERS_CHAT_ID", None)
+    orders_chat_id = _orders_chat_id()
     if not orders_chat_id:
         return {"scanned": 0, "posted": 0, "skipped_no_channel": True}
 
@@ -221,3 +221,10 @@ def _send_rich(sale_id, chat_id) -> int | None:
     except Exception:  # noqa: BLE001
         logger.warning("POS Orders Channel: rich post failed for sale %s -- sending the classic post", sale_id, exc_info=True)
         return None
+
+
+def _orders_chat_id() -> str:
+    """The Orders channel (dashboard-connected or env) -- apps/telegram_bot/infrastructure/orders_chat.py decides."""
+    from apps.telegram_bot.infrastructure.orders_chat import chat_id
+
+    return chat_id()

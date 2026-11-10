@@ -255,3 +255,51 @@ class ProductStockFlag(models.Model):
 
     class Meta:
         db_table = "telegram_product_stock_flags"
+
+
+class OrdersChannelSettings(models.Model):
+    """
+    Dashboard → Telegram botlar markazi → "Buyurtmalar kanali" (singleton, pk=1): the chat the Orders bot posts online
+    orders, kassa sales and after-sales requests to. Set without a deploy -- automatically when the bot is made an
+    admin of a channel (or someone posts /ulash there), or from the dashboard. Blank → the TELEGRAM_ORDERS_CHAT_ID env
+    fallback (apps/telegram_bot/infrastructure/orders_chat.py is the only reader).
+    """
+
+    chat_id = models.CharField("Chat ID", max_length=64, blank=True, default="")
+    title = models.CharField("Nomi", max_length=255, blank=True, default="")
+    chat_type = models.CharField(max_length=20, blank=True, default="")
+    username = models.CharField(max_length=64, blank=True, default="")
+    connected_at = models.DateTimeField(null=True, blank=True)
+    connected_by = models.CharField(max_length=150, blank=True, default="")
+    last_error = models.CharField(max_length=500, blank=True, default="")
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        db_table = "telegram_orders_channel_settings"
+        verbose_name = "Buyurtmalar kanali"
+        verbose_name_plural = "Buyurtmalar kanali"
+
+    def __str__(self) -> str:  # pragma: no cover
+        return self.title or self.chat_id or "Buyurtmalar kanali"
+
+
+class TelegramBotChat(models.Model):
+    """Groups/channels a staff bot was added to (from my_chat_member / channel_post updates) -- the dashboard's pick list."""
+
+    id = models.BigAutoField(primary_key=True)
+    bot = models.CharField(max_length=16, default="orders")
+    chat_id = models.BigIntegerField()
+    title = models.CharField(max_length=255, blank=True, default="")
+    chat_type = models.CharField(max_length=20, blank=True, default="")
+    username = models.CharField(max_length=64, blank=True, default="")
+    status = models.CharField(max_length=20, blank=True, default="")  # creator / administrator / member / left / kicked
+    can_post = models.BooleanField(default=False)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        db_table = "telegram_bot_chats"
+        ordering = ("-updated_at",)
+        constraints = [models.UniqueConstraint(fields=["bot", "chat_id"], name="uniq_bot_chat")]
+
+    def __str__(self) -> str:  # pragma: no cover
+        return f"{self.bot}:{self.title or self.chat_id}"

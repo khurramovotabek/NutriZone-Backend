@@ -116,3 +116,47 @@
   .nzt-owners .nzt-tr > span:nth-child(4) { display: block; grid-column: 1 / -1; }
   .nzt-owners .nzt-invite-btn { width: 100%; justify-content: center; padding: 9px 12px; }
 }
+
+/* Buyurtmalar kanali (orders_chat.py): current chat, pick list, connect form, steps -- one column, phone-first */
+.nzt-oc { scroll-margin-top: 80px; }
+.nzt-pill.is-warn { color: #b45309; background: color-mix(in srgb, #f59e0b 15%, transparent); }
+.nzt-oc .nza-card-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; }
+.nzt-oc-now { display: flex; align-items: center; gap: 12px; padding: 12px; margin-bottom: 10px; border-radius: 14px; background: var(--nz-surface-secondary); }
+.nzt-oc-avatar { width: 44px; height: 44px; flex: none; display: grid; place-items: center; border-radius: 50%; color: #fff; font-size: 17px; background: linear-gradient(140deg, #0ea5e9, #4f46e5); }
+.nzt-oc-name { min-width: 0; flex: 1; display: grid; gap: 2px; }
+.nzt-oc-name b { font-size: 15px; color: var(--nz-text-primary); overflow-wrap: anywhere; }
+.nzt-oc-name small { font-size: 12px; color: var(--nz-text-muted); overflow-wrap: anywhere; }
+.nzt-oc-now .nzt-open { margin-top: 0; align-self: center; }
+.nzt-oc .nzt-about { margin-bottom: 10px; }
+.nzt-oc .nzt-check { margin-bottom: 10px; }
+.nzt-oc-actions { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 12px; }
+.nzt-oc-actions:empty { display: none; }
+.nzt-oc .nzt-invite-btn { min-height: 38px; padding: 8px 14px; font-size: 13px; border-radius: 10px; }
+.nzt-invite-btn.is-ghost { color: #b91c1c; border-color: color-mix(in srgb, #ef4444 35%, transparent); background: transparent; }
+.nzt-invite-btn[disabled] { opacity: .6; cursor: progress; }
+.nzt-oc-sub { margin: 4px 0 8px; font-size: 13px; font-weight: 800; }
+.nzt-oc-chats { list-style: none; margin: 0 0 14px; padding: 0; display: grid; gap: 6px; }
+.nzt-oc-chats li { display: flex; align-items: center; gap: 10px; padding: 9px 10px; border-radius: 12px; box-shadow: inset 0 0 0 1px var(--nz-border); }
+.nzt-oc-chats li.is-current { box-shadow: inset 0 0 0 2px color-mix(in srgb, #22c55e 55%, transparent); }
+.nzt-oc-ico { width: 32px; height: 32px; flex: none; display: grid; place-items: center; border-radius: 10px; color: #0369a1; background: color-mix(in srgb, #0ea5e9 14%, transparent); }
+.nzt-oc-ct { min-width: 0; flex: 1; display: grid; }
+.nzt-oc-ct b { font-size: 13.5px; color: var(--nz-text-primary); overflow-wrap: anywhere; }
+.nzt-oc-ct small { font-size: 11.5px; color: var(--nz-text-muted); }
+.nzt-oc-form { display: grid; gap: 6px; margin-bottom: 12px; }
+.nzt-oc-form label { font-size: 12px; font-weight: 750; color: var(--nz-text-secondary); }
+.nzt-oc-row { display: flex; gap: 8px; }
+.nzt-oc-row input { flex: 1; min-width: 0; min-height: 40px; padding: 8px 12px; border-radius: 10px; border: 1px solid var(--nz-border); background: var(--nz-surface); color: var(--nz-text-primary); font-size: 14px; }
+.nzt-oc-row .nza-btn { flex: none; }
+.nzt-oc-steps { margin: 0; padding-left: 20px; display: grid; gap: 6px; font-size: 12.5px; line-height: 1.5; color: var(--nz-text-secondary); }
+.nzt-inline { display: inline; }
+.nzt-link { padding: 0; border: 0; background: none; color: #0284c7; font: inherit; font-weight: 700; text-decoration: underline; cursor: pointer; }
+@media (max-width: 575px) {
+  .nzt-oc-row { flex-direction: column; }
+  .nzt-oc-row input { font-size: 16px; }
+  .nzt-oc-actions form, .nzt-oc-actions .nzt-invite-btn { flex: 1; width: 100%; justify-content: center; }
+  .nzt-oc-chats li { flex-wrap: wrap; }
+  .nzt-oc-chats li form { width: 100%; }
+  .nzt-oc-chats li .nzt-invite-btn { width: 100%; justify-content: center; }
+}
+.nzt-oc .nzt-oc-go { flex: none; justify-content: center; color: #fff; border-color: transparent; background: linear-gradient(135deg, #0284c7, #4f46e5); box-shadow: 0 8px 18px -12px #0284c7; }
+.nzt-oc .nzt-oc-go:hover { background: linear-gradient(135deg, #0369a1, #4338ca); }

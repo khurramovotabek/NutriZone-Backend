@@ -59,7 +59,7 @@ def scope(bot: str, chat_id, telegram_user_id=None) -> Scope:
     if bot == "analytics":
         all_access = str(chat_id) in _analytics_allowlist()
     else:
-        all_access = str(chat_id) == str(getattr(settings, "TELEGRAM_ORDERS_CHAT_ID", "") or "") or TelegramStaffMember.objects.filter(telegram_user_id=tg_user, is_active=True).exists()
+        all_access = str(chat_id) == _orders_chat_id() or TelegramStaffMember.objects.filter(telegram_user_id=tg_user, is_active=True).exists()
     if all_access:
         stores = list(Store.objects.filter(kind="store").exclude(status="inactive").order_by("name"))
     return Scope(chat_id=int(chat_id), all_access=all_access, stores=stores, name=name)
@@ -103,3 +103,10 @@ def deactivate(bot: str, chat_id) -> None:
     from apps.telegram_bot.infrastructure.models import TelegramBotSubscriber
 
     TelegramBotSubscriber.objects.filter(bot=bot, chat_id=chat_id).update(is_active=False)
+
+
+def _orders_chat_id() -> str:
+    """The Orders channel (dashboard-connected or env) -- apps/telegram_bot/infrastructure/orders_chat.py decides."""
+    from apps.telegram_bot.infrastructure.orders_chat import chat_id
+
+    return chat_id()

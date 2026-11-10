@@ -65,7 +65,7 @@ def _deliver(bot: str, token: str, sub, key: str, build, reply_to_key: str | Non
 
 def _owner_subscribers(bot: str):
     """(subscriber, scope) for every active subscriber who owns at least one branch, skipping the staff channel chat."""
-    channel = str(getattr(settings, "TELEGRAM_ORDERS_CHAT_ID", "") or "") if bot == "orders" else ""
+    channel = _orders_chat_id() if bot == "orders" else ""
     for sub in staff_access.subscribers(bot):
         if bot == "orders" and str(sub.chat_id) == channel:
             continue  # that chat already gets every post from the Orders channel feed
@@ -190,3 +190,10 @@ def run() -> dict:
             logger.exception("store posts: %s feed failed", name)
             out[name] = "error"
     return out
+
+
+def _orders_chat_id() -> str:
+    """The Orders channel (dashboard-connected or env) -- apps/telegram_bot/infrastructure/orders_chat.py decides."""
+    from apps.telegram_bot.infrastructure.orders_chat import chat_id
+
+    return chat_id()
