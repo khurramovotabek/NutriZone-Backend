@@ -16,7 +16,7 @@ from apps.platform.infrastructure import premium_admin as ui
 from apps.platform.infrastructure.excel_export import Col, ExcelExportMixin
 from apps.platform.infrastructure.premium_admin import PremiumFormMixin, PremiumListMixin, hero_stat
 from apps.telegram_bot.infrastructure import posts
-from apps.telegram_bot.infrastructure.models import ChannelAutoPostSettings, TelegramPost, TelegramPostStatus
+from apps.telegram_bot.infrastructure.models import ChannelAutoPostSettings, TelegramPost, TelegramPostStatus, TelegramStaffMember
 from apps.telegram_bot.infrastructure.rich_text_field import TelegramRichTextField
 from apps.telegram_bot.infrastructure.telegram_html import CAPTION_LIMIT, to_plain, visible_length
 
@@ -283,3 +283,185 @@ class ChannelAutoPostSettingsAdmin(PremiumFormMixin, admin.ModelAdmin):
         return format_html('<div class="nzi-panel-body"><ul class="nzi-items">{}</ul><p class="nzi-help">Namuna matn:</p><div class="nztg-bubble" style="max-width:420px">{}</div></div>',
                            format_html_join("", "<li><span>{} — <b>{}</b></span></li>", ((label[k], c["name"]) for k, c, _d in events)),
                            mark_safe(caption(events[0][0], events[0][1])))
+
+
+# ---------------------------------------------------------------- Telegram xodimlari (TelegramStaffMember)
+
+
+class TelegramStaffMemberForm(forms.ModelForm):
+    pick = forms.ChoiceField(label="Orders botni boshlaganlardan tanlash", required=False,
+                             help_text="Odam avval @Orders botda /start bosgan bo'lsa, shu yerdan tanlang — ID va ism o'zi to'ldiriladi.")
+
+    class Meta:
+        model = TelegramStaffMember
+        fields = ("telegram_user_id", "full_name", "is_active")
+        labels = {"telegram_user_id": "Telegram ID", "full_name": "Ism", "is_active": "Faol"}
+        help_texts = {"telegram_user_id": "Raqamli Telegram ID (masalan 1323573501). Odam @userinfobot ga yozib bilib olishi mumkin.",
+                      "is_active": "O'chirilsa, ruxsat darhol yo'qoladi (yozuv tarix uchun qoladi)."}
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        from apps.telegram_bot.infrastructure.models import TelegramBotSubscriber
+
+        taken = set(TelegramStaffMember.objects.values_list("telegram_user_id", flat=True))
+        subs = TelegramBotSubscriber.objects.filter(bot="orders", is_active=True).order_by("-last_seen_at")[:200]
+        choices = [("", "— tanlang —")]
+        for s in subs:
+            tid = s.telegram_user_id or s.chat_id
+            if tid and tid > 0 and tid not in taken:
+                choices.append((str(tid), f"{s.display_name or '—'}{' @' + s.username if s.username else ''} · {tid}"))
+        self.fields["pick"].choices = choices
+        if self.instance and self.instance.pk:
+            self.fields.pop("pick")
+            self.fields["telegram_user_id"].disabled = True
+        else:
+            self.fields["telegram_user_id"].required = False
+
+    def clean(self):
+        data = super().clean()
+        picked = data.get("pick")
+        if picked and not data.get("telegram_user_id"):
+            from apps.telegram_bot.infrastructure.models import TelegramBotSubscriber
+
+            data["telegram_user_id"] = int(picked)
+            self.instance.telegram_user_id = int(picked)
+            if not data.get("full_name"):
+                sub = TelegramBotSubscriber.objects.filter(bot="orders").filter(Q(telegram_user_id=int(picked)) | Q(chat_id=int(picked))).first()
+                data["full_name"] = (sub.display_name if sub else "") or ""
+        tid = data.get("telegram_user_id")
+        if not tid:
+            self.add_error("telegram_user_id", "Telegram ID kiriting yoki ro'yxatdan tanlang.")
+        elif tid <= 0:
+            self.add_error("telegram_user_id", "Bu odamning ID'si emas (manfiy ID — kanal yoki guruh).")
+        elif not (self.instance and self.instance.pk) and TelegramStaffMember.objects.filter(pk=tid).exists():
+            self.add_error("telegram_user_id", "Bu odam allaqachon ro'yxatda.")
+        return data
+
+
+@admin.register(TelegramStaffMember)
+class TelegramStaffMemberAdmin(PremiumListMixin, PremiumFormMixin, admin.ModelAdmin):
+    """
+    Who sees EVERY branch in the Orders bot and may press Confirm/Cancel under channel posts (staff_access.py,
+    callback_router manager actions). Customer and sales data -- superusers only.
+    """
+
+    form = TelegramStaffMemberForm
+    list_display = ("telegram_user_id", "created_at")
+    search_fields = ("full_name", "=telegram_user_id")
+    ordering = ("-is_active", "full_name")
+    list_per_page = 50
+    actions = ("deactivate", "activate")
+
+    nz_icon, nz_tone, nz_title = "fa-user-shield", "#7c3aed", "Telegram xodimlari"
+    nz_subtitle = "Orders botda hamma filiallarni ko'radi va kanaldagi buyurtmalarni «Tasdiqlash / Bekor qilish» qila oladi."
+    nz_columns = (("Xodim", ""), ("Telegram ID", ""), ("Orders bot", ""), ("Qo'shilgan", ""), ("Holat", "r"))
+    nz_grid = "minmax(220px,2fr) 150px minmax(160px,1.2fr) 130px 110px"
+    nz_search = "Ism yoki Telegram ID…"
+    nz_empty = ("Ro'yxat bo'sh", "«Qo'shish» bilan birinchi xodimni qo'shing — u Orders botda hamma filiallarni ko'radi.")
+    hero_icon, hero_tone, hero_noun = "fa-user-shield", "#7c3aed", "xodim"
+
+    def get_fieldsets(self, request, obj=None):
+        if obj is None:
+            return (("Xodim", {"fields": ("pick", "telegram_user_id", "full_name", "is_active")}),
+                    ("Nimaga ruxsat beradi", {"classes": ("nzi-panel",), "fields": ("rights_panel",)}))
+        return (("Xodim", {"fields": ("telegram_user_id", "full_name", "is_active")}),
+                ("Nimaga ruxsat beradi", {"classes": ("nzi-panel",), "fields": ("rights_panel",)}))
+
+    def get_readonly_fields(self, request, obj=None):
+        return ("rights_panel",)
+
+    # superusers only: these people get every branch's sales and every customer's order
+    def has_module_permission(self, request):
+        return request.user.is_active and request.user.is_superuser
+
+    def has_view_permission(self, request, obj=None):
+        return request.user.is_active and request.user.is_superuser
+
+    has_add_permission = has_change_permission = has_delete_permission = lambda self, request, obj=None: request.user.is_active and request.user.is_superuser  # noqa: E731
+
+    # ---------------------------------------------------------------- list
+
+    def nz_prepare(self, request, objs):
+        from apps.identity.infrastructure.models import User
+        from apps.telegram_bot.infrastructure.models import TelegramBotSubscriber
+
+        ids = [o.telegram_user_id for o in objs]
+        self._subs = {}
+        for s in TelegramBotSubscriber.objects.filter(bot="orders").filter(Q(telegram_user_id__in=ids) | Q(chat_id__in=ids)):
+            self._subs[s.telegram_user_id or s.chat_id] = s
+        self._users = {u.telegram_user_id: u for u in User.objects.filter(telegram_user_id__in=ids).only("id", "telegram_user_id", "full_name", "phone_number")}
+
+    def nz_stats(self, request):
+        from apps.telegram_bot.infrastructure.models import TelegramBotSubscriber
+
+        k = TelegramStaffMember.objects.aggregate(on=Count("pk", filter=Q(is_active=True)), off=Count("pk", filter=Q(is_active=False)))
+        active_ids = list(TelegramStaffMember.objects.filter(is_active=True).values_list("pk", flat=True))
+        started = TelegramBotSubscriber.objects.filter(bot="orders", is_active=True).filter(Q(telegram_user_id__in=active_ids) | Q(chat_id__in=active_ids)).count()
+        return [
+            ui.stat_card("Faol xodimlar", k["on"], "#7c3aed", "fa-user-shield", "hamma filialni ko'radi"),
+            ui.stat_card("Botni boshlagan", started, "#16a34a", "fa-robot", f"{k['on']} tadan — /start bosilmasa bot yoza olmaydi"),
+            ui.stat_card("O'chirilgan", k["off"], "#64748b", "fa-user-slash", "ruxsati yo'q"),
+        ]
+
+    def nz_tabs(self, request):
+        counts = dict(TelegramStaffMember.objects.values_list("is_active").annotate(n=Count("pk")))
+        return ui.tabs_for(request, "is_active__exact", [("", "Hammasi", sum(counts.values())), ("1", "Faol", counts.get(True, 0)), ("0", "O'chirilgan", counts.get(False, 0))],
+                           {"1": "#16a34a", "0": "#64748b"})
+
+    def lookup_allowed(self, lookup, value, request=None):
+        return lookup == "is_active__exact" or super().lookup_allowed(lookup, value, request)
+
+    def nz_hero_actions(self, request):
+        from django.urls import reverse
+
+        return [{"label": "Botlar markazi", "url": reverse("admin:nz_telegram_status"), "icon": "fa-robot"},
+                {"label": "Xodim qo'shish", "url": reverse("admin:telegram_bot_telegramstaffmember_add"), "icon": "fa-plus", "primary": True}]
+
+    def nz_row(self, m):
+        sub = getattr(self, "_subs", {}).get(m.telegram_user_id)
+        user = getattr(self, "_users", {}).get(m.telegram_user_id)
+        name = m.full_name or (sub.display_name if sub else "") or (user.full_name if user else "") or "Nomsiz"
+        extra = " · ".join(x for x in ((f"@{sub.username}" if sub and sub.username else ""), (user.phone_number if user else "")) if x)
+        if sub and sub.is_active:
+            bot = format_html('<span class="nzi-pill" style="--t:#16a34a">Ulangan</span><small>oxirgi: {}</small>', ui.ago(sub.last_seen_at))
+        elif sub:
+            bot = format_html('<span class="nzi-pill" style="--t:#dc2626">{}</span>', "Botni bloklagan")
+        else:
+            bot = format_html('<span class="nzi-pill" style="--t:#d97706">{}</span><small>{}</small>', "/start bosmagan", "bot unga yoza olmaydi")
+        return [
+            format_html("<b>{}</b><small>{}</small>", name, extra or "—"),
+            format_html('<code data-copy="{}">{}</code>', m.telegram_user_id, m.telegram_user_id),
+            bot,
+            format_html("<span>{}</span>", ui.local(m.created_at, "%d.%m.%Y")),
+            format_html('<span class="nzi-pill" style="--t:{}">{}</span>', "#16a34a" if m.is_active else "#64748b", "Faol" if m.is_active else "O'chirilgan"),
+        ]
+
+    @admin.action(description="Tanlanganlarni o'chirish (ruxsatni olish)")
+    def deactivate(self, request, queryset):
+        n = queryset.update(is_active=False)
+        messages.success(request, f"{n} ta xodimning ruxsati olindi.")
+
+    @admin.action(description="Tanlanganlarni faollashtirish")
+    def activate(self, request, queryset):
+        n = queryset.update(is_active=True)
+        messages.success(request, f"{n} ta xodim faollashtirildi.")
+
+    # ---------------------------------------------------------------- form
+
+    def form_hero(self, request, obj):
+        if obj is None:
+            return {"title": "Telegram xodimi qo'shish", "subtitle": "Orders botda hamma filiallarni ko'radigan va buyurtmalarni tasdiqlay oladigan odam.",
+                    "icon": "fa-user-shield", "tone": "#7c3aed"}
+        return {"title": obj.full_name or str(obj.telegram_user_id), "subtitle": f"Telegram ID {obj.telegram_user_id} · qo'shilgan {ui.local(obj.created_at)}",
+                "icon": "fa-user-shield", "tone": "#7c3aed" if obj.is_active else "#64748b",
+                "chips": [format_html('<span class="nzi-pill" style="--t:{}">{}</span>', "#16a34a" if obj.is_active else "#64748b", "Faol" if obj.is_active else "O'chirilgan")]}
+
+    @admin.display(description="")
+    def rights_panel(self, obj):
+        return mark_safe(
+            '<div class="nzi-panel-body"><ul class="nzi-items">'
+            "<li><span>📋 Orders botda hamma filiallar: bugungi savdo, onlayn buyurtmalar, jarayondagilar</span></li>"
+            "<li><span>✔️ Buyurtmalar kanalidagi postlarda «Tasdiqlash / Bekor qilish» tugmalari</span></li>"
+            "<li><span>🔒 Filial egasi bu ro'yxatsiz ham o'z filialini ko'radi — bu yerga faqat rahbar va menejerlarni qo'shing</span></li>"
+            "</ul><p class=\"nzi-help\">Bot odamga yoza olishi uchun u @Orders botda bir marta /start bosishi kerak.</p></div>"
+        )

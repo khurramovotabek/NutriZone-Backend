@@ -165,7 +165,7 @@
       {% endfor %}
     </div>
     {% else %}<p class="nza-empty">Hali hech kim xodim botlarini ishga tushirmagan.</p>{% endif %}
-    <p class="nza-note"><i class="fas fa-shield-halved" aria-hidden="true"></i> Ruxsat har safar jonli tekshiriladi: filial egasi faqat o'z filiallarini ko'radi, hammasini — faqat ruxsat ro'yxatidagilar.</p>
+    <p class="nza-note"><i class="fas fa-shield-halved" aria-hidden="true"></i> Ruxsat har safar jonli tekshiriladi: filial egasi faqat o'z filiallarini ko'radi, hammasini — faqat ruxsat ro'yxatidagilar.{% if can_check %} <a href="{% url 'admin:telegram_bot_telegramstaffmember_changelist' %}">Xodimlar ro'yxatini boshqarish →</a>{% endif %}</p>
   </section>
   {% endif %}
 </div>
