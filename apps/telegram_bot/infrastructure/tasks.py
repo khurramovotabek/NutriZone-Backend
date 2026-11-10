@@ -34,3 +34,11 @@ def channel_autopost() -> dict:
     from apps.telegram_bot.infrastructure.channel_autopost import run
 
     return run()
+
+
+@shared_task(queue="default", name="telegram_bot.channel_schedule")
+def channel_schedule() -> dict:
+    """Every minute: scheduled Dashboard posts + the shop channel's daily slots (10:00 / 15:00 / 20:00 by default)."""
+    from apps.telegram_bot.infrastructure.daily_posts import run
+
+    return run()

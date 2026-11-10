@@ -4,10 +4,13 @@ send a test copy to your own Telegram, then send it to the channel / news subscr
 """
 from __future__ import annotations
 
+from datetime import timedelta
+
 from django import forms
 from django.contrib import admin, messages
 from django.db.models import Count, Q, Sum
 from django.http import HttpResponseRedirect
+from django.utils import timezone
 from django.utils.html import format_html
 from django.utils.safestring import mark_safe
 
@@ -16,11 +19,11 @@ from apps.platform.infrastructure import premium_admin as ui
 from apps.platform.infrastructure.excel_export import Col, ExcelExportMixin
 from apps.platform.infrastructure.premium_admin import PremiumFormMixin, PremiumListMixin, hero_stat
 from apps.telegram_bot.infrastructure import posts
-from apps.telegram_bot.infrastructure.models import ChannelAutoPostSettings, TelegramPost, TelegramPostStatus, TelegramStaffMember
+from apps.telegram_bot.infrastructure.models import ChannelAutoPostSettings, ChannelPostSlot, TelegramPost, TelegramPostStatus, TelegramStaffMember
 from apps.telegram_bot.infrastructure.rich_text_field import TelegramRichTextField
 from apps.telegram_bot.infrastructure.telegram_html import CAPTION_LIMIT, to_plain, visible_length
 
-STATUS_TONE = {"draft": "#64748b", "queued": "#f59e0b", "sending": "#0ea5e9", "sent": "#16a34a", "failed": "#dc2626"}
+STATUS_TONE = {"draft": "#64748b", "scheduled": "#7c3aed", "queued": "#f59e0b", "sending": "#0ea5e9", "sent": "#16a34a", "failed": "#dc2626"}
 
 
 def _default_channel() -> str:
@@ -44,13 +47,18 @@ class TelegramPostForm(forms.ModelForm):
     button2_url = forms.URLField(label="2-tugma havolasi", required=False, assume_scheme="https")
     button3_text = forms.CharField(label="3-tugma matni", required=False, max_length=64)
     button3_url = forms.URLField(label="3-tugma havolasi", required=False, assume_scheme="https")
+    scheduled_at = forms.DateTimeField(
+        label="Yuborish vaqti", required=False, input_formats=["%Y-%m-%dT%H:%M", "%Y-%m-%d %H:%M", "%Y-%m-%d %H:%M:%S"],
+        widget=forms.DateTimeInput(attrs={"type": "datetime-local"}, format="%Y-%m-%dT%H:%M"),
+        help_text="Bo'sh — «Saqlash va yuborish» darhol yuboradi. Vaqt tanlansa — post shu daqiqada o'zi yuboriladi (Toshkent vaqti).")
     test_chat = forms.CharField(label="Sinov uchun Telegram ID", required=False, max_length=32,
                                 help_text="O'z Telegram ID raqamingiz (@userinfobot ko'rsatadi). «Sinov yuborish» faqat shu chatga yuboradi.")
 
     class Meta:
         model = TelegramPost
         help_texts = {"image": f"JPG / PNG. Matn {CAPTION_LIMIT} belgigacha bo'lsa rasm ostida chiqadi, uzunroq bo'lsa — rasmdan keyin alohida xabar."}
-        fields = ("title", "body", "image", "product", "to_channel", "channel", "to_subscribers", "to_customers", "silent", "pin")
+        fields = ("title", "body", "image", "product", "to_channel", "channel", "to_subscribers", "to_customers",
+                  "to_orders_channel", "to_orders_staff", "to_analytics_staff", "scheduled_at", "silent", "pin")
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -66,6 +74,14 @@ class TelegramPostForm(forms.ModelForm):
             raise forms.ValidationError("Post bo'sh: matn yozing yoki rasm / mahsulot tanlang.")
         if data.get("to_channel") and not (data.get("channel") or "").strip():
             self.add_error("channel", "Kanal @username yoki ID sini kiriting.")
+        if data.get("to_orders_channel"):
+            from apps.telegram_bot.infrastructure.orders_chat import chat_id
+
+            if not chat_id():
+                self.add_error("to_orders_channel", "Buyurtmalar kanali ulanmagan (Telegram botlar markazi → Buyurtmalar kanali).")
+        when = data.get("scheduled_at")
+        if when and when < timezone.now() - timedelta(minutes=1) and self.instance.status in ("draft", "scheduled", "failed", "sent"):
+            self.add_error("scheduled_at", "Bu vaqt o'tib ketgan. Kelajakdagi vaqtni tanlang yoki bo'sh qoldiring (darhol yuboriladi).")
         for i in (1, 2, 3):
             if bool(data.get(f"button{i}_text")) != bool(data.get(f"button{i}_url")):
                 self.add_error(f"button{i}_url", "Tugma uchun matn ham, havola ham kerak.")
@@ -99,7 +115,9 @@ class TelegramPostAdmin(ExcelExportMixin, PremiumListMixin, PremiumFormMixin, ad
         ("Post", {"fields": ("title", "body")}),
         ("Rasm va mahsulot", {"fields": ("image", "product")}),
         ("Tugmalar", {"fields": (("button1_text", "button1_url"), ("button2_text", "button2_url"), ("button3_text", "button3_url"))}),
-        ("Kimga yuboriladi", {"fields": ("to_channel", "channel", "pin", "to_subscribers", "to_customers", "silent")}),
+        ("Do'kon boti: kanal va mijozlar", {"fields": ("to_channel", "channel", "pin", "to_subscribers", "to_customers")}),
+        ("Xodimlar botlari", {"fields": ("to_orders_channel", "to_orders_staff", "to_analytics_staff")}),
+        ("Qachon", {"fields": ("scheduled_at", "silent")}),
         ("Sinov", {"fields": ("test_chat",)}),
     )
 
@@ -145,12 +163,13 @@ class TelegramPostAdmin(ExcelExportMixin, PremiumListMixin, PremiumFormMixin, ad
     def nz_row(self, p):
         thumb = format_html('<img src="{}" alt="" style="width:40px;height:40px;object-fit:cover;border-radius:10px;margin-right:10px">', p.image.url) if p.image else ""
         text = to_plain(p.body)
-        targets = [x for x, on in (("Kanal " + p.channel, p.to_channel), ("Obunachilar", p.to_subscribers), ("Mijozlar", p.to_customers)) if on]
+        targets = posts.audience(p)
         return [
             format_html('<span style="display:flex;align-items:center">{}<span><b>{}</b><small>{}</small></span></span>', thumb, p.title, (text[:90] + "…") if len(text) > 90 else text),
             format_html("{}", ", ".join(targets) or "—"),
             format_html("<b>{}</b> <small>yetdi</small>{}", p.sent_count, format_html("<small>xato {}</small>", p.failed_count) if p.failed_count else ""),
-            format_html("<span>{}</span><small>{}</small>", ui.ago(p.sent_at or p.created_at), p.created_by),
+            (format_html("<span>⏰ {}</span><small>{}</small>", ui.local(p.scheduled_at, "%d.%m %H:%M"), p.created_by) if p.status == "scheduled" and p.scheduled_at
+             else format_html("<span>{}</span><small>{}</small>", ui.ago(p.sent_at or p.created_at), p.created_by)),
             format_html('<span class="nzi-pill" style="--t:{}">{}</span>', STATUS_TONE.get(p.status, "#64748b"), p.get_status_display()),
         ]
 
@@ -161,7 +180,8 @@ class TelegramPostAdmin(ExcelExportMixin, PremiumListMixin, PremiumFormMixin, ad
             return {"title": "Yangi Telegram post", "subtitle": "Matnni formatlang, rasm yoki mahsulot qo'shing, avval o'zingizga sinov yuboring."}
         n = visible_length(obj.body)
         return {
-            "title": obj.title, "subtitle": f"{ui.local(obj.created_at)} · {obj.created_by}", "icon": "fa-paper-plane", "tone": STATUS_TONE.get(obj.status, "#0ea5e9"),
+            "title": obj.title, "subtitle": (f"⏰ {ui.local(obj.scheduled_at)} da yuboriladi · " if obj.status == "scheduled" and obj.scheduled_at else "")
+            + f"{ui.local(obj.created_at)} · {obj.created_by}", "icon": "fa-paper-plane", "tone": STATUS_TONE.get(obj.status, "#0ea5e9"),
             "image": obj.image.url if obj.image else None,
             "chips": [format_html('<span class="nzi-pill" style="--t:{}">{}</span>', STATUS_TONE.get(obj.status, "#64748b"), obj.get_status_display())],
             "stats": [
@@ -177,7 +197,8 @@ class TelegramPostAdmin(ExcelExportMixin, PremiumListMixin, PremiumFormMixin, ad
         super().save_model(request, obj, form, change)
 
     def render_change_form(self, request, context, add=False, change=False, form_url="", obj=None):
-        context.update({"show_save_and_add_another": False, "nztg_post": True, "nztg_can_send": obj is None or obj.status in (TelegramPostStatus.DRAFT, TelegramPostStatus.FAILED, TelegramPostStatus.SENT)})
+        context.update({"show_save_and_add_another": False, "nztg_post": True, "nztg_can_send": obj is None or obj.status in (TelegramPostStatus.DRAFT, TelegramPostStatus.FAILED, TelegramPostStatus.SENT, TelegramPostStatus.SCHEDULED),
+                        "nztg_scheduled": obj is not None and obj.status == TelegramPostStatus.SCHEDULED})
         return super().render_change_form(request, context, add=add, change=change, form_url=form_url, obj=obj)
 
     def response_add(self, request, obj, post_url_continue=None):
@@ -201,15 +222,23 @@ class TelegramPostAdmin(ExcelExportMixin, PremiumListMixin, PremiumFormMixin, ad
             except posts.PostError as exc:
                 messages.error(request, f"Telegram rad etdi: {exc}")
             return here
+        if "_nztg_unschedule" in request.POST:
+            posts.unschedule(obj)
+            messages.success(request, "Reja bekor qilindi — post qoralamaga qaytdi.")
+            return here
         if "_nztg_send" in request.POST:
-            if not (obj.to_channel or obj.to_subscribers or obj.to_customers):
-                messages.error(request, "Kimga yuborishni tanlang: kanal, obunachilar yoki mijozlar.")
+            if not posts.audience(obj):
+                messages.error(request, "Kimga yuborishni tanlang: kanal, obunachilar, mijozlar yoki xodimlar botlari.")
                 return here
             if obj.status in (TelegramPostStatus.QUEUED, TelegramPostStatus.SENDING):
                 messages.warning(request, "Bu post allaqachon yuborilmoqda.")
                 return here
+            if obj.scheduled_at and obj.scheduled_at > timezone.now():
+                posts.schedule(obj, obj.scheduled_at)
+                messages.success(request, f"Post rejalashtirildi: {ui.local(obj.scheduled_at)} da o'zi yuboriladi ({', '.join(posts.audience(obj))}).")
+                return here
             posts.queue(obj)
-            messages.success(request, "Post yuborish navbatiga qo'yildi. Natija shu sahifada yangilanadi.")
+            messages.success(request, f"Post yuborish navbatiga qo'yildi ({', '.join(posts.audience(obj))}). Natija shu sahifada yangilanadi.")
             return here
         return None
 
@@ -223,18 +252,57 @@ class TelegramPostAdmin(ExcelExportMixin, PremiumListMixin, PremiumFormMixin, ad
                            obj.sent_count, obj.failed_count, f" · {ui.local(obj.sent_at)}" if obj.sent_at else "", link, err)
 
 
+class ChannelAutoPostSettingsForm(forms.ModelForm):
+    daily_template = TelegramRichTextField(label="Post shabloni", required=False, caption=True,
+                                           help_text="Bo'sh qoldirilsa — standart shablon. {o'zgaruvchi} o'rniga mahsulot ma'lumoti qo'yiladi; "
+                                                     "qiymati bo'sh o'zgaruvchili qator o'zi tushib qoladi.")
+
+    class Meta:
+        model = ChannelAutoPostSettings
+        fields = "__all__"
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        from apps.telegram_bot.infrastructure.daily_posts import DEFAULT_TEMPLATE
+
+        if not (self.instance.daily_template or "").strip():
+            self.initial["daily_template"] = DEFAULT_TEMPLATE
+
+
+class ChannelPostSlotForm(forms.ModelForm):
+    class Meta:
+        model = ChannelPostSlot
+        fields = ("time", "kind", "heading", "is_active")
+        widgets = {"time": forms.TimeInput(attrs={"type": "time", "class": "nzs-time"}, format="%H:%M"),
+                   "heading": forms.TextInput(attrs={"class": "nzs-heading", "placeholder": "☀️ Kun mahsuloti"})}
+
+
+class ChannelPostSlotInline(admin.TabularInline):
+    model = ChannelPostSlot
+    form = ChannelPostSlotForm
+    extra = 0
+    fields = ("time", "kind", "heading", "is_active")
+    verbose_name = "Vaqt"
+    verbose_name_plural = "Kunlik jadval (Toshkent vaqti) — har vaqtda kanalga bitta mahsulot posti"
+
+
 @admin.register(ChannelAutoPostSettings)
 class ChannelAutoPostSettingsAdmin(PremiumFormMixin, admin.ModelAdmin):
-    """Singleton: the list opens the one settings row; a read-only panel shows what would be posted next."""
+    """Singleton: the shop channel's daily schedule (daily_posts.py) + event autoposts (channel_autopost.py)."""
 
-    readonly_fields = ("queue_panel",)
+    form = ChannelAutoPostSettingsForm
+    inlines = (ChannelPostSlotInline,)
+    readonly_fields = ("today_panel", "variables_panel", "queue_panel")
     fieldsets = (
-        ("Holat", {"fields": ("enabled", "channel")}),
-        ("Qaysi hodisalar post qilinadi", {"fields": ("new_products", "discounts", "min_discount", "restock")}),
-        ("Tartib", {"fields": ("max_per_run", "quiet_from", "quiet_to")}),
-        ("Navbatdagi postlar", {"classes": ("nzi-panel",), "fields": ("queue_panel",)}),
+        ("Kunlik jadval", {"fields": ("daily_enabled", "channel", "repeat_days")}),
+        ("Bugungi reja", {"classes": ("nzi-panel",), "fields": ("today_panel",)}),
+        ("Post shabloni", {"fields": ("daily_template",)}),
+        ("O'zgaruvchilar", {"classes": ("nzi-panel",), "fields": ("variables_panel",)}),
+        ("Hodisa avtopostlari (yangi / chegirma / yana sotuvda)", {"fields": ("enabled", "new_products", "discounts", "min_discount", "restock")}),
+        ("Avtopostlar tartibi", {"fields": ("max_per_run", "quiet_from", "quiet_to")}),
+        ("Navbatdagi avtopostlar", {"classes": ("nzi-panel",), "fields": ("queue_panel",)}),
     )
-    hero_icon, hero_tone, hero_noun = "fa-bullhorn", "#0ea5e9", "sozlama"
+    hero_icon, hero_tone, hero_noun = "fa-calendar-days", "#0ea5e9", "sozlama"
 
     def has_add_permission(self, request) -> bool:
         return False
@@ -250,22 +318,77 @@ class ChannelAutoPostSettingsAdmin(PremiumFormMixin, admin.ModelAdmin):
 
     def save_model(self, request, obj, form, change):
         if obj.enabled and not obj.enabled_at:
-            from django.utils import timezone
-
             obj.enabled_at = timezone.now()  # products published before today are not announced as "new"
+        from apps.telegram_bot.infrastructure.daily_posts import DEFAULT_TEMPLATE
+
+        if (obj.daily_template or "").strip() == DEFAULT_TEMPLATE.strip():
+            obj.daily_template = ""  # unchanged default: keep following future improvements of the default
         super().save_model(request, obj, form, change)
 
     def form_hero(self, request, obj):
         from apps.telegram_bot.infrastructure.channel_autopost import _channel
 
-        auto = TelegramPost.objects.exclude(source="manual")
+        slots = list(obj.slots.filter(is_active=True))
+        daily = TelegramPost.objects.filter(source="daily")
+        auto = TelegramPost.objects.exclude(source__in=("manual", "daily"))
+        on = obj.daily_enabled and slots
         return {
-            "title": "Kanal avtopostlari", "subtitle": f"{_channel(obj) or 'Kanal tanlanmagan'} · har 15 daqiqada tekshiriladi",
-            "icon": "fa-bullhorn", "tone": "#16a34a" if obj.enabled else "#64748b",
-            "chips": [format_html('<span class="nzi-pill" style="--t:{}">{}</span>', "#16a34a" if obj.enabled else "#64748b", "Yoqilgan" if obj.enabled else "O'chirilgan")],
-            "stats": [hero_stat("Avtopostlar", auto.count(), "#0ea5e9", "jami", "fa-paper-plane"),
-                      hero_stat("Yetkazildi", auto.filter(status="sent").count(), "#16a34a", "kanalga", "fa-circle-check")],
+            "title": "Kanal jadvali", "subtitle": f"{_channel(obj) or 'Kanal tanlanmagan'} · har kuni " + (", ".join(f"{x.time:%H:%M}" for x in slots) or "vaqt yo'q"),
+            "icon": "fa-calendar-days", "tone": "#16a34a" if on else "#64748b",
+            "chips": [format_html('<span class="nzi-pill" style="--t:{}">{}</span>', "#16a34a" if on else "#64748b", "Jadval yoqilgan" if on else "Jadval o'chirilgan"),
+                      format_html('<span class="nzi-pill" style="--t:{}">{}</span>', "#0ea5e9" if obj.enabled else "#64748b", "Avtopostlar yoqilgan" if obj.enabled else "Avtopostlar o'chirilgan")],
+            "stats": [hero_stat("Jadval postlari", daily.filter(status="sent").count(), "#16a34a", "kanalga yuborilgan", "fa-calendar-check"),
+                      hero_stat("Rejalashtirilgan", TelegramPost.objects.filter(status="scheduled").count(), "#7c3aed", "qo'lda tayyorlangan", "fa-clock"),
+                      hero_stat("Avtopostlar", auto.count(), "#0ea5e9", "jami", "fa-paper-plane")],
         }
+
+    @admin.display(description="")
+    def today_panel(self, obj):
+        from datetime import datetime
+
+        from django.urls import reverse
+        from django.utils.html import format_html_join
+
+        from apps.telegram_bot.infrastructure import daily_posts as dp
+
+        today = timezone.localdate()
+        now = timezone.now()
+        rows, first_preview = [], None
+        for slot in obj.slots.filter(is_active=True):
+            at = datetime.combine(today, slot.time, tzinfo=dp.TZ)
+            post = TelegramPost.objects.filter(dedupe_key=f"daily:{today:%Y%m%d}:{slot.pk}").first()
+            if post:
+                state = format_html('<a href="{}">{} — {}</a>', reverse("admin:telegram_bot_telegrampost_change", args=[post.pk]), post.get_status_display(),
+                                    post.product.translations.first().name if post.product_id and post.product.translations.exists() else post.title)
+            elif at + dp.SLOT_WINDOW <= now:
+                state = format_html('<span class="nzi-muted">{}</span>', "vaqti o'tdi — bugun bu vaqtda jadval posti chiqmadi")
+            else:
+                try:
+                    pv = dp.preview(slot)
+                except Exception as exc:  # noqa: BLE001
+                    pv, state = None, format_html('<span class="nzi-muted">hisoblab bo\'lmadi: {}</span>', exc)
+                else:
+                    state = format_html("taxminan: <b>{}</b>", pv["card"]["name"]) if pv else format_html('<span class="nzi-muted">{}</span>', "post qilinadigan mahsulot yo'q")
+                if pv and first_preview is None:
+                    first_preview = pv
+            rows.append((f"{slot.time:%H:%M}", slot.heading or slot.get_kind_display(), state))
+        if not rows:
+            return format_html('<p class="nzi-none">{}</p>', "Jadvalda faol vaqt yo'q — pastdagi jadvalga vaqt qo'shing.")
+        sample = format_html('<p class="nzi-help">Navbatdagi post namunasi:</p><div class="nztg-bubble" style="max-width:420px;white-space:pre-wrap">{}</div>',
+                             mark_safe(first_preview["body"])) if first_preview else ""
+        return format_html('<div class="nzi-panel-body"><ul class="nzi-items">{}</ul>{}<p class="nzi-help">{}</p></div>',
+                           format_html_join("", "<li><span><b>{}</b> · {} — {}</span></li>", rows), sample,
+                           "Mahsulot post paytida tanlanadi (zaxirada bor, rasmi bor, oxirgi kunlarda kanalga chiqmagan). "
+                           "Shu vaqt atrofida kanalga o'zingiz post qo'ysangiz, jadval o'sha vaqtni o'tkazib yuboradi.")
+
+    @admin.display(description="")
+    def variables_panel(self, obj):
+        from django.utils.html import format_html_join
+
+        from apps.telegram_bot.infrastructure.daily_posts import VARIABLES
+
+        return format_html('<div class="nzi-panel-body"><ul class="nzi-items">{}</ul></div>',
+                           format_html_join("", "<li><span><code>{{{}}}</code> — {}</span></li>", VARIABLES))
 
     @admin.display(description="")
     def queue_panel(self, obj):

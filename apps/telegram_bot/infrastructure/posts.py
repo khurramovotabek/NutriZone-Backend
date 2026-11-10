@@ -1,5 +1,9 @@
 """
-Sending a Dashboard Telegram post (models.TelegramPost) through the customer bot.
+Sending a Dashboard Telegram post (models.TelegramPost) -- through every bot it is addressed to:
+
+  shop bot (TELEGRAM_BOT_TOKEN)        the shop channel, news subscribers, every Telegram customer
+  Orders bot (TELEGRAM_ORDERS_...)      the Orders channel (orders_chat.chat_id()), Orders bot subscribers (staff, owners)
+  Analytics bot (TELEGRAM_ANALYTICS_...) Analytics bot subscribers
 
 One post = one photo (uploaded, or the attached product's) + formatted text + URL buttons. The photo is uploaded
 once; every following chat reuses Telegram's file_id. Text up to 1024 visible characters rides as the photo
@@ -27,17 +31,22 @@ class PostError(Exception):
     pass
 
 
-def _token() -> str:
-    token = getattr(settings, "TELEGRAM_BOT_TOKEN", "") or ""
+SHOP, ORDERS, ANALYTICS = "shop", "orders", "analytics"
+BOT_TOKENS = {SHOP: "TELEGRAM_BOT_TOKEN", ORDERS: "TELEGRAM_ORDERS_BOT_TOKEN", ANALYTICS: "TELEGRAM_ANALYTICS_BOT_TOKEN"}
+BOT_NAMES = {SHOP: "Do'kon boti", ORDERS: "Orders bot", ANALYTICS: "Analytics bot"}
+
+
+def _token(bot: str = SHOP) -> str:
+    token = getattr(settings, BOT_TOKENS[bot], "") or ""
     if not token:
-        raise PostError("TELEGRAM_BOT_TOKEN sozlanmagan")
+        raise PostError(f"{BOT_TOKENS[bot]} sozlanmagan")
     return token
 
 
-def _api(method: str, *, data=None, files=None) -> dict:
+def _api(method: str, *, data=None, files=None, bot: str = SHOP) -> dict:
     base = getattr(settings, "TELEGRAM_API_BASE_URL", "https://api.telegram.org").rstrip("/")
     try:
-        r = requests.post(f"{base}/bot{_token()}/{method}", data=data, files=files, timeout=30)
+        r = requests.post(f"{base}/bot{_token(bot)}/{method}", data=data, files=files, timeout=30)
         body = r.json()
     except (requests.RequestException, ValueError) as exc:
         raise PostError(f"{method}: {exc.__class__.__name__}") from exc
@@ -68,6 +77,9 @@ def keyboard(post, card: dict | None = None) -> list:
     base = (getattr(settings, "FRONTEND_URL", "") or "").rstrip("/")
     if card and base.startswith("https://"):
         items.append({"text": "🛒 Sotib olish", "url": f"{base}/products/{card['slug']}"})
+    shop_bot = (getattr(settings, "TELEGRAM_BOT_USERNAME", "") or "").lstrip("@")
+    if card and shop_bot:
+        items.append({"text": "🤖 Botda buyurtma", "url": f"https://t.me/{shop_bot}?start=p_{card['id']}"})
     for b in post.buttons or []:
         text, url = (b.get("text") or "").strip(), (b.get("url") or "").strip()
         if text and url.startswith(("https://", "http://", "tg://")):
@@ -99,7 +111,7 @@ def photo_bytes(post, card: dict | None) -> tuple[bytes, str] | None:
 
 
 def recipients(post) -> list[str]:
-    """Private chat ids (deduplicated) for the subscriber / customer audiences; the channel is sent separately."""
+    """Shop-bot private chat ids (deduplicated) for the subscriber / customer audiences; channels are sent separately."""
     from apps.identity.infrastructure.models import User
 
     ids: set[str] = set()
@@ -112,15 +124,52 @@ def recipients(post) -> list[str]:
     return sorted(ids)
 
 
+def staff_recipients(bot: str) -> list[str]:
+    from apps.telegram_bot.infrastructure.models import TelegramBotSubscriber
+
+    return sorted({str(x) for x in TelegramBotSubscriber.objects.filter(bot=bot, is_active=True).values_list("chat_id", flat=True)})
+
+
+def orders_channel() -> str:
+    from apps.telegram_bot.infrastructure.orders_chat import chat_id
+
+    return chat_id()
+
+
+def plan(post) -> list[tuple[str, str, str]]:
+    """Every delivery of this post: (bot, chat id, kind) -- kind "channel" (pinned if asked) or "chat"."""
+    out: list[tuple[str, str, str]] = []
+    if post.to_channel and (post.channel or "").strip():
+        out.append((SHOP, post.channel.strip(), "channel"))
+    if post.to_orders_channel and orders_channel():
+        out.append((ORDERS, orders_channel(), "channel"))
+    out += [(SHOP, c, "chat") for c in recipients(post)]
+    if post.to_orders_staff:
+        out += [(ORDERS, c, "chat") for c in staff_recipients(ORDERS)]
+    if post.to_analytics_staff:
+        out += [(ANALYTICS, c, "chat") for c in staff_recipients(ANALYTICS)]
+    return out
+
+
+def audience(post) -> list[str]:
+    """Human labels of the chosen audiences (list rows, confirmations)."""
+    labels = [(post.to_channel, f"Kanal {post.channel}".strip()), (post.to_orders_channel, "Buyurtmalar kanali"), (post.to_subscribers, "Obunachilar"),
+              (post.to_customers, "Mijozlar"), (post.to_orders_staff, "Orders bot xodimlari"), (post.to_analytics_staff, "Analytics bot")]
+    return [label for on, label in labels if on]
+
+
 # ----------------------------------------------------------------------------- sending
 
 
 class _Sender:
-    def __init__(self, post) -> None:
+    """One post through one bot. The photo is uploaded once per bot; later chats reuse that bot's file_id."""
+
+    def __init__(self, post, bot: str = SHOP, *, card=None, photo=None) -> None:
         self.post = post
-        self.card = product_card(post)
+        self.bot = bot
+        self.card = card if card is not None else product_card(post)
         self.kb = keyboard(post, self.card)
-        self.photo = photo_bytes(post, self.card)
+        self.photo = photo if photo is not None else photo_bytes(post, self.card)
         self.file_id: str | None = None
         self.caption_fits = visible_length(post.body) <= CAPTION_LIMIT
 
@@ -145,16 +194,16 @@ class _Sender:
                 data["photo"] = self.file_id
             else:
                 files = {"photo": (self.photo[1], self.photo[0])}
-            res = _api("sendPhoto", data=data, files=files)
+            res = _api("sendPhoto", data=data, files=files, bot=self.bot)
             if not self.file_id:
                 sizes = res.get("photo") or []
                 self.file_id = sizes[-1]["file_id"] if sizes else None
             first_id = int(res.get("message_id") or 0)
             if last:
                 return first_id
-            _api("sendMessage", data={**common, "text": body, "link_preview_options": json.dumps({"is_disabled": True}), **self._markup()})
+            _api("sendMessage", data={**common, "text": body, "link_preview_options": json.dumps({"is_disabled": True}), **self._markup()}, bot=self.bot)
             return first_id
-        res = _api("sendMessage", data={**common, "text": body or self.post.title, "link_preview_options": json.dumps({"is_disabled": True}), **self._markup()})
+        res = _api("sendMessage", data={**common, "text": body or self.post.title, "link_preview_options": json.dumps({"is_disabled": True}), **self._markup()}, bot=self.bot)
         return int(res.get("message_id") or 0)
 
 
@@ -169,7 +218,7 @@ def send_test(post, chat_id: str) -> None:
 
 
 def send(post_id) -> dict:
-    """Celery body: channel first (and pin), then private chats. Idempotent per post (only a queued post is sent)."""
+    """Celery body: channels first (and pin), then private chats, each through its own bot. Only a queued post is sent."""
     from apps.telegram_bot.infrastructure.models import TelegramPost, TelegramPostStatus
 
     claimed = TelegramPost.objects.filter(pk=post_id, status=TelegramPostStatus.QUEUED).update(status=TelegramPostStatus.SENDING)
@@ -179,31 +228,32 @@ def send(post_id) -> dict:
     sent = failed = 0
     errors: list[str] = []
     try:
-        sender = _Sender(post)
-        chats = recipients(post)
-        TelegramPost.objects.filter(pk=post.pk).update(recipients=len(chats) + (1 if post.to_channel and post.channel else 0))
-        if post.to_channel and post.channel:
+        card = product_card(post)
+        photo = photo_bytes(post, card)
+        senders: dict[str, _Sender] = {}
+        deliveries = plan(post)
+        TelegramPost.objects.filter(pk=post.pk).update(recipients=len(deliveries))
+        for bot, chat, kind in deliveries:
+            sender = senders.get(bot) or senders.setdefault(bot, _Sender(post, bot, card=card, photo=photo))
             try:
-                mid = sender.send(post.channel.strip())
+                mid = sender.send(chat)
                 sent += 1
-                TelegramPost.objects.filter(pk=post.pk).update(channel_message_id=mid)
-                if post.pin and mid:
-                    try:
-                        _api("pinChatMessage", data={"chat_id": post.channel.strip(), "message_id": mid, "disable_notification": "true"})
-                    except PostError as exc:
-                        errors.append(f"pin: {exc}")
+                if kind == "channel":
+                    if bot == SHOP:
+                        TelegramPost.objects.filter(pk=post.pk).update(channel_message_id=mid)
+                    if post.pin and mid:
+                        try:
+                            _api("pinChatMessage", data={"chat_id": chat, "message_id": mid, "disable_notification": "true"}, bot=bot)
+                        except PostError as exc:
+                            errors.append(f"pin ({BOT_NAMES[bot]}): {exc}")
             except PostError as exc:
                 failed += 1
-                errors.append(f"kanal: {exc}")
-        for chat in chats:
-            try:
-                sender.send(chat)
-                sent += 1
-            except PostError as exc:
-                failed += 1
-                if not is_blocked(exc) and len(errors) < 5:
-                    errors.append(f"{chat}: {exc}")
-            time.sleep(PACE_SECONDS)
+                if kind == "channel":
+                    errors.append(f"kanal {chat} ({BOT_NAMES[bot]}): {exc}")
+                elif not is_blocked(exc) and len(errors) < 5:
+                    errors.append(f"{chat} ({BOT_NAMES[bot]}): {exc}")
+            if kind == "chat":
+                time.sleep(PACE_SECONDS)
         status = TelegramPostStatus.SENT if sent else TelegramPostStatus.FAILED
     except Exception as exc:  # noqa: BLE001 - recorded on the post, visible in the dashboard
         logger.exception("telegram post %s failed", post_id)
@@ -211,6 +261,19 @@ def send(post_id) -> dict:
         status = TelegramPostStatus.FAILED
     TelegramPost.objects.filter(pk=post.pk).update(status=status, sent_count=sent, failed_count=failed, last_error="\n".join(errors)[:2000], sent_at=timezone.now())
     return {"sent": sent, "failed": failed}
+
+
+def schedule(post, when) -> None:
+    """Send later: the every-minute runner (daily_posts.run) queues it at `when`."""
+    from apps.telegram_bot.infrastructure.models import TelegramPost, TelegramPostStatus
+
+    TelegramPost.objects.filter(pk=post.pk).update(status=TelegramPostStatus.SCHEDULED, scheduled_at=when, sent_count=0, failed_count=0, last_error="")
+
+
+def unschedule(post) -> None:
+    from apps.telegram_bot.infrastructure.models import TelegramPost, TelegramPostStatus
+
+    TelegramPost.objects.filter(pk=post.pk, status=TelegramPostStatus.SCHEDULED).update(status=TelegramPostStatus.DRAFT)
 
 
 def queue(post) -> None:

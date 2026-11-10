@@ -71,4 +71,4 @@ def test_events_are_posted_once_and_restock_detected():
 
 def test_settings_page_renders(admin_client):
     r = admin_client.get("/django-admin/telegram_bot/channelautopostsettings/", follow=True)
-    assert r.status_code == 200 and "Kanal avtopostlari" in r.content.decode()
+    assert r.status_code == 200 and "Kanal jadvali" in r.content.decode() and "Hodisa avtopostlari" in r.content.decode()

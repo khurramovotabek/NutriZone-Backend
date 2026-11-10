@@ -168,6 +168,7 @@ class TelegramStorePost(models.Model):
 
 class TelegramPostStatus(models.TextChoices):
     DRAFT = "draft", "Qoralama"
+    SCHEDULED = "scheduled", "Rejalashtirilgan"
     QUEUED = "queued", "Navbatda"
     SENDING = "sending", "Yuborilmoqda"
     SENT = "sent", "Yuborildi"
@@ -192,6 +193,11 @@ class TelegramPost(models.Model):
     channel = models.CharField("Kanal", max_length=100, blank=True, default="", help_text="@username yoki -100… ID. Bot kanalda admin bo'lishi kerak.")
     to_subscribers = models.BooleanField("Yangilik obunachilariga", default=False)
     to_customers = models.BooleanField("Barcha Telegram mijozlarga", default=False)
+    to_orders_channel = models.BooleanField("Buyurtmalar kanaliga (Orders bot)", default=False)
+    to_orders_staff = models.BooleanField("Orders bot xodimlariga", default=False, help_text="Orders botda /start bosgan filial egalari va xodimlar.")
+    to_analytics_staff = models.BooleanField("Analytics bot obunachilariga", default=False, help_text="Analytics botda /start bosgan rahbarlar va filial egalari.")
+    scheduled_at = models.DateTimeField("Yuborish vaqti", null=True, blank=True, db_index=True,
+                                        help_text="Bo'sh — darhol yuboriladi. Vaqt tanlansa, post shu daqiqada o'zi yuboriladi (Toshkent vaqti).")
     silent = models.BooleanField("Ovozsiz yuborish", default=False)
     pin = models.BooleanField("Kanalda qadab qo'yish", default=False)
     source = models.CharField("Manba", max_length=16, default="manual", db_index=True)  # manual / new / sale / restock
@@ -230,15 +236,19 @@ class ChannelAutoPostSettings(models.Model):
     quiet_to = models.PositiveSmallIntegerField("Jim rejim tugashi (soat)", default=9)
     max_per_run = models.PositiveSmallIntegerField("Bir martada ko'pi bilan", default=2, help_text="Har 15 daqiqada shuncha postdan oshmaydi — kanal spam bo'lmasin.")
     enabled_at = models.DateTimeField(null=True, blank=True)  # backlog guard: only products published after this are "new"
+    daily_enabled = models.BooleanField("Kunlik jadval yoqilgan", default=True,
+                                        help_text="Har kuni jadvaldagi vaqtlarda kanalga bittadan mahsulot posti (daily_posts.py).")
+    daily_template = models.TextField("Post shabloni", blank=True, default="")
+    repeat_days = models.PositiveSmallIntegerField("Takrorlamaslik (kun)", default=14, help_text="Bir mahsulot kanalda shuncha kun ichida qayta chiqmaydi.")
     updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:
         db_table = "telegram_channel_autopost_settings"
-        verbose_name = "Kanal avtopostlari"
-        verbose_name_plural = "Kanal avtopostlari"
+        verbose_name = "Kanal jadvali"
+        verbose_name_plural = "Kanal jadvali"
 
     def __str__(self) -> str:
-        return "Kanal avtopostlari"
+        return "Kanal jadvali"
 
     @classmethod
     def get(cls) -> "ChannelAutoPostSettings":
@@ -303,3 +313,29 @@ class TelegramBotChat(models.Model):
 
     def __str__(self) -> str:  # pragma: no cover
         return f"{self.bot}:{self.title or self.chat_id}"
+
+
+class ChannelPostSlot(models.Model):
+    """One daily time in the shop channel's schedule (Dashboard → Telegram → Kanal jadvali): at `time` one product post."""
+
+    KIND_TOP = "top"
+    KIND_SALE = "sale"
+    KIND_NEW = "new"
+    KIND_PICK = "pick"
+    KINDS = [(KIND_TOP, "Kun mahsuloti (eng ko'p sotilgan / yuqori baho)"), (KIND_SALE, "Chegirmadagi mahsulot"),
+             (KIND_NEW, "Yangi kelgan mahsulot"), (KIND_PICK, "Tasodifiy tavsiya")]
+
+    settings = models.ForeignKey(ChannelAutoPostSettings, on_delete=models.CASCADE, related_name="slots", default=1)
+    time = models.TimeField("Vaqt")
+    kind = models.CharField("Nima post qilinadi", max_length=8, choices=KINDS, default=KIND_TOP)
+    heading = models.CharField("Sarlavha", max_length=120, blank=True, default="", help_text="Postning birinchi qatori, masalan «☀️ Kun mahsuloti».")
+    is_active = models.BooleanField("Faol", default=True)
+
+    class Meta:
+        db_table = "telegram_channel_post_slots"
+        ordering = ("time",)
+        verbose_name = "Jadval vaqti"
+        verbose_name_plural = "Jadval vaqtlari"
+
+    def __str__(self) -> str:
+        return f"{self.time:%H:%M} · {self.get_kind_display()}"

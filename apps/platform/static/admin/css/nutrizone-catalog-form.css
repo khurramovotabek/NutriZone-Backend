@@ -67,12 +67,14 @@ main.app-main:has(.nzp-hero) { overflow-x: clip !important; overflow-y: visible 
 .nzp-page #content-main .help-block { font-size: .74rem; color: var(--nz-text-muted); margin-top: 4px; }
 .nzp-page #content-main .help-block.text-red, .nzp-page #content-main .errorlist { color: #e11d48 !important; }
 .nzp-page #content-main input.vTextField, .nzp-page #content-main input[type=text], .nzp-page #content-main input[type=number], .nzp-page #content-main textarea,
+.nzp-page #content-main input[type=datetime-local], .nzp-page #content-main input[type=time], .nzp-page #content-main input.vTimeField,
 .nzp-page #content-main select:not([multiple]) { border-radius: 11px !important; }
 .nzp-page #content-main .readonly { padding: 6px 0; font-size: .84rem; color: var(--nz-text-muted); font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
 .nzp-page #content-main .card.collapsed-card, .nzp-page #content-main .card.collapse { opacity: .95; }
 
 /* consistent inputs; wide tabular inlines scroll inside their card instead of spilling out */
 .nzp-page #content-main .card-body input[type=text], .nzp-page #content-main .card-body input[type=number], .nzp-page #content-main .card-body input[type=date],
+.nzp-page #content-main .card-body input[type=datetime-local], .nzp-page #content-main .card-body input[type=time], .nzp-page #content-main .card-body input.vTimeField,
 .nzp-page #content-main .card-body input.vTextField, .nzp-page #content-main .card-body input.vIntegerField {
   min-height: 38px; padding: 7px 12px; border: 1px solid var(--nz-border) !important; background: color-mix(in srgb, var(--nz-surface-secondary) 55%, transparent) !important;
   color: var(--nz-text-primary); font-variant-numeric: tabular-nums; transition: border-color .15s, box-shadow .15s; }
@@ -247,3 +249,11 @@ main.app-main:has(.nzp-hero) { overflow-x: clip !important; overflow-y: visible 
 .nzp-stock td.a a { text-decoration: none !important; }
 .nzp-stock p { margin: 10px 0 0; font-size: .74rem; color: var(--nz-text-muted); white-space: normal; }
 .nzp-stock p a { color: #10b981 !important; font-weight: 700; }
+
+/* datetime-local / time pickers (Telegram post schedule, channel slots): readable width, 16px on phones (no iOS zoom) */
+.nzp-page #content-main .card-body input[type=datetime-local] { width: 100%; max-width: 280px; }
+@media (max-width: 575px) { .nzp-page #content-main .card-body input[type=datetime-local], .nzp-page #content-main .card-body input[type=time] { font-size: 16px; } }
+/* Kanal jadvali slots (telegram_bot ChannelPostSlotInline): time | kind | heading | active fit a phone without sideways scroll */
+.nzp-page #content-main input.nzs-time { width: 130px !important; min-width: 0; }
+.nzp-page #content-main input.nzs-heading { width: 100%; min-width: 160px; }
+.nzp-page #content-main .inline-group .nzs-time ~ .datetimeshortcuts { display: none; }

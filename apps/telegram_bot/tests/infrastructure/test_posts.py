@@ -23,8 +23,9 @@ class FakeApi:
         self.calls = []
         self.fail_for = set(fail_for)
 
-    def __call__(self, method, *, data=None, files=None):
+    def __call__(self, method, *, data=None, files=None, bot="shop"):
         self.calls.append((method, dict(data or {}), bool(files)))
+        self.bots = getattr(self, "bots", []) + [bot]
         if str((data or {}).get("chat_id")) in self.fail_for:
             raise posts.PostError("Forbidden: bot was blocked by the user")
         if method == "sendPhoto":

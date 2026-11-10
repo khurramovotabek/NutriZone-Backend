@@ -192,7 +192,7 @@ JAZZMIN_SETTINGS = {
         "Telegram": [
             {"name": _("Botlar markazi"), "url": "admin:nz_telegram_status", "icon": "fas fa-robot"},
             {"name": _("Postlar"), "url": "admin:telegram_bot_telegrampost_changelist", "icon": "fas fa-paper-plane", "permissions": ["telegram_bot.view_telegrampost"]},
-            {"name": _("Kanal avtopostlari"), "url": "admin:telegram_bot_channelautopostsettings_changelist", "icon": "fas fa-bullhorn", "permissions": ["telegram_bot.change_channelautopostsettings"]},
+            {"name": _("Kanal jadvali"), "url": "admin:telegram_bot_channelautopostsettings_changelist", "icon": "fas fa-calendar-days", "permissions": ["telegram_bot.change_channelautopostsettings"]},
             {"name": _("Xodimlar (Orders bot)"), "url": "admin:telegram_bot_telegramstaffmember_changelist", "icon": "fas fa-user-shield", "permissions": ["telegram_bot.view_telegramstaffmember"]},
             {"name": _("Mijozlarga xabar"), "url": "admin:nz_notify_send", "icon": "fas fa-bullhorn", "permissions": ["notifications.add_notificationbroadcast"]},
         ],
