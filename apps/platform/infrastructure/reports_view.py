@@ -107,6 +107,7 @@ def settings_overview_view(request):
                 "support_phone", "support_email", "address", "working_hours",
                 "telegram_username", "telegram_channel_url", "instagram_url",
                 "google_site_verification", "yandex_verification", "bing_verification",
+                "google_maps_url", "yandex_maps_url", "two_gis_url",
             ]
             widgets = {
                 "site_name": forms.TextInput(attrs=text),
@@ -124,6 +125,9 @@ def settings_overview_view(request):
                 "google_site_verification": forms.TextInput(attrs={**text, "placeholder": '<meta name="google-site-verification" content="…">', "spellcheck": "false"}),
                 "yandex_verification": forms.TextInput(attrs={**text, "placeholder": '<meta name="yandex-verification" content="…">', "spellcheck": "false"}),
                 "bing_verification": forms.TextInput(attrs={**text, "placeholder": '<meta name="msvalidate.01" content="…">', "spellcheck": "false"}),
+                "google_maps_url": forms.URLInput(attrs={**text, "placeholder": "https://maps.app.goo.gl/…", "spellcheck": "false"}),
+                "yandex_maps_url": forms.URLInput(attrs={**text, "placeholder": "https://yandex.uz/maps/org/…", "spellcheck": "false"}),
+                "two_gis_url": forms.URLInput(attrs={**text, "placeholder": "https://2gis.uz/tashkent/firm/…", "spellcheck": "false"}),
                 "logo": forms.ClearableFileInput(attrs={"class": "nz-file-input", "accept": "image/png,image/jpeg,image/webp"}),
                 "favicon": forms.ClearableFileInput(attrs={"class": "nz-file-input", "accept": "image/png,image/jpeg,image/webp,image/x-icon"}),
             }
@@ -176,6 +180,24 @@ def settings_overview_view(request):
 
         def clean_bing_verification(self):
             return self._clean_verification("bing_verification")
+
+        def _clean_map(self, name):
+            from apps.platform.domain.map_links import map_link_error
+
+            value = (self.cleaned_data.get(name) or "").strip()
+            error = map_link_error(name, value)
+            if error:
+                raise forms.ValidationError(error)
+            return value
+
+        def clean_google_maps_url(self):
+            return self._clean_map("google_maps_url")
+
+        def clean_yandex_maps_url(self):
+            return self._clean_map("yandex_maps_url")
+
+        def clean_two_gis_url(self):
+            return self._clean_map("two_gis_url")
 
         def clean_telegram_username(self):
             return (self.cleaned_data.get("telegram_username") or "").strip().lstrip("@")

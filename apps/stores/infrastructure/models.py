@@ -108,6 +108,12 @@ class Store(models.Model):
     latitude = models.FloatField(null=True, blank=True, verbose_name=_("Latitude"))
     longitude = models.FloatField(null=True, blank=True, verbose_name=_("Longitude"))
     landmark = models.CharField(max_length=255, blank=True, default="", verbose_name=_("Landmark"), help_text=_("How to find the entrance, e.g. «Chorsu metro, 2-chiqish, Makro yonida»."))
+    # The branch's own listing on the map services (Google Business Profile, Yandex Business, 2GIS). The storefront links
+    # to them ("Yo'l ko'rsatish", reviews) and lists them as the branch's sameAs/hasMap in schema.org, which is how search
+    # engines tie this page to the map card -- the store then shows up in Google/Yandex local results with the site link.
+    google_maps_url = models.URLField(max_length=500, blank=True, default="", verbose_name=_("Google Maps link"), help_text=_("The branch's page on Google Maps, e.g. https://maps.app.goo.gl/… (Share → Copy link)."))
+    yandex_maps_url = models.URLField(max_length=500, blank=True, default="", verbose_name=_("Yandex Maps link"), help_text=_("The branch's page on Yandex Maps, e.g. https://yandex.uz/maps/org/…/123456789/ (Ulashish → Nusxa olish)."))
+    two_gis_url = models.URLField(max_length=500, blank=True, default="", verbose_name=_("2GIS link"), help_text=_("Optional: the branch's page on 2GIS."))
     # online orders picked up here (apps/stores/infrastructure/store_orders.py)
     pickup_enabled = models.BooleanField(default=True, verbose_name=_("Pickup orders"), help_text=_("Customers can choose this branch at checkout to pick their order up."))
     pickup_note = models.CharField(max_length=300, blank=True, default="", verbose_name=_("Pickup note"), help_text=_("Shown to the customer when the order is ready, e.g. «Kassada buyurtma raqamini ayting»."))

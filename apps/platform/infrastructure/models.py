@@ -146,6 +146,13 @@ class SiteSettings(models.Model):
     yandex_verification = models.CharField(max_length=128, blank=True, default="", verbose_name=_("Yandex Webmaster code"))
     bing_verification = models.CharField(max_length=128, blank=True, default="", verbose_name=_("Bing Webmaster code"))
 
+    # --- Map listings of the brand (Google Business Profile / Yandex Business / 2GIS). The storefront puts them in the
+    # Organization's schema.org sameAs/hasMap and shows "open on the map / leave a review" links, so search engines join
+    # the website and the map card into one business (the knowledge panel and local "near me" results). ---
+    google_maps_url = models.URLField(max_length=500, blank=True, default="", verbose_name=_("Google Maps link"))
+    yandex_maps_url = models.URLField(max_length=500, blank=True, default="", verbose_name=_("Yandex Maps link"))
+    two_gis_url = models.URLField(max_length=500, blank=True, default="", verbose_name=_("2GIS link"))
+
     updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:

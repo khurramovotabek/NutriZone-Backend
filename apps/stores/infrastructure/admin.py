@@ -244,7 +244,7 @@ class StoreAdminForm(forms.ModelForm):
 
     class Meta:
         model = orm.Store
-        fields = ["owner", "kind", "name", "slug", "color", "description", "status", "phone_numbers", "email", "telegram_username", "instagram_username", "address", "city", "district", "latitude", "longitude", "special_hours"]
+        fields = ["owner", "kind", "name", "slug", "color", "description", "status", "phone_numbers", "email", "telegram_username", "instagram_username", "address", "city", "district", "latitude", "longitude", "special_hours", "tagline", "landmark", "google_maps_url", "yandex_maps_url", "two_gis_url"]
         widgets = {
             "kind": forms.RadioSelect(attrs={"class": "nzf-cards"}),
             "status": forms.RadioSelect(attrs={"class": "nzf-pills"}),
@@ -257,7 +257,30 @@ class StoreAdminForm(forms.ModelForm):
             "instagram_username": forms.TextInput(attrs={"placeholder": "username (@ siz)"}),
             "latitude": forms.NumberInput(attrs={"step": "any", "readonly": False}),
             "longitude": forms.NumberInput(attrs={"step": "any"}),
+            "tagline": forms.TextInput(attrs={"placeholder": "Masalan: Chilonzordagi sport ozuqalari do'koni — protein, kreatin, vitaminlar"}),
+            "landmark": forms.TextInput(attrs={"placeholder": "Masalan: Chorsu metro, 2-chiqish, Makro yonida"}),
+            "google_maps_url": forms.URLInput(attrs={"placeholder": "https://maps.app.goo.gl/…", "spellcheck": "false"}),
+            "yandex_maps_url": forms.URLInput(attrs={"placeholder": "https://yandex.uz/maps/org/…", "spellcheck": "false"}),
+            "two_gis_url": forms.URLInput(attrs={"placeholder": "https://2gis.uz/tashkent/firm/…", "spellcheck": "false"}),
         }
+
+    def _clean_map_url(self, field: str) -> str:
+        from apps.platform.domain.map_links import map_link_error
+
+        url = (self.cleaned_data.get(field) or "").strip()
+        error = map_link_error(field, url)
+        if error:
+            raise forms.ValidationError(error)
+        return url
+
+    def clean_google_maps_url(self):
+        return self._clean_map_url("google_maps_url")
+
+    def clean_yandex_maps_url(self):
+        return self._clean_map_url("yandex_maps_url")
+
+    def clean_two_gis_url(self):
+        return self._clean_map_url("two_gis_url")
 
     def save(self, commit=True):
         instance = super().save(commit=False)
@@ -384,11 +407,12 @@ class StoreAdmin(ExcelExportMixin, admin.ModelAdmin):
     actions = ["mark_active", "mark_inactive", "mark_temporarily_closed"]
 
     fieldsets = (
-        (_("Asosiy ma'lumot"), {"fields": ("kind", "name", "slug", "status", "description")}),
+        (_("Asosiy ma'lumot"), {"fields": ("kind", "name", "slug", "status", "tagline", "description")}),
         (_("Brend rangi"), {"fields": ("color",)}),
         (_("Rasmlar"), {"fields": ("logo_display", "logo_upload", "cover_image_display", "cover_image_upload")}),
         (_("Aloqa"), {"fields": ("phone_numbers", "email", "telegram_username", "instagram_username")}),
-        (_("Manzil va xarita"), {"fields": ("city", "district", "address", "map_picker", ("latitude", "longitude"))}),
+        (_("Manzil va xarita"), {"fields": ("city", "district", "address", "landmark", "map_picker", ("latitude", "longitude"))}),
+        (_("Google Maps va Yandex Maps"), {"fields": ("google_maps_url", "yandex_maps_url", "two_gis_url"), "description": _("Filialning xaritalardagi sahifasi. Saytda «Google Maps'da ochish / Yandex'da ochish» tugmalari chiqadi, Google va Yandex esa sayt bilan xaritadagi kartani bog'laydi — filial qidiruvda xarita bilan birga ko'rinadi.")}),
         (_("Ish vaqti"), {"classes": ("nz-hours",), "fields": tuple((f"hours_{code}_closed", f"hours_{code}_open", f"hours_{code}_close") for code, _l in _WEEKDAYS)}),
         (_("Maxsus kunlar"), {"fields": ("special_hours",)}),
         (_("Egasi (sayt akkaunti)"), {"fields": ("owner",), "description": _("Bu do'konni saytdagi o'z kabinetidan boshqaradigan mijoz akkaunti (dashboard xodimi emas). Ixtiyoriy.")}),

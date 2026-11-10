@@ -88,6 +88,9 @@ class StoreListSerializer(serializers.Serializer):
     amenities = serializers.ListField(child=serializers.CharField(), required=False)
     landmark = serializers.CharField(required=False, allow_blank=True)
     pickup_enabled = serializers.BooleanField(required=False)
+    google_maps_url = serializers.CharField(required=False, allow_blank=True)
+    yandex_maps_url = serializers.CharField(required=False, allow_blank=True)
+    two_gis_url = serializers.CharField(required=False, allow_blank=True)
 
 
 class StoreRatingInputSerializer(serializers.Serializer):

@@ -200,6 +200,20 @@
         <p class="nz-st-hint"><i class="fas fa-sitemap" aria-hidden="true"></i> {% translate "Sitemap:" %} <code>https://nutrizone.uz/sitemap.xml</code></p>
       </section>
 
+      {# --- Map listings: the brand's Google Maps / Yandex Maps / 2GIS cards, tied to the site via schema.org sameAs --- #}
+      <section class="nz-card nz-st-card" id="st-maps">
+        <header class="nz-st-card-head">
+          <span class="nz-st-icon"><i class="fas fa-map-location-dot" aria-hidden="true"></i></span>
+          <div>
+            <h3>{% translate "Xaritalar (Google Maps, Yandex Maps)" %}</h3>
+            <p>{% translate "NutriZone kartasining havolasini qo'ying (xaritada «Ulashish» → «Nusxa olish»). Sayt Google va Yandex'ga shu karta aynan shu do'kon ekanini aytadi — qidiruvda sayt xarita kartasi bilan birga chiqadi. Har bir filialning o'z havolasi: Do'konlar → filial → «Google Maps va Yandex Maps»." %}</p>
+          </div>
+        </header>
+        {% include "admin/nz_settings_field.html" with field=form.google_maps_url label="Google Maps" icon="fa-location-dot" %}
+        {% include "admin/nz_settings_field.html" with field=form.yandex_maps_url label="Yandex Maps" icon="fa-map-pin" %}
+        {% include "admin/nz_settings_field.html" with field=form.two_gis_url label="2GIS" icon="fa-map" %}
+      </section>
+
       {# --- Storefront contact preview (live) --- #}
       <section class="nz-card nz-st-card" id="st-storefront">
         <header class="nz-st-card-head">

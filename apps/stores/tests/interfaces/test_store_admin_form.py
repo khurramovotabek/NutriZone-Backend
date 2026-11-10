@@ -55,3 +55,29 @@ def test_city_outside_the_list_can_be_typed():
     form = StoreAdminForm(data=data)
     assert form.is_valid(), form.errors
     assert form.save().city == "Yangiobod"
+
+
+def test_map_listing_links_are_saved_and_exposed_on_the_public_store_api():
+    from rest_framework.test import APIClient
+
+    form = StoreAdminForm(data=_data(google_maps_url="https://maps.app.goo.gl/AbC123", yandex_maps_url="https://yandex.uz/maps/org/nutrizone/123456789/", two_gis_url=""))
+    assert form.is_valid(), form.errors
+    store = form.save()
+    assert store.google_maps_url == "https://maps.app.goo.gl/AbC123"
+    body = APIClient().get(f"/api/v1/stores/{store.slug}").json()
+    data = body.get("data", body)
+    assert data["google_maps_url"] == "https://maps.app.goo.gl/AbC123"
+    assert data["yandex_maps_url"].startswith("https://yandex.uz/maps/org/")
+    assert data["two_gis_url"] == ""
+
+
+@pytest.mark.parametrize("field,url", [
+    ("google_maps_url", "https://yandex.uz/maps/org/x/1/"),
+    ("google_maps_url", "https://www.google.com/search?q=nutrizone"),
+    ("yandex_maps_url", "https://maps.app.goo.gl/AbC123"),
+    ("two_gis_url", "https://evil.example.com/2gis.uz"),
+])
+def test_a_link_from_another_service_is_rejected(field, url):
+    form = StoreAdminForm(data=_data(**{field: url}))
+    assert not form.is_valid()
+    assert field in form.errors

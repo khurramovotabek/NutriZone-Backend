@@ -62,6 +62,7 @@ def _store_list_payload(store: Store, distance_meters: float | None = None) -> d
         "today_hours": store.today_hours(),
         "product_count": getattr(store, "product_count", None) if getattr(store, "product_count", None) is not None else store.stock_entries.filter(quantity__gt=0).count(),
         "tagline": store.tagline, "amenities": store.amenities or [], "landmark": store.landmark, "pickup_enabled": store.pickup_enabled,
+        "google_maps_url": store.google_maps_url, "yandex_maps_url": store.yandex_maps_url, "two_gis_url": store.two_gis_url,
     }
 
 

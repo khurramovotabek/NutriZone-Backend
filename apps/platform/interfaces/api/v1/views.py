@@ -54,6 +54,7 @@ class SiteSettingsPublicView(APIView):
             "instagram_url": settings_obj.instagram_url,
             "primary_color": settings_obj.primary_color,
             "verification": _verification_codes(),
+            "map_listings": _map_listings(),
             "requisites": _seller_requisites(),
             **_brand_payload(request),
         })
@@ -65,6 +66,14 @@ def _verification_codes() -> dict:
 
     row = SiteSettings.objects.filter(pk=1).values("google_site_verification", "yandex_verification", "bing_verification").first() or {}
     return {"google": row.get("google_site_verification", ""), "yandex": row.get("yandex_verification", ""), "bing": row.get("bing_verification", "")}
+
+
+def _map_listings() -> dict:
+    """The brand's own cards on Google Maps / Yandex Maps / 2GIS (Dashboard → Sozlamalar → Xaritalar) for schema.org sameAs."""
+    from apps.platform.infrastructure.models import SiteSettings
+
+    row = SiteSettings.objects.filter(pk=1).values("google_maps_url", "yandex_maps_url", "two_gis_url").first() or {}
+    return {"google": row.get("google_maps_url", ""), "yandex": row.get("yandex_maps_url", ""), "two_gis": row.get("two_gis_url", "")}
 
 
 def _seller_requisites() -> dict:

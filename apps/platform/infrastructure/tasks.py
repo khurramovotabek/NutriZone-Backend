@@ -36,3 +36,11 @@ def control_scan() -> dict:
     from apps.platform.infrastructure import control_center
 
     return control_center.run()
+
+
+@shared_task(queue="default", name="platform.indexnow_submit")
+def indexnow_submit() -> dict:
+    """Daily (beat, migration 0025): pages changed in the last 2 days → IndexNow (Bing/Yandex; ChatGPT search reads Bing)."""
+    from apps.platform.infrastructure import indexnow
+
+    return indexnow.submit_changed(days=2)
