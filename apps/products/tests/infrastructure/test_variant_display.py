@@ -102,3 +102,24 @@ def test_catalog_on_sale_filter_and_biggest_discount_sort():
     assert ids == [str(big.id), str(small.id)]
     assert str(plain.id) not in ids
     assert body["meta"]["facets"]["on_sale_count"] == 2
+
+
+def test_newest_deals_sort_puts_the_latest_markdown_first():
+    """Home "Aksiyalar": sort=-sale_since -- the deal set most recently comes first, whatever its size."""
+    from datetime import timedelta
+
+    from django.utils import timezone
+
+    from apps.pricing.infrastructure.models import PriceListEntryModel
+    from apps.products.infrastructure import catalog_browse
+
+    old_big = _priced_product("500000", compare_at="1000000")  # -50%, marked down a week ago
+    new_small = _priced_product("900000", compare_at="1000000")  # -10%, marked down just now
+    plain = _priced_product("400000")
+    week_ago = timezone.now() - timedelta(days=7)
+    PriceListEntryModel.objects.filter(product_variant_id__in=old_big.variants.values("id")).update(updated_at=week_ago)
+    catalog_browse._CANDIDATES.clear() if hasattr(catalog_browse, "_CANDIDATES") else None
+
+    body = Client().get("/api/v1/products/search", {"q": "", "filter[on_sale]": "1", "sort": "-sale_since"}).json()
+    assert [p["id"] for p in body["data"]] == [str(new_small.id), str(old_big.id)]
+    assert str(plain.id) not in [p["id"] for p in body["data"]]

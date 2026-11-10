@@ -19,7 +19,7 @@ from dataclasses import dataclass, field
 from apps.products.domain.enums import AgeGroup, Availability, Gender, NutritionCategory, ProductStatus
 from common.exceptions import ValidationFailed
 
-ALLOWED_SORT_FIELDS = {"created_at", "-created_at", "name", "-name", "relevance", "price", "-price", "-rating", "-popularity", "-discount"}
+ALLOWED_SORT_FIELDS = {"created_at", "-created_at", "name", "-name", "relevance", "price", "-price", "-rating", "-popularity", "-discount", "-sale_since"}
 DEFAULT_PAGE_SIZE = 20
 MAX_PAGE_SIZE = 100
 

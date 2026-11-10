@@ -40,7 +40,7 @@ from decimal import Decimal, InvalidOperation
 from apps.products.domain.enums import ProductStatus
 from apps.products.infrastructure import models as orm
 
-SORTS = {"relevance", "-created_at", "created_at", "price", "-price", "-rating", "-popularity", "name", "-name", "-discount"}
+SORTS = {"relevance", "-created_at", "created_at", "price", "-price", "-rating", "-popularity", "name", "-name", "-discount", "-sale_since"}
 
 
 @dataclass(frozen=True)
@@ -77,6 +77,7 @@ class Candidate:
     rank: int = 0  # position in the smart-search ranking (query only)
     offers: list = field(default_factory=list)
     price_from: Decimal | None = None  # lowest variant price -- the "from" price the card shows, used for sorting
+    sale_since: object = None  # when the current markdown was set (latest change of a discounted price entry) -- "newest deals"
 
 
 def size_key(value, unit) -> str | None:
@@ -186,12 +187,30 @@ def _build_candidates(product_ids: list | None, locale: str) -> dict:
     for product_id, flavour_id in orm.ProductFlavour.objects.filter(product_id__in=by_id).values_list("product_id", "flavour_id"):
         by_id[product_id].flavour_ids.add(flavour_id)
     _attach_offers(by_id, products)
+    _attach_sale_since(by_id, products)
     for product_id, units in _units_sold_by_product().items():
         candidate = by_id.get(uuid.UUID(product_id))
         if candidate is not None:
             candidate.popularity = units
     _attach_stock(by_id)
     return by_id
+
+
+def _attach_sale_since(by_id: dict, products: list) -> None:
+    """For marked-down products: the last time one of their discounted price entries changed (≈ when the deal started)."""
+    from django.db.models import F, Max
+
+    from apps.pricing.infrastructure.models import PriceListEntryModel
+
+    variant_product = {v.id: p.id for p in products if by_id[p.id].discount > 0 for v in p.variants.all()}
+    if not variant_product:
+        return
+    rows = (PriceListEntryModel.objects.filter(product_variant_id__in=list(variant_product), compare_at_price_amount__gt=F("base_price_amount"))
+            .values("product_variant_id").annotate(at=Max("updated_at")))
+    for row in rows:
+        candidate = by_id[variant_product[row["product_variant_id"]]]
+        if candidate.sale_since is None or row["at"] > candidate.sale_since:
+            candidate.sale_since = row["at"]
 
 
 def _attach_offers(by_id: dict, products: list) -> None:
@@ -304,6 +323,8 @@ def _sort(rows: list, sort: str) -> list:
         return sorted(rows, key=lambda c: (c.rating or 0, c.rating_count), reverse=True)
     if sort == "-discount":
         return sorted(rows, key=lambda c: (c.discount, c.created_at), reverse=True)
+    if sort == "-sale_since":  # newest deals first; products without a markdown last
+        return sorted(rows, key=lambda c: (c.discount > 0, c.sale_since or c.created_at, c.discount), reverse=True)
     if sort == "-popularity":
         return sorted(rows, key=lambda c: (c.popularity, c.stock > 0), reverse=True)
     if sort in ("name", "-name"):
