@@ -119,6 +119,14 @@ def _expert(meta: dict, p, text: str, loc: str, taught: list):  # noqa: C901 - o
         meta.update(last="dairy", last_kind="protein")
         meta.setdefault("profile", {})["lactose_free"] = True
         return reply, ids, CHIPS["after_reco"][loc], meta
+    # brand-named pairs ("Zorvex yoki Kalmar") go to Brain's compare; tubs named without a brand ("Gold Standard va Iso100") come here
+    pair = (expert.pair_in(text) if (expert.wants_which(text) or brain._has(seen.both, brain.COMPARE)) and len(seen.concepts) < 2
+            and not seen.brands and not re.search(r"\bon\b", seen.text) else [])
+    if pair:  # "Gold Standard va Iso100 qaysi yaxshi" -- the two named tubs side by side, with numbers
+        r = expert.compare_named(pair, concept, loc)
+        if r:
+            meta["last"] = "compare_named"
+            return r[0], r[1], CHIPS["after_reco"][loc], meta
     shown = meta.get("last_shown") or []
     if (expert.wants_which(text) and len(shown) >= 2 and not seen.brands and not nlu.body_facts(p.facts)
             and concept in (None, meta.get("last_kind"))):
@@ -139,11 +147,12 @@ def _expert(meta: dict, p, text: str, loc: str, taught: list):  # noqa: C901 - o
     budget = p.facts.get("budget")
     both = f"{p.text} {p.text.translate(nlu.LATIN_FROM_CYR)}"
     cheap = brain._has(both, brain.CHEAP)
-    best = brain._has(both, brain.BEST + expert.NEED) or expert.wants_which(text) or p.intent == "recommend"
+    best = brain._has(both, brain.BEST) or expert.wants_which(text) or p.intent == "recommend"
     if seen.health:
         return None
     if what or (brain.asks(text) and not (budget or cheap or best)):
-        return None  # a question about the kind ("kreatin zararlimi?") -- knowledge / brain answer it
+        return None  # a question about the kind ("kreatin zararlimi?", "bcaa kerakmi?") -- knowledge / brain answer it
+    best = best or brain._has(both, expert.NEED)  # "kreatin kerak" (not "kerakmi?") is a buying request
     if not (budget or cheap or best) or concept in ADVICE_FIRST:  # "uyqum yomon" -- the routine first, engine's own path
         return None
     r = expert.budget_answer(concept, sub, budget, loc, cheap=cheap and not budget)
@@ -158,11 +167,13 @@ def _expert(meta: dict, p, text: str, loc: str, taught: list):  # noqa: C901 - o
     return reply, ids, CHIPS["after_reco"][loc], meta
 
 
-def _kind_ids(concept: str | None, loc: str) -> list[str]:
-    """In-stock products of the kind a knowledge answer talks about (none when it isn't about a product kind)."""
+def _kind_ids(concept: str | None, loc: str, text: str = "") -> list[str]:
+    """In-stock products of the kind a knowledge answer talks about (none when it isn't about a product kind) -- of the
+    sub-kind named ("vegan protein bormi" shows vegan protein, not whey)."""
     if not concept:
         return []
-    return [x["id"] for x in expert.kind_search(concept, loc, limit=3)]
+    concept, sub = expert.kind_of(text, concept)
+    return [x["id"] for x in expert.kind_search(concept, loc, sub=sub, limit=3)]
 
 
 ADVICE_FIRST = ("sleep",)  # topics whose how-to is the answer itself, shown above the products
@@ -296,7 +307,7 @@ def _answer(conv_meta: dict, text: str, loc: str) -> tuple[str, list[str], list[
         # the shop taught this very question on the dashboard -- its answer wins over everything automatic
         knowledge.mark_used([taught[0].entry])
         meta["last"] = "knowledge"
-        ids = _kind_ids(p.concept, loc)
+        ids = _kind_ids(p.concept, loc, text)
         return taught[0].entry.answer(loc), ids, (CHIPS["after_reco"] if ids else CHIPS["faq"])[loc], meta
     if nlu._has(f"{p.text} {p.text.translate(nlu.LATIN_FROM_CYR)}", nlu.GIFT) and not p.concept:
         # "sovg'a sertifikati bormi" -- the catalogue's fuzzy search would answer with random tubs; the shop knows (and
@@ -359,7 +370,7 @@ def _answer(conv_meta: dict, text: str, loc: str) -> tuple[str, list[str], list[
         # what the shop taught on the dashboard (AI bilimlar bazasi) wins over the built-in texts; products of the kind asked about come along
         knowledge.mark_used([taught[0].entry])
         meta["last"] = "knowledge"
-        ids = _kind_ids(p.concept, loc)
+        ids = _kind_ids(p.concept, loc, text)
         return taught[0].entry.answer(loc), ids, (CHIPS["after_reco"] if ids else CHIPS["faq"])[loc], meta
     if p.intent == "faq_delivery":
         meta["last"] = p.intent

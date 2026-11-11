@@ -159,3 +159,27 @@ def test_personal_dose_from_weight_and_goal(shop):
 def test_stack_answer_has_a_daily_schedule(shop):
     reply, *_ = answer({}, "180 sm, 75 kg, 25 yosh, massa olmoqchiman", "uz")
     assert "Kun tartibi" in reply and "Mashg'ulotdan keyin" in reply
+
+
+def test_two_named_products_are_compared_side_by_side(shop):
+    reply, ids, _c, meta = answer({}, "Gold Standard 100% Whey va Isolate qaysi yaxshi?", "uz")
+    assert meta["last"] == "compare_named" and set(ids) == {str(shop["gold"].id), str(shop["iso"].id)}
+    assert "solishtirdim" in reply and "arzonroq" in reply
+
+
+def test_is_it_needed_question_is_not_a_shopping_list(shop):
+    _r, _ids, _c, meta = answer({}, "kreatin kerakmi?", "uz")
+    assert meta["last"] != "expert_pick"
+
+
+def test_vegan_question_shows_vegan_products(shop):
+    _r, ids, *_ = answer({}, "vegan protein nima?", "uz")
+    assert ids == [str(shop["plant"].id)]
+
+
+def test_gainer_is_not_priced_per_25g_protein(shop):
+    from apps.assistant.tests.test_expert_choice import _cat, _product
+
+    g = _product("Zorvex Mass Gainer", 250_000, _cat("Gainers"), protein=30, servings=20, kg=3)
+    rows = expert.rank(expert.rows_for([str(g.id)], "uz"), "gainer")
+    assert "25 g oqsil" not in expert._numbers(rows[0], "uz") and "porsiyasi" in expert._numbers(rows[0], "uz")

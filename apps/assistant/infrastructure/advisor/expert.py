@@ -85,6 +85,7 @@ class Row:
     serving_g: float | None = None
     kilos: float | None = None  # size of the tub sold at `price`
     tier: int = 1
+    kind: str | None = None  # set by rank(): protein rows are compared per 25 g protein, others per serving
     score: float = 0
     flags: list = field(default_factory=list)
 
@@ -270,6 +271,8 @@ def rank(rows: list[Row], concept: str | None, sub: str | None = None) -> list[R
     a live discount 5 %. Out-of-stock rows go last."""
     if not rows:
         return rows
+    for r in rows:
+        r.kind = concept
     metric = _protein_cost if concept in PROTEIN_KINDS else (lambda r: r.per_serving)
     vals = [metric(r) for r in rows]
     if sum(1 for v in vals if v) < 2:  # the cards lack nutrition numbers: compare price per kilo, else plain price
@@ -312,7 +315,7 @@ def _numbers(r: Row, loc: str) -> str:
         bits.append(_l(loc, f"{r.protein:g} g oqsil × {r.servings:g} porsiya", f"{r.protein:g} г белка × {r.servings:g} порций", f"{r.protein:g} g protein × {r.servings:g} servings"))
     elif r.servings:
         bits.append(_l(loc, f"{r.servings:g} porsiya", f"{r.servings:g} порций", f"{r.servings:g} servings"))
-    if r.per_25g:
+    if r.per_25g and r.kind in (None, *PROTEIN_KINDS):
         bits.append(_l(loc, f"25 g oqsil ≈ {money(r.per_25g)} so'm", f"25 г белка ≈ {money(r.per_25g)} сум", f"25 g protein ≈ {money(r.per_25g)} UZS"))
     elif r.per_serving:
         bits.append(_l(loc, f"porsiyasi ≈ {money(r.per_serving)} so'm", f"порция ≈ {money(r.per_serving)} сум", f"≈ {money(r.per_serving)} UZS a serving"))
@@ -637,3 +640,52 @@ def day_schedule(kinds: list[str], loc: str) -> str:
                     "_В дни отдыха: креатин и витамины — каждый день, протеин — вместо перекуса; предтрен не нужен._",
                     "_Rest days: creatine and vitamins every day, protein as a snack; no pre-workout._"))
     return "\n".join(lines)
+
+
+# ---------------------------------------------------------------------------------------------------- "A or B?"
+
+PAIR_SPLIT = re.compile(r"\s(?:va|yoki|bilan|или|и|vs\.?|versus|or|and|против)\s|\s*(?:/|,)\s*")
+PAIR_FILLER = re.compile(r"\b(?:qaysi\w*|biri\w*|yaxshi\w*|zo'r\w*|farq\w*|nima\w*|solishtir\w*|taqqosla\w*|ma'qul|olay|olsam|menga|"
+                         r"что|чем|лучше|какой|какая|какую|выбрать|разниц\w*|отлича\w*|сравн\w*|which|one|is|better|best|the|difference|between|compare|"
+                         r"protein\w*|proteyn\w*|протеин\w*)\b|[?!.]")
+
+
+def pair_in(text: str) -> list[str]:
+    """Two product names compared in one message ("Gold Standard va Iso100 qaysi yaxshi"), else []."""
+    t = nlu.normalize(text)
+    parts = [re.sub(r"\s+", " ", PAIR_FILLER.sub(" ", x)).strip() for x in PAIR_SPLIT.split(t)]
+    parts = [x for x in parts if len(x) >= 3]
+    return parts if len(parts) == 2 else []
+
+
+def compare_named(parts: list[str], concept: str | None, loc: str) -> tuple[str, list[str]] | None:
+    from apps.assistant.infrastructure import tools
+
+    ids: list[str] = []
+    for q in parts:
+        found = tools.search_products({"query": q, "limit": 1, "in_stock_only": False}, loc)["products"]
+        if not found or found[0]["id"] in ids:
+            return None
+        ids.append(found[0]["id"])
+    rows = rank(rows_for(ids, loc), concept)
+    if len(rows) < 2:
+        return None
+    a, b = rows[0], rows[1]
+    head = _l(loc, f"**{a.name} va {b.name} — solishtirdim:**", f"**{a.name} и {b.name} — сравнение:**", f"**{a.name} vs {b.name} — compared:**")
+    body = "\n".join(_line(i, r, loc) for i, r in enumerate(rows, 1))
+    diff = []
+    if a.per_25g and b.per_25g:
+        cheap, dear = sorted((a, b), key=lambda r: r.per_25g)
+        pct = round((dear.per_25g / cheap.per_25g - 1) * 100)
+        if pct >= 5:
+            diff.append(_l(loc, f"💸 {cheap.name} oqsil grammi hisobida **{pct}% arzonroq**.", f"💸 {cheap.name} по цене белка **дешевле на {pct}%**.",
+                           f"💸 {cheap.name} is **{pct}% cheaper** per gram of protein."))
+    if a.protein and b.protein and abs(a.protein - b.protein) >= 2:
+        hi = max((a, b), key=lambda r: r.protein)
+        diff.append(_l(loc, f"💪 {hi.name} porsiyasida oqsil ko'proq ({hi.protein:g} g).", f"💪 В порции {hi.name} больше белка ({hi.protein:g} г).",
+                       f"💪 {hi.name} has more protein per scoop ({hi.protein:g} g)."))
+    tip = _l(loc, "Qorin sezgir yoki laktoza ko'tarmasangiz — izolyat/gidrolizatni, byudjet muhim bo'lsa — 25 g oqsil narxi arzonini tanlang.",
+             "Чувствительный желудок или лактоза — берите изолят/гидролизат; важен бюджет — тот, где 25 г белка дешевле.",
+             "Sensitive stomach or lactose — take the isolate/hydrolysate; budget matters — the one with cheaper 25 g protein.")
+    text = f"{head}\n{body}\n\n" + ("\n".join(diff) + "\n" if diff else "") + f"{verdict(rows, loc)}\n\n{tip}"
+    return text, [r.id for r in rows]
