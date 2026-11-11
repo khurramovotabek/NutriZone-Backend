@@ -149,3 +149,50 @@ def test_size_key(value, unit, expected):
 @pytest.mark.parametrize("key, band", [("250g", "upto-300g"), ("2270g", "2-3kg"), ("2.27kg", "2-3kg"), ("5lb", "2-3kg"), ("60capsule", "upto-60pcs"), ("120tablet", "61-120pcs"), ("500ml", "250ml-1l"), ("1l", "1l-plus"), ("12x", None), (None, None)])
 def test_size_band(key, band):
     assert size_band(key) == band
+
+
+class TestCandidatesStaleWhileRevalidate:
+    """An expired catalogue copy is served at once and rebuilt in the background -- no visitor waits for the rebuild."""
+
+    def test_expired_copy_is_served_and_refreshed_in_background(self, settings, monkeypatch):
+        import threading
+        import time
+
+        from apps.products.infrastructure import catalog_browse
+
+        settings.CATALOG_CANDIDATES_TTL = 30
+        built = threading.Event()
+        calls = []
+
+        def fake_build(product_ids, locale):
+            calls.append(locale)
+            built.set()
+            return {"new": "fresh"}
+
+        monkeypatch.setattr(catalog_browse, "_build_candidates", fake_build)
+        monkeypatch.setitem(catalog_browse._CANDIDATES, "xx", (time.monotonic() - 1, {"old": "stale"}))
+        try:
+            served = catalog_browse._load_candidates(None, "xx")
+            assert served == {"old": "stale"}  # no waiting for the rebuild
+            assert built.wait(5)
+            for _ in range(50):  # the thread stores the copy right after building it
+                if catalog_browse._CANDIDATES["xx"][1] == {"new": "fresh"}:
+                    break
+                time.sleep(0.02)
+            assert catalog_browse._load_candidates(None, "xx") == {"new": "fresh"}
+            assert calls == ["xx"]
+        finally:
+            catalog_browse._CANDIDATES.pop("xx", None)
+
+    def test_missing_or_very_old_copy_is_built_synchronously(self, settings, monkeypatch):
+        import time
+
+        from apps.products.infrastructure import catalog_browse
+
+        settings.CATALOG_CANDIDATES_TTL = 30
+        monkeypatch.setattr(catalog_browse, "_build_candidates", lambda ids, locale: {"p": "built"})
+        monkeypatch.setitem(catalog_browse._CANDIDATES, "yy", (time.monotonic() - 30 * catalog_browse._STALE_FACTOR - 5, {"p": "ancient"}))
+        try:
+            assert catalog_browse._load_candidates(None, "yy") == {"p": "built"}
+        finally:
+            catalog_browse._CANDIDATES.pop("yy", None)

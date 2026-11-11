@@ -137,6 +137,32 @@ def _parse_decimal(raw) -> Decimal | None:
 
 _CANDIDATES: dict = {}  # locale -> (expires_at, {product_id: Candidate}) -- this process's copy of the whole catalogue
 _CANDIDATES_LOCK = threading.Lock()
+_REFRESHING: set = set()  # locales whose copy a background thread is rebuilding right now
+_STALE_FACTOR = 20  # an expired copy is still served (while refreshing) for up to 20 x TTL (10 min at the 30 s default)
+
+
+def _refresh_in_background(locale: str, ttl: int) -> None:
+    with _CANDIDATES_LOCK:
+        if locale in _REFRESHING:
+            return
+        _REFRESHING.add(locale)
+
+    def run():
+        from django.db import close_old_connections, connection
+
+        try:
+            close_old_connections()
+            built = _build_candidates(None, locale)
+            _CANDIDATES[locale] = (time.monotonic() + ttl, built)
+        except Exception:  # a failed refresh keeps serving the old copy; the next expired request tries again
+            import logging
+
+            logging.getLogger(__name__).exception("catalogue candidates refresh failed (%s)", locale)
+        finally:
+            _REFRESHING.discard(locale)
+            connection.close()  # this thread's own DB connection
+
+    threading.Thread(target=run, name=f"candidates-refresh-{locale}", daemon=True).start()
 
 
 def _load_candidates(product_ids: list | None, locale: str) -> dict:
@@ -153,12 +179,17 @@ def _load_candidates(product_ids: list | None, locale: str) -> dict:
         return _build_candidates(product_ids, locale)
     now = time.monotonic()
     cached = _CANDIDATES.get(locale)
-    if cached is None or cached[0] < now:
+    # Stale-while-revalidate: with a few workers and modest traffic the 30 s copy had nearly always expired, so almost
+    # every uncached search/catalogue request paid the full rebuild (measured 3-5 s on prod, 2026-11-11). An expired
+    # copy is now served at once while one background thread rebuilds it; only a missing or very old copy blocks.
+    if cached is None or cached[0] + ttl * _STALE_FACTOR < now:
         with _CANDIDATES_LOCK:
             cached = _CANDIDATES.get(locale)
-            if cached is None or cached[0] < now:
+            if cached is None or cached[0] + ttl * _STALE_FACTOR < now:
                 cached = (now + ttl, _build_candidates(None, locale))
                 _CANDIDATES[locale] = cached
+    elif cached[0] < now:
+        _refresh_in_background(locale, ttl)
     base = cached[1]
     keys = base.keys() if product_ids is None else (pid for pid in product_ids if pid in base)
     return {pid: copy.copy(base[pid]) for pid in keys}
