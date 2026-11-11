@@ -142,3 +142,51 @@ else
   if nginx -t 2>/dev/null; then systemctl reload nginx; else nginx -t; exit 1; fi
   echo "asset cache already included (snippet refreshed)"
 fi
+
+# Page micro-cache: public storefront HTML for visitors without a session/cart cookie, ~20 s, refreshed in the
+# background (docker/nginx/host-page-cache.conf explains what is never cached). Zone + skip rules at http level.
+mkdir -p /var/cache/nginx/nz_pages
+chown www-data:www-data /var/cache/nginx/nz_pages 2>/dev/null || true
+cat > /etc/nginx/conf.d/nz-page-cache.conf <<'CONF'
+proxy_cache_path /var/cache/nginx/nz_pages levels=1:2 keys_zone=nz_pages:20m max_size=1g inactive=10m use_temp_path=off;
+# Any cookie the server reads to personalise a page -> straight to Next.js, never stored.
+map $http_cookie $nz_page_cookie_skip {
+    default 0;
+    "~*(?:^|;\s*)(?:nz_access_token|nz_refresh_token|nz_cart_code|nz_cart_token|nz_embed|nz_ref)=" 1;
+}
+# The language a cookie picked (a /ru or /en address is already in $request_uri).
+map $http_cookie $nz_page_locale {
+    default uz;
+    "~*(?:^|;\s*)nz_locale=(?<nz_l>[a-z]{2})" $nz_l;
+}
+# Only public catalogue/content pages; cart, checkout, account, profile, orders, wishlist, compare, login, /api ... never.
+map $uri $nz_page_path_skip {
+    default 1;
+    "~^/(?:ru|en)?/?$" 0;
+    "~^/(?:(?:ru|en)/)?(?:products|categories|brands|blog|guides|stores|store|about|contact|privacy|terms|loyalty)(?:/|$)" 0;
+}
+# RSC navigation/prefetch requests carry per-client router state -- only full HTML documents are cached.
+map "$nz_page_cookie_skip$nz_page_path_skip:$http_rsc$http_next_router_prefetch:$request_method" $nz_page_skip {
+    default 1;
+    "00::GET" 0;
+    "00::HEAD" 0;
+}
+CONF
+cp "$(dirname "$(readlink -f "$0")")/../nginx/host-page-cache.conf" /etc/nginx/snippets/nz-page-cache.conf
+if ! grep -q 'nz-page-cache' "$SITE"; then
+  cp -a "$SITE" "$BACKUP.pages"
+  sed -i -E '0,/^(\s*)include snippets\/nz-assets-cache\.conf;  # nz-assets-cache/s//\1include snippets\/nz-assets-cache.conf;  # nz-assets-cache\n\1include snippets\/nz-page-cache.conf;  # nz-page-cache/' "$SITE"
+  if nginx -t 2>/dev/null; then
+    systemctl reload nginx
+    echo "page micro-cache for public storefront pages (backup: $BACKUP.pages)"
+  else
+    cp -a "$BACKUP.pages" "$SITE"
+    rm -f /etc/nginx/conf.d/nz-page-cache.conf
+    nginx -t
+    echo "nginx -t failed -- restored $BACKUP.pages" >&2
+    exit 1
+  fi
+else
+  if nginx -t 2>/dev/null; then systemctl reload nginx; else nginx -t; exit 1; fi
+  echo "page micro-cache already included (snippet refreshed)"
+fi
