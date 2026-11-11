@@ -330,6 +330,21 @@ def build_tip_post(slot, entry, chan: str, *, key: str | None):
     )
 
 
+def _post_tip(slot, chan: str, key: str, now: datetime) -> int:
+    from apps.telegram_bot.infrastructure import posts
+
+    entry = pick_tip(now)
+    if entry is None:
+        logger.warning("Channel schedule %s: no knowledge entry left to post.", slot)
+        return 0
+    try:
+        post = build_tip_post(slot, entry, chan, key=key)
+    except IntegrityError:
+        return 0
+    posts.queue(post)
+    return 1
+
+
 def run(now: datetime | None = None) -> dict:
     from apps.telegram_bot.infrastructure import posts
     from apps.telegram_bot.infrastructure.models import ChannelAutoPostSettings, ChannelPostSlot, TelegramPost
@@ -354,16 +369,7 @@ def run(now: datetime | None = None) -> dict:
         if manual.filter(sent_at__range=(at - MANUAL_GAP, at + MANUAL_GAP)).exists() or manual.filter(scheduled_at__range=(at - MANUAL_GAP, at + MANUAL_GAP)).exists():
             continue  # a manager already posts around this time
         if slot.kind == slot.KIND_TIP:
-            entry = pick_tip(now)
-            if entry is None:
-                logger.warning("Channel schedule %s: no knowledge entry left to post.", slot)
-                continue
-            try:
-                post = build_tip_post(slot, entry, chan, key=key)
-            except IntegrityError:
-                continue
-            posts.queue(post)
-            result["daily"] += 1
+            result["daily"] += _post_tip(slot, chan, key, now)
             continue
         if cards is None:
             cards = pool()
