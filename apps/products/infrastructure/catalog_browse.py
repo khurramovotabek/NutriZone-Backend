@@ -402,6 +402,23 @@ def browse(query: str | None, filters: dict, sort: str, page: int, page_size: in
     """{"ordered_ids": page ids in order, "total_count", "facets", "suggestion"} -- the caller renders the page's cards."""
     suggestion = None
     ranked_ids = None
+    understood: list[str] = []
+    if query:
+        # "arzon kreatin", "chegirmadagi protein", "500 minggacha gainer": the order / filter words leave the query
+        from apps.products.infrastructure import query_intent
+
+        intent = query_intent.parse(query)
+        if intent.understood:
+            understood = intent.understood
+            query = intent.query or None
+            filters = dict(filters)
+            for key, value in intent.filters.items():
+                if key == "price":
+                    filters["price"] = {**value, **(filters.get("price") or {})}  # a price the shopper set in the filter wins
+                else:
+                    filters.setdefault(key, value)
+            if intent.sort and sort in ("-created_at", "relevance", "", None):
+                sort = intent.sort
     if query:
         from apps.products.infrastructure import smart_search
 
@@ -420,8 +437,10 @@ def browse(query: str | None, filters: dict, sort: str, page: int, page_size: in
     preds = _predicates(filters)
     matching = [c for c in candidates if _passes(c, preds)]
     effective_sort = sort if sort in SORTS else "-created_at"
-    if query and effective_sort == "-created_at":
+    if query and effective_sort == "-created_at" and "sort:-created_at" not in understood:
         effective_sort = "relevance"  # a query's default order is relevance, not date
+    if understood and not query and effective_sort == "-created_at" and "sort:-created_at" not in understood:
+        effective_sort = "-discount" if "on_sale" in understood else "-popularity"  # "chegirmalar" alone: the deepest deals first
     if not query and effective_sort == "relevance":
         effective_sort = "-created_at"
     ordered = _sort(matching, effective_sort)
@@ -431,6 +450,7 @@ def browse(query: str | None, filters: dict, sort: str, page: int, page_size: in
         "total_count": len(ordered),
         "facets": _facets(candidates, preds, locale),
         "suggestion": suggestion,
+        "understood": understood,
     }
 
 

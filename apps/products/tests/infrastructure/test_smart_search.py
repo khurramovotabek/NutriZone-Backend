@@ -277,3 +277,18 @@ def test_cyrillic_bcaa_misspelt_protein_and_sport_nutrition():
     assert ss.search("protien", index).product_ids[:1] == [whey.id]
     assert ss.search("спортивное питание", index).product_ids[:1] == [whey.id]
     assert ss._expand_aliases(["bcaa", "2", "1", "1"]) == ["bcaa", "2", "1", "1"]  # numbers are never collapsed
+
+
+class TestTypedWordTolerance:
+    """"d3" / "b12" are one typed word: splitting them into "d 3" must not unlock the one-missed-word allowance."""
+
+    D3 = _entry("NOW Vitamin D3 2000 IU", brand="NOW Foods", category="Vitamins")
+    B12 = _entry("Solgar Vitamin B12 1000 mcg", brand="Solgar", category="Vitamins")
+    OMEGA3 = _entry("Omega 3 Fish Oil with Vitamin E", brand="NOW Foods", category="Vitamins")
+    IDX = [D3, B12, OMEGA3]
+
+    def test_vitamin_d3_finds_only_d3(self):
+        assert ss.search("vitamin d3", self.IDX).product_ids == [self.D3.id]
+
+    def test_three_typed_words_still_tolerate_one_miss(self):
+        assert self.D3.id in ss.search("now vitamin d3 kapsula", self.IDX).product_ids

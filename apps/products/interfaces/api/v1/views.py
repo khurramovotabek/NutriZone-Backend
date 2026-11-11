@@ -287,7 +287,8 @@ class ProductSearchView(APIView):
             data=result["results"],
             pagination={"strategy": "page", "page": params.page, "page_size": params.page_size, "total_pages": total_pages, "total_count": result["total_count"]},
             # "suggestion": the corrected query ("did you mean") when the smart engine matched only fuzzily; null otherwise.
-            meta_extra={"facets": result["facets"], "suggestion": result.get("suggestion")},
+            # "understood": order/filter words the engine took out of the query ("sort:price", "on_sale", "price_lte:500000").
+            meta_extra={"facets": result["facets"], "suggestion": result.get("suggestion"), "understood": result.get("understood", [])},
         )
 
 

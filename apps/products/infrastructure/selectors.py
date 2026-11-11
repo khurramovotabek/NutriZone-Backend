@@ -513,6 +513,7 @@ class DjangoProductSearchBackend:
             "total_count": outcome["total_count"],
             "facets": outcome["facets"],
             "suggestion": outcome["suggestion"],
+            "understood": outcome.get("understood", []),
         }
 
     def autocomplete(self, partial: str, limit: int) -> list[str]:

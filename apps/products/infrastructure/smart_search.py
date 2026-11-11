@@ -503,6 +503,9 @@ def search(query: str, index: list[IndexedProduct] | None = None) -> SearchOutco
     """Ranked product ids for `query`, plus a "did you mean" suggestion when the query only matched fuzzily."""
     normalized = normalize(query)
     tokens = normalized.split()
+    # words as typed: "d3", "b12", "5lb" are one word each although normalize() splits them ("d 3") -- the one-missed-word
+    # allowance is counted on these, otherwise "vitamin d3" (3 tokens) let any vitamin with a "3" or any "D" product through
+    typed_words = len([w for w in (query or "").split() if normalize(w) and phonetic(normalize(w).split()[0]) not in _STOP_KEYS]) or 1
     meaningful = [t for t in tokens if phonetic(t) not in _STOP_KEYS]
     if meaningful and len(meaningful) < len(tokens):
         tokens = meaningful
@@ -517,10 +520,10 @@ def search(query: str, index: list[IndexedProduct] | None = None) -> SearchOutco
     token_keys = [phonetic(t) for t in tokens]
     normalized = " ".join(tokens)
 
-    outcome = _rank(index, prepared, tokens, token_keys, normalized, joined_code, relaxed=False)
+    outcome = _rank(index, prepared, tokens, token_keys, normalized, joined_code, relaxed=False, typed_words=typed_words)
     if not outcome.product_ids and len(tokens) > 1:
         # nothing matched every word: the nearest products (most words matched) beat an empty page
-        outcome = _rank(index, prepared, tokens, token_keys, normalized, joined_code, relaxed=True)
+        outcome = _rank(index, prepared, tokens, token_keys, normalized, joined_code, relaxed=True, typed_words=typed_words)
     return outcome
 
 
@@ -561,7 +564,7 @@ def _split_compound(prepared: _Prepared, token: str) -> list[str]:
     return best[1] if best else [token]
 
 
-def _rank(index, prepared, tokens, token_keys, normalized, joined_code, relaxed: bool) -> SearchOutcome:
+def _rank(index, prepared, tokens, token_keys, normalized, joined_code, relaxed: bool, typed_words: int | None = None) -> SearchOutcome:
     # Per query word: entry position -> its best (word, weighted score), built from the postings of the words it matches.
     best_by_token: list[dict[int, tuple[str, float]]] = []
     for tk in token_keys:
@@ -588,7 +591,7 @@ def _rank(index, prepared, tokens, token_keys, normalized, joined_code, relaxed:
             per_token = [(joined_code, 1.0)] * len(token_keys)
 
         matched = [s for _, s in per_token if s >= MATCH_THRESHOLD]
-        tolerated_misses = len(token_keys) - 1 if relaxed else 1 if len(token_keys) >= 3 else 0
+        tolerated_misses = len(token_keys) - 1 if relaxed else 1 if min(len(token_keys), typed_words or len(token_keys)) >= 3 else 0
         if len(matched) < len(token_keys) - tolerated_misses or not matched:
             continue
 
