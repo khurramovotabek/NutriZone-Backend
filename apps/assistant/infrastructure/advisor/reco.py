@@ -43,6 +43,14 @@ def best_for(concept: str, profile: dict, locale: str, budget_left: int | None, 
         query = "plant protein"
     elif concept == "protein" and (profile.get("lactose_free") or profile.get("goal") == "weight_loss"):
         query = "isolate protein"
+    from apps.assistant.infrastructure.advisor import expert
+
+    if expert.category_id(concept):  # the category tree knows this kind: only its own section, never a look-alike
+        sub = "vegan" if query == "plant protein" else "isolate" if query == "isolate protein" else None
+        found = expert.kind_search(concept, locale, sub=sub, limit=8, max_price=int(budget_left) if budget_left else None)
+        if not found and budget_left:
+            found = sorted(expert.kind_search(concept, locale, sub=sub, limit=8), key=lambda p: p.get("price_uzs") or 0)[:3]
+        return _pick(found, profile, exclude)
     args = {"query": query, "limit": 8, "in_stock_only": True}
     if budget_left:
         args["max_price"] = int(budget_left)
@@ -51,6 +59,10 @@ def best_for(concept: str, profile: dict, locale: str, budget_left: int | None, 
         found = tools.search_products({**args, "query": QUERIES.get(concept, concept)}, locale)["products"]
     if not found and budget_left:  # nothing that cheap -> show the cheapest one anyway, the text explains
         found = sorted(tools.search_products({**args, "max_price": None}, locale)["products"], key=lambda p: p.get("price_uzs") or 0)[:3]
+    return _pick(found, profile, exclude)
+
+
+def _pick(found: list, profile: dict, exclude: set) -> dict | None:
     found = [p for p in found if p["id"] not in exclude and p.get("in_stock")]
     if not found:
         return None

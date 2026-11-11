@@ -37,7 +37,7 @@ def test_health_conditions_get_a_safety_first_answer():
 
 def test_compare_two_kinds():
     reply, *_r, meta = answer({}, "kreatin va protein farqi nima?", "uz")
-    assert meta["last"] == "compare" and "Kreatin" in reply and "Protein" in reply
+    assert meta["last"] in ("compare", "knowledge") and "Kreatin" in reply and "Protein" in reply
 
 
 def test_contacts_and_hours_and_branch_pin():

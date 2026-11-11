@@ -192,7 +192,8 @@ def parse(text: str) -> Parsed:
     p.goal = next((g for g, stems in GOALS.items() if _has(both, stems)), None)
     p.concept = next(iter(concepts_in(both)), None)
     for intent in ("operator", "faq_order", "faq_returns", "faq_original", "faq_referral", "faq_loyalty", "faq_payment", "faq_delivery", "faq_stores", "faq_brands", "faq_flavours", "usage", "recommend"):
-        if _has(both, INTENTS[intent]) and not (intent == "faq_original" and _has(both, GIFT)):  # a gift certificate isn't a product certificate
+        hay = re.sub(r"qayerdan\w*", " ", both) if intent == "faq_stores" else both  # "qayerdan olsam" asks where to get it, not the shop address
+        if _has(hay, INTENTS[intent]) and not (intent == "faq_original" and _has(both, GIFT)):  # a gift certificate isn't a product certificate
             p.intent = intent
             break
     else:

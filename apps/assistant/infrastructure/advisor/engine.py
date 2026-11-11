@@ -16,7 +16,7 @@ from asgiref.sync import sync_to_async
 from django.utils import timezone
 
 from apps.assistant.infrastructure import knowledge, tools
-from apps.assistant.infrastructure.advisor import brain, catalog, kb, needs, nlu, reco, talk
+from apps.assistant.infrastructure.advisor import brain, catalog, expert, kb, needs, nlu, reco, talk
 
 logger = logging.getLogger("nutrizone.assistant.local")
 LOCALES = ("uz", "ru", "en")
@@ -100,11 +100,66 @@ def recommend_answer(profile: dict, loc: str) -> tuple[str, list[str], list[str]
     return "\n".join(lines), ids, [k for k, _p in picks]
 
 
+WHAT_IS = re.compile(r"(?:\bnima\b(?!\s+(?:uchun|ich|olay|kerak|tavsiya))|\bnimadir\b|nima degani|nima o'zi|farqi?\b|что так|что это|чем отлича|разниц|\bwhat is\b|\bwhat's\b|difference)")
+
+
+def _expert(meta: dict, p, text: str, loc: str, taught: list):  # noqa: C901 - one plain branch per kind of question
+    """The sports-nutrition consultant (expert.py) -- answers that need judgement, not just a search."""
+    seen = brain.understand(text)
+    issue = expert.dairy_issue(text)
+    other_health = [h for h in seen.health if not (issue and h == "allergy")]  # a milk allergy is ours to explain; heart, pregnancy... stay safety-first
+    if other_health or seen.stores or p.intent in ("usage", "faq_delivery", "faq_payment", "faq_order", "faq_returns", "operator"):
+        return None
+    concept, sub = expert.kind_of(text, p.concept)
+    if issue and concept in (None, "protein", "gainer") and not seen.brands:
+        reply, ids = expert.dairy_answer(issue, loc)
+        meta.update(last="dairy", last_kind="protein")
+        meta.setdefault("profile", {})["lactose_free"] = True
+        return reply, ids, CHIPS["after_reco"][loc], meta
+    shown = meta.get("last_shown") or []
+    if (expert.wants_which(text) and len(shown) >= 2 and not seen.brands and not nlu.body_facts(p.facts)
+            and concept in (None, meta.get("last_kind"))):
+        r = expert.compare_shown(shown, meta.get("last_kind"), loc)
+        if r:
+            meta["last"] = "compare_shown"
+            return r[0], r[1], CHIPS["after_reco"][loc], meta
+    if not concept or concept not in expert.KIND_CATEGORY or seen.brands or nlu.body_facts(p.facts) or len(seen.concepts) >= 2:
+        # "kreatin va protein farqi" compares two kinds -- Brain's side-by-side answers that
+        return None
+    what = WHAT_IS.search(p.text) and not p.facts.get("budget")
+    if what and taught and taught[0].score >= WEAK_MATCH and _on_topic(taught[0].entry, concept):
+        # "gidrolizat nima?", "izolyat va konsentrat farqi" -- the knowledge base explains, products of that kind below
+        knowledge.mark_used([taught[0].entry])
+        meta["last"] = "knowledge"
+        ids = [x["id"] for x in expert.kind_search(concept, loc, sub=sub, limit=3)]
+        return taught[0].entry.answer(loc), ids, (CHIPS["after_reco"] if ids else CHIPS["faq"])[loc], meta
+    budget = p.facts.get("budget")
+    both = f"{p.text} {p.text.translate(nlu.LATIN_FROM_CYR)}"
+    cheap = brain._has(both, brain.CHEAP)
+    best = brain._has(both, brain.BEST + expert.NEED) or expert.wants_which(text) or p.intent == "recommend"
+    if seen.health:
+        return None
+    if what or (brain.asks(text) and not (budget or cheap or best)):
+        return None  # a question about the kind ("kreatin zararlimi?") -- knowledge / brain answer it
+    if not (budget or cheap or best) or concept in ADVICE_FIRST:  # "uyqum yomon" -- the routine first, engine's own path
+        return None
+    r = expert.budget_answer(concept, sub, budget, loc, cheap=cheap and not budget)
+    if r is None:
+        return None
+    reply, ids = r
+    if p.facts.get("sex") == "f" and concept in ("protein", "creatine", "bcaa", "gainer", "preworkout", "carnitine"):
+        reply = kb.FOR_WOMEN[loc] + "\n\n" + reply
+    meta.update(last="expert_pick", last_query=reco.QUERIES.get(concept, concept))
+    if budget:
+        meta["profile"]["budget"] = budget
+    return reply, ids, CHIPS["after_reco"][loc], meta
+
+
 def _kind_ids(concept: str | None, loc: str) -> list[str]:
     """In-stock products of the kind a knowledge answer talks about (none when it isn't about a product kind)."""
     if not concept:
         return []
-    return [x["id"] for x in tools.search_products({"query": reco.QUERIES.get(concept, concept), "limit": 3, "in_stock_only": True}, loc)["products"]]
+    return [x["id"] for x in expert.kind_search(concept, loc, limit=3)]
 
 
 ADVICE_FIRST = ("sleep",)  # topics whose how-to is the answer itself, shown above the products
@@ -178,6 +233,10 @@ def answer(conv_meta: dict, text: str, loc: str) -> tuple[str, list[str], list[s
     loc = detect_locale(text, (conv_meta or {}).get("lang") or loc)
     reply, ids, chips, meta = _answer(conv_meta, text, loc)
     meta["lang"] = loc
+    if len(ids) >= 2:  # "qaysi biri yaxshi?" next turn compares exactly these
+        meta["last_shown"] = [str(i) for i in ids[:6]]
+        concept, _sub = expert.kind_of(text, nlu.parse(text).concept)
+        meta["last_kind"] = concept or meta.get("last_kind")
     # the product a follow-up ("uning tarkibi qanday?") is about: the one just shown, or none when several were
     if meta.get("last") != "catalog":
         if len(ids) == 1:
@@ -243,6 +302,9 @@ def _answer(conv_meta: dict, text: str, loc: str) -> tuple[str, list[str], list[
         # "yetkazib berish qancha turadi" -- the real tariff from the dashboard, before the price handler lists tubs
         meta["last"] = "faq_delivery"
         return kb.delivery_text(loc), [], CHIPS["faq"][loc], meta
+    hit = _expert(meta, p, text, loc, taught)  # the consultant: dairy, "which is better", budget / value picks, "X nima"
+    if hit is not None:
+        return hit
     about = catalog.respond(meta, text, loc)  # what the catalogue says about one product, a brand or a category
     if about is not None:
         meta["last"] = "catalog"
@@ -307,7 +369,7 @@ def _answer(conv_meta: dict, text: str, loc: str) -> tuple[str, list[str], list[
         meta["last"] = p.intent
         return kb.referral_text(loc), [], CHIPS["faq"][loc], meta
     if p.intent == "usage" and p.concept:
-        found = tools.search_products({"query": reco.QUERIES.get(p.concept, p.concept), "limit": 3, "in_stock_only": True}, loc)["products"]
+        found = expert.kind_search(p.concept, loc, limit=3)
         head = f"**{kb.T['kind_name'][loc][p.concept]}** — {kb.T['why'][loc][p.concept]}.\n\n{kb.T['usage'][loc][p.concept]}"
         tail = {"uz": "\n\nOmbordagi variantlar:", "ru": "\n\nВ наличии:", "en": "\n\nIn stock:"}[loc] if found else ""
         return head + tail + "\n\n" + kb.T["disclaimer"][loc], [x["id"] for x in found], CHIPS["after_reco"][loc], meta
@@ -319,11 +381,11 @@ def _answer(conv_meta: dict, text: str, loc: str) -> tuple[str, list[str], list[
         # "qaysi protein yaxshi?", "что лучше для суставов" -- show the best of that kind right away, offer a personal pick instead of interrogating
         q = reco.QUERIES.get(p.concept, p.concept)
         budget = p.facts.get("budget")  # "300 ming so'mgacha protein"
-        args = {"query": q, "limit": 4, "in_stock_only": True, **({"max_price": budget} if budget else {})}
-        found = tools.search_products(args, loc)["products"] or tools.search_products({**args, "in_stock_only": False}, loc)["products"]
+        _c, sub = expert.kind_of(text, p.concept)
+        found = expert.kind_search(p.concept, loc, sub=sub, limit=4, max_price=budget) or expert.kind_search(p.concept, loc, sub=sub, limit=4, in_stock=False, max_price=budget)
         over_budget = False
         if not found and budget:  # nothing that cheap: the cheapest of the kind, and say so
-            found = sorted(tools.search_products({"query": q, "limit": 8, "in_stock_only": True}, loc)["products"], key=lambda x: x.get("price_uzs") or 0)[:3]
+            found = sorted(expert.kind_search(p.concept, loc, sub=sub, limit=8), key=lambda x: x.get("price_uzs") or 0)[:3]
             over_budget = bool(found)
         if taught and taught[0].score >= WEAK_MATCH and _on_topic(taught[0].entry, p.concept) and brain.asks(text):
             # "gainer ichsam semiramanmi?" -- a question about the kind: the taught answer, with what's in stock below it
@@ -371,7 +433,7 @@ def _answer(conv_meta: dict, text: str, loc: str) -> tuple[str, list[str], list[
             ids = []
             if profile.get("goal"):  # while we wait for the details, the goal's best sellers are already on screen
                 for kind in reco.STACKS.get(profile["goal"], reco.STACKS["health"]):  # the goal's own stack (protein, creatine...), not loose goal tags
-                    ids += [x["id"] for x in tools.search_products({"query": reco.QUERIES.get(kind, kind), "limit": 2, "in_stock_only": True}, loc)["products"] if x["id"] not in ids]
+                    ids += [x["id"] for x in expert.kind_search(kind, loc, limit=2) if x["id"] not in ids]
                 ids = ids[:4]
                 if ids:
                     prefix += {"uz": "Bu maqsad uchun eng ko'p tanlanadiganlar pastda. ", "ru": "Самое популярное под эту цель — ниже. ",
