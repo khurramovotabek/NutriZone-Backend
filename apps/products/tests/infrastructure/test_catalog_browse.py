@@ -134,6 +134,19 @@ class TestFamilyDiscount:
         assert card["price_from"] == "270000.00"
 
 
+    def test_deepest_discount_first_but_out_of_stock_deals_last(self, client, catalog):
+        """-discount: the -40% creatine has no stock, so the buyable -10% whey comes first."""
+        from apps.pricing.infrastructure import models as pricing_orm
+
+        for key, old in (("a_whey", "555556"), ("a_crea", "300000")):  # -10% (stock 12) / -40% (stock 0)
+            entry = pricing_orm.PriceListEntryModel.objects.get(product_variant_id=catalog[key].variants.get().id)
+            entry.compare_at_price_amount = Decimal(old)
+            entry.save()
+
+        body = _get(client, catalog, **{"filter[on_sale]": "1", "sort": "-discount"})
+        assert _ids(body) == [_id(catalog["a_whey"]), _id(catalog["a_crea"])]
+
+
 class TestFacets:
     def test_each_dimension_counts_without_its_own_filter(self, client, catalog):
         body = _get(client, catalog, **{"filter[brand_id]": str(catalog["brand_a"].id)})

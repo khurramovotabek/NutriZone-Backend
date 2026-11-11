@@ -359,8 +359,8 @@ def _sort(rows: list, sort: str) -> list:
         return priced + [c for c in rows if c.price_from is None]  # unpriced always last
     if sort == "-rating":
         return sorted(rows, key=lambda c: (c.rating or 0, c.rating_count), reverse=True)
-    if sort == "-discount":
-        return sorted(rows, key=lambda c: (c.discount, c.created_at), reverse=True)
+    if sort == "-discount":  # deepest deals first; a deal nobody can buy right now (no stock) goes after the buyable ones
+        return sorted(rows, key=lambda c: (c.stock > 0, c.discount, c.created_at), reverse=True)
     if sort == "-sale_since":  # newest deals first; products without a markdown last
         return sorted(rows, key=lambda c: (c.discount > 0, c.sale_since or c.created_at, c.discount), reverse=True)
     if sort == "-popularity":
