@@ -42,7 +42,8 @@ def channel_on(settings):
 
 
 def test_default_slots_are_10_15_20():
-    assert [f"{x.time:%H:%M}" for x in ChannelPostSlot.objects.all()] == ["10:00", "15:00", "20:00"]
+    assert [f"{x.time:%H:%M}" for x in ChannelPostSlot.objects.all()] == ["10:00", "12:30", "15:00", "20:00"]
+    assert ChannelPostSlot.objects.get(time="12:30").kind == "tip"  # migration 0017
 
 
 def test_render_drops_lines_with_empty_variables_and_escapes():
@@ -168,3 +169,20 @@ def test_composer_refuses_past_time(root):
         "title": "Kech", "body": "x", "to_channel": "on", "channel": "@nutrizonepit",
         "scheduled_at": (timezone.localtime() - timedelta(hours=2)).strftime("%Y-%m-%dT%H:%M"), "_nztg_send": "1"})
     assert r.status_code == 200 and not TelegramPost.objects.filter(title="Kech").exists()
+
+
+def test_daily_tip_posts_a_knowledge_entry_once_and_walks_the_base(channel_on):
+    from apps.assistant.infrastructure.models import KnowledgeEntry
+
+    if not ChannelPostSlot.objects.filter(kind="tip").exists():
+        ChannelPostSlot.objects.create(settings=channel_on, time=datetime(2000, 1, 1, 12, 30).time(), kind="tip", heading="💡 Kun maslahati")
+    KnowledgeEntry.objects.update(is_active=False)
+    a = KnowledgeEntry.objects.create(topic="product", priority=99, title="Kreatin turlari test", answer_uz="**Monogidrat** — eng yaxshisi. " * 8, keywords="kreatin")
+    b = KnowledgeEntry.objects.create(topic="usage", priority=98, title="Protein qanday ichiladi test", answer_uz="Kuniga 1–2 porsiya _suv bilan_. " * 8)
+    result, _queue = _run(datetime(2026, 11, 11, 12, 31, tzinfo=TZ))
+    post = TelegramPost.objects.get(source="daily", title__startswith=dp.TIP_TITLE)
+    assert result["daily"] == 1 and "💡 Kun maslahati" in post.body and ("<b>Monogidrat</b>" in post.body or "<i>suv bilan</i>" in post.body)
+    first = post.title
+    _run(datetime(2026, 11, 12, 12, 31, tzinfo=TZ))
+    titles = set(TelegramPost.objects.filter(title__startswith=dp.TIP_TITLE).values_list("title", flat=True))
+    assert len(titles) == 2 and first in titles and {f"{dp.TIP_TITLE}{a.title}", f"{dp.TIP_TITLE}{b.title}"} == titles  # no repeat

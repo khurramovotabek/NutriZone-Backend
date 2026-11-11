@@ -322,8 +322,10 @@ class ChannelPostSlot(models.Model):
     KIND_SALE = "sale"
     KIND_NEW = "new"
     KIND_PICK = "pick"
+    KIND_TIP = "tip"
     KINDS = [(KIND_TOP, "Kun mahsuloti (eng ko'p sotilgan / yuqori baho)"), (KIND_SALE, "Chegirmadagi mahsulot"),
-             (KIND_NEW, "Yangi kelgan mahsulot"), (KIND_PICK, "Tasodifiy tavsiya")]
+             (KIND_NEW, "Yangi kelgan mahsulot"), (KIND_PICK, "Tasodifiy tavsiya"),
+             (KIND_TIP, "Kun maslahati (AI bilimlar bazasidan + mos mahsulot)")]
 
     settings = models.ForeignKey(ChannelAutoPostSettings, on_delete=models.CASCADE, related_name="slots", default=1)
     time = models.TimeField("Vaqt")

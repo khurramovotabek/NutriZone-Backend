@@ -247,6 +247,13 @@ def preview(slot) -> dict | None:
     from apps.telegram_bot.infrastructure.models import ChannelAutoPostSettings
 
     s = ChannelAutoPostSettings.get()
+    if slot.kind == slot.KIND_TIP:
+        entry = pick_tip(timezone.now(), random.Random(f"{timezone.localdate()}:{slot.pk}"))
+        if entry is None:
+            return None
+        product = tip_product(entry)
+        return {"card": {"id": str(product.pk) if product else "", "name": f"💡 {entry.title}"},
+                "body": f"<b>{_md_html(slot.heading or '💡 Kun maslahati')}</b>\n\n<b>{_md_html(entry.title)}</b>\n\n{_md_html(entry.answer_uz.strip())}"}
     cards = pool()
     card = pick(slot.kind, cards, _recently_posted(channel(), s.repeat_days), random.Random(f"{timezone.localdate()}:{slot.pk}"))
     if not card:
@@ -264,6 +271,63 @@ def _due_scheduled(now: datetime) -> int:
         posts.queue(post)
         n += 1
     return n
+
+
+# ------------------------------------------------------------------------------------------------ "💡 Kun maslahati"
+
+TIP_TOPICS = ("product", "usage")
+TIP_REPEAT_DAYS = 90
+TIP_TITLE = "Maslahat: "
+
+
+def _md_html(text: str) -> str:
+    """The knowledge base's light markdown (**bold**, _italic_) as Telegram HTML; everything else escaped."""
+    import html
+
+    out = html.escape(text or "", quote=False)
+    out = re.sub(r"\*\*(.+?)\*\*", r"<b>\1</b>", out)
+    return re.sub(r"(?<![\w])_(.+?)_(?![\w])", r"<i>\1</i>", out, flags=re.S)
+
+
+def pick_tip(now: datetime, rng: random.Random | None = None):
+    """A knowledge entry for today's tip: active, about products / how to take them, not posted in TIP_REPEAT_DAYS --
+    among the 5 most important left, so the channel walks through the whole base over the months."""
+    from apps.assistant.infrastructure.models import KnowledgeEntry
+    from apps.telegram_bot.infrastructure.models import TelegramPost
+
+    recent = {t[len(TIP_TITLE):] for t in TelegramPost.objects.filter(source="daily", title__startswith=TIP_TITLE,
+                                                                       created_at__gte=now - timedelta(days=TIP_REPEAT_DAYS)).values_list("title", flat=True)}
+    today = now.astimezone(TZ).date()
+    entries = [e for e in KnowledgeEntry.objects.filter(is_active=True, topic__in=TIP_TOPICS).order_by("-priority", "title")
+               if (e.valid_until is None or e.valid_until >= today) and e.title[:150] not in recent and len(e.answer_uz or "") >= 120]
+    if not entries:
+        return None
+    return (rng or random.Random()).choice(entries[:5])
+
+
+def tip_product(entry):
+    """An in-stock product of the kind the tip is about (its photo and «buy» button), or None."""
+    from apps.assistant.infrastructure.advisor import expert, nlu
+    from apps.products.infrastructure.models import Product
+
+    about = nlu.normalize(" ".join((entry.title, entry.keywords or "")))
+    concept, sub = expert.kind_of(about, next(iter(nlu.concepts_in(f"{about} {about.translate(nlu.LATIN_FROM_CYR)}")), None))
+    if not concept:
+        return None
+    found = expert.kind_search(concept, "uz", sub=sub, limit=1)
+    return Product.objects.filter(pk=found[0]["id"]).first() if found else None
+
+
+def build_tip_post(slot, entry, chan: str, *, key: str | None):
+    from apps.telegram_bot.infrastructure.models import TelegramPost, TelegramPostStatus
+
+    heading = slot.heading or "💡 Kun maslahati"
+    body = (f"<b>{_md_html(heading)}</b>\n\n<b>{_md_html(entry.title)}</b>\n\n{_md_html(entry.answer_uz.strip())}\n\n"
+            "🤖 Savolingiz bo'lsa — saytdagi AI maslahatchiga yozing, mahsulotni sizga moslab tanlab beradi.")
+    return TelegramPost.objects.create(
+        title=f"{TIP_TITLE}{entry.title[:150]}", body=body, product=tip_product(entry), to_channel=True, channel=chan, source="daily",
+        dedupe_key=key, created_by="Kanal jadvali", status=TelegramPostStatus.DRAFT,
+    )
 
 
 def run(now: datetime | None = None) -> dict:
@@ -289,6 +353,18 @@ def run(now: datetime | None = None) -> dict:
         manual = TelegramPost.objects.filter(source="manual", to_channel=True, channel=chan).exclude(status__in=("draft", "failed"))
         if manual.filter(sent_at__range=(at - MANUAL_GAP, at + MANUAL_GAP)).exists() or manual.filter(scheduled_at__range=(at - MANUAL_GAP, at + MANUAL_GAP)).exists():
             continue  # a manager already posts around this time
+        if slot.kind == slot.KIND_TIP:
+            entry = pick_tip(now)
+            if entry is None:
+                logger.warning("Channel schedule %s: no knowledge entry left to post.", slot)
+                continue
+            try:
+                post = build_tip_post(slot, entry, chan, key=key)
+            except IntegrityError:
+                continue
+            posts.queue(post)
+            result["daily"] += 1
+            continue
         if cards is None:
             cards = pool()
         card = pick(slot.kind, cards, _recently_posted(chan, s.repeat_days))
