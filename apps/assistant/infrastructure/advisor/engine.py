@@ -9,6 +9,7 @@ facts (stores, payment, coins, delivery...), or a catalogue search. Products sho
 from __future__ import annotations
 
 import logging
+import re
 from collections.abc import AsyncIterator
 
 from asgiref.sync import sync_to_async
@@ -139,9 +140,44 @@ def _taught(text: str, concept: str | None) -> list:
     return hits[:1] if hits[0].score >= DEEP_MATCH else []
 
 
+_UZ_CYR = set("ўқғҳЎҚҒҲ")
+_RU_ONLY = set("ыэщъёЫЭЩЪЁ")
+_RU_WORDS = {"что", "как", "какой", "какая", "какие", "для", "где", "есть", "нужно", "можно", "лучше", "сколько", "привет", "здравствуйте",
+             "спасибо", "хочу", "мне", "это", "или", "почему", "зачем", "пить", "принимать", "похудения", "массы", "цена", "доставка"}
+_UZ_LAT = {"uchun", "qanday", "nima", "qancha", "bormi", "kerak", "menga", "salom", "rahmat", "qaysi", "yaxshi", "ichish", "ichay", "olish",
+           "olmoqchiman", "narxi", "qayerda", "bilan", "emas", "ham", "juda", "ekan", "bo'ladimi", "assalomu"}
+_EN_WORDS = {"what", "how", "which", "the", "is", "are", "for", "do", "does", "should", "best", "price", "hello", "hi", "thanks", "thank",
+             "can", "need", "want", "take", "much", "where", "delivery", "i", "my", "you"}
+
+
+def detect_locale(text: str, fallback: str) -> str:
+    """The language the shopper actually wrote in -- a Russian question gets a Russian answer even on the Uzbek site.
+    Only a clear signal switches; short or mixed messages keep `fallback` (the conversation's language)."""
+    raw = text or ""
+    words = set(re.findall(r"[\w']+", raw.lower()))
+    cyr = sum(1 for ch in raw if "\u0400" <= ch <= "\u04ff")
+    lat = sum(1 for ch in raw if ch.isascii() and ch.isalpha())
+    if cyr > lat:
+        if any(ch in _UZ_CYR for ch in raw):
+            return "uz"
+        if any(ch in _RU_ONLY for ch in raw) or words & _RU_WORDS or cyr >= 12:
+            return "ru"
+        return fallback
+    if lat > cyr:
+        uz, en = len(words & _UZ_LAT) + (1 if re.search(r"[og]['ʻ‘’]", raw.lower()) else 0), len(words & _EN_WORDS)
+        if en >= 2 and uz == 0:
+            return "en"
+        if uz >= 1 and fallback != "uz" and en == 0:
+            return "uz"
+    return fallback
+
+
 def answer(conv_meta: dict, text: str, loc: str) -> tuple[str, list[str], list[str], dict]:
     """(reply text, product ids to show, quick-reply chips, updated meta). Pure sync -- DB reads only."""
+    # the language of this message, else the one the shopper last wrote in, else the site's
+    loc = detect_locale(text, (conv_meta or {}).get("lang") or loc)
     reply, ids, chips, meta = _answer(conv_meta, text, loc)
+    meta["lang"] = loc
     # the product a follow-up ("uning tarkibi qanday?") is about: the one just shown, or none when several were
     if meta.get("last") != "catalog":
         if len(ids) == 1:
@@ -159,7 +195,8 @@ def _answer(conv_meta: dict, text: str, loc: str) -> tuple[str, list[str], list[
     if p.goal:
         profile["goal"] = p.goal
     t = p.text
-    if meta.get("last") == "recommend" and any(s in t for s in CHEAPER):
+    repick = meta.get("last") == "recommend" and any(s in t for s in CHEAPER)
+    if repick:
         last_total = meta.get("last_total") or profile.get("budget") or 600_000
         profile["budget"] = int(last_total * 0.7)
         p.intent = "recommend"
@@ -180,6 +217,8 @@ def _answer(conv_meta: dict, text: str, loc: str) -> tuple[str, list[str], list[
     small = talk.intent(text)
     seen = brain.understand(text) if small else None
     # "uyqum yomon" is about sleep, not a complaint; "Zorvex yoki Kalmar qaysi biri yaxshi" compares brands, it isn't praise
+    if small == "price" and repick:
+        small = None  # "qimmatroq" right after a pick = pick again within a lower budget, not the money-feelings reply
     if small and not (p.facts or p.concept or seen.health or seen.brands):  # how are you / who are you / complaints / bye ...
         meta["last"] = f"talk_{small}"
         reply, chips = talk.reply(small, loc, name, kb.contacts(loc) if small == "complaint" else "")

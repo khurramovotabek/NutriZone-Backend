@@ -17,6 +17,10 @@ TALK: dict[str, tuple[str, ...]] = {
     "who": ("sen kimsan", "siz kimsiz", "kimsan", "kimsiz", "bot misan", "botmisan", "robot", "odammisan", "odam misan", "ты кто", "кто ты", "вы кто", "кто вы", "ты бот", "who are you", "are you a bot", "are you human", "are you real"),
     "abilities": ("nima qila olasan", "nima qila olasiz", "nimalar qila", "qanday yordam", "nimaga yordam", "что умеешь", "что ты умеешь", "чем можешь помочь", "чем поможешь", "what can you do", "how can you help", "what do you do"),
     "complaint": ("yomon", "ishlamayapti", "ishlamaydi", "jahlim", "achchiq", "norozi", "aldad", "aldash", "kech qoldi", "kelmadi", "shikoyat", "плохо", "ужасно", "не работает", "обман", "жалоб", "недоволен", "не пришел", "не пришёл", "bad service", "terrible", "not working", "complain", "scam", "didn't arrive", "angry"),
+    # feelings: answered with empathy first, then something useful
+    "price": ("qimmat", "qimmatku", "qimmatroq", "pulim yo'q", "pulim yetmaydi", "arzonroq yo'q", "arzonrog'i", "дорого", "дороговато", "нет денег", "дешевле нет", "too expensive", "expensive", "can't afford", "cheaper"),
+    "down": ("charchadim", "charchagan", "motivatsiya", "kayfiyatim yo'q", "kayfiyat yo'q", "natija yo'q", "natija bermayapti", "tashlab qo'ymoqchi", "zerikdim", "xafa",
+             "устал", "нет мотивации", "нет результата", "не получается", "грустно", "хочу бросить", "tired", "no motivation", "no results", "give up", "demotivated", "sad"),
     "bye": ("xayr", "hayr", "ko'rishguncha", "salomat bo'ling", "пока", "до свидания", "всего доброго", "bye", "goodbye", "see you"),
     "ack": ("ok", "okay", "xo'p", "xop", "mayli", "tushunarli", "tushundim", "ha", "yo'q", "yoq", "ладно", "понятно", "хорошо", "ок", "да", "нет", "got it", "fine", "yes", "no", "sure", "cool"),
     "guides": ("maslahatlar markazi", "центр советов", "advice centre", "advice center", "maqolalar", "статьи", "articles"),
@@ -62,6 +66,35 @@ R = {
         "en": ["We're sorry about that{name_c} 🙏 Let's sort it out quickly. Tell me briefly what happened (and the order number if you have one), "
                "or reach a person directly: {contacts}"],
     },
+    "price": {
+        "uz": ["Tushunaman{name_c}, sport ozuqasi arzon emas 🙏 Lekin tejashning yo'llari bor:\n"
+               "• **Arzonroq analoglar** — tarkibi deyarli bir xil, narxi 30–50% past (masalan kreatin monohidrat har qanday brendda bir xil ishlaydi)\n"
+               "• **Aksiyalar** — chegirmadagi mahsulotlar: {site}/products?sale=1\n"
+               "• **NutriZone Coins** — har xariddan bonus, keyingi xaridda to'lovga ishlatiladi\n"
+               "• **Kattaroq qadoq** — porsiya narxi ancha arzon chiqadi\n\nByudjetingizni yozing (masalan **«300 minggacha protein»**) — shunga mosini topaman 💪"],
+        "ru": ["Понимаю{name_c}, спортпит недешёвый 🙏 Но сэкономить можно:\n"
+               "• **Доступные аналоги** — почти тот же состав на 30–50% дешевле (креатин моногидрат работает одинаково у любого бренда)\n"
+               "• **Акции** — товары со скидкой: {site}/ru/products?sale=1\n"
+               "• **NutriZone Coins** — бонусы с каждой покупки, можно оплатить ими следующую\n"
+               "• **Большая упаковка** — порция выходит заметно дешевле\n\nНапишите бюджет (например **«протеин до 300 тысяч»**) — подберу 💪"],
+        "en": ["I get it{name_c} — supplements aren't cheap 🙏 A few ways to save:\n"
+               "• **Budget alternatives** — nearly the same formula for 30–50% less (creatine monohydrate works the same from any brand)\n"
+               "• **Deals** — products on sale: {site}/en/products?sale=1\n"
+               "• **NutriZone Coins** — earned on every order, spend them on the next one\n"
+               "• **Bigger tubs** — a much lower price per serving\n\nTell me your budget (e.g. **\"protein under 300k\"**) and I'll find a match 💪"],
+    },
+    "down": {
+        "uz": ["Bu holat hammada bo'ladi{name_c} — siz yolg'iz emassiz 🤝 Natija sekin keladi, lekin keladi.\n"
+               "• **Uyqu** 7–8 soat — tiklanishning 50%i shu\n• **Oqsil** har kg vaznga 1,6–2 g\n• **Kichik maqsad** — har hafta bitta yaxshilanish\n"
+               "• **Dam olish haftasi** — 6–8 haftada bir yengilroq hafta charchoqni ketkazadi\n\n"
+               "Maqsadingiz va bo'y/vazningizni yozing — rejangizni birga ko'rib chiqamiz 💪🔥"],
+        "ru": ["Такое бывает у всех{name_c} — вы не один 🤝 Результат приходит медленно, но приходит.\n"
+               "• **Сон** 7–8 часов — половина восстановления\n• **Белок** 1,6–2 г на кг веса\n• **Маленькие цели** — одно улучшение в неделю\n"
+               "• **Разгрузочная неделя** раз в 6–8 недель снимает усталость\n\nНапишите цель, рост и вес — разберём ваш план вместе 💪🔥"],
+        "en": ["Everyone hits this{name_c} — you're not alone 🤝 Progress is slow, but it comes.\n"
+               "• **Sleep** 7–8 hours — half of recovery\n• **Protein** 1.6–2 g per kg of body weight\n• **Small goals** — one improvement a week\n"
+               "• **Deload week** every 6–8 weeks clears the fatigue\n\nTell me your goal, height and weight — let's look at your plan together 💪🔥"],
+    },
     "bye": {
         "uz": ["Xayr{name_c}! Mashg'ulotlaringizga omad 💪 Savol tug'ilsa, men shu yerdaman.", "Ko'rishguncha{name_c}! Sog'lom bo'ling, kerak bo'lsa yozing 🙂"],
         "ru": ["До встречи{name_c}! Удачных тренировок 💪 Если появятся вопросы — я здесь.", "Всего доброго{name_c}! Будьте здоровы, пишите, если что 🙂"],
@@ -95,6 +128,12 @@ CHIPS = {
     "en": ["Pick a product for me", "How to take creatine?", "Advice centre", "Talk to a person"],
 }
 
+PRICE_CHIPS = {
+    "uz": ["Aksiyadagi mahsulotlar", "Arzon kreatin", "300 minggacha protein", "Coinlar qanday ishlaydi?"],
+    "ru": ["Товары со скидкой", "Недорогой креатин", "Протеин до 300 тысяч", "Как работают коины?"],
+    "en": ["Products on sale", "Cheap creatine", "Protein under 300k", "How do coins work?"],
+}
+
 MAX_WORDS = 7  # longer messages are questions, not small talk
 
 
@@ -117,7 +156,7 @@ def intent(text: str) -> str | None:
     both = f"{t} {t.translate(nlu.LATIN_FROM_CYR)}"
     if nlu.concepts_in(both):  # "yomon emas, kreatin nima uchun kerak?" is a product question, not small talk
         return None
-    for key in ("guides", "complaint", "who", "abilities", "how_are_you", "bye", "praise"):
+    for key in ("guides", "price", "down", "complaint", "who", "abilities", "how_are_you", "bye", "praise"):
         if _matches(both, TALK[key]):
             return key
     if _exact_short(t, set(TALK["ack"])):
@@ -132,7 +171,7 @@ def reply(key: str, loc: str, name: str = "", contacts: str = "") -> tuple[str, 
     name_c = f", {name}" if name else ""
     site = (getattr(settings, "FRONTEND_URL", "") or "https://nutrizone.uz").rstrip("/")
     text = random.choice(R[key][loc]).format(name_c=name_c, contacts=contacts, site=site)
-    chips = [] if key in ("bye",) else CHIPS[loc]
+    chips = [] if key in ("bye",) else PRICE_CHIPS[loc] if key == "price" else CHIPS[loc]
     return text, chips
 
 
