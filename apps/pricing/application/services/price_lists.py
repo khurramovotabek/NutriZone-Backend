@@ -47,7 +47,7 @@ class ActivatePriceList:
 
     @transaction.atomic
     def execute(self, price_list_id: uuid.UUID) -> PriceList:
-        price_list = self._repo.get_by_id(price_list_id)
+        price_list = self._repo.get_by_id(price_list_id, for_update=True)
         if price_list is None:
             raise ResourceNotFound("Price list not found.")
 
@@ -67,7 +67,7 @@ class ArchivePriceList:
 
     @transaction.atomic
     def execute(self, price_list_id: uuid.UUID) -> PriceList:
-        price_list = self._repo.get_by_id(price_list_id)
+        price_list = self._repo.get_by_id(price_list_id, for_update=True)
         if price_list is None:
             raise ResourceNotFound("Price list not found.")
 
@@ -89,7 +89,7 @@ class SetPrice:
 
     @transaction.atomic
     def execute(self, price_list_id: uuid.UUID, product_variant_id: uuid.UUID, base_amount, currency: str, cost_amount=None, sale_amount=None, compare_at_amount=None, reason: str = PriceChangeReason.MANUAL.value) -> PriceList:
-        price_list = self._repo.get_by_id(price_list_id)
+        price_list = self._repo.get_by_id(price_list_id, for_update=True)
         if price_list is None:
             raise ResourceNotFound("Price list not found.")
 

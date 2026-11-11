@@ -9,7 +9,7 @@ class FakePriceListRepository:
     def __init__(self) -> None:
         self.by_id: dict = {}
 
-    def get_by_id(self, price_list_id):
+    def get_by_id(self, price_list_id, for_update=False):
         return self.by_id.get(price_list_id)
 
     def get_by_code(self, code):

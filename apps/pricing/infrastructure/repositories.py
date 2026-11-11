@@ -47,8 +47,14 @@ def _discount_to_orm_fields(discount: DiscountValue, prefix: str = "discount_") 
 
 
 class DjangoPriceListRepository:
-    def get_by_id(self, price_list_id: uuid.UUID) -> PriceList | None:
-        row = orm.PriceListModel.objects.filter(id=price_list_id).prefetch_related("entries", "history").first()
+    def get_by_id(self, price_list_id: uuid.UUID, for_update: bool = False) -> PriceList | None:
+        qs = orm.PriceListModel.objects.filter(id=price_list_id)
+        if for_update:
+            # Writers load the whole list, change one entry and save. Without the row lock two concurrent saves both
+            # read the same snapshot and the second wrote the first one's entry back to its old value (lost update,
+            # seen on prod 2026-11-11: 91 of 137 parallel price saves silently reverted).
+            qs = qs.select_for_update()
+        row = qs.prefetch_related("entries", "history").first()
         return self._to_domain(row) if row else None
 
     def get_by_code(self, code: str) -> PriceList | None:

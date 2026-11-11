@@ -42,6 +42,21 @@ class TestDjangoPriceListRepository:
         assert len(fetched.history) == 1
         assert fetched.entry_for_variant(variant_id).base_price.amount == Decimal("100.00")
 
+    def test_writers_lock_the_price_list_row(self):
+        """SetPrice & co. read with for_update=True: concurrent saves must queue, not overwrite each other's entries."""
+        from django.db import connection, transaction
+        from django.test.utils import CaptureQueriesContext
+
+        repo = DjangoPriceListRepository()
+        price_list = PriceList(id=uuid.uuid4(), code=PriceListCode("LOCK-UZS"), name="Lock", currency="UZS")
+        repo.save(price_list)
+        with transaction.atomic(), CaptureQueriesContext(connection) as ctx:
+            assert repo.get_by_id(price_list.id, for_update=True) is not None
+        assert any("FOR UPDATE" in q["sql"] for q in ctx.captured_queries)
+        with CaptureQueriesContext(connection) as ctx:
+            repo.get_by_id(price_list.id)
+        assert not any("FOR UPDATE" in q["sql"] for q in ctx.captured_queries)
+
     def test_database_level_sale_price_constraint(self):
         """Verifies the CheckConstraint actually rejects sale_price > base_price at the database layer, bypassing the domain aggregate's own __post_init__ entirely."""
         from apps.pricing.infrastructure import models as orm
