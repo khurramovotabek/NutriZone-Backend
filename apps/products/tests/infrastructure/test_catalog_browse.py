@@ -115,6 +115,25 @@ class TestFilters:
         assert response.status_code == 422
 
 
+class TestFamilyDiscount:
+    def test_a_marked_down_non_default_variant_puts_the_family_on_sale(self, client, catalog):
+        """Alpha Whey's default 2,27 kg is full price, its 1 kg is marked down: the family is on sale, the card says "-X% gacha"."""
+        from apps.pricing.infrastructure import models as pricing_orm
+
+        product = catalog["a_whey"]
+        variant = p_models.ProductVariant.objects.create(id=uuid.uuid4(), product=product, sku=f"SKU-{uuid.uuid4().hex[:8]}", is_default=False, status="active", weight_value=1000, weight_unit="g")
+        price_list = pricing_orm.PriceListModel.objects.get(code="DEFAULT-UZS")
+        pricing_orm.PriceListEntryModel.objects.create(price_list=price_list, product_variant_id=variant.id, base_price_amount=Decimal("270000"), compare_at_price_amount=Decimal("300000"))
+        put_stock(variant.id, 4)
+
+        body = _get(client, catalog, **{"filter[on_sale]": "1"})
+        assert _ids(body) == [_id(product)]
+        card = body["data"][0]
+        assert card["discount_percent"] is None  # the default variant itself is full price
+        assert card["max_discount_percent"] == 10
+        assert card["price_from"] == "270000.00"
+
+
 class TestFacets:
     def test_each_dimension_counts_without_its_own_filter(self, client, catalog):
         body = _get(client, catalog, **{"filter[brand_id]": str(catalog["brand_a"].id)})

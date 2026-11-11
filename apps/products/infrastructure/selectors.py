@@ -797,6 +797,9 @@ def _with_family(cards: list[dict], rows: list) -> None:
         card["flavour_count"] = len(fam["flavours"]) if fam else 0
         amounts = sorted({float(prices[v]["amount"]) for v in (fam["variants"] if fam else []) if v in prices})
         card["price_from"] = f"{amounts[0]:.2f}" if len(amounts) > 1 else None
+        # the deepest markdown among the family's variants -- the card's "-17% gacha" badge (None: nothing discounted)
+        best = max(((_discount_fields(prices[v])["discount_percent"] or 0) for v in (fam["variants"] if fam else []) if v in prices), default=0)
+        card["max_discount_percent"] = best or None
 
 
 def _with_stock(cards: list[dict]) -> list[dict]:

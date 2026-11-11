@@ -250,9 +250,16 @@ def _attach_offers(by_id: dict, products: list) -> None:
 
     active = [v for p in products for v in p.variants.all() if v.status == "active"]
     prices = bulk_variant_prices([v.id for v in active])
+    from apps.products.infrastructure.selectors import _discount_fields
+
     for v in active:
         c = by_id[v.product_id]
         price = prices.get(v.id)
+        # a family counts as "on sale" when ANY of its sizes/flavours is marked down, not only the default variant --
+        # otherwise a discounted 2 kg or a discounted flavour never reached the Aksiyalar page or the -discount sort
+        variant_discount = (_discount_fields(price)["discount_percent"] or 0) if price else 0
+        if variant_discount > c.discount:
+            c.discount = variant_discount
         # a variant without its own flavour carries the product's flavour tags (one-flavour-per-product data)
         flavours = frozenset({v.flavour_id}) if v.flavour_id else frozenset(c.flavour_ids)
         c.offers.append(Offer(size=size_key(v.weight_value, v.weight_unit), flavours=flavours, price=Decimal(price["amount"]) if price else None))
