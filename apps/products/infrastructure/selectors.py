@@ -131,10 +131,12 @@ class ProductDetailSelector:
         price_info = _bulk_default_variant_prices([row]).get(row.id)
         rating_info = _bulk_rating_summary([row.id]).get(str(row.id))
         default_variant_id = _bulk_default_variant_ids([row]).get(row.id)
-        return _product_card(
+        card = _product_card(
             row, locale=locale, include_variants=True, include_details=True,
             price_info=price_info, rating_info=rating_info, default_variant_id=default_variant_id,
         )
+        card["card_facts"] = _card_facts(row, card, default_variant_id)
+        return card
 
 
 class CatalogSelector:
