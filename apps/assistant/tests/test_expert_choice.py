@@ -183,3 +183,11 @@ def test_gainer_is_not_priced_per_25g_protein(shop):
     g = _product("Zorvex Mass Gainer", 250_000, _cat("Gainers"), protein=30, servings=20, kg=3)
     rows = expert.rank(expert.rows_for([str(g.id)], "uz"), "gainer")
     assert "25 g oqsil" not in expert._numbers(rows[0], "uz") and "porsiyasi" in expert._numbers(rows[0], "uz")
+
+
+@pytest.mark.parametrize("text,yes", [
+    ("kreatin kerak", True), ("eng yaxshi izolyat", True), ("sut ko'tarmayman qornim shishadi", True), ("Gold Standard va Iso100 qaysi yaxshi", True),
+    ("протеин до 400 тысяч", True), ("whey protein", False), ("kreatin", False), ("salom", False),
+])
+def test_telegram_sends_consultant_questions_to_the_advisor(text, yes):
+    assert expert.wants_consultant(text) is yes

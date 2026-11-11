@@ -689,3 +689,18 @@ def compare_named(parts: list[str], concept: str | None, loc: str) -> tuple[str,
              "Sensitive stomach or lactose — take the isolate/hydrolysate; budget matters — the one with cheaper 25 g protein.")
     text = f"{head}\n{body}\n\n" + ("\n".join(diff) + "\n" if diff else "") + f"{verdict(rows, loc)}\n\n{tip}"
     return text, [r.id for r in rows]
+
+
+def wants_consultant(text: str) -> bool:
+    """A message the consultant layer answers better than a plain catalogue search -- used by the Telegram bot, which
+    sends bare product words to its own search: "kreatin kerak", "eng yaxshi izolyat", "sut ko'tarmayman",
+    "Gold Standard va Iso100 qaysi yaxshi"."""
+    from apps.assistant.infrastructure.advisor import brain
+
+    both = _both(text)
+    if dairy_issue(text):
+        return True
+    concept, _sub = kind_of(text, next(iter(nlu.concepts_in(both)), None))
+    if concept and (nlu._has(both, NEED + brain.BEST + brain.CHEAP) or wants_which(text) or nlu.extract_facts(nlu.normalize(text)).get("budget")):
+        return True
+    return bool(pair_in(text)) and (wants_which(text) or nlu._has(both, brain.COMPARE))

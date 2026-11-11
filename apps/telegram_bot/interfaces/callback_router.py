@@ -1572,7 +1572,11 @@ def _advisor_understands(text: str, lang: str) -> bool:
     from apps.assistant.infrastructure.advisor import brain
     from apps.assistant.infrastructure.advisor.engine import STRONG_MATCH
 
+    from apps.assistant.infrastructure.advisor import expert
+
     try:
+        if expert.wants_consultant(text):  # "kreatin kerak", "eng yaxshi izolyat", "sut ko'tarmayman" -- compared picks, not a bare search
+            return True
         if brain.respond({}, text, lang if lang in ("uz", "ru", "en") else "uz") is not None:
             return True
         hits = knowledge.search(text, limit=1)
