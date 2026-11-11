@@ -364,7 +364,7 @@ def verdict(rows: list[Row], loc: str, sub: str | None = None) -> str:
         how = _numbers(value, loc).split(" · ")[-1]
         out.append(_l(loc, f"💸 **Eng tejamkori: {value.name}**" + (f" — {how}" if how else "") + ".", f"💸 **Самый выгодный: {value.name}**" + (f" — {how}" if how else "") + ".",
                       f"💸 **Best value: {value.name}**" + (f" — {how}" if how else "") + "."))
-    trusted = max((r for r in rows if r.in_stock), key=lambda r: (r.tier, r.rating, -r.price), default=None)
+    trusted = max((r for r in rows if r.in_stock and not SIDE_PROTEIN.search(r.name)), key=lambda r: (r.tier, r.rating, -r.price), default=None)
     if trusted and trusted not in (pick, value) and trusted.tier > pick.tier:
         out.append(_l(loc, f"⭐ **Brend ishonchliligi bo'yicha: {trusted.name}**.", f"⭐ **Самый надёжный бренд: {trusted.name}**.", f"⭐ **Most trusted brand: {trusted.name}**."))
     return "\n".join(out)

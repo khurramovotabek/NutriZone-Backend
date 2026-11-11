@@ -209,7 +209,8 @@ _RU_WORDS = {"что", "как", "какой", "какая", "какие", "дл
 _UZ_LAT = {"uchun", "qanday", "nima", "qancha", "bormi", "kerak", "menga", "salom", "rahmat", "qaysi", "yaxshi", "ichish", "ichay", "olish",
            "olmoqchiman", "narxi", "qayerda", "bilan", "emas", "ham", "juda", "ekan", "bo'ladimi", "assalomu"}
 _EN_WORDS = {"what", "how", "which", "the", "is", "are", "for", "do", "does", "should", "best", "price", "hello", "hi", "thanks", "thank",
-             "can", "need", "want", "take", "much", "where", "delivery", "i", "my", "you"}
+             "can", "need", "want", "take", "much", "where", "delivery", "i", "my", "you", "cheapest", "cheap", "cheaper", "better", "under",
+             "buy", "good", "any", "have", "recommend", "compare", "vs", "or", "me", "please", "some", "of", "it", "this", "that", "with"}
 
 
 def detect_locale(text: str, fallback: str) -> str:
@@ -227,7 +228,7 @@ def detect_locale(text: str, fallback: str) -> str:
         return fallback
     if lat > cyr:
         uz, en = len(words & _UZ_LAT) + (1 if re.search(r"[og]['ʻ‘’]", raw.lower()) else 0), len(words & _EN_WORDS)
-        if en >= 2 and uz == 0:
+        if (en >= 2 or (en >= 1 and len(words) <= 3)) and uz == 0:
             return "en"
         if uz >= 1 and fallback != "uz" and en == 0:
             return "uz"
