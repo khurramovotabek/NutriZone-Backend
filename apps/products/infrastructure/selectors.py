@@ -96,10 +96,12 @@ class ProductDetailSelector:
         price_info = _bulk_default_variant_prices([row]).get(row.id)
         rating_info = _bulk_rating_summary([row.id]).get(str(row.id))
         default_variant_id = _bulk_default_variant_ids([row]).get(row.id)
-        return _product_card(
+        card = _product_card(
             row, locale=locale, include_variants=True, include_details=True,
             price_info=price_info, rating_info=rating_info, default_variant_id=default_variant_id,
         )
+        card["card_facts"] = _card_facts(row, card, default_variant_id)
+        return card
 
     def get_by_id(self, product_id: uuid.UUID, locale: str | None = None) -> dict | None:
         """
@@ -1064,6 +1066,34 @@ def _product_card(row: orm.Product, locale: str | None = None, include_variants:
         card["nutrition"] = {"serving_size_grams": row.nutrition_serving_size_grams, "servings_per_container": row.nutrition_servings_per_container, "calories": row.nutrition_calories}
         card["goals"] = list(row.goals or [])
     return card
+
+
+def _category_path_en(category_id) -> list[str]:
+    """English names of the category and its parents, top first ("Sports Nutrition", "Proteins", "Whey Isolate")."""
+    names: list[str] = []
+    seen: set = set()
+    while category_id and category_id not in seen:
+        seen.add(category_id)
+        c = orm.Category.objects.filter(pk=category_id).values("parent_id").first()
+        if c is None:
+            break
+        names.append(orm.CategoryTranslation.objects.filter(category_id=category_id, locale_code="en").values_list("name", flat=True).first() or "")
+        category_id = c["parent_id"]
+    return names[::-1]
+
+
+def _card_facts(row, card: dict, default_variant_id) -> dict:
+    """Price per serving, price of 25 g protein and who the product suits -- from the card's numbers or, when those
+    fields are empty, its own text (card_numbers.py). Priced at the default size, which `size` names."""
+    from apps.products.infrastructure.card_numbers import card_facts
+
+    variant = next((v for v in row.variants.all() if v.id == default_variant_id), None)
+    size = f"{float(variant.weight_value):g} {variant.weight_unit}" if variant is not None and variant.weight_value else ""
+    try:
+        return card_facts(texts=[card.get("supplement_facts") or "", row.supplement_facts_text_uz or "", card.get("description") or ""],
+                          nutrition=card.get("nutrition") or {}, price=card.get("price"), category_path=_category_path_en(row.category_id), size=size)
+    except Exception:  # noqa: BLE001 -- facts are a bonus; the page renders without them
+        return {}
 
 
 def _localized_text_field(row, field_prefix: str, effective_locale: str) -> str | None:

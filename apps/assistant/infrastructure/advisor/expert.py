@@ -19,6 +19,7 @@ import re
 from dataclasses import dataclass, field
 
 from apps.assistant.infrastructure.advisor import nlu
+from apps.products.infrastructure.card_numbers import text_numbers  # shared with the product page and replenishment
 
 # ---------------------------------------------------------------------------------------------------- product kinds
 
@@ -175,35 +176,6 @@ def _kilos(size: str) -> float | None:
     v = float(m.group(1).replace(",", "."))
     unit = m.group(2).lower()
     return v if unit in ("kg", "кг") else v / 1000 if unit in ("g", "г") else v * 0.4536
-
-
-_SERVINGS = re.compile(r"(?:porsiyalar soni|porsiya soni|porsiyaga yetadi|servings per container|servings|порций в упаковке|количество порций|порций)\D{0,8}?(\d{1,3})\b"
-                       r"|\b(\d{1,3})\s*(?:porsiya(?:ga|dan)?\b(?!\s*\())(?=[^.\n]{0,25}(?:yetadi|qadoq|bor))|qadoq\w*\s+(\d{1,3})\s*porsiya|\b(\d{1,3})\s*(?:servings|порций)\b", re.I)
-_SERVING_G = re.compile(r"(?:1\s*porsiya|porsiya|serving size|1 serving|порция|1 порция)\s*(?:\(|[—–:-]\s*|\s)(\d{1,3}(?:[.,]\d)?)\s*(?:g|г|gr)\b", re.I)
-_PROTEIN_G = re.compile(r"(?:oqsil|protein|белок|белка)\s*(?:[—–:-]\s*|\s)(\d{1,2}(?:[.,]\d)?)\s*(?:g|г)\b|(\d{1,2}(?:[.,]\d)?)\s*(?:g|г)\s*(?:oqsil|protein|белка|белок)", re.I)
-_PROTEIN_PCT = re.compile(r"(\d{2})\s*%\s*(?:oqsil|protein|белка|белок)|(?:oqsil|protein|белок)\w*\s*[—–:-]?\s*~?(\d{2})\s*%", re.I)
-
-
-def text_numbers(*texts: str) -> dict:
-    """Serving size, servings and protein per serving read from the card's own text when the number fields are empty
-    ("Porsiya — 30 g", "Qadoqdagi porsiyalar soni — 23", "~80% oqsil")."""
-    t = "\n".join(x for x in texts if x)
-    out: dict = {}
-    if m := _SERVING_G.search(t):
-        out["serving_g"] = float(m.group(1).replace(",", "."))
-    if m := _SERVINGS.search(t):
-        v = next(g for g in m.groups() if g)
-        if 5 <= int(v) <= 400:
-            out["servings"] = float(v)
-    if m := _PROTEIN_G.search(t):
-        v = float(next(g for g in m.groups() if g).replace(",", "."))
-        if 5 <= v <= 60 and v <= (out.get("serving_g") or 999):
-            out["protein"] = v
-    if "protein" not in out and out.get("serving_g") and (m := _PROTEIN_PCT.search(t)):
-        pct = int(next(g for g in m.groups() if g))
-        if 40 <= pct <= 95:
-            out["protein"] = round(out["serving_g"] * pct / 100, 1)
-    return out
 
 
 def rows_for(ids: list[str], loc: str, max_price: int | None = None) -> list[Row]:

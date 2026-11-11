@@ -92,10 +92,10 @@ def purchases(customer_ids=None, since: datetime | None = None) -> list[Purchase
 
 def _servings_from_text(product_ids: list) -> dict:
     """Servings per container read from the card's text when the number field is empty (most cards: "Qadoqdagi
-    porsiyalar soni — 23") -- the same reader the AI advisor uses."""
+    porsiyalar soni — 23") -- the same reader the product page and the AI advisor use."""
     if not product_ids:
         return {}
-    from apps.assistant.infrastructure.advisor.expert import text_numbers
+    from apps.products.infrastructure.card_numbers import text_numbers
     from apps.products.infrastructure.models import Product, ProductTranslation
 
     descriptions = dict(ProductTranslation.objects.filter(product_id__in=product_ids, locale_code="uz").values_list("product_id", "description"))
