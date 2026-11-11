@@ -111,3 +111,10 @@ def test_my_replenishment_endpoint_lists_soonest_first(monkeypatch):
     body = APIClient().get("/api/v1/orders/replenishment").json()
     assert [row["product"]["id"] for row in body["data"]] == [str(soon.id), str(later.id)]
     assert body["data"][0]["days_left"] <= 2
+
+
+def test_servings_read_from_the_card_text_when_the_field_is_empty(monkeypatch):
+    customer = uuid.uuid4()
+    whey = Product.objects.create(id=uuid.uuid4(), status="published", supplement_facts_text_uz="1 porsiya (30 g) uchun:\n\nQadoqdagi porsiyalar soni — 23")
+    f = _forecast(monkeypatch, [_buy(customer, whey.id, 3)])
+    assert (f[whey.id].basis, f[whey.id].supply_days) == ("servings", 23)

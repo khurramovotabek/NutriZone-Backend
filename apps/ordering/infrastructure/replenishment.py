@@ -90,6 +90,23 @@ def purchases(customer_ids=None, since: datetime | None = None) -> list[Purchase
     return out
 
 
+def _servings_from_text(product_ids: list) -> dict:
+    """Servings per container read from the card's text when the number field is empty (most cards: "Qadoqdagi
+    porsiyalar soni — 23") -- the same reader the AI advisor uses."""
+    if not product_ids:
+        return {}
+    from apps.assistant.infrastructure.advisor.expert import text_numbers
+    from apps.products.infrastructure.models import Product, ProductTranslation
+
+    descriptions = dict(ProductTranslation.objects.filter(product_id__in=product_ids, locale_code="uz").values_list("product_id", "description"))
+    out = {}
+    for pid, facts in Product.objects.filter(id__in=product_ids).values_list("id", "supplement_facts_text_uz"):
+        n = text_numbers(facts or "", descriptions.get(pid) or "").get("servings")
+        if n:
+            out[pid] = int(n)
+    return out
+
+
 def _clamp(days: float) -> int:
     return int(max(MIN_DAYS, min(MAX_DAYS, round(days))))
 
@@ -102,6 +119,7 @@ def forecasts(customer_ids=None, now: datetime | None = None) -> list[Forecast]:
     for p in purchases(customer_ids):
         groups.setdefault((p.customer_id, p.product_id), []).append(p)
     servings = dict(Product.objects.filter(id__in={k[1] for k in groups}).values_list("id", "nutrition_servings_per_container"))
+    servings.update(_servings_from_text([pid for pid, n in servings.items() if not n]))
 
     out = []
     for (customer_id, product_id), items in groups.items():
