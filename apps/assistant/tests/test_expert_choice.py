@@ -121,3 +121,41 @@ def test_where_from_is_not_the_store_address():
 
 def test_brand_tiers():
     assert expert.brand_tier("Optimum Nutrition") == 3 and expert.brand_tier("Nutrex Research") == 2 and expert.brand_tier("Zorvex") == 1
+
+
+def test_numbers_read_from_the_card_text():
+    facts = "1 porsiya (30 g) uchun:\n\nPorsiya — 30 g\n\nQadoqdagi porsiyalar soni — 23"
+    assert expert.text_numbers(facts, "~80% oqsil") == {"serving_g": 30.0, "servings": 23.0, "protein": 24.0}
+    assert expert.text_numbers("Порция 30 г: белок 22 г. Порций в упаковке: 30") == {"serving_g": 30.0, "servings": 30.0, "protein": 22.0}
+    assert expert.text_numbers("Kuniga 1–3 porsiya ichiladi") == {}
+
+
+def test_general_protein_prefers_everyday_whey_over_casein(shop):
+    from apps.assistant.tests.test_expert_choice import _cat, _product
+
+    casein = _product("Zorvex Micellar Casein", 200_000, _cat("Casein"), protein=24, servings=74)  # cheapest per gram
+    reply, ids, *_ = answer({}, "500 minggacha protein", "uz")
+    assert ids[0] != str(casein.id) and "Mening tanlovim: Gold Standard" in reply
+
+
+@pytest.mark.parametrize("text,loc,word", [
+    ("протеин до 500 тысяч", "ru", "Мой выбор"),
+    ("какой креатин лучше", "ru", "Мой выбор"),
+    ("best protein under 500k", "en", "My pick"),
+    ("креатин керак", "uz", "Mening tanlovim"),
+])
+def test_other_languages_and_cyrillic(shop, text, loc, word):
+    reply, ids, *_ = answer({}, text, loc)
+    assert word in reply and ids
+
+
+def test_personal_dose_from_weight_and_goal(shop):
+    reply, ids, _c, meta = answer({}, "90 kg, massa olmoqchiman. kreatinni qanday ichaman?", "uz")
+    assert meta["last"] == "personal_usage" and "kuniga **5 g**" in reply and ids == [str(shop["creatine"].id)]
+    reply, *_r, meta = answer({"profile": {"weight": 70, "goal": "weight_loss"}}, "протеин как принимать", "ru")
+    assert "140–168 г белка" in reply
+
+
+def test_stack_answer_has_a_daily_schedule(shop):
+    reply, *_ = answer({}, "180 sm, 75 kg, 25 yosh, massa olmoqchiman", "uz")
+    assert "Kun tartibi" in reply and "Mashg'ulotdan keyin" in reply

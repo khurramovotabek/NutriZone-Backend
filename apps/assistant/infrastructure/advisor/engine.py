@@ -96,6 +96,9 @@ def recommend_answer(profile: dict, loc: str) -> tuple[str, list[str], list[str]
             lines.append({"uz": "_Byudjetga to'liq mos variant hozir omborda yo'q — eng arzon mosini ko'rsatdim. Avval eng muhimidan (protein) boshlashni tavsiya qilaman._",
                           "ru": "_Полностью укладывающегося в бюджет варианта сейчас нет — показал самый доступный. Советую начать с главного (протеин)._",
                           "en": "_Nothing in stock fits the budget fully — I showed the most affordable match. Start with the essential one (protein)._"}[loc])
+    sched = expert.day_schedule([k for k, _p in picks], loc)
+    if sched:
+        lines += ["", sched]
     lines += ["", kb.T["disclaimer"][loc]]
     return "\n".join(lines), ids, [k for k, _p in picks]
 
@@ -119,7 +122,7 @@ def _expert(meta: dict, p, text: str, loc: str, taught: list):  # noqa: C901 - o
     shown = meta.get("last_shown") or []
     if (expert.wants_which(text) and len(shown) >= 2 and not seen.brands and not nlu.body_facts(p.facts)
             and concept in (None, meta.get("last_kind"))):
-        r = expert.compare_shown(shown, meta.get("last_kind"), loc)
+        r = expert.compare_shown(shown, meta.get("last_kind"), loc, meta.get("last_sub"), (meta.get("profile") or {}).get("budget"))
         if r:
             meta["last"] = "compare_shown"
             return r[0], r[1], CHIPS["after_reco"][loc], meta
@@ -149,7 +152,7 @@ def _expert(meta: dict, p, text: str, loc: str, taught: list):  # noqa: C901 - o
     reply, ids = r
     if p.facts.get("sex") == "f" and concept in ("protein", "creatine", "bcaa", "gainer", "preworkout", "carnitine"):
         reply = kb.FOR_WOMEN[loc] + "\n\n" + reply
-    meta.update(last="expert_pick", last_query=reco.QUERIES.get(concept, concept))
+    meta.update(last="expert_pick", last_query=reco.QUERIES.get(concept, concept), last_sub=sub)
     if budget:
         meta["profile"]["budget"] = budget
     return reply, ids, CHIPS["after_reco"][loc], meta
@@ -196,7 +199,11 @@ def _taught(text: str, concept: str | None) -> list:
 
 
 _UZ_CYR = set("ўқғҳЎҚҒҲ")
-_RU_ONLY = set("ыэщъёЫЭЩЪЁ")
+_RU_ONLY = set("ыщъёЫЩЪЁ")  # (э is common in Uzbek Cyrillic too: "эмас", "эртага")
+# Uzbek typed in Cyrillic without ў/қ/ғ/ҳ ("креатин керак", "протеин нархи канча")
+_UZ_CYR_WORDS = {"керак", "керакми", "учун", "нима", "нимага", "менга", "мен", "яхши", "яхшими", "борми", "бор", "йук", "йўқ", "канча", "кандай",
+                 "кайси", "билан", "эмас", "хам", "жуда", "олмокчиман", "олсам", "ичсам", "ичиш", "нархи", "нарх", "салом", "рахмат", "ассалому",
+                 "алейкум", "сизда", "мумкинми", "буладими", "булади", "килиб", "беринг", "айтинг", "кетади", "ёки", "ва", "ёкмайди", "сут", "махсулот"}
 _RU_WORDS = {"что", "как", "какой", "какая", "какие", "для", "где", "есть", "нужно", "можно", "лучше", "сколько", "привет", "здравствуйте",
              "спасибо", "хочу", "мне", "это", "или", "почему", "зачем", "пить", "принимать", "похудения", "массы", "цена", "доставка"}
 _UZ_LAT = {"uchun", "qanday", "nima", "qancha", "bormi", "kerak", "menga", "salom", "rahmat", "qaysi", "yaxshi", "ichish", "ichay", "olish",
@@ -213,7 +220,7 @@ def detect_locale(text: str, fallback: str) -> str:
     cyr = sum(1 for ch in raw if "\u0400" <= ch <= "\u04ff")
     lat = sum(1 for ch in raw if ch.isascii() and ch.isalpha())
     if cyr > lat:
-        if any(ch in _UZ_CYR for ch in raw):
+        if any(ch in _UZ_CYR for ch in raw) or (words & _UZ_CYR_WORDS and not words & _RU_WORDS):
             return "uz"
         if any(ch in _RU_ONLY for ch in raw) or words & _RU_WORDS or cyr >= 12:
             return "ru"
@@ -302,6 +309,13 @@ def _answer(conv_meta: dict, text: str, loc: str) -> tuple[str, list[str], list[
         # "yetkazib berish qancha turadi" -- the real tariff from the dashboard, before the price handler lists tubs
         meta["last"] = "faq_delivery"
         return kb.delivery_text(loc), [], CHIPS["faq"][loc], meta
+    if p.intent == "usage" and p.concept and profile.get("weight") and not brain.understand(text).health:
+        # "80 kg man, kreatinni qanday ichay" -- the dose for this body and goal, not the label's average
+        mine = expert.personal_usage(p.concept, profile, loc)
+        if mine:
+            meta["last"] = "personal_usage"
+            ids = [x["id"] for x in expert.kind_search(p.concept, loc, limit=3)]
+            return mine + "\n\n" + kb.T["disclaimer"][loc], ids, CHIPS["after_reco"][loc], meta
     hit = _expert(meta, p, text, loc, taught)  # the consultant: dairy, "which is better", budget / value picks, "X nima"
     if hit is not None:
         return hit
@@ -372,10 +386,16 @@ def _answer(conv_meta: dict, text: str, loc: str) -> tuple[str, list[str], list[
         found = expert.kind_search(p.concept, loc, limit=3)
         head = f"**{kb.T['kind_name'][loc][p.concept]}** — {kb.T['why'][loc][p.concept]}.\n\n{kb.T['usage'][loc][p.concept]}"
         tail = {"uz": "\n\nOmbordagi variantlar:", "ru": "\n\nВ наличии:", "en": "\n\nIn stock:"}[loc] if found else ""
+        if expert.personal_usage(p.concept, {"weight": 75}, loc):  # a personal rule exists: offer it
+            head += "\n\n" + {"uz": "✍️ Vazningiz va maqsadingizni yozsangiz (masalan, «80 kg, massa»), dozani aynan sizga hisoblab beraman.",
+                               "ru": "✍️ Напишите вес и цель (например, «80 кг, масса») — рассчитаю дозировку именно для вас.",
+                               "en": "✍️ Tell me your weight and goal (e.g. \"80 kg, muscle\") and I'll work out your exact dose."}[loc]
         return head + tail + "\n\n" + kb.T["disclaimer"][loc], [x["id"] for x in found], CHIPS["after_reco"][loc], meta
     if p.intent == "usage" and meta.get("last_ids") and meta.get("last") == "recommend":
         kinds = meta.get("last_kinds") or []
-        body = "\n".join(f"• **{kb.T['kind_name'][loc][k]}:** {kb.T['usage'][loc][k]}" for k in kinds)
+        body = "\n\n".join(expert.personal_usage(k, profile, loc) or f"• **{kb.T['kind_name'][loc][k]}:** {kb.T['usage'][loc][k]}" for k in kinds)
+        sched = expert.day_schedule(kinds, loc)
+        body += f"\n\n{sched}" if sched else ""
         return body + "\n\n" + kb.T["disclaimer"][loc], [], CHIPS["after_reco"][loc], meta
     if p.concept and not nlu.body_facts(p.facts) and p.intent in ("recommend", "search"):
         # "qaysi protein yaxshi?", "что лучше для суставов" -- show the best of that kind right away, offer a personal pick instead of interrogating
