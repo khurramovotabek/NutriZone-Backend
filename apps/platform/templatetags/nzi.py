@@ -49,6 +49,7 @@ def nz_pager(cl, page_range) -> dict:
         "next": link(current + 1) if current < total else None,
         "start": start,
         "end": min(current * cl.list_per_page, cl.result_count),
+        "more": min(cl.list_per_page, max(cl.result_count - current * cl.list_per_page, 0)),  # rows "Yana ko'rsatish" adds
         "current": current,
         "total": total,
     }

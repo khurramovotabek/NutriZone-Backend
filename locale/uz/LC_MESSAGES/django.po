@@ -9909,3 +9909,6 @@ msgstr "{n} dona ochiq buyurtmalar uchun band qilingan — qoldiq bundan kam bo'
 
 msgid "24/7 ochiq (ish vaqtiga qaramasdan)"
 msgstr ""
+
+msgid "Yana ko'rsatish"
+msgstr "Yana ko'rsatish"

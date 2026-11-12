@@ -2580,3 +2580,6 @@ msgstr "Remove the %(role)s role?"
 
 msgid "Kuryerlar"
 msgstr "Couriers"
+
+msgid "Yana ko'rsatish"
+msgstr "Show more"

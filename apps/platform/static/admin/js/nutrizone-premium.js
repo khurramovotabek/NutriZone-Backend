@@ -14,12 +14,13 @@
     var bulk = list.querySelector("[data-nzi-bulk]"), all = list.querySelector("[data-nzi-all]");
     var boxes = qa("input.action-select", list);
     var sync = function () {
+      boxes = qa("input.action-select", list); // "Yana ko'rsatish" (nz-load-more.js) may have appended rows
       var n = boxes.filter(function (b) { return b.checked; }).length;
       boxes.forEach(function (b) { (b.closest(".nzi-tr") || b.closest(".nzi-card")).classList.toggle("is-picked", b.checked); });
       if (bulk) { bulk.hidden = !n; bulk.querySelector("[data-nzi-count]").textContent = n; }
       if (all) { all.checked = n && n === boxes.length; all.indeterminate = n > 0 && n < boxes.length; }
     };
-    if (all) all.addEventListener("change", function () { boxes.forEach(function (b) { b.checked = all.checked; }); sync(); });
+    if (all) all.addEventListener("change", function () { qa("input.action-select", list).forEach(function (b) { b.checked = all.checked; }); sync(); });
     list.addEventListener("change", function (e) { if (e.target.classList.contains("action-select")) sync(); });
     list.addEventListener("click", function (e) {
       var row = e.target.closest(".nzi-tr[data-href], .nzi-card[data-href]");
@@ -35,6 +36,7 @@
       var question = (window.nzTranslate || String)("tanlangan " + n + " ta yozuv uchun bajarilsinmi?");
       if (!window.confirm(btn.textContent.trim() + " — " + question)) e.preventDefault();
     });
+    document.addEventListener("nz:rows-added", function () { if (all) all.checked = false; sync(); });
     sync();
   }
 

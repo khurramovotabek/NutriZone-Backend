@@ -112,7 +112,7 @@
       </div>
       {% endfor %}
     </div>
-    <div class="wx-pl-foot"><span>{% blocktranslate with a=page_start b=page_end n=total_count %}Showing {{ a }}–{{ b }} of {{ n }} products{% endblocktranslate %}</span>
+    <div class="wx-pl-foot" data-nz-pager data-nz-rows=".wx-pl-table" data-nz-from="{{ page_start }}">{% if page < total_pages %}<a class="nz-pager-more" href="?{{ filter_qs }}&sort={{ sort }}&page={{ page|add:'1' }}" data-nz-more><i class="fas fa-angles-down" aria-hidden="true"></i> {% translate "Yana ko'rsatish" %}</a>{% endif %}<span>{% blocktranslate with a=page_start b=page_end n=total_count %}Showing {{ a }}–{{ b }} of {{ n }} products{% endblocktranslate %}</span>
       {% if total_pages > 1 %}<span class="wx-pl-pages">{% if page > 1 %}<a class="nzp-btn nzp-btn-ghost nzp-btn-sm" href="?{{ filter_qs }}&sort={{ sort }}&page={{ page|add:'-1' }}">‹</a>{% endif %}<b>{{ page }} / {{ total_pages }}</b>{% if page < total_pages %}<a class="nzp-btn nzp-btn-ghost nzp-btn-sm" href="?{{ filter_qs }}&sort={{ sort }}&page={{ page|add:'1' }}">›</a>{% endif %}</span>{% endif %}</div>
     {% else %}
     <div class="nzp-empty"><span class="nzp-empty-icon" style="--c:#10b981"><i class="fas fa-tags" aria-hidden="true"></i></span><h3>{% translate "No products found" %}</h3><p>{% if missing %}{% translate "Every variant has a price." %}{% else %}{% translate "Try a different search or filter." %}{% endif %}</p></div>
@@ -385,6 +385,11 @@
   opUi();
   var firstMatch = root.querySelector(".wx-pl-sub.is-match"); if (firstMatch) firstMatch.scrollIntoView({ block: "center" });
   root.querySelectorAll("[role=row][data-variant-id], [role=row][data-sub-variant-id]").forEach(recalc);
+  // "Yana ko'rsatish" (nz-load-more.js) appends the next page's products: work out their margins too
+  document.addEventListener("nz:rows-added", function (e) {
+    e.detail.rows.forEach(function (r) { (r.matches("[role=row][data-variant-id]") ? [r] : Array.prototype.slice.call(r.querySelectorAll("[role=row][data-variant-id], [role=row][data-sub-variant-id]"))).forEach(recalc); });
+    if (typeof syncChecks === "function") syncChecks();
+  });
 })();
 </script>
 {% endblock %}

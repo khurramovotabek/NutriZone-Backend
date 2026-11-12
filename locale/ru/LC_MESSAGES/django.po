@@ -10125,3 +10125,6 @@ msgstr "{n} шт. зарезервировано под открытые зак�
 
 msgid "24/7 ochiq (ish vaqtiga qaramasdan)"
 msgstr "Открыт 24/7 (без учёта рабочего времени)"
+
+msgid "Yana ko'rsatish"
+msgstr "Показать ещё"

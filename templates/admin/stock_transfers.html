@@ -157,7 +157,8 @@
         </table>
       </div>
       {% if history.paginator.num_pages > 1 %}
-      <nav class="nz-tr-pager nz-tr-pager-static">
+      <nav class="nz-tr-pager nz-tr-pager-static" data-nz-pager data-nz-rows=".nz-tr-table tbody" style="flex-wrap:wrap">
+        {% if history.has_next %}<a class="nz-pager-more" href="?page={{ history.next_page_number }}{% if branch_filter %}&branch={{ branch_filter }}{% endif %}" data-nz-more><i class="fas fa-angles-down" aria-hidden="true"></i> {% translate "Yana ko'rsatish" %}</a>{% endif %}
         {% if history.has_previous %}<a href="?page={{ history.previous_page_number }}{% if branch_filter %}&branch={{ branch_filter }}{% endif %}"><i class="fas fa-chevron-left" aria-hidden="true"></i></a>{% endif %}
         <span>{% translate "Page" %} {{ history.number }} / {{ history.paginator.num_pages }}</span>
         {% if history.has_next %}<a href="?page={{ history.next_page_number }}{% if branch_filter %}&branch={{ branch_filter }}{% endif %}"><i class="fas fa-chevron-right" aria-hidden="true"></i></a>{% endif %}

@@ -135,7 +135,8 @@
       {% endfor %}
     </div>
     {% if pager.pages > 1 %}
-    <nav class="wx-pager" aria-label="Sahifalar" style="display:flex;align-items:center;justify-content:center;gap:12px;padding:14px 0 4px">
+    <nav class="wx-pager" aria-label="Sahifalar" data-nz-pager data-nz-rows=".wx-stock-table" style="flex-wrap:wrap;display:flex;align-items:center;justify-content:center;gap:12px;padding:14px 0 4px">
+      {% if pager.next %}<a class="nz-pager-more" href="?{{ pager.qs }}&amp;page={{ pager.next }}" data-nz-more><i class="fas fa-angles-down" aria-hidden="true"></i> {% translate "Yana ko'rsatish" %}</a>{% endif %}
       {% if pager.prev %}<a class="nzp-btn nzp-btn-ghost nzp-btn-sm" href="?{{ pager.qs }}&amp;page={{ pager.prev }}"><i class="fas fa-chevron-left" aria-hidden="true"></i> {% translate "Previous" %}</a>{% endif %}
       <small>{{ pager.page }} / {{ pager.pages }}</small>
       {% if pager.next %}<a class="nzp-btn nzp-btn-ghost nzp-btn-sm" href="?{{ pager.qs }}&amp;page={{ pager.next }}">{% translate "Next" %} <i class="fas fa-chevron-right" aria-hidden="true"></i></a>{% endif %}
