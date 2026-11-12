@@ -115,14 +115,14 @@
   {% else %}
   <section class="nzp-card nzp-inbox">
     {% if rows %}
-    <div class="nzd-table wx-stock-table" role="table">
+    <div class="nzd-table wx-stock-table" role="table" data-stock-table data-location="{{ current.pk }}" data-set-url="{% url 'admin:nz_wms_stock_set' %}"{% if can_set_stock %} data-can-set{% endif %}>
       <div class="nzd-tr nzd-th" role="row"><span>{% translate "Product" %}</span><span class="r">{% translate "On hand" %}</span><span class="r">{% translate "Reserved" %}</span><span class="r">{% translate "Available" %}</span><span class="r">{% translate "Value at cost" %}</span><span class="r">{% translate "Last movement" %}</span><span></span></div>
       {% for r in rows %}
-      <div class="nzd-tr" role="row" style="--i:{{ forloop.counter0 }}">
+      <div class="nzd-tr" role="row" style="--i:{{ forloop.counter0 }}" data-variant="{{ r.variant_id }}" data-reserved="{{ r.reserved }}" data-min="{{ r.min|default_if_none:'' }}">
         <span class="wx-prod">{% if r.image_url %}<img src="{{ r.image_url }}" alt="" loading="lazy">{% else %}<span class="ph"><i class="fas fa-box" aria-hidden="true"></i></span>{% endif %}<span><a class="nzs-name-link" href="{% url 'admin:nz_wms_stock_product' r.variant_id %}" title="{% translate 'Barcha joylar bo‘yicha qoldiq' %}"><b>{{ r.name }}</b></a><small>{{ r.sku }}{% if r.barcode %} · {{ r.barcode }}{% endif %}{% if r.size %} · {{ r.size }}{% endif %}</small>{% if r.batches %}<span class="wx-batch-tags">{% for b in r.batches %}<span class="nzd-tag" style="--t:{{ b.tone }}" title="{% translate 'Batch' %}">{% if b.batch_number %}LOT {{ b.batch_number }}{% endif %}{% if b.expiry_date %} · {{ b.expiry_date|date:"d.m.Y" }}{% endif %} · {{ b.quantity }}</span>{% endfor %}</span>{% endif %}</span></span>
-        <span class="r"><b class="wx-num">{{ r.quantity }}</b></span>
+        <span class="r">{% if can_set_stock %}<button type="button" class="wx-qty-edit" data-qty-edit title="{% translate 'Qoldiqni o‘zgartirish — bosing, yangi sonni yozing, Enter' %}"><b class="wx-num" data-cell="quantity">{{ r.quantity }}</b><i class="fas fa-pen" aria-hidden="true"></i></button>{% else %}<b class="wx-num">{{ r.quantity }}</b>{% endif %}</span>
         <span class="r">{% if r.reserved %}<b class="wx-qty-res">{{ r.reserved }}</b>{% else %}<small>—</small>{% endif %}</span>
-        <span class="r"><b class="wx-num">{{ r.available }}</b><span class="wx-state {{ r.state }}">{% if r.state == 'ok' %}{% translate "Enough" %}{% elif r.state == 'low' %}{% translate "Low" %}{% else %}{% translate "Out" %}{% endif %}</span>{% if r.min is not None %}<small>{% translate "min" %} {{ r.min }}</small>{% endif %}</span>
+        <span class="r"><b class="wx-num" data-cell="available">{{ r.available }}</b><span class="wx-state {{ r.state }}" data-cell="state">{% if r.state == 'ok' %}{% translate "Enough" %}{% elif r.state == 'low' %}{% translate "Low" %}{% else %}{% translate "Out" %}{% endif %}</span>{% if r.min is not None %}<small>{% translate "min" %} {{ r.min }}</small>{% endif %}</span>
         <span class="r">{% if r.cost_value %}<b>{{ r.cost_value }}</b><small>{{ r.cost }} × {{ r.quantity }}</small>{% else %}<span class="wx-nodata">{% translate "no cost yet" %}</span>{% endif %}</span>
         <span class="r"><small>{{ r.last }}</small></span>
         <span class="wx-row-actions">
@@ -154,4 +154,90 @@
   <div class="nzp-empty"><h3>{% translate "No warehouse or branch yet" %}</h3><p>{% translate "Create a location of type “Warehouse” in Stores." %}</p></div>
   {% endif %}
 </div>
+{% if can_set_stock and current %}{% csrf_token %}
+<style>
+.wx-qty-edit{display:inline-flex;align-items:center;gap:6px;padding:4px 8px;margin:-4px -8px;border:1px dashed transparent;border-radius:9px;background:none;color:inherit;cursor:pointer;font:inherit}
+.wx-qty-edit i{font-size:.68rem;opacity:0;color:var(--nz-primary,#3b82f6);transition:opacity .15s}
+.wx-qty-edit:hover,.wx-qty-edit:focus-visible{border-color:var(--nz-primary,#3b82f6);background:var(--nz-hover)}
+.wx-qty-edit:hover i,.wx-qty-edit:focus-visible i{opacity:1}
+.wx-qty-input{width:84px;padding:5px 8px;border:1.5px solid var(--nz-primary,#3b82f6);border-radius:9px;background:var(--nz-surface,#fff);color:var(--nz-text-primary);text-align:right;font-weight:700;font-variant-numeric:tabular-nums}
+.nzd-tr.is-saving{opacity:.6}
+.nzd-tr.is-saved{animation:wxSaved 1.6s ease}
+.nzd-tr.is-failed{box-shadow:inset 3px 0 0 #e11d48}
+@keyframes wxSaved{0%{background:rgba(16,185,129,.22)}100%{background:transparent}}
+.wx-qty-msg{display:block;font-size:.72rem;font-weight:600;color:#e11d48;white-space:normal}
+.wx-qty-msg.ok{color:#059669}
+</style>
+<script>
+/* Ombor → Qoldiqlar: the "On hand" number is edited in place. Click it (or Enter on it), type the counted number, Enter or
+   click away = save (one ADJUSTMENT in the ledger, never below what is reserved), Esc = cancel. Works on rows that
+   "Yana ko'rsatish" appends too (delegated). */
+(function () {
+  "use strict";
+  var table = document.querySelector("[data-stock-table][data-can-set]");
+  if (!table) return;
+  var T = function (s) { return (window.nzTranslate || String)(s); };
+  var csrf = (document.querySelector("input[name=csrfmiddlewaretoken]") || {}).value || "";
+  var LOW = {{ low_limit|default:5 }};
+  var STATE = { ok: "{% translate 'Enough' as a %}{{ a|escapejs }}", low: "{% translate 'Low' as b %}{{ b|escapejs }}", out: "{% translate 'Out' as c %}{{ c|escapejs }}" };
+
+  function msg(row, text, ok) {
+    var cell = row.querySelector("[data-qty-edit]").parentNode, m = cell.querySelector(".wx-qty-msg");
+    if (!m) { m = document.createElement("small"); m.className = "wx-qty-msg"; cell.appendChild(m); }
+    m.textContent = text; m.classList.toggle("ok", !!ok);
+    if (ok) setTimeout(function () { if (m.parentNode) m.remove(); }, 2500);
+  }
+
+  function open(btn) {
+    var row = btn.closest("[data-variant]"), was = btn.querySelector("[data-cell=quantity]").textContent.trim();
+    var input = document.createElement("input");
+    input.type = "number"; input.min = row.getAttribute("data-reserved") || "0"; input.step = "1"; input.inputMode = "numeric";
+    input.className = "wx-qty-input"; input.value = was; input.setAttribute("aria-label", T("Yangi qoldiq"));
+    btn.hidden = true; btn.parentNode.insertBefore(input, btn); input.focus(); input.select();
+    var done = false;
+    function close() { if (input.parentNode) input.remove(); btn.hidden = false; }
+    function save() {
+      if (done) return; done = true;
+      var v = input.value.trim();
+      if (v === "" || v === was) { close(); return; }
+      if (!/^\d+$/.test(v)) { close(); msg(row, T("Butun son kiriting (0 yoki undan katta).")); return; }
+      row.classList.add("is-saving"); input.disabled = true;
+      fetch(table.getAttribute("data-set-url"), {
+        method: "POST", credentials: "same-origin",
+        headers: { "Content-Type": "application/json", "X-CSRFToken": csrf, "X-Requested-With": "XMLHttpRequest" },
+        body: JSON.stringify({ location: table.getAttribute("data-location"), variant: row.getAttribute("data-variant"), quantity: Number(v) })
+      }).then(function (r) { return r.json().then(function (j) { return { ok: r.ok, j: j }; }); })
+        .then(function (res) {
+          close(); row.classList.remove("is-saving");
+          if (!res.ok || !res.j.success) {
+            row.classList.add("is-failed");
+            msg(row, (res.j.error && (res.j.error.message || res.j.error)) || T("Saqlanmadi"));
+            return;
+          }
+          var d = res.j.data, min = row.getAttribute("data-min");
+          row.classList.remove("is-failed"); row.classList.remove("is-saved"); void row.offsetWidth; row.classList.add("is-saved");
+          btn.querySelector("[data-cell=quantity]").textContent = d.quantity;
+          row.querySelector("[data-cell=available]").textContent = d.available;
+          var st = d.available <= 0 ? "out" : d.available <= (min !== "" ? Number(min) : LOW) ? "low" : "ok";
+          var badge = row.querySelector("[data-cell=state]");
+          badge.className = "wx-state " + st;
+          badge.textContent = STATE[st];
+          msg(row, d.clamped ? T("Band qilinganidan kam bo'lmaydi") + ": " + d.quantity : d.before + " → " + d.quantity, !d.clamped);
+        })
+        .catch(function () { close(); row.classList.remove("is-saving"); row.classList.add("is-failed"); msg(row, T("Internet aloqasini tekshiring")); });
+    }
+    input.addEventListener("keydown", function (e) {
+      if (e.key === "Enter") { e.preventDefault(); save(); }
+      else if (e.key === "Escape") { done = true; close(); btn.focus(); }
+    });
+    input.addEventListener("blur", save);
+  }
+
+  table.addEventListener("click", function (e) {
+    var btn = e.target.closest("[data-qty-edit]");
+    if (btn) { e.preventDefault(); open(btn); }
+  });
+})();
+</script>
+{% endif %}
 {% endblock %}

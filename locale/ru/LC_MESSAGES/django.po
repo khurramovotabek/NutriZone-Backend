@@ -10128,3 +10128,27 @@ msgstr "Открыт 24/7 (без учёта рабочего времени)"
 
 msgid "Yana ko'rsatish"
 msgstr "Показать ещё"
+
+msgid "Yangi qoldiq"
+msgstr "Новый остаток"
+
+msgid "Butun son kiriting (0 yoki undan katta)."
+msgstr "Введите целое число (0 или больше)."
+
+msgid "Saqlanmadi"
+msgstr "Не сохранено"
+
+msgid "Band qilinganidan kam bo'lmaydi"
+msgstr "Не может быть меньше зарезервированного"
+
+msgid "Internet aloqasini tekshiring"
+msgstr "Проверьте подключение к интернету"
+
+msgid "Qoldiqni o'zgartirishga ruxsatingiz yo'q."
+msgstr "У вас нет права менять остаток."
+
+msgid "Joy yoki mahsulot topilmadi."
+msgstr "Склад или товар не найден."
+
+msgid "Qoldiqni o‘zgartirish — bosing, yangi sonni yozing, Enter"
+msgstr "Изменить остаток — нажмите, введите число, Enter"

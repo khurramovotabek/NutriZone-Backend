@@ -9912,3 +9912,27 @@ msgstr ""
 
 msgid "Yana ko'rsatish"
 msgstr "Yana ko'rsatish"
+
+msgid "Yangi qoldiq"
+msgstr "Yangi qoldiq"
+
+msgid "Butun son kiriting (0 yoki undan katta)."
+msgstr "Butun son kiriting (0 yoki undan katta)."
+
+msgid "Saqlanmadi"
+msgstr "Saqlanmadi"
+
+msgid "Band qilinganidan kam bo'lmaydi"
+msgstr "Band qilinganidan kam bo'lmaydi"
+
+msgid "Internet aloqasini tekshiring"
+msgstr "Internet aloqasini tekshiring"
+
+msgid "Qoldiqni o'zgartirishga ruxsatingiz yo'q."
+msgstr "Qoldiqni o'zgartirishga ruxsatingiz yo'q."
+
+msgid "Joy yoki mahsulot topilmadi."
+msgstr "Joy yoki mahsulot topilmadi."
+
+msgid "Qoldiqni o‘zgartirish — bosing, yangi sonni yozing, Enter"
+msgstr "Qoldiqni o‘zgartirish — bosing, yangi sonni yozing, Enter"

@@ -1069,7 +1069,7 @@ def stock_view(request):
     cards = [{"s": s, "lines": loc_stats.get(str(s.id), {}).get("lines", 0), "units": loc_stats.get(str(s.id), {}).get("units", 0),
               "value": _som(loc_stats.get(str(s.id), {}).get("value", 0))} for s in locations]
     ctx = {**admin.site.each_context(request), "title": _t("Qoldiqlar"), "locations": locations, "cards": cards, "current": current,
-           "q": q, "state": state, "view": view, "low_limit": LOW_STOCK}
+           "q": q, "state": state, "view": view, "low_limit": LOW_STOCK, "can_set_stock": _can_set_stock(request.user)}
 
     if view == "matrix":
         return _matrix_view(request, ctx, locations, q)
@@ -1157,6 +1157,66 @@ def stock_view(request):
     keep.pop("page", None)
     pager = {"page": page, "pages": pages, "qs": keep.urlencode(), "prev": page - 1 if page > 1 else None, "next": page + 1 if page < pages else None}
     return render(request, "admin/wms/stock.html", {**ctx, "rows": rows, "totals": totals, "counts": counts, "sort": sort, "pager": pager})
+
+
+def _can_set_stock(user) -> bool:
+    return user.is_active and user.is_staff and (user.is_superuser or user.has_perm("stores.change_storeproductstock") or user.has_perm("stores.post_stockcount"))
+
+
+def _stock_location(request, value):
+    return next((s for s in transfer_service.locations() if str(s.id) == str(value or "")), None)
+
+
+def stock_set_api(request):
+    """
+    Ombor → Qoldiqlar, the "On hand" cell edited in place: POST {location, variant, quantity} sets that location's count
+    (one ADJUSTMENT in the ledger, never below the reservation) and returns the row's new numbers.
+    """
+    from apps.stores.infrastructure import stock_sync
+
+    if request.method != "POST":
+        return JsonResponse({"success": False, "error": "POST only"}, status=405)
+    if not _can_set_stock(request.user):
+        return JsonResponse({"success": False, "error": str(_t("Qoldiqni o'zgartirishga ruxsatingiz yo'q."))}, status=403)
+    body = _body(request)
+    store = _stock_location(request, body.get("location"))
+    if store is None or not _is_uuid(body.get("variant")):
+        return JsonResponse({"success": False, "error": str(_t("Joy yoki mahsulot topilmadi."))}, status=404)
+    try:
+        target = int(str(body.get("quantity", "")).replace(" ", "").strip())
+        if not 0 <= target <= 1_000_000:
+            raise ValueError
+    except ValueError:
+        return JsonResponse({"success": False, "error": str(_t("Butun son kiriting (0 yoki undan katta)."))}, status=400)
+    try:
+        res = stock_sync.set_count(store, uuid.UUID(str(body["variant"])), target, actor=_actor(request), note="Qoldiqlar ro'yxati", reference="STOCK-LIST")
+    except Exception as exc:  # noqa: BLE001 - the ledger refuses impossible counts; answer, never a 500
+        return _error(exc)
+    state = "out" if res.available <= 0 else "low" if res.available <= LOW_STOCK else "ok"
+    return JsonResponse({"success": True, "data": {"quantity": res.after, "reserved": res.reserved, "available": res.available, "before": res.before,
+                                                   "clamped": res.clamped, "state": state}})
+
+
+def stock_sync_api(request):
+    """
+    One branch made equal to an outside count (the OX cash-register database): POST {location, counts: [[barcode, qty, name], ...],
+    dry_run, source}. Dry run first -- the report says what would go up / down, what OX has that the catalogue doesn't, and
+    what we hold that OX doesn't list (left untouched).
+    """
+    from apps.stores.infrastructure import stock_sync
+
+    if request.method != "POST":
+        return JsonResponse({"success": False, "error": "POST only"}, status=405)
+    if not (request.user.is_superuser or request.user.has_perm("stores.post_stockcount")):
+        return JsonResponse({"success": False, "error": str(_t("Qoldiqni o'zgartirishga ruxsatingiz yo'q."))}, status=403)
+    body = _body(request)
+    store = _stock_location(request, body.get("location"))
+    counts = body.get("counts")
+    if store is None or not isinstance(counts, list):
+        return JsonResponse({"success": False, "error": "location and counts are required"}, status=400)
+    source = str(body.get("source") or "OX")[:12].upper()
+    report = stock_sync.sync_counts(store, counts, actor=_actor(request), source=source, dry_run=bool(body.get("dry_run", True)))
+    return JsonResponse({"success": True, "data": report.as_dict()})
 
 
 def _exact_variant(code: str):
@@ -1368,6 +1428,8 @@ def install_urls() -> None:
 
         return [
             path("wms/stock/", admin.site.admin_view(stock_view), name="nz_wms_stock"),
+            path("wms/stock/api/set/", admin.site.admin_view(stock_set_api), name="nz_wms_stock_set"),
+            path("wms/stock/api/sync/", admin.site.admin_view(stock_sync_api), name="nz_wms_stock_sync"),
             path("wms/stock/product/<uuid:variant_id>/", admin.site.admin_view(stock_product_view), name="nz_wms_stock_product"),
             path("inventory/transfers/", RedirectView.as_view(pattern_name="admin:stores_stocktransfer_changelist", permanent=False), name="nz_wms_old_transfers"),
             *original(),

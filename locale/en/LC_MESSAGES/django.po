@@ -2583,3 +2583,27 @@ msgstr "Couriers"
 
 msgid "Yana ko'rsatish"
 msgstr "Show more"
+
+msgid "Yangi qoldiq"
+msgstr "New count"
+
+msgid "Butun son kiriting (0 yoki undan katta)."
+msgstr "Enter a whole number (0 or more)."
+
+msgid "Saqlanmadi"
+msgstr "Not saved"
+
+msgid "Band qilinganidan kam bo'lmaydi"
+msgstr "Cannot be lower than the reserved units"
+
+msgid "Internet aloqasini tekshiring"
+msgstr "Check your internet connection"
+
+msgid "Qoldiqni o'zgartirishga ruxsatingiz yo'q."
+msgstr "You are not allowed to change stock."
+
+msgid "Joy yoki mahsulot topilmadi."
+msgstr "Location or product not found."
+
+msgid "Qoldiqni o‘zgartirish — bosing, yangi sonni yozing, Enter"
+msgstr "Change the count — click, type the number, Enter"

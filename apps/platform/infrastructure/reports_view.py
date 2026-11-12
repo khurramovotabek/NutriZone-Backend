@@ -524,6 +524,8 @@ def _get_urls_with_reports():
         path("chat/conversations/<str:conversation_id>/messages", chat_view.chat_admin_messages_api, name="nz_chat_messages"),
         path("chat/conversations/<str:conversation_id>/send", chat_view.chat_admin_send_message_api, name="nz_chat_send"),
         path("wms/stock/", _wms_stock_view, name="nz_wms_stock"),
+        path("wms/stock/api/set/", _wms_stock_api("stock_set_api"), name="nz_wms_stock_set"),
+        path("wms/stock/api/sync/", _wms_stock_api("stock_sync_api"), name="nz_wms_stock_sync"),
         path("wms/stock/product/<uuid:variant_id>/", _wms_stock_product_view, name="nz_wms_stock_product"),
         path("wms/expiry/", _wms_expiry_view, name="nz_wms_expiry"),
         path("wms/reports/", _wms_reports_view, name="nz_wms_reports"),
@@ -630,6 +632,15 @@ def _wms_stock_product_view(request, variant_id):
     from apps.stores.infrastructure.warehouse_admin import stock_product_view
 
     return admin.site.admin_view(stock_product_view)(request, variant_id=variant_id)
+
+
+def _wms_stock_api(name):
+    def view(request):
+        from apps.stores.infrastructure import warehouse_admin
+
+        return admin.site.admin_view(getattr(warehouse_admin, name))(request)
+
+    return view
 
 
 def _wms_stock_view(request):
