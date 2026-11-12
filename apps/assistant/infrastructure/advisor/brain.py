@@ -41,7 +41,7 @@ CAN_I = ("bo'ladimi", "mumkinmi", "ichsam", "ichsa", "beraversa", "bersam", "ber
 HEALTH = {
     "heart": ("yurak", "bosim", "gipertoni", "aritmi", "сердц", "давлен", "гипертон", "аритм", "heart", "blood pressure", "hypertension"),
     "pregnant": ("homilador", "emiz", "beremen", "беремен", "кормлю грудью", "лактац", "pregnan", "breastfeed"),
-    "child": ("bola", "bolam", "bolalar", "farzand", "o'smir", "ребен", "дет", "подрост", "child", "kid", "teen", "son ", "daughter"),
+    "child": ("bola", "bolam", "bolalar", "farzand", "o'smir", "ребен", "дет", "подрост", "child", "kids", "kid ", "kid's", "teen", "son ", "daughter"),
     "kidney": ("buyrak", "jigar", "почк", "печен", "kidney", "liver"),
     "diabetes": ("diabet", "qandli", "qand kasal", "qonda qand", "qon qand", "qandim", "диабет", "сахарный диабет", "сахар в крови", "высокий сахар", "diabetes", "blood sugar"),
     "meds": ("dori ich", "dori qabul", "antidepress", "лекарств", "таблетк", "medication", "pills", "medicine"),

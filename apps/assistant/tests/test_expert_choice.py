@@ -234,3 +234,13 @@ def test_sore_muscles_are_not_a_mass_goal():
 def test_diabetes_protein_gets_a_real_answer(shop):
     reply, ids, _c, meta = answer({}, "qandli diabet bor protein ichsa bo'ladimi", "uz")
     assert meta["last"] == "health" and "izolyat" in reply and ids == [str(shop["iso"].id)]
+
+
+def test_kidneys_are_not_kids(db):
+    assert "child" not in brain.understand("is creatine safe for kidneys").health
+    assert "child" in brain.understand("can my kids take protein").health
+
+
+def test_fat_loss_protein_is_an_isolate(shop):
+    reply, ids, _c, meta = answer({}, "ozish uchun eng yaxshi protein qaysi", "uz")
+    assert meta["last"] == "expert_pick" and ids == [str(shop["iso"].id)] and "Ozish uchun — izolyat" in reply

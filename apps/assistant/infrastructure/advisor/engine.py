@@ -160,7 +160,10 @@ def _expert(meta: dict, p, text: str, loc: str, taught: list):  # noqa: C901 - o
     best = best or brain._has(both, expert.NEED)  # "kreatin kerak" (not "kerakmi?") is a buying request
     if not (budget or cheap or best) or concept in ADVICE_FIRST:  # "uyqum yomon" -- the routine first, engine's own path
         return None
-    r = expert.budget_answer(concept, sub, budget, loc, cheap=cheap and not budget, free=free)
+    lean = concept == "protein" and sub is None and p.goal == "weight_loss"  # cutting: isolate -- more protein, least carbs and fat
+    r = expert.budget_answer(concept, "isolate" if lean else sub, budget, loc, cheap=cheap and not budget, free=free)
+    if r and lean:
+        r = (kb_lean_note(loc) + "\n\n" + r[0], r[1])
     if r is None:
         return None
     reply, ids = r
@@ -170,6 +173,12 @@ def _expert(meta: dict, p, text: str, loc: str, taught: list):  # noqa: C901 - o
     if budget:
         meta["profile"]["budget"] = budget
     return reply, ids, CHIPS["after_reco"][loc], meta
+
+
+def kb_lean_note(loc: str) -> str:
+    return {"uz": "🔥 **Ozish uchun — izolyat:** porsiyada oqsil ko'proq (25–27 g), uglevod va yog' deyarli yo'q (~100–110 kkal), to'qlik beradi. Proteinni kaloriya defitsiti ichida iching — o'zi ozdirmaydi, lekin mushakni saqlaydi.",
+            "ru": "🔥 **Для похудения — изолят:** больше белка в порции (25–27 г), почти нет углеводов и жира (~100–110 ккал), хорошо насыщает. Пейте протеин в рамках дефицита калорий — сам он не сжигает жир, но сохраняет мышцы.",
+            "en": "🔥 **For fat loss — an isolate:** more protein per scoop (25–27 g), almost no carbs or fat (~100–110 kcal), keeps you full. Use it inside a calorie deficit — protein doesn't burn fat by itself, it protects muscle."}[loc if loc in ("uz", "ru", "en") else "uz"]
 
 
 def _kind_ids(concept: str | None, loc: str, text: str = "") -> list[str]:
