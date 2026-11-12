@@ -184,12 +184,16 @@ def extract_facts(t: str) -> dict:
     return facts
 
 
+SORE = ("og'ri", "ogri", "болят", "болит", "боль в мыш", "крепатур", "krepatur", "sore", "aching")
+
+
 def parse(text: str) -> Parsed:
     t = normalize(text)
     latin = t.translate(LATIN_FROM_CYR)  # Uzbek typed in Cyrillic still matches the Latin stems
     both = f"{t} {latin}"
     p = Parsed(text=t, facts=extract_facts(t))
-    p.goal = next((g for g, stems in GOALS.items() if _has(both, stems)), None)
+    goal_hay = re.sub(r"\b(?:mushak|muskul|мышц|muscle)\w*", " ", both) if _has(both, SORE) else both  # "mushagim og'riyapti" is soreness, not a mass goal
+    p.goal = next((g for g, stems in GOALS.items() if _has(goal_hay, stems)), None)
     p.concept = next(iter(concepts_in(both)), None)
     for intent in ("operator", "faq_order", "faq_returns", "faq_original", "faq_referral", "faq_loyalty", "faq_payment", "faq_delivery", "faq_stores", "faq_brands", "faq_flavours", "usage", "recommend"):
         hay = re.sub(r"qayerdan\w*", " ", both) if intent == "faq_stores" else both  # "qayerdan olsam" asks where to get it, not the shop address

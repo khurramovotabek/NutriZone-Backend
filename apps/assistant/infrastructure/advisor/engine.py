@@ -111,8 +111,10 @@ def _expert(meta: dict, p, text: str, loc: str, taught: list):  # noqa: C901 - o
     seen = brain.understand(text)
     issue = expert.dairy_issue(text)
     other_health = [h for h in seen.health if not (issue and h == "allergy")]  # a milk allergy is ours to explain; heart, pregnancy... stay safety-first
-    if other_health or seen.stores or p.intent in ("usage", "faq_delivery", "faq_payment", "faq_order", "faq_returns", "operator"):
+    free = expert.free_of(text)  # "kofeinsiz pre-workout", "протеин без сахара есть?" -- a pick that honours it
+    if other_health or seen.stores or p.intent in (() if free else ("usage",)) + ("faq_delivery", "faq_payment", "faq_order", "faq_returns", "operator"):
         return None
+    kinds = [c for c in seen.concepts if not (free == "stim" and c == "caffeine")]  # "kofeinsiz" names caffeine only to rule it out
     concept, sub = expert.kind_of(text, p.concept)
     if issue and concept in (None, "protein", "gainer") and not seen.brands:
         reply, ids = expert.dairy_answer(issue, loc)
@@ -120,8 +122,10 @@ def _expert(meta: dict, p, text: str, loc: str, taught: list):  # noqa: C901 - o
         meta.setdefault("profile", {})["lactose_free"] = True
         return reply, ids, CHIPS["after_reco"][loc], meta
     # brand-named pairs ("Zorvex yoki Kalmar") go to Brain's compare; tubs named without a brand ("Gold Standard va Iso100") come here
-    pair = (expert.pair_in(text) if (expert.wants_which(text) or brain._has(seen.both, brain.COMPARE)) and len(seen.concepts) < 2
+    pair = (expert.pair_in(text) if (expert.wants_which(text) or brain._has(seen.both, brain.COMPARE)) and len(kinds) < 2
             and not seen.brands and not re.search(r"\bon\b", seen.text) else [])
+    if pair and all(len(x.split()) <= 2 and (nlu.concepts_in(expert._both(x)) or expert.subtype_in(x)) for x in pair):
+        pair = []  # "bcaa yoki eaa", "izolyat yoki konsentrat" -- two kinds, the knowledge base explains the difference
     if pair:  # "Gold Standard va Iso100 qaysi yaxshi" -- the two named tubs side by side, with numbers
         r = expert.compare_named(pair, concept, loc)
         if r:
@@ -134,7 +138,7 @@ def _expert(meta: dict, p, text: str, loc: str, taught: list):  # noqa: C901 - o
         if r:
             meta["last"] = "compare_shown"
             return r[0], r[1], CHIPS["after_reco"][loc], meta
-    if not concept or concept not in expert.KIND_CATEGORY or seen.brands or nlu.body_facts(p.facts) or len(seen.concepts) >= 2:
+    if not concept or concept not in expert.KIND_CATEGORY or seen.brands or nlu.body_facts(p.facts) or len(kinds) >= 2:
         # "kreatin va protein farqi" compares two kinds -- Brain's side-by-side answers that
         return None
     what = WHAT_IS.search(p.text) and not p.facts.get("budget")
@@ -150,12 +154,13 @@ def _expert(meta: dict, p, text: str, loc: str, taught: list):  # noqa: C901 - o
     best = brain._has(both, brain.BEST) or expert.wants_which(text) or p.intent == "recommend"
     if seen.health:
         return None
+    best = best or bool(free)
     if what or (brain.asks(text) and not (budget or cheap or best)):
         return None  # a question about the kind ("kreatin zararlimi?", "bcaa kerakmi?") -- knowledge / brain answer it
     best = best or brain._has(both, expert.NEED)  # "kreatin kerak" (not "kerakmi?") is a buying request
     if not (budget or cheap or best) or concept in ADVICE_FIRST:  # "uyqum yomon" -- the routine first, engine's own path
         return None
-    r = expert.budget_answer(concept, sub, budget, loc, cheap=cheap and not budget)
+    r = expert.budget_answer(concept, sub, budget, loc, cheap=cheap and not budget, free=free)
     if r is None:
         return None
     reply, ids = r

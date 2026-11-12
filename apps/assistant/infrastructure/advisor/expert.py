@@ -44,6 +44,33 @@ SUBTYPES: dict[str, tuple[str, str, tuple[str, ...]]] = {
     "hcl": ("creatine", "Creatine HCL", ("hcl", "gidroxlorid", "гидрохлорид", "hydrochloride")),
 }
 
+# kinds that share their section with others (L-carnitine sits in Fat Burners next to caffeine and yohimbe): the name
+# must say the kind too
+KIND_QUERY = {"carnitine": "carnitine"}
+
+# "kofeinsiz pre-workout", "протеин без сахара" -- a constraint the pick has to honour
+STIM_FREE = ("kofeinsiz", "kofein siz", "kofeinsi", "stimsiz", "stim free", "stim-free", "stimfree", "non-stim", "non stim", "без кофеина",
+             "без стимулятор", "бескофеин", "кофеинсиз", "caffeine free", "caffeine-free", "no caffeine", "decaf")
+SUGAR_FREE = ("shakarsiz", "shakar siz", "qandsiz", "shakari yo'q", "shakarsi", "без сахара", "сахара нет", "шакарсиз", "sugar free", "sugar-free",
+              "no sugar", "zero sugar", "without sugar")
+STIM_FREE_NAME = re.compile(r"stim[- ]?free|non[- ]?stim|\bpump\b", re.I)
+STIM_NAME = re.compile(r"burn|caffeine|kofein|energy|shot|focus|jack3d|psychotic|xplode legendary", re.I)
+
+
+def free_of(text: str) -> str | None:
+    both = _both(text)
+    return "stim" if nlu._has(both, STIM_FREE) else "sugar" if nlu._has(both, SUGAR_FREE) else None
+
+
+FREE_NOTE = {
+    "stim": ("☕️ **Kofeinsiz (stim-free)** variantlar — asosan \"Pump\" formulalar (sitrullin, arginin, glitserin): kechqurun ham uyquni buzmaydi. Sotib olishdan oldin tarkibida kofein yo'qligini kartadan tekshiring.",
+             "☕️ **Без кофеина (stim-free)** — в основном «Pump»-формулы (цитруллин, аргинин, глицерин): не мешают сну даже вечером. Перед покупкой проверьте в составе, что кофеина нет.",
+             "☕️ **Stim-free** options — mostly \"Pump\" formulas (citrulline, arginine, glycerol): fine even in the evening. Check the label for caffeine before you buy."),
+    "sugar": ("🍬 **Shakarsiz protein** — izolyat: shakar porsiyasiga ~0–1 g (konsentratda 2–4 g). \"Zero\" va \"Clear\" belgilari ham shakarsiz.",
+              "🍬 **Протеин без сахара** — изолят: ~0–1 г сахара на порцию (в концентрате 2–4 г). Пометки «Zero» и «Clear» — тоже без сахара.",
+              "🍬 **Sugar-free protein** — an isolate: ~0–1 g sugar a serving (a concentrate has 2–4 g). \"Zero\" and \"Clear\" ones are sugar-free too."),
+}
+
 # kinds whose value is protein (compared per 25 g protein); the rest are compared per serving
 PROTEIN_KINDS = ("protein",)
 
@@ -138,7 +165,7 @@ def category_id(concept: str | None, sub: str | None = None):
 
 
 def kind_search(concept: str | None, loc: str, *, sub: str | None = None, limit: int = 4, in_stock: bool = True, max_price: int | None = None,
-                fallback_query: str | None = None) -> list[dict]:
+                fallback_query: str | None = None, query: str | None = None) -> list[dict]:
     """Products of exactly this kind (its category subtree). Only when the tree has no such section does it fall back to
     the text search -- and then keeps rows whose category still says the kind."""
     from apps.assistant.infrastructure import tools
@@ -150,6 +177,10 @@ def kind_search(concept: str | None, loc: str, *, sub: str | None = None, limit:
         if found:
             return found
     if cat := category_id(concept):  # no such sub-section (or it's empty): the whole kind, never another kind
+        for q in filter(None, (query, KIND_QUERY.get(concept or ""))):
+            found = tools.search_products({**args, "category_id": str(cat), "query": q}, loc)["products"]
+            if found:
+                return found
         return tools.search_products({**args, "category_id": str(cat)}, loc)["products"]
     q = fallback_query or reco.QUERIES.get(concept or "", concept or "")
     return tools.search_products({**args, "query": q}, loc)["products"] if q else []
@@ -358,14 +389,21 @@ HOW_COMPARE = {
 }
 
 
-def budget_answer(concept: str, sub: str | None, budget: int | None, loc: str, *, cheap: bool = False) -> tuple[str, list[str]] | None:
+def budget_answer(concept: str, sub: str | None, budget: int | None, loc: str, *, cheap: bool = False, free: str | None = None) -> tuple[str, list[str]] | None:  # noqa: C901 - one plain step per constraint
     """"500 minggacha protein", "eng arzon izolyat", "лучший креатин до 300 тысяч" -- ranked, with numbers and a verdict."""
     from apps.assistant.infrastructure.advisor import kb
 
-    found = kind_search(concept, loc, sub=sub, limit=8, max_price=budget)
+    if free == "sugar" and concept == "protein" and sub in (None, "concentrate"):
+        sub = "isolate"
+    query = None
+    if free == "stim" and concept == "preworkout":
+        query = "stim free"
+    found = kind_search(concept, loc, sub=sub, limit=8, max_price=budget, query=query)
+    if free == "stim" and concept == "preworkout":
+        found = [x for x in found if STIM_FREE_NAME.search(x.get("name") or "") and not STIM_NAME.search(x.get("name") or "")]
     over = False
     if not found and budget:
-        found = sorted(kind_search(concept, loc, sub=sub, limit=8), key=lambda x: float(x.get("price_uzs") or 0))[:3]
+        found = sorted(kind_search(concept, loc, sub=sub, limit=8, query=query), key=lambda x: float(x.get("price_uzs") or 0))[:3]
         over = bool(found)
     if not found:
         return None
@@ -393,7 +431,8 @@ def budget_answer(concept: str, sub: str | None, budget: int | None, loc: str, *
         head = _l(loc, f"**{title} — ombordagi eng yaxshilari, solishtirib:**", f"**{title} — лучшее в наличии, со сравнением:**", f"**{title} — the best in stock, compared:**")
     body = "\n".join(_line(i, r, loc) for i, r in enumerate(rows, 1))
     tip = HOW_COMPARE.get(concept, {}).get(loc, "")
-    text = f"{head}\n{body}\n\n{verdict(rows, loc, sub)}" + (f"\n\n{tip}" if tip else "")
+    note = _l(loc, *FREE_NOTE[free]) + "\n\n" if free in FREE_NOTE and concept in ("protein", "preworkout") else ""
+    text = f"{note}{head}\n{body}\n\n{verdict(rows, loc, sub)}" + (f"\n\n{tip}" if tip else "")
     return text, [r.id for r in rows]
 
 

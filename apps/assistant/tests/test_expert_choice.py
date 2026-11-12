@@ -191,3 +191,46 @@ def test_gainer_is_not_priced_per_25g_protein(shop):
 ])
 def test_telegram_sends_consultant_questions_to_the_advisor(text, yes):
     assert expert.wants_consultant(text) is yes
+
+
+@pytest.fixture
+def more(shop):
+    pre, burn = _cat("Pre-Workout"), _cat("Fat Burners")
+    return {
+        "pump": _product("Zorvex Stim-Free Pump", 260_000, pre, kg=0.3),
+        "blast": _product("Zorvex Caffeine Blast Pre-Workout", 240_000, pre, kg=0.3),
+        "caff": _product("Zorvex Caffeine 200 mg", 90_000, burn, kg=0.1),
+        "carn": _product("Zorvex L-Carnitine 3000", 200_000, burn, kg=0.5),
+        "amino": _product("Zorvex BCAA 2:1:1", 150_000, _cat("Amino Acids"), kg=0.3),
+        "eaa": _product("Zorvex EAA", 160_000, _cat("Amino Acids"), kg=0.3),
+    }
+
+
+def test_stim_free_pre_workout_has_no_caffeine(more):
+    reply, ids, _c, meta = answer({}, "pre workout tavsiya qiling kofeinsiz", "uz")
+    assert meta["last"] == "expert_pick" and ids == [str(more["pump"].id)] and "Kofeinsiz" in reply
+
+
+def test_carnitine_is_not_any_fat_burner(more):
+    _r, ids, _c, meta = answer({}, "какой л-карнитин лучше для похудения", "ru")
+    assert ids == [str(more["carn"].id)]
+
+
+def test_sugar_free_protein_means_isolate(shop):
+    reply, ids, _c, meta = answer({}, "протеин без сахара есть?", "ru")
+    assert meta["last"] == "expert_pick" and ids == [str(shop["iso"].id)] and "без сахара" in reply
+
+
+def test_two_kinds_are_explained_not_two_tubs(more):
+    _r, _ids, _c, meta = answer({}, "bcaa yoki eaa qaysi yaxshi", "uz")
+    assert meta["last"] != "compare_named"
+
+
+def test_sore_muscles_are_not_a_mass_goal():
+    assert nlu.parse("mushak og'riyapti trenirovkadan keyin nima ichay").goal is None
+    assert nlu.parse("mushak massasi uchun nima ichay").goal == "muscle"
+
+
+def test_diabetes_protein_gets_a_real_answer(shop):
+    reply, ids, _c, meta = answer({}, "qandli diabet bor protein ichsa bo'ladimi", "uz")
+    assert meta["last"] == "health" and "izolyat" in reply and ids == [str(shop["iso"].id)]

@@ -280,6 +280,10 @@ def _health(seen: Seen, loc: str) -> Reply:  # noqa: C901 - one plain branch per
         parts.append(_l(loc, "Qandli diabetda geyner va shakarli mahsulotlardan qoching; har qanday qo'shimchani endokrinolog bilan kelishing.",
                         "При диабете избегайте гейнеров и продуктов с сахаром; любые добавки согласуйте с эндокринологом.",
                         "With diabetes, avoid gainers and sugary products, and agree any supplement with your endocrinologist."))
+    if "diabetes" in conds and "protein" in seen.concepts:
+        parts.append(_l(loc, "**Protein** o'zi qandni deyarli oshirmaydi: **izolyat** yoki \"Zero\" belgili proteinda shakar porsiyasiga ~0–1 g. Suv bilan, ovqat bilan birga iching; kuniga 1–2 porsiyadan oshirmang. Buyrak muammosi bo'lsa — avval shifokor.",
+                        "**Протеин** сам по себе сахар почти не повышает: в **изоляте** или протеине с пометкой «Zero» сахара ~0–1 г на порцию. Пейте на воде, вместе с едой, не больше 1–2 порций в день. При проблемах с почками — сначала врач.",
+                        "**Protein** itself barely raises blood sugar: an **isolate** or a \"Zero\" protein has ~0–1 g sugar per serving. Mix with water, take it with a meal, 1–2 servings a day at most. Kidney problems — doctor first."))
     if "meds" in conds or "allergy" in conds:
         parts.append(_l(loc, "Dori ichayotgan yoki allergiyangiz bo'lsa, mahsulot tarkibini shifokorga ko'rsatib, ruxsat oling.",
                         "Если вы принимаете лекарства или есть аллергия — покажите состав продукта врачу.",
@@ -290,10 +294,16 @@ def _health(seen: Seen, loc: str) -> Reply:  # noqa: C901 - one plain branch per
         kids = [cid for name, cid in idx.items() if any(w in name for w in ("bolalar", "детск", "kids", "children"))]
         if kids:
             ids = [p["id"] for p in _search(loc=loc, category=kids[0], limit=3)]
+    if "diabetes" in conds and "protein" in seen.concepts and not ids:
+        from apps.assistant.infrastructure.advisor import expert
+
+        ids = [p["id"] for p in expert.kind_search("protein", loc, sub="isolate", limit=3)]
     text = "⚠️ " + "\n\n".join(parts) + "\n\n" + _l(loc, "Sog'lom odamlar uchun xavfsiz variantlar haqida so'rasangiz, yordam beraman.",
                                                     "Если нужно, подскажу безопасные варианты для здоровых людей.", "Happy to suggest safe options for healthy adults if you need.")
-    if ids:
+    if ids and "child" in conds:
         text += "\n\n" + _l(loc, "Bolalar uchun mo'ljallangan mahsulotlar:", "Детские продукты:", "Products made for kids:")
+    elif ids:
+        text += "\n\n" + _l(loc, "Shakari kam izolyatlar:", "Изоляты почти без сахара:", "Isolates with almost no sugar:")
     chips = [_l(loc, "Operator bilan bog'lanish", "Связаться с оператором", "Talk to a person")]
     return Reply(text, ids, chips, last="health")
 
