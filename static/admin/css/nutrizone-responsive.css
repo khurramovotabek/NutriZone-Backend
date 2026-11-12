@@ -83,6 +83,12 @@
 a.nz-pager-num:hover, a.nz-pager-step:hover { background: var(--nz-hover); color: var(--nz-primary); }
 .nz-pager-num.is-current { color: #fff; background: var(--nz-primary, #3b82f6); box-shadow: 0 6px 16px -8px var(--nz-primary, #3b82f6); }
 .nz-pager-step.is-off { opacity: .35; pointer-events: none; }
+.nz-pager-more { order: -1; flex: 1 1 100%; display: flex; align-items: center; justify-content: center; gap: 8px; min-height: 44px; padding: 10px 16px; border-radius: 14px; border: 1px dashed var(--nz-border); background: var(--nz-glass-bg, var(--nz-surface)); color: var(--nz-primary, #3b82f6); font-weight: 700; font-size: .88rem; text-decoration: none !important; transition: background .15s, border-color .15s, transform .15s; }
+.nz-pager-more:hover { background: var(--nz-hover); border-color: var(--nz-primary, #3b82f6); }
+.nz-pager-more:active { transform: scale(.99); }
+.nz-pager-more:focus-visible { outline: 2px solid var(--nz-primary, #3b82f6); outline-offset: 2px; }
+.nz-pager-more.is-loading { opacity: .7; pointer-events: none; }
+.nz-pager-more-n { padding: 1px 8px; border-radius: 999px; background: var(--nz-hover); font-size: .75rem; font-variant-numeric: tabular-nums; }
 .nz-pager-gap { width: 18px; text-align: center; color: var(--nz-text-muted); }
 .nz-pager-of, .nz-pager-narrow { display: none; }
 @media (max-width: 767.98px) {
