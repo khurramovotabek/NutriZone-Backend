@@ -223,7 +223,7 @@ def test_sugar_free_protein_means_isolate(shop):
 
 def test_two_kinds_are_explained_not_two_tubs(more):
     _r, _ids, _c, meta = answer({}, "bcaa yoki eaa qaysi yaxshi", "uz")
-    assert meta["last"] != "compare_named"
+    assert meta["last"] not in ("compare_named", "expert_pick")
 
 
 def test_sore_muscles_are_not_a_mass_goal():

@@ -125,7 +125,7 @@ def _expert(meta: dict, p, text: str, loc: str, taught: list):  # noqa: C901 - o
     pair = (expert.pair_in(text) if (expert.wants_which(text) or brain._has(seen.both, brain.COMPARE)) and len(kinds) < 2
             and not seen.brands and not re.search(r"\bon\b", seen.text) else [])
     if pair and all(len(x.split()) <= 2 and (nlu.concepts_in(expert._both(x)) or expert.subtype_in(x)) for x in pair):
-        pair = []  # "bcaa yoki eaa", "izolyat yoki konsentrat" -- two kinds, the knowledge base explains the difference
+        return None  # "bcaa yoki eaa", "izolyat yoki konsentrat" -- two kinds: the knowledge base explains the difference
     if pair:  # "Gold Standard va Iso100 qaysi yaxshi" -- the two named tubs side by side, with numbers
         r = expert.compare_named(pair, concept, loc)
         if r:
