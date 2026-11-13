@@ -280,12 +280,38 @@ def _goal_map(product_ids) -> dict:
     return {str(pid): goal_book.clean(g) for pid, g in orm.Product.objects.filter(id__in=product_ids).values_list("id", "goals")}
 
 
-def get_product_details(args: dict, locale: str) -> dict:
+_DETAILS: dict = {}  # (product_id, locale) -> (expires, product page data) -- this process's short memo
+
+
+def _product_detail(pid, locale: str):
+    """The product page data, kept for CATALOG_CANDIDATES_TTL seconds (the catalogue's own refresh interval; 0 in
+    tests). A budget/compare answer reads 8 of them -- ~0.3 s each, 2.3 s per answer on prod, mostly the same best
+    sellers every time. Stock and branches are still read live by the caller."""
+    import copy
+    import time
+
+    from django.conf import settings
+
     from apps.products.infrastructure.selectors import ProductDetailSelector
+
+    ttl = getattr(settings, "CATALOG_CANDIDATES_TTL", 30)
+    key, now = (pid, locale), time.monotonic()
+    hit = _DETAILS.get(key) if ttl else None
+    if hit is None or hit[0] < now:
+        detail = ProductDetailSelector().get_by_id(pid, locale)
+        if not ttl:
+            return detail
+        if len(_DETAILS) > 2000:
+            _DETAILS.clear()
+        hit = _DETAILS[key] = (now + ttl, detail)
+    return copy.deepcopy(hit[1])
+
+
+def get_product_details(args: dict, locale: str) -> dict:
     from apps.stores.infrastructure import availability
 
     pid = _uuid(args.get("product_id"))
-    d = ProductDetailSelector().get_by_id(pid, locale)
+    d = _product_detail(pid, locale)
     if d is None:
         raise ToolError("No published product with this id.")
     variants = d.get("variants") or []
