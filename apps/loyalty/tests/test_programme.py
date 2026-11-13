@@ -366,3 +366,33 @@ def test_me_and_rate_expose_tier_risk_and_cashback(client):
     assert risk["tier"]["slug"] == "silver" and risk["falls_to"]["slug"] == "bronze" and risk["needed"] == "1000000" and risk["days_left"] == 5
     rate = api.get("/api/v1/loyalty/me/rate").json()["data"]
     assert rate["current_tier"]["percent"] == "2" and rate["next_tier"]["slug"] == "gold" and rate["amount_to_next"] == "1800000"
+
+
+def test_bulk_summaries_match_one_by_one_summary():
+    """The tier ladder and wallet lists use summaries() (grouped queries); it must give exactly what summary() gives."""
+    from apps.pos.infrastructure.models import SaleLineItemModel, SaleModel
+
+    def sale(user, amount, coins=0, discount=0, refunded=0, status="completed", when=None):
+        s = SaleModel.objects.create(branch_id=uuid.uuid4(), cashier_id=uuid.uuid4(), status=status, channel="store", completed_at=when or timezone.now(),
+                                     payment_method="cash", payments=[{"method": "cash", "amount": str(amount)}], customer_id=user.id,
+                                     coins_redeemed=coins, discount_amount=Decimal(discount), refunded_amount=Decimal(refunded))
+        SaleLineItemModel.objects.create(sale=s, product_id=uuid.uuid4(), quantity=2, unit_price_amount=Decimal(amount) / 2, unit_price_currency="UZS")
+
+    online, shop, both, old, nothing, pinned = (_user() for _ in range(6))
+    _order(online, "1500000", status="delivered")
+    _order(online, "900000", status="completed")
+    _order(online, "700000", status="cancelled")  # not qualifying
+    sale(shop, "800000", coins=5000, discount="20000")
+    sale(shop, "300000", status="refunded")  # not completed
+    _order(both, "2000000", status="delivered")
+    sale(both, "50000", coins=60000)  # paid off more than the gross: floors at 0
+    _order(old, "9000000", status="delivered", placed_at=timezone.now() - timedelta(days=LoyaltySettings.load().tier_window_days + 5))
+    for u in (online, shop, both, old, nothing, pinned):
+        Wallet.objects.get_or_create(user_id=u.id)
+    Wallet.objects.filter(user_id=pinned.id).update(tier_override=LoyaltyTier.objects.order_by("-min_spend").first())
+
+    ids = [u.id for u in (online, shop, both, old, nothing, pinned)]
+    bulk = services.summaries(ids)
+    for uid in ids:
+        assert bulk[uid] == services.summary(uid), uid
+    assert bulk[online.id].order_count == 2 and bulk[shop.id].order_count == 1 and bulk[pinned.id].manual

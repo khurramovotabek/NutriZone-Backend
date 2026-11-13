@@ -248,7 +248,7 @@ def search_products(args: dict, locale: str) -> dict:
         filters["in_stock"] = True
     if args.get("category_id"):  # internal (advisor): one category and everything below it
         filters["category_id"] = str(_safe_uuid(args["category_id"]) or "")
-    page = DjangoProductSearchBackend().search(query, filters, 1, limit, "relevance" if query else "-popularity", locale)
+    page = DjangoProductSearchBackend().search(query, filters, 1, limit, "relevance" if query else "-popularity", locale, with_facets=False)
     rows = page["results"]
     brands = _names("brand", [_safe_uuid(r.get("brand_id")) for r in rows], locale)
     categories = _names("category", [_safe_uuid(r.get("category_id")) for r in rows], locale)

@@ -112,7 +112,7 @@ class TelegramCatalogService:
         # "new" = newest first; "all" / a brand / a category = best sellers first (the newest were often baby or niche items,
         # a weak first card for a shopper who just tapped "All products")
         sort = "relevance" if searching else "-discount" if source == "sale" else "-created_at" if source == "new" else "-popularity"
-        found = DjangoProductSearchBackend().search((query or "") if searching else "", filters, page, 1, sort, locale)
+        found = DjangoProductSearchBackend().search((query or "") if searching else "", filters, page, 1, sort, locale, with_facets=False)
         product = found["results"][0] if found["results"] else None
         return (self.enrich(product) if product else None), found["total_count"]
 

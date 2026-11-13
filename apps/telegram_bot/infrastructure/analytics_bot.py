@@ -17,6 +17,7 @@ Settings:
     TELEGRAM_ANALYTICS_CHAT_IDS        comma-separated recipients, e.g. "123456789,-1001234567890"
 """
 from __future__ import annotations
+from core import http_pool
 
 import contextlib
 import logging
@@ -93,7 +94,7 @@ def call(method: str, payload: dict) -> dict:
     base = getattr(settings, "TELEGRAM_API_BASE_URL", "https://api.telegram.org").rstrip("/")
     timeout = float(getattr(settings, "TELEGRAM_TIMEOUT_SECONDS", 10) or 10)
     try:
-        response = requests.post(f"{base}/bot{token()}/{method}", json=payload, timeout=timeout)
+        response = http_pool.post(f"{base}/bot{token()}/{method}", json=payload, timeout=timeout)
         body = response.json()
     except (requests.RequestException, ValueError) as exc:
         raise BotApiError(f"{method}: {exc.__class__.__name__}") from exc

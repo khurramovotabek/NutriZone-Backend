@@ -7,6 +7,7 @@ Works without an account (it is a public catalog view). Needs inline mode switch
 (/setinline) and `inline_query` among the webhook's allowed updates (telegram_set_webhook).
 """
 from __future__ import annotations
+from core import http_pool
 
 import html
 import logging
@@ -83,7 +84,7 @@ def build_answer(inline_query: dict) -> dict:
     except ValueError:
         offset = 0
     page = offset // PAGE_SIZE + 1
-    found = DjangoProductSearchBackend().search(query, {}, page, PAGE_SIZE, "relevance" if query else "-popularity", lang)
+    found = DjangoProductSearchBackend().search(query, {}, page, PAGE_SIZE, "relevance" if query else "-popularity", lang, with_facets=False)
     bot_username = (getattr(settings, "TELEGRAM_BOT_USERNAME", None) or "").lstrip("@") or None
     frontend = (getattr(settings, "FRONTEND_URL", None) or "").rstrip("/")
     results = [_result(p, lang, bot_username, frontend) for p in found["results"]]
@@ -104,7 +105,7 @@ def answer(inline_query: dict) -> None:
         return
     base_url = getattr(settings, "TELEGRAM_API_BASE_URL", "https://api.telegram.org")
     try:
-        response = requests.post(f"{base_url}/bot{token}/answerInlineQuery", json=build_answer(inline_query), timeout=8)
+        response = http_pool.post(f"{base_url}/bot{token}/answerInlineQuery", json=build_answer(inline_query), timeout=8)
         if not response.ok:
             logger.warning("answerInlineQuery failed: %s %s", response.status_code, response.text[:300])
     except Exception:  # noqa: BLE001

@@ -19,6 +19,7 @@ rather than letting Telegram's own retry/backoff behavior repeatedly
 hit a failing endpoint.
 """
 from __future__ import annotations
+from core import http_pool
 
 import json
 import logging
@@ -603,8 +604,9 @@ def telegram_webhook_view(request):
         elif callback_query is not None:
             from apps.telegram_bot.interfaces.callback_router import handle_callback
 
-            handle_callback(callback_query)
+            # Answer first: the button's spinner stops at once instead of after the whole screen is rebuilt.
             _answer_callback_query(callback_query.get("id"))
+            handle_callback(callback_query)
         elif message is not None:
             if "contact" in message:
                 _handle_contact(message)
@@ -701,8 +703,8 @@ def telegram_orders_webhook_view(request):
         if callback_query is not None:
             from apps.telegram_bot.interfaces.callback_router import handle_callback
 
-            handle_callback(callback_query)
             _answer_callback_query(callback_query.get("id"), bot_token=getattr(settings, "TELEGRAM_ORDERS_BOT_TOKEN", None))
+            handle_callback(callback_query)
     except Exception:  # noqa: BLE001
         logger.exception("Telegram Orders Bot webhook: unexpected failure processing update.")
 
@@ -745,6 +747,6 @@ def _answer_callback_query(callback_query_id: str | None, bot_token: str | None 
         resolved_bot_token = bot_token if bot_token is not None else getattr(settings, "TELEGRAM_BOT_TOKEN", None)
         base_url = getattr(settings, "TELEGRAM_API_BASE_URL", "https://api.telegram.org")
         if resolved_bot_token:
-            requests.post(f"{base_url}/bot{resolved_bot_token}/answerCallbackQuery", json={"callback_query_id": callback_query_id}, timeout=5)
+            http_pool.post(f"{base_url}/bot{resolved_bot_token}/answerCallbackQuery", json={"callback_query_id": callback_query_id}, timeout=5)
     except Exception:  # noqa: BLE001
         pass

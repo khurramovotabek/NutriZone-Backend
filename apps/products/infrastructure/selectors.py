@@ -487,7 +487,7 @@ def _fts_config_for_locale(locale_code: str) -> str:
 class DjangoProductSearchBackend:
     """Implements `application/selectors.py::ProductSearchBackend`."""
 
-    def search(self, query: str, filters: dict, page: int, page_size: int, sort: str, locale: str | None = None) -> dict:
+    def search(self, query: str, filters: dict, page: int, page_size: int, sort: str, locale: str | None = None, with_facets: bool = True) -> dict:
         """
         Catalog browse with or without a query -- smart search ranking,
         every filter, facets with counts, and sorting live in
@@ -498,7 +498,7 @@ class DjangoProductSearchBackend:
         from apps.products.infrastructure import catalog_browse
 
         effective_locale = locale or _DEFAULT_LOCALE
-        outcome = catalog_browse.browse(query=query, filters=_normalize_filters(filters), sort=sort, page=page, page_size=page_size, locale=effective_locale)
+        outcome = catalog_browse.browse(query=query, filters=_normalize_filters(filters), sort=sort, page=page, page_size=page_size, locale=effective_locale, with_facets=with_facets)
         page_ids = outcome["ordered_ids"]
         rows_by_id = {r.id: r for r in orm.Product.objects.filter(id__in=page_ids).prefetch_related("translations", "media", "variants")}
         rows = [rows_by_id[pid] for pid in page_ids if pid in rows_by_id]
@@ -1070,17 +1070,38 @@ def _product_card(row: orm.Product, locale: str | None = None, include_variants:
     return card
 
 
+_CATEGORY_TREE: dict = {"at": 0.0, "tree": {}}  # {category_id: (parent_id, English name)} -- this process's copy
+_CATEGORY_TREE_TTL = 60.0
+
+
+def _category_tree() -> dict:
+    """The whole category tree (~110 rows) in two queries, kept 60 s -- walking parents row by row cost 3 queries a
+    level, 24 per assistant answer (0.1 s per product card on prod)."""
+    import time
+
+    from django.conf import settings
+
+    now = time.monotonic()
+    ttl = _CATEGORY_TREE_TTL if getattr(settings, "CATALOG_CANDIDATES_TTL", 30) else 0  # tests: always fresh
+    if not ttl or now - _CATEGORY_TREE["at"] > ttl:
+        names = dict(orm.CategoryTranslation.objects.filter(locale_code="en").values_list("category_id", "name"))
+        tree = {cid: (parent, names.get(cid) or "") for cid, parent in orm.Category.objects.values_list("id", "parent_id")}
+        _CATEGORY_TREE.update(at=now, tree=tree)
+    return _CATEGORY_TREE["tree"]
+
+
 def _category_path_en(category_id) -> list[str]:
     """English names of the category and its parents, top first ("Sports Nutrition", "Proteins", "Whey Isolate")."""
+    tree = _category_tree()
     names: list[str] = []
     seen: set = set()
     while category_id and category_id not in seen:
         seen.add(category_id)
-        c = orm.Category.objects.filter(pk=category_id).values("parent_id").first()
-        if c is None:
+        node = tree.get(category_id)
+        if node is None:
             break
-        names.append(orm.CategoryTranslation.objects.filter(category_id=category_id, locale_code="en").values_list("name", flat=True).first() or "")
-        category_id = c["parent_id"]
+        names.append(node[1])
+        category_id = node[0]
     return names[::-1]
 
 

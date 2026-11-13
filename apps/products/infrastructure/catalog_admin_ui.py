@@ -89,7 +89,11 @@ class _TranslatedRelatedFilter(admin.RelatedFieldListFilter):
     own filter ran one query per brand and per category -- seconds on the product list in production)."""
 
     def field_choices(self, field, request, model_admin):
-        rows = field.related_model._default_manager.prefetch_related("translations")
+        from django.db.models import Prefetch
+
+        rel = field.related_model._meta.get_field("translations")  # only the name columns -- descriptions made it 0.8 s
+        names = rel.related_model.objects.only("pk", rel.field.attname, "locale_code", "name")
+        rows = field.related_model._default_manager.prefetch_related(Prefetch("translations", queryset=names))
         return sorted(((obj.pk, str(obj)) for obj in rows), key=lambda r: r[1].lower())
 
 

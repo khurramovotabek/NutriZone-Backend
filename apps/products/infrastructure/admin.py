@@ -14,6 +14,7 @@ from decimal import Decimal
 from django import forms
 from django.conf import settings
 from django.contrib import admin, messages
+from django.db.models import Prefetch
 from django.utils.html import format_html, mark_safe
 from django.utils.translation import gettext_lazy as _
 
@@ -465,16 +466,22 @@ class ProductPricingInline(admin.TabularInline):
 
     def get_queryset(self, request):
         """ProductVariant itself has no price field (real, confirmed via direct model inspection) -- it lives in the separate pricing bounded context, linked only by a loose product_variant_id UUID, matching Category.image's own cross-app reference pattern. Bulk-loaded here, once per Product's variant set, avoiding N+1 across the small number of variants a single product typically has."""
+        # Prices are loaded on first use for the one product being edited (_price_for) -- this queryset is every
+        # variant in the catalogue until the formset narrows it, so loading here priced all ~1 900 of them.
+        self._prices, self._priced_products = {}, set()
+        return super().get_queryset(request)
+
+    def _price_for(self, obj):
         from apps.pricing.infrastructure.models import PriceListEntryModel
 
-        qs = super().get_queryset(request)
-        variant_ids = list(qs.values_list("id", flat=True))
-
-        self._prices = {}
-        for entry in PriceListEntryModel.objects.filter(product_variant_id__in=variant_ids).select_related("price_list").order_by("product_variant_id"):
-            self._prices.setdefault(entry.product_variant_id, entry)
-
-        return qs
+        if not hasattr(self, "_prices"):
+            self._prices, self._priced_products = {}, set()
+        if obj.product_id not in self._priced_products:
+            self._priced_products.add(obj.product_id)
+            ids = orm.ProductVariant.objects.filter(product_id=obj.product_id).values_list("id", flat=True)
+            for entry in PriceListEntryModel.objects.filter(product_variant_id__in=list(ids)).select_related("price_list").order_by("product_variant_id"):
+                self._prices.setdefault(entry.product_variant_id, entry)
+        return self._prices.get(obj.id)
 
     def discount_display(self, obj: orm.ProductVariant) -> str:
         """
@@ -488,7 +495,7 @@ class ProductPricingInline(admin.TabularInline):
         this admin's own established `_direct_thumbnail_html`-style
         convention of never rendering a value that looks real but isn't.
         """
-        entry = self._prices.get(obj.id)
+        entry = self._price_for(obj)
         if entry is None or entry.compare_at_price_amount is None or not entry.base_price_amount:
             return "—"
         base, compare = entry.base_price_amount, entry.compare_at_price_amount
@@ -993,34 +1000,43 @@ class ProductAdmin(ExcelExportMixin, CatalogFormMixin, CatalogAnalyticsMixin, ad
     nutrition_table.short_description = "Ozuqaviy qiymat"
 
     def get_queryset(self, request):
+        # The price / stock facts used to be loaded HERE for every product in the queryset -- evaluating the whole
+        # catalogue (1 210 products with translations, variants and media) on every list page, change form and
+        # delete page: ~7 s of the product list on prod (2026-11-13). Now only the rows actually shown load them
+        # (get_changelist_instance -> the page's 25 rows; any other single object on first use).
+        self._representative_variant, self._prices, self._stock = {}, {}, {}
+        return super().get_queryset(request).prefetch_related("translations", "variants", "media", "brand__translations", "category__translations")
+
+    def get_changelist_instance(self, request):
+        cl = super().get_changelist_instance(request)
+        self._load_row_facts(cl.result_list)
+        return cl
+
+    def _load_row_facts(self, products) -> None:
+        """Phase B3: the is_default variant (or the first one) represents the product's price/stock in the list --
+        a Product may have several variants with different prices/stock. Merged into the per-request maps."""
         from apps.pricing.infrastructure.models import PriceListEntryModel
-
-        qs = super().get_queryset(request).prefetch_related("translations", "variants", "media", "brand__translations", "category__translations")
-
-        # Phase B3: same rationale as ProductVariantInline above --
-        # picks the is_default variant (or the first variant, if none
-        # is marked default) to represent the product's price/stock
-        # in the list view, since a Product may have multiple
-        # variants with different prices/stock levels.
-        variant_ids = []
-        self._representative_variant = {}
-        for product in qs:
-            variants = list(product.variants.all())
-            if not variants:
-                continue
-            representative = next((v for v in variants if v.is_default), variants[0])
-            self._representative_variant[product.id] = representative.id
-            variant_ids.append(representative.id)
-
-        self._prices = {}
-        for entry in PriceListEntryModel.objects.filter(product_variant_id__in=variant_ids).select_related("price_list").order_by("product_variant_id"):
-            self._prices.setdefault(entry.product_variant_id, entry)
-
         from apps.stores.infrastructure.availability import sellable
 
-        self._stock = sellable(variant_ids)  # the WMS stock (on hand − reserved at active locations)
+        if not hasattr(self, "_representative_variant"):
+            self._representative_variant, self._prices, self._stock = {}, {}, {}
+        variant_ids = []
+        for product in products:
+            variants = list(product.variants.all())
+            representative = next((v for v in variants if v.is_default), variants[0]) if variants else None
+            self._representative_variant[product.id] = representative.id if representative else None
+            if representative:
+                variant_ids.append(representative.id)
+        if not variant_ids:
+            return
+        for entry in PriceListEntryModel.objects.filter(product_variant_id__in=variant_ids).select_related("price_list").order_by("product_variant_id"):
+            self._prices.setdefault(entry.product_variant_id, entry)
+        self._stock.update(sellable(variant_ids))  # the WMS stock (on hand − reserved at active locations)
 
-        return qs
+    def _variant_for(self, obj):
+        if obj.id not in getattr(self, "_representative_variant", {}):
+            self._load_row_facts([obj])
+        return self._representative_variant.get(obj.id)
 
     def save_formset(self, request, form, formset, change):
         if formset.model is not orm.ProductMedia:
@@ -1099,7 +1115,7 @@ class ProductAdmin(ExcelExportMixin, CatalogFormMixin, CatalogAnalyticsMixin, ad
     @admin.display(description="Narx")
     def price_col(self, obj: orm.Product) -> str:
         # A button: opens the quick price editor (every variant: cost, price, old price, margin) -- nutrizone-price-quick.js.
-        variant_id = self._representative_variant.get(obj.id)
+        variant_id = self._variant_for(obj)
         entry = self._prices.get(variant_id) if variant_id else None
         if entry is None:
             return format_html('<button type="button" class="nzq-cell nzq-empty" data-nzq="{}" title="Narx qo\'yish"><i class="fas fa-tag"></i> Narx qo\'yish</button>', obj.id)
@@ -1111,7 +1127,7 @@ class ProductAdmin(ExcelExportMixin, CatalogFormMixin, CatalogAnalyticsMixin, ad
     def stock_col(self, obj: orm.Product) -> str:
         if obj.id in self.snap.product_stock:
             return stock_cell(self.snap.product_stock[obj.id])
-        variant_id = self._representative_variant.get(obj.id)
+        variant_id = self._variant_for(obj)
         return stock_cell(self._stock.get(variant_id) if variant_id else None)
 
     @admin.display(description="30 kunlik savdo")
@@ -1127,14 +1143,14 @@ class ProductAdmin(ExcelExportMixin, CatalogFormMixin, CatalogAnalyticsMixin, ad
         return mark_safe('<span class="nzc-seo" style="--t:#e11d48"><i></i>Yo\'q</span>')
 
     def price_display(self, obj: orm.Product) -> str:
-        variant_id = self._representative_variant.get(obj.id)
+        variant_id = self._variant_for(obj)
         entry = self._prices.get(variant_id) if variant_id else None
         return f"{entry.base_price_amount} {entry.price_list.currency}" if entry else "—"
 
     price_display.short_description = "Price"
 
     def stock_display(self, obj: orm.Product) -> str:
-        variant_id = self._representative_variant.get(obj.id)
+        variant_id = self._variant_for(obj)
         quantity = self._stock.get(variant_id) if variant_id else None
         return "—" if quantity is None else str(quantity)
 
@@ -1424,7 +1440,7 @@ class ProductVariantAdmin(ExcelExportMixin, CatalogFormMixin, CatalogAnalyticsMi
         }
 
     def get_queryset(self, request):
-        return super().get_queryset(request).select_related("product", "package").prefetch_related("product__translations", "extra_barcodes")
+        return super().get_queryset(request).select_related("product", "package").prefetch_related("product__translations", "package__translations", "extra_barcodes")
 
     def analytics(self, request, snap):
         qs = orm.ProductVariant.objects.all()
@@ -1437,7 +1453,10 @@ class ProductVariantAdmin(ExcelExportMixin, CatalogFormMixin, CatalogAnalyticsMi
         out = sum(1 for v in ids if snap.variant_stock.get(v, (0, 0))[0] <= 0)
         low = sum(1 for v in ids if 0 < snap.variant_stock.get(v, (0, 0))[0] < 10)
         labels = {}
-        for v in qs.select_related("product").prefetch_related("product__translations"):
+        # labels only for the ranked (best-selling) variants -- every variant with its product's full translation rows
+        # was ~2 s of this page on prod
+        ranked = orm.ProductVariant.objects.filter(id__in=list(snap.variant_sales)).select_related("product")
+        for v in ranked.prefetch_related(Prefetch("product__translations", queryset=orm.ProductTranslation.objects.only("id", "product_id", "locale_code", "name"))):
             labels[v.id] = f"{_display_name(v.product.translations.all(), v.product_id)} · {v.sku}"
         rank = ca.ranking([(labels.get(vid, "—"), n, "") for vid, n in snap.variant_sales.items()])
         for i, r in enumerate(rank):

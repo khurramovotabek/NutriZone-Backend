@@ -34,6 +34,7 @@ the same swap-point convention already established by
 `NUTRIZONE_OTP_PROVIDER`.
 """
 from __future__ import annotations
+from core import http_pool
 
 import logging
 from typing import Protocol
@@ -144,7 +145,7 @@ class LiveTelegramGateway:
         text = f"*{title}*\n{body}" if title else body
         try:
             # The bot token appears only in the URL path of this one request, never logged -- see this method's own exception handlers below, none of which include the URL.
-            response = requests.post(
+            response = http_pool.post(
                 f"{self._base_url}/bot{self._bot_token}/sendMessage",
                 json={"chat_id": telegram_username, "text": text, "parse_mode": "Markdown"},
                 timeout=self._timeout_seconds,
@@ -192,7 +193,7 @@ class LiveTelegramGateway:
                 "Set the environment variable, or select 'disabled'."
             )
         try:
-            response = requests.post(
+            response = http_pool.post(
                 f"{self._base_url}/bot{self._bot_token}/sendMessage",
                 json={"chat_id": chat_id, "text": text, "parse_mode": "HTML", "reply_markup": {"inline_keyboard": inline_keyboard}},
                 timeout=self._timeout_seconds,
@@ -225,7 +226,7 @@ class LiveTelegramGateway:
             )
         reply_markup = {"keyboard": [[{"text": button_text, "request_contact": True}]], "resize_keyboard": True, "one_time_keyboard": True}
         try:
-            response = requests.post(
+            response = http_pool.post(
                 f"{self._base_url}/bot{self._bot_token}/sendMessage",
                 json={"chat_id": chat_id, "text": text, "parse_mode": "HTML", "reply_markup": reply_markup},
                 timeout=self._timeout_seconds,
@@ -258,7 +259,7 @@ class LiveTelegramGateway:
             )
         reply_markup = {"keyboard": [[{"text": button_text, "request_location": True}]], "resize_keyboard": True, "one_time_keyboard": True}
         try:
-            response = requests.post(
+            response = http_pool.post(
                 f"{self._base_url}/bot{self._bot_token}/sendMessage",
                 json={"chat_id": chat_id, "text": text, "parse_mode": "HTML", "reply_markup": reply_markup},
                 timeout=self._timeout_seconds,
@@ -292,7 +293,7 @@ class LiveTelegramGateway:
         if inline_keyboard:
             payload["reply_markup"] = {"inline_keyboard": inline_keyboard}
         try:
-            response = requests.post(f"{self._base_url}/bot{self._bot_token}/sendVenue", json=payload, timeout=self._timeout_seconds)
+            response = http_pool.post(f"{self._base_url}/bot{self._bot_token}/sendVenue", json=payload, timeout=self._timeout_seconds)
         except requests.exceptions.Timeout as exc:
             raise TelegramGatewayRetryableError("Telegram sendVenue request timed out.") from exc
         except requests.exceptions.ConnectionError as exc:
@@ -318,7 +319,7 @@ class LiveTelegramGateway:
         if inline_keyboard is not None:
             payload["reply_markup"] = {"inline_keyboard": inline_keyboard}
         try:
-            response = requests.post(f"{self._base_url}/bot{self._bot_token}/editMessageText", json=payload, timeout=self._timeout_seconds)
+            response = http_pool.post(f"{self._base_url}/bot{self._bot_token}/editMessageText", json=payload, timeout=self._timeout_seconds)
         except requests.exceptions.Timeout as exc:
             raise TelegramGatewayRetryableError("Telegram editMessageText request timed out.") from exc
         except requests.exceptions.ConnectionError as exc:
@@ -337,7 +338,7 @@ class LiveTelegramGateway:
         if inline_keyboard is not None:
             payload["reply_markup"] = {"inline_keyboard": inline_keyboard}
         try:
-            response = requests.post(f"{self._base_url}/bot{self._bot_token}/editMessageCaption", json=payload, timeout=self._timeout_seconds)
+            response = http_pool.post(f"{self._base_url}/bot{self._bot_token}/editMessageCaption", json=payload, timeout=self._timeout_seconds)
         except (requests.exceptions.Timeout, requests.exceptions.ConnectionError) as exc:
             raise TelegramGatewayRetryableError("Telegram editMessageCaption request failed.") from exc
         if response.status_code >= 500:
@@ -357,7 +358,7 @@ class LiveTelegramGateway:
         if inline_keyboard is not None:
             payload["reply_markup"] = {"inline_keyboard": inline_keyboard}
         try:
-            response = requests.post(f"{self._base_url}/bot{self._bot_token}/sendPhoto", json=payload, timeout=self._timeout_seconds)
+            response = http_pool.post(f"{self._base_url}/bot{self._bot_token}/sendPhoto", json=payload, timeout=self._timeout_seconds)
         except requests.exceptions.Timeout as exc:
             raise TelegramGatewayRetryableError("Telegram sendPhoto request timed out.") from exc
         except requests.exceptions.ConnectionError as exc:
@@ -392,7 +393,7 @@ class LiveTelegramGateway:
         if inline_keyboard is not None:
             payload["reply_markup"] = {"inline_keyboard": inline_keyboard}
         try:
-            response = requests.post(f"{self._base_url}/bot{self._bot_token}/editMessageMedia", json=payload, timeout=self._timeout_seconds)
+            response = http_pool.post(f"{self._base_url}/bot{self._bot_token}/editMessageMedia", json=payload, timeout=self._timeout_seconds)
         except requests.exceptions.Timeout as exc:
             raise TelegramGatewayRetryableError("Telegram editMessageMedia request timed out.") from exc
         except requests.exceptions.ConnectionError as exc:

@@ -124,6 +124,13 @@ deploy_frontend() {
     mv node_modules "$ROOT/frontend/node_modules"
     echo "$LOCK_SHA" > "$ROOT/frontend/.deps-lock-sha"
   fi
+  # Keep next/image's optimised copies: they lived inside .next and were thrown away with it on every deploy, so
+  # each product photo was re-encoded (AVIF: 0.6-1.2 s each, measured 2026-11-13) the first time anyone saw it again.
+  if [ -d "$ROOT/frontend/.next/cache/images" ]; then
+    mkdir -p .next/cache
+    rm -rf .next/cache/images
+    cp -al "$ROOT/frontend/.next/cache/images" .next/cache/images
+  fi
   rm -rf "$ROOT/frontend/.next.old"
   [ -d "$ROOT/frontend/.next" ] && mv "$ROOT/frontend/.next" "$ROOT/frontend/.next.old"
   mv .next "$ROOT/frontend/.next"

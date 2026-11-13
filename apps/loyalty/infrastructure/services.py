@@ -38,7 +38,7 @@ from decimal import ROUND_DOWN, Decimal
 
 from django.conf import settings
 from django.db import IntegrityError, transaction
-from django.db.models import DecimalField, ExpressionWrapper, F, Q, Sum
+from django.db.models import Count, DecimalField, ExpressionWrapper, F, Q, Sum
 from django.utils import timezone
 
 from apps.loyalty.domain.tiers import TierRule, next_tier, resolve_tier, reward_coins
@@ -762,8 +762,57 @@ def summary(user_id: uuid.UUID) -> LoyaltySummary:
     spend, count = qualifying_spend(user_id)
     tiers = list(LoyaltyTier.objects.filter(is_active=True).order_by("min_spend"))
     rules = [t.to_rule() for t in tiers]
+    return _summary_from(wallet, spend, count, tiers, _override_rule(user_id, rules))
+
+
+def summaries(user_ids) -> dict:
+    """{user_id: LoyaltySummary} for many customers in a fixed number of grouped queries -- the same figures as
+    summary(), which costs ~8 queries per customer (the tier ladder and wallet lists called it per row: 468 queries,
+    ~5 s on prod, 2026-11-13)."""
+    from apps.pos.infrastructure.models import SaleLineItemModel, SaleModel
+
+    ids = list(dict.fromkeys(user_ids))
+    if not ids:
+        return {}
+    o = _ordering()
+    tiers = list(LoyaltyTier.objects.filter(is_active=True).order_by("min_spend"))
+    rules = [t.to_rule() for t in tiers]
+    wallets = {w.user_id: w for w in Wallet.objects.filter(user_id__in=ids).select_related("tier_override")}
+    start = window_start()
+
+    orders = o.OrderModel.objects.filter(customer_id__in=ids, status__in=FULFILLED_STATUSES)
+    if start is not None:
+        orders = orders.filter(Q(placed_at__gte=start) | Q(placed_at__isnull=True, created_at__gte=start))
+    order_count = dict(orders.values("customer_id").annotate(n=Count("id")).values_list("customer_id", "n"))
+    order_total = dict(o.OrderLineItemModel.objects.filter(order__in=orders, status="active").values("order__customer_id")
+                       .annotate(t=Sum(_line_total_expr())).values_list("order__customer_id", "t"))
+
+    sales = SaleModel.objects.filter(customer_id__in=ids, status="completed")
+    if start is not None:
+        sales = sales.filter(completed_at__gte=start)
+    pos = {r["customer_id"]: r for r in sales.values("customer_id").annotate(n=Count("id"), c=Sum("coins_redeemed"), d=Sum("discount_amount"), r=Sum("refunded_amount"))}
+    gross = dict(SaleLineItemModel.objects.filter(sale__in=sales).values("sale__customer_id")
+                 .annotate(v=Sum(F("unit_price_amount") * F("quantity"))).values_list("sale__customer_id", "v"))
+
+    out = {}
+    for uid in ids:
+        p = pos.get(uid)
+        pos_total, pos_count = Decimal("0"), 0
+        if p and p["n"]:
+            pos_count = p["n"]
+            pos_total = max(Decimal("0"), (gross.get(uid) or Decimal("0")) - (p["c"] or 0) - (p["d"] or 0) - (p["r"] or 0))
+        spend = (order_total.get(uid) or Decimal("0")) + pos_total
+        count = order_count.get(uid, 0) + pos_count
+        wallet = wallets.get(uid)
+        slug = wallet.tier_override.slug if wallet is not None and wallet.tier_override_id else None
+        manual = next((r for r in rules if r.slug == slug), None) if slug else None
+        out[uid] = _summary_from(wallet, spend, count, tiers, manual)
+    return out
+
+
+def _summary_from(wallet, spend: Decimal, count: int, tiers: list, manual: TierRule | None) -> LoyaltySummary:
+    rules = [t.to_rule() for t in tiers]
     by_slug = {t.slug: t for t in tiers}
-    manual = _override_rule(user_id, rules)
     current = manual or resolve_tier(spend, rules)
     upcoming = next_tier(max(spend, current.min_spend) if manual else spend, rules)
 

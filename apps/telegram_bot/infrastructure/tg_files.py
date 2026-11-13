@@ -3,6 +3,7 @@ Downloads a file a customer sent to the customer bot (a photo for a product requ
 getFile → https://api.telegram.org/file/bot<token>/<file_path>. Size-capped; never raises past TelegramFileError.
 """
 from __future__ import annotations
+from core import http_pool
 
 import logging
 import mimetypes
@@ -45,7 +46,7 @@ def download(file_id: str, token: str | None = None) -> TelegramFile:
         raise TelegramFileError("no token or file id")
     base = getattr(settings, "TELEGRAM_API_BASE_URL", "https://api.telegram.org").rstrip("/")
     try:
-        meta = requests.get(f"{base}/bot{token}/getFile", params={"file_id": file_id}, timeout=10).json()
+        meta = http_pool.get(f"{base}/bot{token}/getFile", params={"file_id": file_id}, timeout=10).json()
     except Exception as exc:  # noqa: BLE001
         raise TelegramFileError("getFile failed") from exc
     result = meta.get("result") or {}
@@ -55,7 +56,7 @@ def download(file_id: str, token: str | None = None) -> TelegramFile:
     if (result.get("file_size") or 0) > MAX_BYTES:
         raise TelegramFileError("file too large")
     try:
-        response = requests.get(f"{base}/file/bot{token}/{path}", timeout=20)
+        response = http_pool.get(f"{base}/file/bot{token}/{path}", timeout=20)
     except Exception as exc:  # noqa: BLE001
         raise TelegramFileError("download failed") from exc
     if response.status_code != 200 or len(response.content) > MAX_BYTES:

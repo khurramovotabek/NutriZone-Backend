@@ -11,6 +11,7 @@ caption; a longer text goes as a second message right under the photo (the butto
 Private chats are paced under Telegram's ~30 messages/second limit; a customer who blocked the bot is just counted.
 """
 from __future__ import annotations
+from core import http_pool
 
 import json
 import logging
@@ -46,7 +47,7 @@ def _token(bot: str = SHOP) -> str:
 def _api(method: str, *, data=None, files=None, bot: str = SHOP) -> dict:
     base = getattr(settings, "TELEGRAM_API_BASE_URL", "https://api.telegram.org").rstrip("/")
     try:
-        r = requests.post(f"{base}/bot{_token(bot)}/{method}", data=data, files=files, timeout=30)
+        r = http_pool.post(f"{base}/bot{_token(bot)}/{method}", data=data, files=files, timeout=30)
         body = r.json()
     except (requests.RequestException, ValueError) as exc:
         raise PostError(f"{method}: {exc.__class__.__name__}") from exc

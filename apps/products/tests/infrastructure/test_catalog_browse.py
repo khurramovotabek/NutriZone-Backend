@@ -203,6 +203,9 @@ class TestCandidatesStaleWhileRevalidate:
 
         monkeypatch.setattr(catalog_browse, "_build_candidates", fake_build)
         monkeypatch.setitem(catalog_browse._CANDIDATES, "xx", (time.monotonic() - 1, {"old": "stale"}))
+        from django.core.cache import cache
+
+        cache.delete(catalog_browse._SHARED_KEY.format(locale="xx"))
         try:
             served = catalog_browse._load_candidates(None, "xx")
             assert served == {"old": "stale"}  # no waiting for the rebuild
@@ -224,7 +227,60 @@ class TestCandidatesStaleWhileRevalidate:
         settings.CATALOG_CANDIDATES_TTL = 30
         monkeypatch.setattr(catalog_browse, "_build_candidates", lambda ids, locale: {"p": "built"})
         monkeypatch.setitem(catalog_browse._CANDIDATES, "yy", (time.monotonic() - 30 * catalog_browse._STALE_FACTOR - 5, {"p": "ancient"}))
+        from django.core.cache import cache
+
+        cache.delete(catalog_browse._SHARED_KEY.format(locale="yy"))
         try:
             assert catalog_browse._load_candidates(None, "yy") == {"p": "built"}
         finally:
             catalog_browse._CANDIDATES.pop("yy", None)
+
+
+class TestCandidatesSharedAcrossProcesses:
+    """A process without its own copy takes the one another process put in Redis instead of rebuilding (~3 s on prod)."""
+
+    def test_copy_from_redis_is_adopted_without_building(self, settings, monkeypatch):
+        import time
+
+        from django.core.cache import cache
+
+        from apps.products.infrastructure import catalog_browse
+
+        settings.CATALOG_CANDIDATES_TTL = 30
+        monkeypatch.setattr(catalog_browse, "_build_candidates", lambda ids, locale: (_ for _ in ()).throw(AssertionError("must not build")))
+        key = catalog_browse._SHARED_KEY.format(locale="zz")
+        cache.set(key, (time.time() - 5, {"p": "shared"}), 600)
+        catalog_browse._CANDIDATES.pop("zz", None)
+        try:
+            assert catalog_browse._load_candidates(None, "zz") == {"p": "shared"}
+            expires = catalog_browse._CANDIDATES["zz"][0]
+            assert 20 < expires - time.monotonic() <= 25  # keeps the builder's expiry, not a fresh 30 s
+        finally:
+            catalog_browse._CANDIDATES.pop("zz", None)
+            cache.delete(key)
+
+    def test_a_built_copy_is_published_for_the_other_processes(self, settings, monkeypatch):
+        from django.core.cache import cache
+
+        from apps.products.infrastructure import catalog_browse
+
+        settings.CATALOG_CANDIDATES_TTL = 30
+        monkeypatch.setattr(catalog_browse, "_build_candidates", lambda ids, locale: {"p": "built"})
+        key = catalog_browse._SHARED_KEY.format(locale="ww")
+        cache.delete(key)
+        catalog_browse._CANDIDATES.pop("ww", None)
+        try:
+            assert catalog_browse._load_candidates(None, "ww") == {"p": "built"}
+            assert cache.get(key)[1] == {"p": "built"}
+        finally:
+            catalog_browse._CANDIDATES.pop("ww", None)
+            cache.delete(key)
+
+    def test_real_build_with_trimmed_columns_matches_products(self, settings):
+        """The .only() column list still carries everything a candidate needs (names, sizes, goals, offers)."""
+        from apps.products.infrastructure import catalog_browse
+
+        built = catalog_browse._build_candidates(None, "uz")
+        for c in built.values():
+            assert c.offers  # every candidate has at least one offer
+            assert isinstance(c.name, str)

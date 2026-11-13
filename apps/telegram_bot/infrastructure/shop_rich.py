@@ -226,7 +226,7 @@ def showcase_cards(lang: str, kind: str = "best") -> list[dict]:
         from apps.products.infrastructure.selectors import DjangoProductSearchBackend
 
         seen = {c["id"] for c in cards}
-        newest = DjangoProductSearchBackend().search("", {}, 1, SHOWCASE_SIZE, "-created_at", lang)["results"]
+        newest = DjangoProductSearchBackend().search("", {}, 1, SHOWCASE_SIZE, "-created_at", lang, with_facets=False)["results"]
         cards += [c for c in newest if c["id"] not in seen][: SHOWCASE_SIZE - len(cards)]
     return cards
 
@@ -263,7 +263,7 @@ def sale_cards(lang: str, limit: int = 10) -> list[dict]:
     """Products on sale right now (old price above today's price), biggest saving first."""
     from apps.products.infrastructure.selectors import DjangoProductSearchBackend
 
-    found = DjangoProductSearchBackend().search("", {"on_sale": True}, 1, limit, "-discount", lang)["results"]
+    found = DjangoProductSearchBackend().search("", {"on_sale": True}, 1, limit, "-discount", lang, with_facets=False)["results"]
     return [c for c in found if c.get("price") and c.get("compare_at_price")]
 
 

@@ -74,6 +74,28 @@ class Hit:
     exact: bool = False  # the customer asked one of the entry's own question forms (whole, or nearly)
 
 
+_PREPARED: dict = {}  # entry pk -> (content hash, prepared stems) -- this process's memo
+
+
+def _prepared(e) -> tuple:
+    """An entry's normalised questions and stem sets. Stemming every entry's answers on every question was ~0.25 s of
+    each assistant answer on prod (~210 entries); now it is redone only when the entry's text changes."""
+    key = hash((e.questions, e.keywords, e.title, e.answer_uz, e.answer_ru, e.answer_en))
+    hit = _PREPARED.get(e.pk)
+    if hit is not None and hit[0] == key:
+        return hit[1]
+    questions = [_norm(x).strip(" ?!.") for x in (e.questions or "").splitlines() if x.strip()]
+    prepared = (
+        questions,
+        set().union(*(_stems(x) for x in questions)) if questions else set(),
+        _stems(e.keywords.replace(",", " ")),
+        _stems(e.title),
+        _stems(" ".join((e.answer_uz, e.answer_ru, e.answer_en))),
+    )
+    _PREPARED[e.pk] = (key, prepared)
+    return prepared
+
+
 def search(query: str, limit: int = 3, min_score: float = MIN_SCORE) -> list[Hit]:
     from apps.assistant.infrastructure.models import KnowledgeEntry
 
@@ -84,15 +106,15 @@ def search(query: str, limit: int = 3, min_score: float = MIN_SCORE) -> list[Hit
     hits = []
     qn = _norm(query).strip(" ?!.")
     for e in KnowledgeEntry.objects.filter(is_active=True).filter(Q(valid_until__isnull=True) | Q(valid_until__gte=today)):
-        questions = [_norm(x).strip(" ?!.") for x in (e.questions or "").splitlines() if x.strip()]
+        questions, q_stems, k_stems, t_stems, a_stems = _prepared(e)
         score = 0.0
         exact = bool(qn) and any(qn == x or (len(x) > 8 and x in qn and len(x) >= 0.6 * len(qn)) for x in questions)
         if exact:
             score += 10  # the customer asked (almost) exactly one of the listed questions
-        score += 2.5 * len(q & set().union(*(_stems(x) for x in questions))) if questions else 0
-        score += 3.0 * len(q & _stems(e.keywords.replace(",", " ")))
-        score += 1.5 * len(q & _stems(e.title))
-        score += 0.4 * len(q & _stems(" ".join((e.answer_uz, e.answer_ru, e.answer_en))))
+        score += 2.5 * len(q & q_stems)
+        score += 3.0 * len(q & k_stems)
+        score += 1.5 * len(q & t_stems)
+        score += 0.4 * len(q & a_stems)
         if score >= min_score:
             hits.append(Hit(e, score + e.priority / 100, exact))
     hits.sort(key=lambda h: -h.score)

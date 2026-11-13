@@ -198,7 +198,7 @@ def _search_once(query: str, loc: str, limit: int, category, brand, sort, on_sal
         filters["on_sale"] = True
     if in_stock:
         filters["in_stock"] = True
-    page = DjangoProductSearchBackend().search(query, filters, 1, limit, sort or ("relevance" if query else "-popularity"), loc)
+    page = DjangoProductSearchBackend().search(query, filters, 1, limit, sort or ("relevance" if query else "-popularity"), loc, with_facets=False)
     rows = page["results"]
     stock = tools._stock([tools._safe_uuid(r.get("default_variant_id")) for r in rows])
     return [{"id": str(r["id"]), "name": r.get("name"), "price": r.get("price"), "old": r.get("compare_at_price"), "discount": r.get("discount_percent"),

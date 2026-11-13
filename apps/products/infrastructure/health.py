@@ -39,7 +39,7 @@ def check_products_search() -> tuple[bool, str]:
     try:
         from apps.products.infrastructure.selectors import DjangoProductSearchBackend
 
-        DjangoProductSearchBackend().search(query="", filters={}, page=1, page_size=1, sort="-created_at")
+        DjangoProductSearchBackend().search(query="", filters={}, page=1, page_size=1, sort="-created_at", with_facets=False)
         return True, "ok (Postgres full-text search)"
     except Exception as exc:  # noqa: BLE001
         return False, f"unavailable: {exc}"

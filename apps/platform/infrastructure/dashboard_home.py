@@ -57,10 +57,10 @@ def wms_low_stock() -> list[dict]:
     from apps.stores.infrastructure.models import ReorderRule, Store
 
     out = []
-    for store in Store.objects.exclude(status="inactive"):
-        rules = list(ReorderRule.objects.filter(store=store).select_related("product_variant"))
-        if not rules:
-            continue
+    by_store: dict = {}  # every rule in one query -- one query per store (28 on prod) ran twice per dashboard load
+    for r in ReorderRule.objects.filter(store__in=Store.objects.exclude(status="inactive")).select_related("product_variant", "store"):
+        by_store.setdefault(r.store_id, (r.store, []))[1].append(r)
+    for store, rules in by_store.values():
         ids = [r.product_variant_id for r in rules]
         avail, incoming = stock.available_map(store, ids), plan.incoming_map(store, ids)
         for r in rules:

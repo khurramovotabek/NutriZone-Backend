@@ -153,10 +153,9 @@ class LoyaltyTierAdmin(PremiumFormMixin, admin.ModelAdmin):
         if Wallet.objects.count() > 1500:
             return {}
         out: dict = {}
-        for user_id in Wallet.objects.values_list("user_id", flat=True):
-            tier = services.summary(user_id).current_tier
-            if tier is not None:
-                out[tier.slug] = out.get(tier.slug, 0) + 1
+        for s in services.summaries(Wallet.objects.values_list("user_id", flat=True)).values():
+            if s.current_tier is not None:
+                out[s.current_tier.slug] = out.get(s.current_tier.slug, 0) + 1
         return out
 
     def changelist_view(self, request, extra_context=None):
@@ -348,8 +347,9 @@ class WalletAdmin(ExcelExportMixin, PremiumListMixin, PremiumFormMixin, admin.Mo
         expiring = dict(WalletTransaction.objects.filter(wallet_id__in=ids, remaining__gt=0, expires_at__gt=now, expires_at__lte=now + timedelta(days=30))
                         .values("wallet_id").annotate(v=Sum("remaining")).values_list("wallet_id", "v"))
         last = dict(WalletTransaction.objects.filter(wallet_id__in=ids).values("wallet_id").annotate(m=Max("created_at")).values_list("wallet_id", "m"))
+        sums = services.summaries([w.user_id for w in objs])
         for w in objs:
-            w._sum, w._expiring, w._last = services.summary(w.user_id), expiring.get(w.pk, 0), last.get(w.pk)
+            w._sum, w._expiring, w._last = sums[w.user_id], expiring.get(w.pk, 0), last.get(w.pk)
 
     def nz_row(self, w):
         s = w._sum

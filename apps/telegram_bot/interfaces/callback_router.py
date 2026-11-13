@@ -14,6 +14,7 @@ customer-facing string is now looked up via t(key, lang, **kwargs)
 instead of hardcoded Uzbek text.
 """
 from __future__ import annotations
+from core import http_pool
 
 import html
 import re
@@ -260,7 +261,7 @@ def set_chat_menu_button(chat_id: int, lang: str) -> None:
         if not token or getattr(django_settings, "NUTRIZONE_TELEGRAM_GATEWAY", "disabled") != "live":
             return
         base = getattr(django_settings, "TELEGRAM_API_BASE_URL", "https://api.telegram.org").rstrip("/")
-        requests.post(f"{base}/bot{token}/setChatMenuButton", json={"chat_id": chat_id, "menu_button": {"type": "web_app", "text": t("menu_button_label", lang), "web_app": {"url": url}}}, timeout=5)
+        http_pool.post(f"{base}/bot{token}/setChatMenuButton", json={"chat_id": chat_id, "menu_button": {"type": "web_app", "text": t("menu_button_label", lang), "web_app": {"url": url}}}, timeout=5)
     except Exception:  # noqa: BLE001 - cosmetic; the global menu button still opens the shop
         logger.info("menu button: could not set it for chat %s", chat_id)
 

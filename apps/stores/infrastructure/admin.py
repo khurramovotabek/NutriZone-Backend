@@ -446,13 +446,20 @@ class StoreAdmin(ExcelExportMixin, admin.ModelAdmin):
 
     def get_queryset(self, request):
         """Real, professional-grade performance: annotates the real product count in one query rather than triggering an N+1 (one extra query per row) via a naive obj.stock_entries.count() in product_count_display."""
-        from django.db.models import Avg, Count, OuterRef, Q, Subquery, Sum
+        from django.db.models import Avg, Count, IntegerField, OuterRef, Subquery, Sum
+        from django.db.models.functions import Coalesce
 
-        units = orm.StoreProductStock.objects.filter(store=OuterRef("pk")).values("store").annotate(u=Sum("quantity")).values("u")[:1]
+        # One correlated subquery per figure: joining stock_entries AND ratings in the same GROUP BY multiplied the
+        # rows (stock lines x ratings per store) -- 3.2 s for this single query on prod (2026-11-13).
+        per_store = orm.StoreProductStock.objects.filter(store=OuterRef("pk")).values("store")
+        products = per_store.filter(quantity__gt=0).annotate(n=Count("id")).values("n")[:1]
+        units = per_store.annotate(u=Sum("quantity")).values("u")[:1]
+        ratings = orm.StoreRating.objects.filter(store=OuterRef("pk")).values("store")
         return super().get_queryset(request).select_related("owner").annotate(
-            _product_count=Count("stock_entries", filter=Q(stock_entries__quantity__gt=0), distinct=True),
+            _product_count=Coalesce(Subquery(products, output_field=IntegerField()), 0),
             _units=Subquery(units),
-            _rating=Avg("ratings__rating"), _ratings=Count("ratings", distinct=True),
+            _rating=Subquery(ratings.annotate(a=Avg("rating")).values("a")[:1]),
+            _ratings=Coalesce(Subquery(ratings.annotate(n=Count("id")).values("n")[:1], output_field=IntegerField()), 0),
         )
 
     # ------------------------------------------------------------ premium list

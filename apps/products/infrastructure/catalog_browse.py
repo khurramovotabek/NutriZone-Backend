@@ -141,6 +141,47 @@ _REFRESHING: set = set()  # locales whose copy a background thread is rebuilding
 _STALE_FACTOR = 20  # an expired copy is still served (while refreshing) for up to 20 x TTL (10 min at the 30 s default)
 
 
+_SHARED_KEY = "catalog:candidates:v1:{locale}"  # (built_at wall clock, {product_id: Candidate}) -- shared by every process
+_SHARED_LOCK = "catalog:candidates:v1:{locale}:building"
+
+
+def _shared_get(locale: str, ttl: int):
+    """The copy another process built (pickled in Redis, ~0.5 MB / 0.1 s to load) -- None when missing or too old."""
+    from django.core.cache import cache
+
+    try:
+        hit = cache.get(_SHARED_KEY.format(locale=locale))
+    except Exception:  # Redis down: every process just builds its own copy, as before
+        return None
+    if not hit or time.time() - hit[0] > ttl * _STALE_FACTOR:
+        return None
+    return hit
+
+
+def _shared_set(locale: str, ttl: int, built: dict) -> None:
+    from django.core.cache import cache
+
+    try:
+        cache.set(_SHARED_KEY.format(locale=locale), (time.time(), built), timeout=ttl * _STALE_FACTOR)
+    except Exception:  # noqa: BLE001 - sharing is an optimisation only
+        pass
+
+
+def _adopt(locale: str, ttl: int, hit) -> tuple:
+    """A shared copy becomes this process's copy; it expires when it would have for the process that built it."""
+    entry = (time.monotonic() + ttl - (time.time() - hit[0]), hit[1])
+    _CANDIDATES[locale] = entry
+    return entry
+
+
+def _build_and_share(locale: str, ttl: int) -> tuple:
+    built = _build_candidates(None, locale)
+    _shared_set(locale, ttl, built)
+    entry = (time.monotonic() + ttl, built)
+    _CANDIDATES[locale] = entry
+    return entry
+
+
 def _refresh_in_background(locale: str, ttl: int) -> None:
     with _CANDIDATES_LOCK:
         if locale in _REFRESHING:
@@ -148,12 +189,28 @@ def _refresh_in_background(locale: str, ttl: int) -> None:
         _REFRESHING.add(locale)
 
     def run():
+        from django.core.cache import cache
         from django.db import close_old_connections, connection
 
         try:
             close_old_connections()
-            built = _build_candidates(None, locale)
-            _CANDIDATES[locale] = (time.monotonic() + ttl, built)
+            hit = _shared_get(locale, ttl)
+            if hit and time.time() - hit[0] < ttl:  # another process already rebuilt it
+                _adopt(locale, ttl, hit)
+                return
+            try:
+                mine = cache.add(_SHARED_LOCK.format(locale=locale), 1, timeout=60)
+            except Exception:  # noqa: BLE001
+                mine = True
+            if not mine:  # another process is rebuilding right now -- keep serving the old copy, adopt theirs next time
+                return
+            try:
+                _build_and_share(locale, ttl)
+            finally:
+                try:
+                    cache.delete(_SHARED_LOCK.format(locale=locale))
+                except Exception:  # noqa: BLE001
+                    pass
         except Exception:  # a failed refresh keeps serving the old copy; the next expired request tries again
             import logging
 
@@ -169,8 +226,9 @@ def _load_candidates(product_ids: list | None, locale: str) -> dict:
     """
     The candidates for one browse: every published product (or `product_ids`), as copies -- browse() writes `rank`.
     Loading the whole catalogue took ~0.5 s and every catalogue page, search and advisor answer did it, several
-    times per advisor answer; it is now built at most once per CATALOG_CANDIDATES_TTL seconds per process (0 = never
-    cached, as in tests). Prices, stock and popularity may lag by that long -- the storefront caches pages for 60 s anyway.
+    times per advisor answer; it is now built at most once per CATALOG_CANDIDATES_TTL seconds (0 = never cached, as
+    in tests) and shared through Redis: 2 replicas x 4 workers x 3 languages used to rebuild 24 copies (~3 s each)
+    after every deploy and every expiry. Prices, stock and popularity may lag by that long -- pages are cached too.
     """
     from django.conf import settings
 
@@ -181,18 +239,45 @@ def _load_candidates(product_ids: list | None, locale: str) -> dict:
     cached = _CANDIDATES.get(locale)
     # Stale-while-revalidate: with a few workers and modest traffic the 30 s copy had nearly always expired, so almost
     # every uncached search/catalogue request paid the full rebuild (measured 3-5 s on prod, 2026-11-11). An expired
-    # copy is now served at once while one background thread rebuilds it; only a missing or very old copy blocks.
+    # copy is now served at once while one background thread rebuilds it; only a missing or very old copy blocks --
+    # and then another process's copy from Redis is taken first.
     if cached is None or cached[0] + ttl * _STALE_FACTOR < now:
         with _CANDIDATES_LOCK:
             cached = _CANDIDATES.get(locale)
             if cached is None or cached[0] + ttl * _STALE_FACTOR < now:
-                cached = (now + ttl, _build_candidates(None, locale))
-                _CANDIDATES[locale] = cached
-    elif cached[0] < now:
+                hit = _shared_get(locale, ttl)
+                cached = _adopt(locale, ttl, hit) if hit else _build_and_share(locale, ttl)
+    if cached[0] < now:
         _refresh_in_background(locale, ttl)
     base = cached[1]
     keys = base.keys() if product_ids is None else (pid for pid in product_ids if pid in base)
     return {pid: copy.copy(base[pid]) for pid in keys}
+
+
+def warm_candidates(locales=("uz", "ru", "en")) -> None:
+    """Load this process's copies in a background thread at start-up (from Redis when another process has one), so
+    the first visitors after a deploy don't wait for the build; a request arriving meanwhile waits on the same lock
+    instead of building a second copy."""
+    from django.conf import settings
+
+    if not getattr(settings, "CATALOG_CANDIDATES_TTL", 30):
+        return
+
+    def run():
+        from django.db import close_old_connections, connection
+
+        try:
+            close_old_connections()
+            for locale in locales:
+                _load_candidates([], locale)
+        except Exception:  # noqa: BLE001 - warming is best-effort; a request builds what is missing
+            import logging
+
+            logging.getLogger(__name__).exception("catalogue candidates warm-up failed")
+        finally:
+            connection.close()
+
+    threading.Thread(target=run, name="candidates-warm", daemon=True).start()
 
 
 def _build_candidates(product_ids: list | None, locale: str) -> dict:
@@ -203,7 +288,15 @@ def _build_candidates(product_ids: list | None, locale: str) -> dict:
     qs = orm.Product.objects.filter(status=ProductStatus.PUBLISHED.value)
     if product_ids is not None:
         qs = qs.filter(id__in=product_ids)
-    products = list(qs.prefetch_related("variants", "translations"))
+    # Only the columns a candidate needs: the product row carries nine big text fields and each translation its
+    # description + search_vector -- loading them made this query ~1.9 s of the ~3 s build on prod (1 210 products).
+    from django.db.models import Prefetch
+
+    qs = qs.only("id", "category_id", "brand_id", "created_at", "goals", "status")
+    products = list(qs.prefetch_related(
+        Prefetch("variants", queryset=orm.ProductVariant.objects.only("id", "product_id", "status", "weight_value", "weight_unit", "flavour_id", "is_default")),
+        Prefetch("translations", queryset=orm.ProductTranslation.objects.only("id", "product_id", "locale_code", "name")),
+    ))
     by_id = {p.id: _candidate(p, locale) for p in products}
 
     from apps.products.infrastructure.selectors import _discount_fields
@@ -436,8 +529,9 @@ def _category_name(category, locale: str) -> str:
     return t.name if t else str(category.id)[:8]
 
 
-def browse(query: str | None, filters: dict, sort: str, page: int, page_size: int, locale: str) -> dict:
-    """{"ordered_ids": page ids in order, "total_count", "facets", "suggestion"} -- the caller renders the page's cards."""
+def browse(query: str | None, filters: dict, sort: str, page: int, page_size: int, locale: str, with_facets: bool = True) -> dict:
+    """{"ordered_ids": page ids in order, "total_count", "facets", "suggestion"} -- the caller renders the page's cards.
+    `with_facets=False` (assistant, Telegram bot: no filter panel) skips the facet counts, 0.2-0.5 s per call on prod."""
     suggestion = None
     ranked_ids = None
     understood: list[str] = []
@@ -486,7 +580,7 @@ def browse(query: str | None, filters: dict, sort: str, page: int, page_size: in
     return {
         "ordered_ids": [c.id for c in ordered[start : start + page_size]],
         "total_count": len(ordered),
-        "facets": _facets(candidates, preds, locale),
+        "facets": _facets(candidates, preds, locale) if with_facets else {},
         "suggestion": suggestion,
         "understood": understood,
     }

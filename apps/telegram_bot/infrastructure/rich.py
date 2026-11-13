@@ -7,6 +7,7 @@ Every helper escapes its text. `send()` uploads images in the same request (mult
 should Telegram refuse the rich message, falls back to a classic HTML message so a report is never lost.
 """
 from __future__ import annotations
+from core import http_pool
 
 import json
 import logging
@@ -177,7 +178,7 @@ class RichSendError(Exception):
 def _api(token: str, method: str, *, data=None, json_body=None, files=None) -> dict:
     base = getattr(settings, "TELEGRAM_API_BASE_URL", "https://api.telegram.org").rstrip("/")
     try:
-        r = requests.post(f"{base}/bot{token}/{method}", data=data, json=json_body, files=files, timeout=float(getattr(settings, "TELEGRAM_TIMEOUT_SECONDS", 10) or 10) + 20)
+        r = http_pool.post(f"{base}/bot{token}/{method}", data=data, json=json_body, files=files, timeout=float(getattr(settings, "TELEGRAM_TIMEOUT_SECONDS", 10) or 10) + 20)
         body = r.json()
     except (requests.RequestException, ValueError) as exc:
         raise RichSendError(f"{method}: {exc.__class__.__name__}") from exc
