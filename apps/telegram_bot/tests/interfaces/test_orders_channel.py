@@ -327,6 +327,14 @@ def _pay_with_coins(user, order, coins, extra_discount=Decimal("0")):
 
 
 class TestOrdersChannelCoinPayment:
+    @pytest.fixture(autouse=True)
+    def _free_delivery(self):
+        """These orders come through the bot, which now charges delivery like the website; the coin/cash split is
+        what is tested here, so delivery is free (the delivery line itself is tested in test_checkout.py)."""
+        from apps.ordering.infrastructure.models import DeliverySettings
+
+        DeliverySettings.objects.filter(pk=DeliverySettings.load().pk).update(tashkent_fee=0, tashkent_min_fee=0, tashkent_per_km=0, regions_fee=0, regions_extra_per_kg=0)
+
     def _sync(self):
         from apps.notifications.infrastructure import composition as notifications_composition
         from apps.telegram_bot.infrastructure.orders_channel_subscriber import sync_orders_channel

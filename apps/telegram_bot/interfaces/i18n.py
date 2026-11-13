@@ -454,6 +454,17 @@ _TRANSLATIONS: dict[str, dict[str, str]] = {
         "ru": "\U0001F4CD <b>Адрес:</b> {address}",
         "en": "\U0001F4CD <b>Address:</b> {address}",
     },
+    "checkout_delivery_line": {
+        "uz": "\U0001F69A <b>Yetkazib berish ({carrier}):</b> {fee} · {eta}",
+        "ru": "\U0001F69A <b>Доставка ({carrier}):</b> {fee} · {eta}",
+        "en": "\U0001F69A <b>Delivery ({carrier}):</b> {fee} · {eta}",
+    },
+    "checkout_goods_line": {
+        "uz": "\U0001F6CD <b>Mahsulotlar:</b> {goods}",
+        "ru": "\U0001F6CD <b>Товары:</b> {goods}",
+        "en": "\U0001F6CD <b>Products:</b> {goods}",
+    },
+    "delivery_free": {"uz": "bepul", "ru": "бесплатно", "en": "free"},
     "checkout_recipient_line": {
         "uz": "\U0001F464 <b>Qabul qiluvchi:</b> {recipient}",
         "ru": "\U0001F464 <b>Получатель:</b> {recipient}",

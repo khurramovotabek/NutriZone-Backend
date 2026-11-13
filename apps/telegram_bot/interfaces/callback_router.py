@@ -784,6 +784,12 @@ def _checkout_details(user, lang: str, summary: dict) -> str:
         who = " · ".join(html.escape(str(x)) for x in (address.recipient_name, address.recipient_phone) if x)
         if who:
             lines.append(t("checkout_recipient_line", lang, recipient=who))
+    delivery = summary.get("delivery")
+    if delivery is not None:  # the same price the website charges, frozen onto the order at confirmation
+        if summary.get("goods_total"):
+            lines.append(t("checkout_goods_line", lang, goods=money_text(summary["goods_total"], lang)))
+        fee = t("delivery_free", lang) if delivery.is_free else money_text(delivery.fee, lang)
+        lines.append(t("checkout_delivery_line", lang, carrier=html.escape(delivery.carrier or "—"), fee=fee, eta=html.escape(delivery.eta or "")).rstrip(" ·"))
     return "\n".join(lines)
 
 

@@ -337,3 +337,54 @@ def test_summary_shows_lines_address_recipient_and_a_readable_total(settings, mo
     from apps.telegram_bot.interfaces import checkout_state
 
     assert checkout_state.is_awaiting_location(telegram_id) and not ordering_orm.OrderModel.objects.exists()
+
+
+def test_bot_order_carries_the_same_delivery_fee_as_the_website(settings, monkeypatch):
+    """ORD-31C162A3CD (2026-11-13) came from the bot with no delivery fee: the bot now quotes and freezes the same
+    price the website charges (delivery_pricing.quote_for_address), shows it before confirming and marks the channel."""
+    from apps.ordering.infrastructure import delivery_pricing
+    from apps.ordering.infrastructure import models as ordering_orm
+    from apps.telegram_bot.interfaces import callback_router
+
+    settings.TELEGRAM_WEBHOOK_SECRET = TEST_SECRET
+    sent = []
+    monkeypatch.setattr(callback_router, "_send", lambda chat_id, text, keyboard=None, **kw: sent.append((text, keyboard)))
+    _category, _product, variant = _make_priced_product(Decimal("200000.00"))
+    telegram_id = 800400191
+    user = _register(telegram_id, 91)
+    client = Client()
+    _post(client, _callback(telegram_id, f"cart:add:{variant.id}"))
+    _share_real_location(client, telegram_id)
+    from apps.geo.infrastructure.models import Address
+
+    expected = delivery_pricing.quote_for_address(Address.objects.get(owner_id=user.id).id, Decimal("200000"), "uz", items=[(variant.id, 1)])
+    assert expected.fee > 0
+    sent.clear()
+    _post(client, _callback(telegram_id, "checkout:start"))
+    text = sent[-1][0]
+    assert "Yetkazib berish" in text and f"{int(200000 + expected.fee):,}".replace(",", " ") in text
+
+    _post(client, _callback(telegram_id, "checkout:confirm"))
+    order = ordering_orm.OrderModel.objects.get(customer_id=user.id)
+    assert order.shipping_amount == expected.fee
+    assert order.delivery_zone == expected.zone and order.delivery_carrier == expected.carrier
+    assert order.channel == "telegram"
+
+
+def test_a_point_far_from_our_cities_keeps_its_own_region_for_the_price(monkeypatch):
+    """A village 80 km from any city we know used to become "Tashkent city" and was priced as a Yandex city trip."""
+    from apps.geo.infrastructure import models as geo_orm
+    from apps.geo.infrastructure.gateways import geocoder
+    from apps.identity.infrastructure import models as identity_orm
+    from apps.ordering.infrastructure import delivery_pricing
+    from apps.telegram_bot.application.services.checkout import get_or_create_default_address
+
+    country, _ = geo_orm.Country.objects.get_or_create(code="UZ", defaults={"status": "active"})
+    region = geo_orm.Region.objects.create(country=country, code="UZ-SA", status="active")
+    city = geo_orm.City.objects.create(region=region, code="SAM1", status="active")
+    monkeypatch.setattr(geocoder, "locate", lambda *a, **k: {"street": "", "label": "", "in_uzbekistan": True, "in_service_area": False,
+                                                             "city": {"id": str(city.id)}, "region": {"id": str(region.id)}})
+    user = identity_orm.User.objects.create(id=uuid.uuid4(), phone_number="+998917770001", status="active", full_name="Far")
+    address = get_or_create_default_address(user, 39.9, 67.9)
+    assert address.region_id == region.id and address.city_id == city.id
+    assert delivery_pricing.region_code_for_address(address.id) == "UZ-SA"

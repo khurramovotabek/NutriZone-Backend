@@ -75,19 +75,24 @@ def get_or_create_default_address(user, latitude: float, longitude: float):
         found = geocoder.locate(latitude, longitude, lang if lang in geocoder.LANGS else "uz")
     except Exception:  # noqa: BLE001 - the address is saved even when lookup fails
         found = {}
-    city = geo_orm.City.objects.filter(pk=(found.get("city") or {}).get("id")).select_related("region__country").first() if found.get("in_service_area") else None
+    # Any point in Uzbekistan keeps its own region (and nearest city of that region): the region decides the delivery
+    # price -- a village 80 km from Samarkand used to become "Tashkent city" and was priced as a Yandex city trip.
+    in_uz = bool(found.get("in_uzbekistan"))
+    city = geo_orm.City.objects.filter(pk=(found.get("city") or {}).get("id")).select_related("region__country").first() if in_uz else None
+    region_obj = city.region if city is not None else (geo_orm.Region.objects.filter(pk=(found.get("region") or {}).get("id")).first() if in_uz else None)
     if city is None:  # outside the cities we know (or no reference data yet): Tashkent, as before
         country, _ = geo_orm.Country.objects.get_or_create(code="UZ", defaults={"status": "active"})
         region, _ = geo_orm.Region.objects.get_or_create(country=country, code="TGCITYR", defaults={"status": "active"})
         city, _ = geo_orm.City.objects.get_or_create(region=region, code="TGCITY1", defaults={"status": "active"})
         geo_orm.CityTranslation.objects.get_or_create(city=city, locale_code="en", defaults={"name": "Tashkent", "slug": "tashkent-telegram"})
-    district_id = (found.get("district") or {}).get("id") if found.get("in_service_area") else None
+    region_obj = region_obj or city.region
+    district_id = (found.get("district") or {}).get("id") if in_uz else None
     line1 = (found.get("street") or "").strip() or f"📍 {latitude:.5f}, {longitude:.5f}"
     label = (found.get("label") or "").strip()
 
     return geo_orm.Address.objects.create(
         id=uuid.uuid4(), owner_type="user", owner_id=user.id, address_type="residential",
-        country=city.region.country, region=city.region, district_id=district_id, city=city, line1=line1[:255],
+        country=region_obj.country, region=region_obj, district_id=district_id, city=city, line1=line1[:255],
         formatted_single_line=label[:1024] or None,
         coordinate_latitude=latitude, coordinate_longitude=longitude, coordinate_source="telegram_native_share",
         normalized_signature=AddressNormalizer.normalized_signature(line1, None, str(city.id), None),
@@ -114,7 +119,28 @@ def get_checkout_summary(user) -> dict:
         if item.price_reference is not None:
             total += item.price_reference.unit_amount.amount * item.quantity.value
 
-    return {"cart": cart, "readiness": readiness, "total": str(total), "currency": currency, "item_count": len(active_items)}
+    delivery = delivery_quote(user, active_items, total)
+    grand = total + (delivery.fee if delivery is not None else Decimal("0"))
+    return {"cart": cart, "readiness": readiness, "total": str(grand), "goods_total": str(total), "delivery": delivery, "currency": currency,
+            "item_count": len(active_items)}
+
+
+def _latest_address(user):
+    from apps.geo.infrastructure import models as geo_orm
+
+    return geo_orm.Address.objects.filter(owner_type="user", owner_id=user.id).order_by("-created_at").first()
+
+
+def delivery_quote(user, active_items, goods_total: Decimal, address=None):
+    """The same delivery price the website charges (apps/ordering/infrastructure/delivery_pricing.py): Tashkent city by
+    Yandex per km from the nearest branch, the regions by BTS per parcel weight. None while no address is on file."""
+    from apps.ordering.infrastructure import delivery_pricing
+
+    address = address or _latest_address(user)
+    if address is None:
+        return None
+    lang = getattr(user, "language", None) or "uz"
+    return delivery_pricing.quote_for_address(address.id, goods_total, lang, items=[(i.product_variant_id, i.quantity.value) for i in active_items])
 
 
 def confirm_cash_order(user) -> dict:
@@ -136,7 +162,7 @@ def confirm_cash_order(user) -> dict:
     if readiness != "ready":
         raise CheckoutNotReady(f"Cart is not ready for checkout (status: {readiness}).")
 
-    address = geo_orm.Address.objects.filter(owner_type="user", owner_id=user.id).order_by("-created_at").first()
+    address = _latest_address(user)
     if address is None:
         raise NoDeliveryAddress("No real delivery address on file -- the customer must share their location via checkout:start before confirming.")
 
@@ -170,6 +196,9 @@ def confirm_cash_order(user) -> dict:
         {"product_variant_id": str(item.product_variant_id), "quantity": item.quantity.value, "unit_price": str(item.price_reference.unit_amount.amount), "price_snapshot_id": str(item.price_reference.price_snapshot_id)}
         for item in active_items
     ]
+    goods_total = sum((Decimal(li["unit_price"]) * li["quantity"] for li in line_items), Decimal("0"))
+    # Bot orders used to carry no delivery fee at all (ORD-31C162A3CD, 2026-11-13): same quote as the website, frozen on the order.
+    delivery = delivery_quote(user, active_items, goods_total, address)
 
     try:
         with transaction.atomic():
@@ -178,8 +207,13 @@ def confirm_cash_order(user) -> dict:
             order = ordering_composition.build_create_order_from_cart(user.id).execute(
                 cart_id=cart.id, customer_id=user.id, currency=cart.currency.value,
                 shipping_address=_address_snapshot(address), billing_address=_address_snapshot(address),
-                line_items=line_items, coupon_ids=[uuid.UUID(c) for c in cart.coupon_ids],
+                line_items=line_items, coupon_ids=[uuid.UUID(str(c)) for c in cart.coupon_ids],
+                shipping_amount=delivery.fee if delivery is not None else 0, channel="telegram",
             )
+            if delivery is not None:
+                from apps.ordering.infrastructure.models import OrderModel
+
+                OrderModel.objects.filter(pk=order.id).update(delivery_zone=delivery.zone, delivery_carrier=delivery.carrier[:60])
             consume_snapshot = pricing_composition.build_consume_price_snapshot(user.id)
             for item in active_items:
                 consume_snapshot.execute(item.price_reference.price_snapshot_id)
@@ -191,5 +225,5 @@ def confirm_cash_order(user) -> dict:
 
     telegram_orm.TelegramCheckoutConfirmation.objects.filter(cart_id=cart.id).update(order_number=order.order_number.value)
 
-    total = sum((Decimal(li["unit_price"]) * li["quantity"] for li in line_items), Decimal("0"))
+    total = goods_total + (delivery.fee if delivery is not None else Decimal("0"))
     return {"order_number": order.order_number.value, "total": str(total), "currency": cart.currency.value}
