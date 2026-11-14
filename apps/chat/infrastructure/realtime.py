@@ -73,3 +73,18 @@ def push_message(conversation_id, payload: dict, sender_id, recipient_ids) -> No
                 async_to_sync(layer.group_send)(f"chat.inbox.{user_id}", {"type": "chat.inbox.broadcast", "payload": {"type": "conversation.updated", "conversation_id": str(conversation_id)}})
     except Exception:  # noqa: BLE001 - best effort, see module docstring
         logger.warning("chat realtime push failed for %s", conversation_id, exc_info=True)
+
+
+def push_message_deleted(conversation_id, message_id) -> None:
+    """Tell the open thread a message was removed, so live clients drop it without a reload. Best effort."""
+    try:
+        from asgiref.sync import async_to_sync
+        from channels.layers import get_channel_layer
+
+        layer = get_channel_layer()
+        if layer is None:
+            return
+        async_to_sync(layer.group_send)(f"chat.conversation.{conversation_id}", {"type": "chat.message.broadcast", "payload": {
+            "type": "message.deleted", "message_id": str(message_id), "conversation_id": str(conversation_id)}})
+    except Exception:  # noqa: BLE001 - best effort, see module docstring
+        logger.warning("chat realtime delete push failed for %s", conversation_id, exc_info=True)

@@ -113,3 +113,29 @@ class MarkConversationRead:
         if events:
             self._ctx.metric("chat_messages_read_total", value=len(events))
         return read_at, len(events)
+
+
+class DeleteMessage:
+    """
+    "Unsend": the original sender removes one of their own messages via the Domain's `Message.delete()` (only the
+    sender may, a message is deleted once). The row stays -- status DELETED + deleted_at -- so the thread keeps its
+    shape and the audit trail says who removed what; every reader hides its content (the dashboard shows
+    "Xabar o'chirilgan", the customer / store API leaves it out). Participation is checked by the caller.
+    """
+
+    def __init__(self, message_repo: MessageRepository, ctx: ChatServiceContext) -> None:
+        self._message_repo = message_repo
+        self._ctx = ctx
+
+    def execute(self, conversation_id: uuid.UUID, message_id: uuid.UUID, requested_by: uuid.UUID) -> Message:
+        message = self._message_repo.get_by_id(message_id)
+        if message is None or message.conversation_id != conversation_id:
+            raise ResourceNotFound("Message not found.")
+        before = {"conversation_id": str(conversation_id), "message_type": message.message_type.value,
+                  "content": message.content.value if message.content else None}
+        event = message.delete(requested_by=requested_by, at=datetime.now(timezone.utc))
+        with transaction.atomic():
+            saved = self._message_repo.save(message)
+            self._ctx.stage_events([("MessageDeleted", event.to_payload())])
+        self._ctx.audit().deleted(entity_type="Message", entity_id=str(saved.id), before=before)
+        return saved  # chat_messages_deleted_total is counted by the MessageDeleted outbox handler

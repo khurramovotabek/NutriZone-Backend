@@ -113,7 +113,9 @@
     var side = m.kind === "customer" ? "in" : "out";
     var ticks = side === "out" ? (m.read_at ? '<i class="fas fa-check-double read" title="O\'qildi" aria-label="O\'qildi"></i>' : '<i class="fas fa-check" title="Yuborildi" aria-label="Yuborildi"></i>') : "";
     return '<div class="nzc-msg ' + side + " " + m.kind + (m.type === "sticker" || m.type === "card" ? " is-sticker" : "") + '" data-mid="' + m.id + '">' +
-      (side === "out" ? '<small class="nzc-who">' + esc(m.who) + "</small>" : "") + '<div class="nzc-bubble">' + body +
+      (side === "out" ? '<small class="nzc-who">' + esc(m.who) + "</small>" : "") +
+      (m.mine && !m.deleted ? '<button type="button" class="nzc-del" data-del="' + esc(m.id) + '" title="Xabarni o\'chirish" aria-label="Xabarni o\'chirish"><i class="fas fa-trash-can" aria-hidden="true"></i></button>' : "") +
+      '<div class="nzc-bubble">' + body +
       '<span class="nzc-time">' + (m.edited ? "tahrirlangan · " : "") + hm(m.at) + " " + ticks + "</span></div></div>";
   }
   function renderMsgs(scroll) {
@@ -280,6 +282,17 @@
       act.disabled = true;
       post(url("action", S.active, name)).then(function (d) { S.conv = d.conversation; renderHead(); loadQueue(); toast({ take: "Suhbat sizga biriktirildi", close: "Suhbat yopildi", reopen: "Suhbat qayta ochildi", archive: "Arxivlandi" }[name]); })
         .catch(function (err) { toast(err.message, true); act.disabled = false; });
+      return;
+    }
+    var del = e.target.closest("[data-del]");
+    if (del) {
+      if (!window.confirm((window.nzTranslate || String)("Xabar o'chirilsinmi? Mijoz uni boshqa ko'rmaydi."))) return;
+      var mid = del.getAttribute("data-del");
+      del.disabled = true;
+      post(url("action", S.active, "delete"), { message_id: mid }).then(function () {
+        S.msgs.forEach(function (m) { if (m.id === mid) { m.deleted = true; m.content = ""; m.attachment = null; } });
+        renderMsgs(false); loadQueue(); toast("Xabar o'chirildi");
+      }).catch(function (err) { toast(err.message, true); del.disabled = false; });
       return;
     }
     var tool = e.target.closest("[data-tool]");

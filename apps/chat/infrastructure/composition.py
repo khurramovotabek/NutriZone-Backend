@@ -21,7 +21,7 @@ from apps.chat.application.services.conversations import (
     RemoveParticipant,
     ReopenConversation,
 )
-from apps.chat.application.services.messages import MarkConversationRead, SendMessage
+from apps.chat.application.services.messages import DeleteMessage, MarkConversationRead, SendMessage
 from apps.chat.infrastructure.gateways import NotImplementedNotificationGateway, RealMediaStorageGateway
 from apps.chat.infrastructure.models import ChatOutboxEvent
 from apps.chat.infrastructure.repositories import DjangoConversationRepository, DjangoMessageRepository
@@ -40,6 +40,10 @@ def build_chat_service_context(actor_id=None) -> ChatServiceContext:
 
 def build_send_message(actor_id=None) -> SendMessage:
     return SendMessage(DjangoConversationRepository(), DjangoMessageRepository(), build_chat_service_context(actor_id))
+
+
+def build_delete_message(actor_id=None) -> DeleteMessage:
+    return DeleteMessage(DjangoMessageRepository(), build_chat_service_context(actor_id))
 
 
 def build_mark_conversation_read(actor_id=None) -> MarkConversationRead:

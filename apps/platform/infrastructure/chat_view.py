@@ -518,13 +518,18 @@ def chat_upload_api(request, conversation_id: str):
 
 @staff_member_required
 def chat_action_api(request, conversation_id: str, action: str):
-    """take (join + assign to me), close, reopen, archive -- each through its chat Application Service; resolve -- ends a low-rating review."""
-    if request.method != "POST" or action not in ("take", "close", "reopen", "archive", "resolve"):
+    """
+    take (join + assign to me), close, reopen, archive -- each through its chat Application Service; resolve -- ends a
+    low-rating review; delete -- body {message_id}: removes one of MY OWN messages (DeleteMessage, sender only).
+    """
+    if request.method != "POST" or action not in ("take", "close", "reopen", "archive", "resolve", "delete"):
         return JsonResponse({"success": False, "error": {"message": "Not allowed"}}, status=405)
     conv = _load(conversation_id)
     if conv is None:
         return JsonResponse({"success": False, "error": {"message": "Suhbat topilmadi."}}, status=404)
     me = _actor_id(request)
+    if action == "delete":
+        return _delete_message(request, conv, me)
     try:
         if action == "resolve":
             try:
@@ -545,6 +550,31 @@ def chat_action_api(request, conversation_id: str, action: str):
         return _json_error(exc)
     conv.refresh_from_db()
     return JsonResponse({"success": True, "data": {"conversation": _conv_payload(request, conv)}})
+
+
+def _delete_message(request, conv, me) -> JsonResponse:
+    import uuid as _uuid
+
+    from apps.chat.domain.exceptions import MessageAlreadyDeleted, MessageNotOwnedBySender
+    from apps.chat.infrastructure.realtime import push_message_deleted
+    from common.exceptions import ResourceNotFound
+
+    try:
+        message_id = _uuid.UUID(str(json.loads(request.body or b"{}").get("message_id") or ""))
+    except (ValueError, AttributeError):
+        return JsonResponse({"success": False, "error": {"message": "Xabar topilmadi."}}, status=404)
+    try:
+        composition.build_delete_message(me).execute(conversation_id=conv.id, message_id=message_id, requested_by=me)
+    except ResourceNotFound:
+        return JsonResponse({"success": False, "error": {"message": "Xabar topilmadi."}}, status=404)
+    except MessageNotOwnedBySender:
+        return JsonResponse({"success": False, "error": {"message": "Faqat o'zingiz yozgan xabarni o'chira olasiz."}}, status=403)
+    except MessageAlreadyDeleted:
+        return JsonResponse({"success": False, "error": {"message": "Bu xabar allaqachon o'chirilgan."}}, status=409)
+    except Exception as exc:  # noqa: BLE001
+        return _json_error(exc)
+    push_message_deleted(conv.id, message_id)
+    return JsonResponse({"success": True, "data": {"message_id": str(message_id), "deleted": True}})
 
 
 @staff_member_required

@@ -1,7 +1,7 @@
 {% extends "admin/base_site.html" %}
 {% load i18n static %}
 {# Chat markazi -- the support desk (apps/platform/infrastructure/chat_view.py): queue | thread | customer profile, driven by nutrizone-chat-desk.js. #}
-{% block extrastyle %}{{ block.super }}<link rel="stylesheet" href="{% static 'admin/css/nutrizone-platform.css' %}?v=5"><link rel="stylesheet" href="{% static 'admin/css/nutrizone-premium.css' %}?v=6"><link rel="stylesheet" href="{% static 'admin/css/nutrizone-chat-desk.css' %}?v=5">{% endblock %}
+{% block extrastyle %}{{ block.super }}<link rel="stylesheet" href="{% static 'admin/css/nutrizone-platform.css' %}?v=5"><link rel="stylesheet" href="{% static 'admin/css/nutrizone-premium.css' %}?v=6"><link rel="stylesheet" href="{% static 'admin/css/nutrizone-chat-desk.css' %}?v=6">{% endblock %}
 {% block breadcrumbs %}<ol class="breadcrumb"><li class="breadcrumb-item"><a href="{% url 'admin:index' %}">{% translate "Home" %}</a></li><li class="breadcrumb-item active">{% translate "Chat" %}</li></ol>{% endblock %}
 {% block content_title %}{% endblock %}
 {% block content %}
@@ -62,5 +62,5 @@
 </div>
 {% csrf_token %}
 {{ config|json_script:"nzc-config" }}
-<script src="{% static 'admin/js/nutrizone-chat-desk.js' %}?v=5" defer></script>
+<script src="{% static 'admin/js/nutrizone-chat-desk.js' %}?v=6" defer></script>
 {% endblock %}

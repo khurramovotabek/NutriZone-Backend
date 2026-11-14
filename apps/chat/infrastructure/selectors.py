@@ -116,7 +116,8 @@ class ConversationSelector:
 
 class MessageSelector:
     def list_for_conversation(self, conversation_id: uuid.UUID, page: int, page_size: int) -> tuple[list[dict], int]:
-        qs = orm.MessageModel.objects.filter(conversation_id=conversation_id)
+        # a message its sender deleted ("unsend") is gone for the customer / store reader -- the row stays for the audit trail
+        qs = orm.MessageModel.objects.filter(conversation_id=conversation_id).exclude(status="deleted")
         total = qs.count()
         start = (page - 1) * page_size
         rows = qs.order_by("created_at")[start : start + page_size]
