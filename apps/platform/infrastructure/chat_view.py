@@ -156,7 +156,8 @@ def _queue(request, flt: str, q: str) -> list[dict]:
         parts.setdefault(p.conversation_id, []).append(p)
     customers = {cid: next((p.user_id for p in ps if p.role == "customer"), None) for cid, ps in parts.items()}
     users, stores = _users(customers.values()), _stores(c.store_id for c in convs)
-    last = {m.conversation_id: m for m in MessageModel.objects.filter(conversation_id__in=ids).order_by("conversation_id", "-created_at").distinct("conversation_id")}
+    # the preview is the latest message still shown -- a deleted ("unsent") one is not
+    last = {m.conversation_id: m for m in MessageModel.objects.filter(conversation_id__in=ids).exclude(status="deleted").order_by("conversation_id", "-created_at").distinct("conversation_id")}
     last_human = dict(MessageModel.objects.filter(conversation_id__in=ids).exclude(sender_id=BOT_ID).order_by("conversation_id", "-created_at").distinct("conversation_id")
                       .values_list("conversation_id", "sender_id"))  # a bot answer doesn't take a chat out of "waiting"
     reviews = automation.under_review(ids)
@@ -520,9 +521,10 @@ def chat_upload_api(request, conversation_id: str):
 def chat_action_api(request, conversation_id: str, action: str):
     """
     take (join + assign to me), close, reopen, archive -- each through its chat Application Service; resolve -- ends a
-    low-rating review; delete -- body {message_id}: removes one of MY OWN messages (DeleteMessage, sender only).
+    low-rating review; delete -- body {message_id}: removes one of MY OWN messages (DeleteMessage, sender only);
+    unarchive -- brings an archived conversation back as open (UnarchiveConversation).
     """
-    if request.method != "POST" or action not in ("take", "close", "reopen", "archive", "resolve", "delete"):
+    if request.method != "POST" or action not in ("take", "close", "reopen", "archive", "resolve", "delete", "unarchive"):
         return JsonResponse({"success": False, "error": {"message": "Not allowed"}}, status=405)
     conv = _load(conversation_id)
     if conv is None:
@@ -545,7 +547,8 @@ def chat_action_api(request, conversation_id: str, action: str):
                 composition.build_add_participant(me).execute(conversation_id=conv.id, user_id=me, role=ParticipantRole.OPERATOR)
             composition.build_assign_operator(me).execute(conversation_id=conv.id, operator_user_id=me)
         else:
-            {"close": composition.build_close_conversation, "reopen": composition.build_reopen_conversation, "archive": composition.build_archive_conversation}[action](me).execute(conversation_id=conv.id)
+            {"close": composition.build_close_conversation, "reopen": composition.build_reopen_conversation, "archive": composition.build_archive_conversation,
+             "unarchive": composition.build_unarchive_conversation}[action](me).execute(conversation_id=conv.id)
     except Exception as exc:  # noqa: BLE001
         return _json_error(exc)
     conv.refresh_from_db()

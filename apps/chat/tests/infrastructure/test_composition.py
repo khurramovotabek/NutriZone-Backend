@@ -14,10 +14,10 @@ class TestComposition:
         repo = composition.build_conversation_repository()
         assert repo is not None
 
-    def test_all_20_factories_are_callable(self):
-        """Verifies every build_* factory in composition.py actually executes without error. Fresh count is 20 (18 + build_mark_conversation_read, read receipts, + build_delete_message, unsend)."""
+    def test_all_21_factories_are_callable(self):
+        """Verifies every build_* factory in composition.py actually executes without error. Fresh count is 21 (18 + build_mark_conversation_read, read receipts, + build_delete_message, unsend, + build_unarchive_conversation)."""
         factories = [name for name, obj in vars(composition).items() if name.startswith("build_") and inspect.isfunction(obj)]
-        assert len(factories) == 20
+        assert len(factories) == 21
         for name in factories:
             factory = getattr(composition, name)
             factory()

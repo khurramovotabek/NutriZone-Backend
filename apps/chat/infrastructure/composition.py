@@ -20,6 +20,7 @@ from apps.chat.application.services.conversations import (
     OpenStoreConversation,
     RemoveParticipant,
     ReopenConversation,
+    UnarchiveConversation,
 )
 from apps.chat.application.services.messages import DeleteMessage, MarkConversationRead, SendMessage
 from apps.chat.infrastructure.gateways import NotImplementedNotificationGateway, RealMediaStorageGateway
@@ -76,6 +77,10 @@ def build_close_conversation(actor_id=None) -> CloseConversation:
 
 def build_reopen_conversation(actor_id=None) -> ReopenConversation:
     return ReopenConversation(DjangoConversationRepository(), build_chat_service_context(actor_id))
+
+
+def build_unarchive_conversation(actor_id=None) -> UnarchiveConversation:
+    return UnarchiveConversation(DjangoConversationRepository(), build_chat_service_context(actor_id))
 
 
 def build_archive_conversation(actor_id=None) -> ArchiveConversation:

@@ -267,3 +267,14 @@ def test_make_conversation_with_operator_factory_produces_two_active_participant
     conversation, operator_id = make_conversation_with_operator()
     assert len(conversation.participants) == 2
     assert conversation.assigned_operator_id == operator_id
+
+
+def test_unarchive_is_the_only_way_back_from_the_archive():
+    from apps.chat.domain.exceptions import InvalidConversationTransition
+
+    conv = make_conversation()
+    with pytest.raises(InvalidConversationTransition):
+        conv.unarchive()  # an open conversation is not archived
+    conv.archive()
+    event = conv.unarchive()
+    assert conv.status.value == "open" and event.conversation_id == conv.id

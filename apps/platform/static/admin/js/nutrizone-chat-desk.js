@@ -131,6 +131,7 @@
     var actions = [];
     if (c.can_reply && c.status === "open" && c.assigned !== "me") actions.push('<button type="button" class="nzc-act primary" data-act="take"><i class="fas fa-hand" aria-hidden="true"></i> O\'zimga olish</button>');
     if (c.status === "open") actions.push('<button type="button" class="nzc-act" data-act="close"><i class="fas fa-circle-check" aria-hidden="true"></i> Yopish</button>');
+    if (c.status === "archived") actions.push('<button type="button" class="nzc-act primary" data-act="unarchive"><i class="fas fa-box-open" aria-hidden="true"></i> Arxivdan chiqarish</button>');
     if (c.status === "closed") actions.push('<button type="button" class="nzc-act" data-act="reopen"><i class="fas fa-rotate-left" aria-hidden="true"></i> Qayta ochish</button>', '<button type="button" class="nzc-act" data-act="archive"><i class="fas fa-box-archive" aria-hidden="true"></i> Arxivlash</button>');
     $("[data-head]").innerHTML = '<button type="button" class="nzc-back" data-back aria-label="Orqaga"><i class="fas fa-arrow-left" aria-hidden="true"></i></button>' + avatar(p || { name: "Mijoz" }, "lg") +
       '<div class="nzc-head-main"><b>' + esc(p ? p.name : "Mijoz") + "</b><small>" + esc(p ? p.phone : "") + (c.store ? " · " + esc(c.store) : "") + "</small>" +
@@ -280,7 +281,7 @@
       var name = act.getAttribute("data-act");
       if ((name === "close" || name === "archive") && !window.confirm((window.nzTranslate || String)(name === "close" ? "Suhbat yopilsinmi? Mijoz yangi xabar yozsa, uni qayta ochish mumkin." : "Suhbat arxivga o'tkazilsinmi?"))) return;
       act.disabled = true;
-      post(url("action", S.active, name)).then(function (d) { S.conv = d.conversation; renderHead(); loadQueue(); toast({ take: "Suhbat sizga biriktirildi", close: "Suhbat yopildi", reopen: "Suhbat qayta ochildi", archive: "Arxivlandi" }[name]); })
+      post(url("action", S.active, name)).then(function (d) { S.conv = d.conversation; renderHead(); loadQueue(); toast({ take: "Suhbat sizga biriktirildi", close: "Suhbat yopildi", reopen: "Suhbat qayta ochildi", archive: "Arxivlandi", unarchive: "Suhbat arxivdan chiqarildi" }[name]); })
         .catch(function (err) { toast(err.message, true); act.disabled = false; });
       return;
     }

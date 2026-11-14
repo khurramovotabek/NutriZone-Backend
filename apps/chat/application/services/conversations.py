@@ -253,3 +253,24 @@ class ArchiveConversation:
         self._ctx.audit().updated(entity_type="Conversation", entity_id=str(conversation_id), before={}, after={"status": "archived"})
         self._ctx.metric("chat_conversations_archived_total")
         return saved
+
+
+class UnarchiveConversation:
+    """Chat markazi "Arxivdan chiqarish": Conversation.unarchive() (ARCHIVED -> OPEN), staged as ConversationReopened."""
+
+    def __init__(self, conversation_repo: ConversationRepository, ctx: ChatServiceContext) -> None:
+        self._conversation_repo = conversation_repo
+        self._ctx = ctx
+
+    def execute(self, conversation_id: uuid.UUID) -> Conversation:
+        from common.exceptions import ResourceNotFound
+
+        conversation = self._conversation_repo.get_by_id(conversation_id)
+        if conversation is None:
+            raise ResourceNotFound("Conversation not found.")
+        event = conversation.unarchive()
+        with transaction.atomic():
+            saved = self._conversation_repo.save(conversation)
+            self._ctx.stage_events([("ConversationReopened", event.to_payload())])
+        self._ctx.audit().updated(entity_type="Conversation", entity_id=str(conversation_id), before={"status": "archived"}, after={"status": "open"})
+        return saved

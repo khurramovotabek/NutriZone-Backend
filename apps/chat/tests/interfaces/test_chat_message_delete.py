@@ -95,4 +95,18 @@ def test_delete_message_service_rules():
 def test_desk_script_has_the_delete_button():
     _, client = _staff()
     html = client.get("/django-admin/chat/").content.decode()
-    assert "nutrizone-chat-desk.js' %}" not in html and "nutrizone-chat-desk.js?v=6" in html
+    assert "nutrizone-chat-desk.js' %}" not in html and "nutrizone-chat-desk.js?v=7" in html
+
+
+def test_archived_conversation_comes_back_with_unarchive_and_deleted_preview_is_hidden():
+    _, client = _staff()
+    conv, mine, _ = _chat_with_reply(client)
+    assert client.post(f"/django-admin/chat/api/conversations/{conv.id}/do/archive").status_code == 200
+    assert client.post(f"/django-admin/chat/api/conversations/{conv.id}/do/reopen").status_code == 409  # archive stays terminal for reopen
+    _delete(client, conv, mine.id)
+    rows = client.get("/django-admin/chat/api/queue?f=closed").json()["data"]["rows"]
+    assert next(r for r in rows if r["id"] == str(conv.id))["last"] == "Salom"  # the deleted reply is not the preview
+    r = client.post(f"/django-admin/chat/api/conversations/{conv.id}/do/unarchive")
+    assert r.status_code == 200 and r.json()["data"]["conversation"]["status"] == "open"
+    assert client.post(f"/django-admin/chat/api/conversations/{conv.id}/do/unarchive").status_code in (409, 422)
+    assert orm.ChatOutboxEvent.objects.filter(event_type="ConversationReopened").exists()

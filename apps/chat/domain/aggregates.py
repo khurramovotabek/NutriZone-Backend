@@ -144,6 +144,17 @@ class Conversation:
         self._bump_version()
         return ConversationReopened(conversation_id=self.id)
 
+    def unarchive(self) -> ConversationReopened:
+        """
+        Staff take a conversation back out of the archive (Chat markazi "Arxivdan chiqarish"): ARCHIVED -> OPEN. `reopen()`
+        still never touches an archived conversation -- bringing one back is this separate, explicit staff action.
+        """
+        if self.status != ConversationStatus.ARCHIVED:
+            raise InvalidConversationTransition(f"Cannot unarchive a conversation in status {self.status.value}; only ARCHIVED conversations can be unarchived.")
+        self.status = ConversationStatus.OPEN
+        self._bump_version()
+        return ConversationReopened(conversation_id=self.id)
+
     def archive(self) -> ConversationArchivedEvent:
         if self.status == ConversationStatus.ARCHIVED:
             raise InvalidConversationTransition("This conversation is already archived.")
