@@ -56,10 +56,10 @@ def _slot(wait: float = 1.2) -> bool:
         time.sleep(0.15)
 
 
-def _get(path: str, params: dict):
+def _get(path: str, params: dict, wait: float = 1.2):
     import requests
 
-    if not _enabled() or not _slot():
+    if not _enabled() or not _slot(wait):
         return None
     try:
         r = requests.get(f"{_base()}{path}", params={**params, "format": "jsonv2"}, headers=_headers(), timeout=4)
@@ -111,46 +111,127 @@ TASHKENT = (41.2995, 69.2401)
 LOCAL_BOX_DEG = 0.35  # ~40 km around the map centre: "Chorsu" means Tashkent's Chorsu, not Qarshi's restaurant
 
 
+class _GeocoderBusy(Exception):
+    pass
+
+
 def _search(query: str, lang: str, box: tuple[float, float, float, float] | None) -> list[dict]:
     params = {"q": query, "countrycodes": "uz", "limit": 10, "addressdetails": 1, "accept-language": lang}
     if box:
         params.update(viewbox=f"{box[0]},{box[1]},{box[2]},{box[3]}", bounded=1)
+    data = _get("/search", params, wait=3.0)
+    if data is None:
+        raise _GeocoderBusy  # rate gate / timeout / error: "no answer", not "no places" -- never cached as empty
     rows = []
-    for d in _get("/search", params) or []:
+    for d in data or []:
         try:
             lat, lng = float(d["lat"]), float(d["lon"])
         except (KeyError, TypeError, ValueError):
             continue
-        name = d.get("name") or (d.get("display_name") or "").split(",")[0]
-        rest = ", ".join(p.strip() for p in (d.get("display_name") or "").split(",")[1:4])
-        rows.append({"title": name, "subtitle": rest, "lat": lat, "lng": lng, "kind": d.get("type") or d.get("category") or ""})
+        a = d.get("address") or {}
+        road = a.get("road") or a.get("pedestrian") or a.get("residential") or a.get("footway") or ""
+        house = (a.get("house_number") or "").strip()
+        name = (d.get("name") or "").strip()
+        parts = [p.strip() for p in (d.get("display_name") or "").split(",")]
+        if road and house:
+            # a building: "Mirobod ko'chasi, 66" -- the bare "66" OSM calls it says nothing on its own
+            title = f"{road}, {house}"
+            rest = ", ".join(x for x in (name if name and name != house else "", a.get("suburb") or a.get("neighbourhood") or "",
+                                         a.get("city_district") or "", a.get("city") or a.get("town") or a.get("village") or "") if x)
+        else:
+            title = name or (parts[0] if parts else "")
+            rest = ", ".join(parts[1:4])
+        rows.append({"title": title, "subtitle": rest, "lat": lat, "lng": lng, "kind": d.get("type") or d.get("category") or "",
+                     "road": road, "house": house})
     return rows
+
+
+_STREET_WORDS = ("ko'cha", "kocha", "ko‘cha", "koʻcha", "кўча", "куча", "улица", "ул.", "ул ", "street", "проспект", "prospekt", "shoh",
+                 "tor", "berk", "o'tish", "mavze", "massiv", "массив", "kvartal", "квартал", "мкр", "mahalla", "тупик", "проезд", "шоссе", "yo'li")
+_HOUSE_RE = re.compile(r"^(?P<street>.*?\D)[\s,№#-]*(?P<house>\d+[\w/-]*)$", re.UNICODE)
+
+
+def _skeleton(text: str) -> str:
+    """Consonants of the latinized text: "Mirobod", "Мирабад", "мирабадская" -> "mrbd..." (Uzbek / Russian spellings differ in vowels)."""
+    return re.sub(r"[^bcdfghjklmnpqrstvwxz]", "", _latinize(text or ""))
+
+
+def _variants(query: str) -> tuple[list[str], str, str]:
+    """
+    The query as typed plus "<street> ko'chasi <house>" when the customer typed just a name and a number ("mirobod 66",
+    "мирабад 66"): OSM keeps the house under the street's full name, and the bare words match side lanes first.
+    """
+    out = [query]
+    m = _HOUSE_RE.match(query)
+    street, house = (m.group("street").strip(" ,"), m.group("house")) if m else ("", "")
+    if street and not any(w in query.lower() for w in _STREET_WORDS):
+        if re.search(r"[а-яёўқғҳ]", street.lower()):
+            # Cyrillic: OSM names Tashkent streets in Uzbek Latin. "Мирабадская" -> "мирабад" -> "mirabad" -> "mirobod"
+            # (Russian "а" is Uzbek "o" in most names: Юнусабад/Yunusobod, Чиланзар/Chilonzor); both spellings are tried.
+            base = re.sub(r"(ская|ский|ской|ское|ая|ий)$", "", street.lower().strip())
+            latin = _latinize(base)
+            as_uzbek = latin[:1] + latin[1:].replace("a", "o")
+            out += [f"{v} ko'chasi {house}" for v in dict.fromkeys((as_uzbek, latin))]
+        else:
+            out.append(f"{street} ko'chasi {house}")
+    return out, street, house
 
 
 def geocode(query: str, lang: str = "uz", near: tuple[float, float] | None = None, limit: int = 6) -> list[dict]:
     """
-    Places matching a free-text query, Uzbekistan only. Places around `near` (the map's centre; Tashkent when not
-    given) come first -- searched inside a ~40 km box -- then the rest of the country, each group closest first.
+    Places matching a free-text query (Latin or Cyrillic), Uzbekistan only. Places around `near` (the map's centre;
+    Tashkent when not given) are searched inside a ~40 km box; the rest of the country only when nothing local matched.
+    Ranked: the typed house number on the typed street first, then that street, then the rest -- closest first.
     """
-    query = (query or "").strip()
+    query = re.sub(r"\s+", " ", (query or "").strip())
     if len(query) < 3:
         return []
     lang = lang if lang in LANGS else "uz"
     centre = near if near and in_uzbekistan(*near) else TASHKENT
     cell = f"{round(centre[0] * 2) / 2},{round(centre[1] * 2) / 2}"  # ~50 km cache cells
-    key = f"geo:search:v2:{lang}:{cell}:{hashlib.sha1(query.lower().encode()).hexdigest()}"
+    key = f"geo:search:v4:{lang}:{cell}:{hashlib.sha1(query.lower().encode()).hexdigest()}"
+    variants, street, house = _variants(query)
+    want_street = _skeleton(street)[:4]
+    side_lane_asked = any(w in query.lower() for w in ("o'tish", "otish", "проезд", "tor", "berk", "тупик"))
+
+    def on_street(r) -> bool:
+        lane = "o'tish" in (r.get("road") or "").lower() and not side_lane_asked  # "Mirobod 2-o'tish" is not "Mirobod ko'chasi"
+        return bool(want_street) and _skeleton(r.get("road") or r.get("title") or "").startswith(want_street) and not lane
+
+    def same_house(r) -> bool:
+        return bool(house) and (r.get("house") or "").lower().replace(" ", "").startswith(house.lower())
+
     rows = cache.get(key)
     if rows is None:
         box = (centre[1] - LOCAL_BOX_DEG, centre[0] + LOCAL_BOX_DEG, centre[1] + LOCAL_BOX_DEG, centre[0] - LOCAL_BOX_DEG)
-        local = _search(query, lang, box)
-        wider = _search(query, lang, None) if len(local) < 4 else []
-        seen = {(round(r["lat"], 4), round(r["lng"], 4)) for r in local}
-        rows = local + [r for r in wider if (round(r["lat"], 4), round(r["lng"], 4)) not in seen]
-        cache.set(key, rows, 60 * 60 if rows else 60 * 5)
+        rows, seen, failed = [], set(), False
+        for variant in variants:
+            try:
+                found = _search(variant, lang, box)
+            except _GeocoderBusy:
+                failed = True
+                continue
+            for r in found:
+                spot = (round(r["lat"], 4), round(r["lng"], 4))
+                if spot not in seen:
+                    seen.add(spot)
+                    rows.append(r)
+            if any(on_street(r) and same_house(r) for r in rows):
+                break  # the exact house is found -- each further variant costs a second of the free geocoder
+        if not rows and not failed:
+            try:
+                rows = _search(query, lang, None)
+            except _GeocoderBusy:
+                failed = True
+        if rows or not failed:
+            cache.set(key, rows, 60 * 60 if rows else 60 * 5)
+
     def rank(r):
         d = haversine_km(centre[0], centre[1], r["lat"], r["lng"])
-        return (d > LOCAL_BOX_DEG * 111, d)
-    return sorted(rows, key=rank)[:limit]
+        st, hs = on_street(r), same_house(r)
+        return (d > LOCAL_BOX_DEG * 111, not (st and hs), not st, not hs, d)
+
+    return [{k: v for k, v in r.items() if k not in ("road", "house")} for r in sorted(rows, key=rank)[:limit]]
 
 
 # ---------------------------------------------------------------- our own reference data

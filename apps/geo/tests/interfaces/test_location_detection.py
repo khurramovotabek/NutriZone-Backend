@@ -126,6 +126,31 @@ class TestGeocodeAndLinks:
             data = APIClient().get("/api/v1/geo/locations/geocode", {"q": f"Chorsu {uuid.uuid4().hex[:4]}", "lat": TASHKENT[0], "lng": TASHKENT[1]}).json()["data"]
         assert [r["title"] for r in data] == ["Yaqin", "Uzoq"]
 
+    def test_name_and_number_finds_the_house_on_the_main_street(self):
+        """ "mirobod 66" / "мирабад 66": the house on Mirobod ko'chasi first (side lanes later), titled "street, house"."""
+        lane = {"lat": "41.2914", "lon": "69.2657", "name": "66", "display_name": "66, Mirobod 2-o'tish ko'chasi, Yakkasaroy Tumani, Toshkent",
+                "address": {"road": "Mirobod 2-o'tish ko'chasi", "house_number": "66", "city_district": "Yakkasaroy Tumani", "city": "Toshkent"}}
+        main = {"lat": "41.3002", "lon": "69.2795", "name": "66", "display_name": "66, Mirobod ko'chasi, Mirobod Tumani, Toshkent",
+                "address": {"road": "Mirobod ko'chasi", "house_number": "66", "city_district": "Mirobod Tumani", "city": "Toshkent"}}
+        asked = []
+
+        def fake(path, params, **_kw):
+            asked.append(params["q"])
+            return [main] if "ko'chasi" in params["q"] else [lane]
+
+        for q in (f"mirobod 66", "мирабад 66"):
+            with mock.patch.object(geocoder, "_get", side_effect=fake), mock.patch.object(geocoder.cache, "get", return_value=None):
+                data = APIClient().get("/api/v1/geo/locations/geocode", {"q": q, "lat": TASHKENT[0], "lng": TASHKENT[1]}).json()["data"]
+            assert data[0]["title"] == "Mirobod ko'chasi, 66" and data[1]["title"] == "Mirobod 2-o'tish ko'chasi, 66"
+        assert "mirobod ko'chasi 66" in asked
+
+    def test_a_typed_street_word_is_searched_as_is(self):
+        variants, street, house = geocoder._variants("Amir Temur ko'chasi 15")
+        assert variants == ["Amir Temur ko'chasi 15"] and house == "15"
+        assert geocoder._skeleton("Мирабадская")[:4] == geocoder._skeleton("Mirobod")[:4] == "mrbd"
+        assert geocoder._variants("мирабад 66")[0] == ["мирабад 66", "mirobod ko'chasi 66", "mirabad ko'chasi 66"]
+        assert geocoder._variants("Мирабадская 66")[0][1] == "mirobod ko'chasi 66"
+
     @pytest.mark.parametrize("text", [
         "https://yandex.uz/maps/?ll=69.240562%2C41.299496&z=12&pt=69.2797,41.3111",
         "https://www.google.com/maps/place/X/@41.30,69.20,17z/data=!3m1!4b1!8m2!3d41.3111!4d69.2797",
