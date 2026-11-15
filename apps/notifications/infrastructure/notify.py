@@ -40,9 +40,16 @@ K = Kind
 KINDS: dict[str, Kind] = {
     # ---- orders
     "order_confirmed": K("package-check", "success", "high",
-        ("Buyurtma tasdiqlandi", "{order} raqamli buyurtmangiz tasdiqlandi va tayyorlanmoqda."),
-        ("Заказ подтверждён", "Ваш заказ {order} подтверждён и готовится."),
-        ("Order confirmed", "Your order {order} has been confirmed and is being prepared.")),
+        ("Buyurtma tasdiqlandi", "{order} raqamli buyurtmangiz tasdiqlandi va tayyorlanmoqda.{note}"),
+        ("Заказ подтверждён", "Ваш заказ {order} подтверждён и готовится.{note}"),
+        ("Order confirmed", "Your order {order} has been confirmed and is being prepared.{note}")),
+    "first_purchase": K("party-popper", "success", "high",
+        ("{brand} sizni birinchi xaridingiz bilan tabriklaydi! 🎉", "Jamoamizga ishonch bildirganingiz uchun chin dildan rahmat! {order} raqamli buyurtmangiz qabul qilindi — "
+         "uni ehtiyotkorlik bilan yig'ib, o'z vaqtida yetkazib beramiz.{note}\n\nSavollar bo'lsa, shu botga yoki sayt chatiga yozing — yordam berishdan doim xursandmiz."),
+        ("{brand} поздравляет вас с первой покупкой! 🎉", "Спасибо, что доверились нашей команде! Ваш заказ {order} принят — мы бережно его соберём и доставим вовремя.{note}"
+         "\n\nЕсли появятся вопросы — пишите в этот бот или в чат на сайте, мы всегда рады помочь."),
+        ("{brand} congratulates you on your first purchase! 🎉", "Thank you for trusting our team! Your order {order} has been received — we'll pack it with care and deliver it on time.{note}"
+         "\n\nAny questions? Write to this bot or the chat on our website — we're always happy to help.")),
     "order_processing": K("package", "info", "normal",
         ("Buyurtma yig'ilmoqda", "{order} buyurtmangiz omborda yig'ilmoqda."),
         ("Заказ собирается", "Ваш заказ {order} собирается на складе."),

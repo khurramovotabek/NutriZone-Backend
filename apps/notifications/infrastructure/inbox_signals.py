@@ -39,7 +39,70 @@ def _order_status(sender, instance, **kwargs) -> None:
         store = Store.objects.filter(pk=instance.fulfilment_store_id).first()
         where = ", ".join(x for x in ((store.address, store.district, store.landmark) if store else ()) if x)
         ctx.update(store=store.name if store else "", address=where + (f". {store.pickup_note}" if store and store.pickup_note else ""))
+    if instance.status == "confirmed":
+        ctx["i18n"] = _delivery_notes(instance)
     notify(instance.customer_id, kind, ctx, link=f"/orders/{instance.order_number}", dedupe_key=f"order:{instance.id}:{instance.status}")
+    if instance.status == "confirmed" and _is_first_purchase(instance):
+        # once per customer ever (dedupe key), queued after the "order confirmed" message
+        notify(instance.customer_id, "first_purchase", ctx, link=f"/orders/{instance.order_number}", dedupe_key=f"first_purchase:{instance.customer_id}")
+
+
+_ZONE_LABEL = {
+    "tashkent": {"uz": "Toshkent shahri bo'ylab", "ru": "по Ташкенту", "en": "in Tashkent city"},
+    "regions": {"uz": "viloyatlarga", "ru": "в регионы", "en": "to the regions"},
+}
+_PICKUP_NOTE = {
+    "uz": "\n\n🏬 Buyurtma do'konda tayyor bo'lishi bilan sizga xabar beramiz.",
+    "ru": "\n\n🏬 Как только заказ будет готов в магазине, мы сразу сообщим.",
+    "en": "\n\n🏬 We'll let you know as soon as the order is ready at the store.",
+}
+_DELIVERY_NOTE = {
+    "uz": "\n\n🚚 Yetkazib berish: {zone} — {eta} ({carrier}). Buyurtma yo'lga chiqqanda alohida xabar yuboramiz.",
+    "ru": "\n\n🚚 Доставка {zone} — {eta} ({carrier}). Когда заказ отправится в путь, пришлём отдельное сообщение.",
+    "en": "\n\n🚚 Delivery {zone} — {eta} ({carrier}). We'll message you again once the order is on its way.",
+}
+
+
+def _delivery_notes(order) -> dict:
+    """Per-language "{note}" for the order-confirmed / first-purchase texts: the delivery promise of the order's zone,
+    taken from the dashboard's delivery settings (Toshkent: 1 ish kuni, viloyatlar: 2 ish kuni by default)."""
+    if getattr(order, "fulfilment_method", "delivery") == "pickup":
+        return {lang: {"note": _PICKUP_NOTE[lang]} for lang in ("uz", "ru", "en")}
+    zone = order.delivery_zone or ""
+    if zone not in _ZONE_LABEL:
+        return {lang: {"note": ""} for lang in ("uz", "ru", "en")}
+    try:
+        from apps.ordering.infrastructure.delivery_pricing import _eta
+        from apps.ordering.infrastructure.models import DeliverySettings
+
+        cfg = DeliverySettings.load()
+    except Exception:  # noqa: BLE001 - a missing settings row never blocks the notification
+        return {lang: {"note": ""} for lang in ("uz", "ru", "en")}
+    carrier = order.delivery_carrier or getattr(cfg, f"{zone}_carrier", "") or ""
+    out = {}
+    for lang in ("uz", "ru", "en"):
+        eta = _eta(cfg, zone, lang)
+        if lang != "uz" and eta[:1].isupper():
+            eta = eta[0].lower() + eta[1:]  # "Доставка по Ташкенту — в течение 1 рабочего дня"
+        if not eta:
+            out[lang] = {"note": ""}
+            continue
+        note = _DELIVERY_NOTE[lang].format(zone=_ZONE_LABEL[zone][lang], eta=eta, carrier=carrier)
+        out[lang] = {"note": note.replace(" ()", "")}
+    return out
+
+
+def _is_first_purchase(order) -> bool:
+    """True when no other order of this customer ever got confirmed and they never bought at a NutriZone till."""
+    from apps.ordering.infrastructure.models import OrderModel, OrderStatusHistoryEntryModel
+    from apps.pos.infrastructure.models import SaleModel
+
+    others = OrderModel.objects.filter(customer_id=order.customer_id).exclude(id=order.id)
+    if others.filter(status__in=("confirmed", "processing", "shipped", "delivered", "completed", "returned")).exists():
+        return False
+    if OrderStatusHistoryEntryModel.objects.filter(order__in=others, to_status="confirmed").exists():
+        return False  # e.g. an earlier order that was confirmed and later cancelled
+    return not SaleModel.objects.filter(customer_id=order.customer_id, status__in=("completed", "refunded")).exists()
 
 
 def _discount(obj) -> str:

@@ -63,11 +63,77 @@ def test_order_status_changes_notify_once_each_in_three_languages(_no_telegram):
         order.save()
     order.save()  # a re-save of the same status never notifies twice
     kinds = list(_inbox(user).exclude(kind="welcome").order_by("created_at").values_list("kind", flat=True))
-    assert kinds == ["order_confirmed", "order_processing", "order_shipped", "order_delivered"]
+    assert kinds == ["order_confirmed", "first_purchase", "order_processing", "order_shipped", "order_delivered"]
     shipped = _inbox(user, "order_shipped").get()
     assert order.order_number in shipped.i18n["uz"]["body"] and "Заказ в пути" == shipped.i18n["ru"]["title"]
     assert shipped.link == f"/orders/{order.order_number}"
     assert str(shipped.id) in _no_telegram  # the linked customer also gets it on Telegram
+
+
+def test_confirmed_order_tells_the_delivery_promise_of_its_zone():
+    user = _user()
+    for zone, uz, ru in (("tashkent", "Toshkent shahri bo'ylab — 1 ish kuni ichida", "в течение 1 рабочего дня"),
+                         ("regions", "viloyatlarga — 2 ish kuni ichida", "в течение 2 рабочих дней")):
+        order = _order(user)
+        OrderModel.objects.filter(pk=order.pk).update(delivery_zone=zone, delivery_carrier="BTS" if zone == "regions" else "Yandex Dostavka")
+        order.refresh_from_db()
+        order.status = "confirmed"
+        order.save()
+        row = _inbox(user, "order_confirmed").get(link=f"/orders/{order.order_number}")
+        assert uz in row.i18n["uz"]["body"] and ru in row.i18n["ru"]["body"], row.i18n
+        assert "Доставка по Ташкенту — в течение" in row.i18n["ru"]["body"] or zone == "regions"
+
+
+def test_pickup_order_confirmation_has_no_delivery_promise():
+    user = _user()
+    order = _order(user)
+    OrderModel.objects.filter(pk=order.pk).update(fulfilment_method="pickup")
+    order.refresh_from_db()
+    order.status = "confirmed"
+    order.save()
+    body = _inbox(user, "order_confirmed").get().i18n["uz"]["body"]
+    assert "ish kuni" not in body and "do'konda tayyor" in body
+
+
+def test_first_purchase_greeting_is_sent_once_and_only_for_the_first_order(_no_telegram):
+    user = _user(telegram_user_id=777000222)
+    first = _order(user)
+    OrderModel.objects.filter(pk=first.pk).update(delivery_zone="tashkent")
+    first.refresh_from_db()
+    first.status = "confirmed"
+    first.save()
+    greeting = _inbox(user, "first_purchase").get()
+    assert "birinchi xaridingiz bilan tabriklaydi" in greeting.i18n["uz"]["title"]
+    assert "ishonch bildirganingiz uchun" in greeting.i18n["uz"]["body"] and first.order_number in greeting.i18n["uz"]["body"]
+    assert "1 ish kuni ichida" in greeting.i18n["uz"]["body"]
+    assert str(greeting.id) in _no_telegram  # goes to the customer's Telegram too
+    second = _order(user)
+    second.status = "confirmed"
+    second.save()
+    assert _inbox(user, "first_purchase").count() == 1
+
+
+def test_no_first_purchase_greeting_for_a_customer_who_already_bought():
+    user = _user()
+    old = _order(user, status="delivered")
+    OrderModel.objects.filter(pk=old.pk).update(status="delivered")
+    new = _order(user)
+    new.status = "confirmed"
+    new.save()
+    assert not _inbox(user, "first_purchase").exists()
+    # an earlier order that was confirmed and then cancelled still counts as a past purchase
+    other = _user()
+    cancelled = _order(other)
+    cancelled.status = "confirmed"
+    cancelled.save()
+    NotificationModel.objects.filter(recipient_id=other.id, kind="first_purchase").delete()
+    from apps.ordering.infrastructure.models import OrderStatusHistoryEntryModel
+    OrderStatusHistoryEntryModel.objects.create(order=cancelled, from_status="pending_payment", to_status="confirmed", changed_at=timezone.now())
+    OrderModel.objects.filter(pk=cancelled.pk).update(status="cancelled")
+    again = _order(other)
+    again.status = "confirmed"
+    again.save()
+    assert not _inbox(other, "first_purchase").exists()
 
 
 def test_guest_order_is_skipped():

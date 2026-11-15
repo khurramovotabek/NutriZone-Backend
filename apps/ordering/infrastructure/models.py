@@ -362,9 +362,9 @@ class DeliverySettings(models.Model):
     tashkent_per_km = models.DecimalField(_("Toshkent shahri: har km uchun (so'm)"), max_digits=12, decimal_places=2, default=1500,
                                           help_text=_("Eng yaqin filialdan yo'l masofasi (taxminan) bo'yicha qo'shiladi. 0 — har doim maksimal narx."))
     tashkent_carrier = models.CharField(_("Toshkent shahri: yetkazish xizmati"), max_length=60, default="Yandex Dostavka")
-    tashkent_eta_uz = models.CharField(_("Toshkent: muddat (uz)"), max_length=80, blank=True, default="Bugun yoki ertaga")
-    tashkent_eta_ru = models.CharField(_("Toshkent: muddat (ru)"), max_length=80, blank=True, default="Сегодня или завтра")
-    tashkent_eta_en = models.CharField(_("Toshkent: muddat (en)"), max_length=80, blank=True, default="Today or tomorrow")
+    tashkent_eta_uz = models.CharField(_("Toshkent: muddat (uz)"), max_length=80, blank=True, default="1 ish kuni ichida")
+    tashkent_eta_ru = models.CharField(_("Toshkent: muddat (ru)"), max_length=80, blank=True, default="В течение 1 рабочего дня")
+    tashkent_eta_en = models.CharField(_("Toshkent: muddat (en)"), max_length=80, blank=True, default="Within 1 working day")
     # Regions (BTS): a base price for the first kilograms, then a price for every further started kilogram.
     regions_fee = models.DecimalField(_("Viloyatlar: boshlang'ich narx (so'm)"), max_digits=12, decimal_places=2, default=30000,
                                       help_text=_("Posilka og'irligi quyidagi chegaragacha bo'lsa shu narx («30 000 so'mdan»)."))
@@ -375,9 +375,9 @@ class DeliverySettings(models.Model):
                                           help_text=_("Og'irligi gramm/kg/ml da kiritilmagan mahsulotlar (tabletkalar va h.k.) shu og'irlikda hisoblanadi."))
     packaging_kg = models.DecimalField(_("Qadoq og'irligi (kg, har posilka)"), max_digits=6, decimal_places=2, default=0.1)
     regions_carrier = models.CharField(_("Viloyatlar: yetkazish xizmati"), max_length=60, default="BTS")
-    regions_eta_uz = models.CharField(_("Viloyatlar: muddat (uz)"), max_length=80, blank=True, default="2–4 ish kuni")
-    regions_eta_ru = models.CharField(_("Viloyatlar: muddat (ru)"), max_length=80, blank=True, default="2–4 рабочих дня")
-    regions_eta_en = models.CharField(_("Viloyatlar: muddat (en)"), max_length=80, blank=True, default="2–4 working days")
+    regions_eta_uz = models.CharField(_("Viloyatlar: muddat (uz)"), max_length=80, blank=True, default="2 ish kuni ichida")
+    regions_eta_ru = models.CharField(_("Viloyatlar: muddat (ru)"), max_length=80, blank=True, default="В течение 2 рабочих дней")
+    regions_eta_en = models.CharField(_("Viloyatlar: muddat (en)"), max_length=80, blank=True, default="Within 2 working days")
     free_from = models.DecimalField(_("Bepul yetkazish chegarasi (so'm)"), max_digits=14, decimal_places=2, null=True, blank=True,
                                     help_text=_("Shu summadan (chegirmalardan keyin) qimmat buyurtmalar bepul yetkaziladi. Bo'sh — har doim pulli."))
     updated_at = models.DateTimeField(auto_now=True)
