@@ -615,6 +615,8 @@ class LoyaltySettingsForm(forms.ModelForm):
             "referral_enabled": "Referal dasturi", "referrer_reward": "Taklif qilganga mukofot (coin)", "referee_reward": "Yangi mijozga mukofot (coin)",
             "referral_min_order": "Referal: birinchi buyurtma minimal summasi (so'm)", "subscribe_gift_coins": "Telegram yangiliklariga obuna sovg'asi (coin)",
             "telegram_notifications": "Telegram xabarnomalari",
+            "signup_bonus_enabled": "Ro'yxatdan o'tish sovg'asi yoqilgan", "signup_bonus_coins": "Sovg'a miqdori (coin)",
+            "signup_bonus_limit": "Nechta birinchi mijozga",
         }
         help_texts = {
             "tier_window_days": "Daraja oxirgi shuncha kundagi xaridlar bo'yicha hisoblanadi (siljuvchi davr). 0 — butun tarix.",
@@ -626,6 +628,9 @@ class LoyaltySettingsForm(forms.ModelForm):
             "subscribe_gift_coins": "Botda yangiliklarga obuna bo'lgan mijoz birinchi xaridida bir marta oladi. 0 — sovg'a yo'q.",
             "telegram_notifications": "Coin tushishi, daraja oshishi, referal bonuslari va yonish eslatmalari.",
             "referrer_reward": "", "referee_reward": "",
+            "signup_bonus_enabled": "Ro'yxatdan o'tgan (telefon raqami tasdiqlangan) birinchi mijozlarga bir martalik coin sovg'a. Saytda qolgan joylar soni ko'rsatiladi.",
+            "signup_bonus_coins": "Har bir mijozga beriladigan coin (1 coin = 1 so'm).",
+            "signup_bonus_limit": "Shuncha mijozga berilgach aksiya avtomatik yopiladi. 0 — cheklovsiz.",
         }
 
 
@@ -639,15 +644,25 @@ class LoyaltySettingsAdmin(PremiumFormMixin, admin.ModelAdmin):
         ("Coin muddati", {"fields": ("coin_expiry_days", "expiry_reminder_days")}),
         ("Xaridda coin bilan to'lash", {"fields": ("redeem_enabled", "max_redeem_percent", "min_redeem_coins")}),
         ("Referal dasturi", {"fields": ("referral_enabled", "referrer_reward", "referee_reward", "referral_min_order")}),
+        ("Ro'yxatdan o'tish sovg'asi", {"fields": ("signup_bonus_enabled", "signup_bonus_coins", "signup_bonus_limit", "signup_bonus_progress")}),
         ("Telegram", {"fields": ("subscribe_gift_coins", "telegram_notifications")}),
         ("Mijoz uchun qanday ko'rinadi", {"classes": ("nzi-panel",), "fields": ("example_panel",)}),
     )
-    readonly_fields = ("example_panel",)
+    readonly_fields = ("example_panel", "signup_bonus_progress")
     nz_css = CSS
     hero_icon, hero_tone = "fa-sliders", "#d4a017"
 
     def changelist_view(self, request, extra_context=None):
         return redirect(reverse("admin:loyalty_loyaltysettings_change", args=[LoyaltySettings.load().pk]))
+
+    @admin.display(description="Berilgan sovg'alar")
+    def signup_bonus_progress(self, obj):
+        from apps.loyalty.infrastructure.signup_bonus import status
+
+        st = status()
+        left = "cheklovsiz" if st.remaining is None else f"{st.remaining} ta joy qoldi"
+        state = "ochiq" if st.is_open else "yopiq"
+        return format_html("<b>{}</b>{} mijoz oldi · {} · aksiya {}", st.granted, f" / {st.limit}" if st.limit else "", left, state)
 
     def has_add_permission(self, request) -> bool:
         return False

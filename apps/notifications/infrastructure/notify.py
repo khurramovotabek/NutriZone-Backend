@@ -223,6 +223,13 @@ KINDS: dict[str, Kind] = {
         ("Xush kelibsiz bonusi: +{coins} coin", "Do'stingiz taklifi bilan qilgan birinchi xaridingiz uchun. Balans: {balance} coin."),
         ("Приветственный бонус: +{coins} коинов", "За первую покупку по приглашению друга. Баланс: {balance} коинов."),
         ("Welcome bonus: +{coins} coins", "For your first purchase via a friend's invite. Balance: {balance} coins.")),
+    "signup_bonus": K("gift", "success", "high",
+        ("🎁 Sovg'a: +{coins} NutriZone Coins", "Siz {brand}'da ro'yxatdan o'tgan birinchi {limit} mijoz qatoridasiz — №{number}! Hisobingizga {coins} coin tushdi. "
+         "1 coin = 1 so'm: keyingi xaridda buyurtma summasining {percent}% gacha qismini coin bilan to'lashingiz mumkin."),
+        ("🎁 Подарок: +{coins} NutriZone Coins", "Вы среди первых {limit} клиентов {brand} — №{number}! На ваш счёт зачислено {coins} коинов. "
+         "1 коин = 1 сум: оплачивайте ими до {percent}% суммы следующего заказа."),
+        ("🎁 Gift: +{coins} NutriZone Coins", "You're one of the first {limit} {brand} customers — №{number}! {coins} coins are now in your wallet. "
+         "1 coin = 1 UZS: pay up to {percent}% of your next order with them.")),
     "coins_granted": K("coins", "success", "normal",
         ("+{coins} coin sovg'a", "{note}Balans: {balance} coin."),
         ("+{coins} коинов в подарок", "{note}Баланс: {balance} коинов."),

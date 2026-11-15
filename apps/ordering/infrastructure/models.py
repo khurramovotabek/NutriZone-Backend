@@ -362,6 +362,8 @@ class DeliverySettings(models.Model):
     tashkent_per_km = models.DecimalField(_("Toshkent shahri: har km uchun (so'm)"), max_digits=12, decimal_places=2, default=1500,
                                           help_text=_("Eng yaqin filialdan yo'l masofasi (taxminan) bo'yicha qo'shiladi. 0 — har doim maksimal narx."))
     tashkent_carrier = models.CharField(_("Toshkent shahri: yetkazish xizmati"), max_length=60, default="Yandex Dostavka")
+    tashkent_eta_days = models.PositiveSmallIntegerField(_("Toshkent: muddat (ish kuni)"), default=1,
+                                                         help_text=_("Chat va AI maslahatchi ko'rsatadigan taxminiy yetkazish sanasi shundan hisoblanadi (yakshanba — dam olish)."))
     tashkent_eta_uz = models.CharField(_("Toshkent: muddat (uz)"), max_length=80, blank=True, default="1 ish kuni ichida")
     tashkent_eta_ru = models.CharField(_("Toshkent: muddat (ru)"), max_length=80, blank=True, default="В течение 1 рабочего дня")
     tashkent_eta_en = models.CharField(_("Toshkent: muddat (en)"), max_length=80, blank=True, default="Within 1 working day")
@@ -375,6 +377,7 @@ class DeliverySettings(models.Model):
                                           help_text=_("Og'irligi gramm/kg/ml da kiritilmagan mahsulotlar (tabletkalar va h.k.) shu og'irlikda hisoblanadi."))
     packaging_kg = models.DecimalField(_("Qadoq og'irligi (kg, har posilka)"), max_digits=6, decimal_places=2, default=0.1)
     regions_carrier = models.CharField(_("Viloyatlar: yetkazish xizmati"), max_length=60, default="BTS")
+    regions_eta_days = models.PositiveSmallIntegerField(_("Viloyatlar: muddat (ish kuni)"), default=2)
     regions_eta_uz = models.CharField(_("Viloyatlar: muddat (uz)"), max_length=80, blank=True, default="2 ish kuni ichida")
     regions_eta_ru = models.CharField(_("Viloyatlar: muddat (ru)"), max_length=80, blank=True, default="В течение 2 рабочих дней")
     regions_eta_en = models.CharField(_("Viloyatlar: muddat (en)"), max_length=80, blank=True, default="Within 2 working days")

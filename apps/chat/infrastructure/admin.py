@@ -313,7 +313,7 @@ class ChatSettingsForm(forms.ModelForm):
             "rating_enabled": "Qo'llab-quvvatlash suhbati yopilganda mijozdan 1–5 yulduz bilan baho so'raladi (bildirishnoma + Telegram).",
             "low_rating_alert": "1–2 yulduz qo'yilsa, suhbat «Nazoratda» belgisini oladi va xodimlar Telegram kanaliga xabar boradi. Menejer mijoz bilan bog'lanib, Chat markazida «Hal qilindi» deydi.",
             "order_bot_enabled": "Mijoz «Buyurtmam qayerda?», «где мой заказ» deb yoki buyurtma raqamini yozsa, bot darhol (kechasi ham) buyurtma kartasini yuboradi. Suhbat baribir operator navbatida qoladi.",
-            "delivery_days": "Buyurtma berilgandan necha kunda yetkaziladi — kartadagi va {yetkazish_sanasi} o'zgaruvchisidagi taxminiy sana shundan hisoblanadi (yakshanba → dushanba).",
+            "delivery_days": "Hududi aniqlanmagan buyurtmalar uchun zaxira muddat (kun). Toshkent va viloyatlar buyurtmalari sanasi «Yetkazib berish narxlari» sahifasidagi ish kunlari bo'yicha hisoblanadi (yakshanba → dushanba).",
         }
 
     def __init__(self, *args, **kwargs):

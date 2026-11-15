@@ -6130,3 +6130,39 @@ msgstr "Склад или товар не найден."
 
 msgid "Qoldiqni o‘zgartirish — bosing, yangi sonni yozing, Enter"
 msgstr "Изменить остаток — нажмите, введите число, Enter"
+
+msgid "Ro'yxatdan o'tish sovg'asi"
+msgstr "Подарок за регистрацию"
+
+msgid "Ro'yxatdan o'tish sovg'asi yoqilgan"
+msgstr "Подарок за регистрацию включён"
+
+msgid "Sovg'a miqdori (coin)"
+msgstr "Размер подарка (коины)"
+
+msgid "Nechta birinchi mijozga"
+msgstr "Скольким первым клиентам"
+
+msgid "Berilgan sovg'alar"
+msgstr "Выдано подарков"
+
+msgid "Ro'yxatdan o'tgan (telefon raqami tasdiqlangan) birinchi mijozlarga bir martalik coin sovg'a. Saytda qolgan joylar soni ko'rsatiladi."
+msgstr "Разовый подарок в коинах первым зарегистрированным клиентам (с подтверждённым номером). На сайте показано, сколько мест осталось."
+
+msgid "Har bir mijozga beriladigan coin (1 coin = 1 so'm)."
+msgstr "Коины каждому клиенту (1 коин = 1 сум)."
+
+msgid "Shuncha mijozga berilgach aksiya avtomatik yopiladi. 0 — cheklovsiz."
+msgstr "После стольких клиентов акция закроется автоматически. 0 — без ограничений."
+
+msgid "Toshkent: muddat (ish kuni)"
+msgstr "Ташкент: срок (рабочих дней)"
+
+msgid "Viloyatlar: muddat (ish kuni)"
+msgstr "Регионы: срок (рабочих дней)"
+
+msgid "Chat va AI maslahatchi ko'rsatadigan taxminiy yetkazish sanasi shundan hisoblanadi (yakshanba — dam olish)."
+msgstr "Отсюда считается ориентировочная дата доставки в чате и у AI-консультанта (воскресенье — выходной)."
+
+msgid "Hududi aniqlanmagan buyurtmalar uchun zaxira muddat (kun). Toshkent va viloyatlar buyurtmalari sanasi «Yetkazib berish narxlari» sahifasidagi ish kunlari bo'yicha hisoblanadi (yakshanba → dushanba)."
+msgstr "Запасной срок (дни) для заказов без зоны. Для Ташкента и регионов дата считается по рабочим дням со страницы «Цены доставки» (воскресенье → понедельник)."

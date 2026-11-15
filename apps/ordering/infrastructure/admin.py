@@ -1281,9 +1281,9 @@ class DeliverySettingsAdmin(PremiumFormMixin, admin.ModelAdmin):
 
     fieldsets = (
         ("Toshkent shahri — masofa bo'yicha, maksimal narxgacha", {"fields": ("tashkent_carrier", "tashkent_min_fee", "tashkent_per_km", "tashkent_fee",
-                                                                       ("tashkent_eta_uz", "tashkent_eta_ru", "tashkent_eta_en"))}),
+                                                                       "tashkent_eta_days", ("tashkent_eta_uz", "tashkent_eta_ru", "tashkent_eta_en"))}),
         ("Viloyatlar (Toshkent viloyati ham) — og'irlik bo'yicha", {"fields": ("regions_carrier", "regions_fee", "regions_base_kg", "regions_extra_per_kg",
-                                                                          "unknown_item_kg", "packaging_kg", ("regions_eta_uz", "regions_eta_ru", "regions_eta_en"))}),
+                                                                          "unknown_item_kg", "packaging_kg", "regions_eta_days", ("regions_eta_uz", "regions_eta_ru", "regions_eta_en"))}),
         ("Bepul yetkazish", {"fields": ("free_from",)}),
         ("Mijoz uchun qanday ko'rinadi", {"classes": ("nzi-panel",), "fields": ("preview_panel",)}),
     )

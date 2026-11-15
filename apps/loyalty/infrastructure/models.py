@@ -221,6 +221,11 @@ class LoyaltySettings(models.Model):
         help_text=_("Coins a customer gets once, on their first purchase after subscribing to news in the Telegram bot. 0 = no gift."),
     )
     telegram_notifications = models.BooleanField(_("Telegram notifications"), default=True, help_text=_("Coins earned, tier upgrades, referral bonuses and expiry reminders."))
+    # Launch campaign (2026-11-15): the first N customers who sign up get a one-time coin gift.
+    signup_bonus_enabled = models.BooleanField(_("Sign-up gift enabled"), default=True)
+    signup_bonus_coins = models.PositiveIntegerField(_("Sign-up gift (coins)"), default=5000)
+    signup_bonus_limit = models.PositiveIntegerField(_("Sign-up gift: number of customers"), default=500,
+                                                     help_text=_("Only the first this many customers get the gift. 0 = no limit."))
     updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:
@@ -311,3 +316,24 @@ class TierChange(models.Model):
 
     def __str__(self) -> str:
         return f"{self.from_tier or '—'} → {self.to_tier or '—'}"
+
+
+class SignupBonusGrant(models.Model):
+    """One row per customer who got the sign-up gift -- the campaign counter ("№37 of 500") and the guard that
+    the gift is never paid twice (unique user)."""
+
+    user_id = models.UUIDField(unique=True)
+    number = models.PositiveIntegerField(unique=True)
+    coins = models.PositiveIntegerField()
+    transaction = models.ForeignKey(WalletTransaction, null=True, blank=True, on_delete=models.SET_NULL, related_name="+")
+    source = models.CharField(max_length=16, default="signup")  # signup | backfill
+    created_at = models.DateTimeField(auto_now_add=True, db_index=True)
+
+    class Meta:
+        db_table = "loyalty_signup_bonus_grants"
+        ordering = ["number"]
+        verbose_name = _("Sign-up gift")
+        verbose_name_plural = _("Sign-up gifts")
+
+    def __str__(self) -> str:
+        return f"№{self.number} · {self.user_id}"

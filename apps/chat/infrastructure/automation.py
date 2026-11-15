@@ -438,14 +438,38 @@ def _order_card(order_id) -> dict | None:
 
 
 def delivery_eta(order, cfg=None) -> date | None:
-    """The estimated delivery day of an order still on its way: placed + `delivery_days` (a Sunday moves to Monday, never in the past)."""
+    """The estimated delivery day of an order still on its way. Delivery orders with a zone use that zone's promise in
+    working days (Dashboard → Yetkazib berish narxlari: Toshkent 1, viloyatlar 2; Sunday is the day off); orders
+    without a zone fall back to the chat settings' `delivery_days`. Pickup orders have no delivery day. Never in the past."""
     if order.status in ("draft", "delivered", "completed", "cancelled", "returned", "failed"):
         return None
-    cfg = cfg or chat_settings()
-    day = timezone.localtime(order.placed_at or order.created_at, TZ).date() + timedelta(days=cfg.delivery_days)
+    if getattr(order, "fulfilment_method", "delivery") == "pickup":
+        return None
+    start = timezone.localtime(order.placed_at or order.created_at, TZ).date()
+    zone = getattr(order, "delivery_zone", "") or ""
+    if zone in ("tashkent", "regions"):
+        from apps.ordering.infrastructure.models import DeliverySettings
+
+        day = add_working_days(start, int(getattr(DeliverySettings.load(), f"{zone}_eta_days", 0) or 0))
+    else:
+        cfg = cfg or chat_settings()
+        day = start + timedelta(days=cfg.delivery_days)
+        if day.weekday() == 6:
+            day += timedelta(days=1)
+    return max(day, timezone.localdate(timezone=TZ))
+
+
+def add_working_days(start: date, days: int) -> date:
+    """`days` working days after `start` (Sunday is not a working day); 0 keeps the day, moved off a Sunday."""
+    day = start
+    left = days
+    while left > 0:
+        day += timedelta(days=1)
+        if day.weekday() != 6:
+            left -= 1
     if day.weekday() == 6:
         day += timedelta(days=1)
-    return max(day, timezone.localdate(timezone=TZ))
+    return day
 
 
 def _delivered_on(order) -> date | None:

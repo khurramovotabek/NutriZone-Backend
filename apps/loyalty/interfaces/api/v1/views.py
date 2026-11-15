@@ -2,6 +2,7 @@
 Loyalty REST API.
 
 - GET /loyalty/tiers                 public -- the programme's active tiers
+- GET /loyalty/signup-bonus          public -- launch gift: coins, slots left (+ the caller's own slot)
 - GET /loyalty/me                    customer -- wallet balance, tier, progress
 - GET /loyalty/me/transactions       customer -- paginated wallet ledger
 - GET /loyalty/me/rate               customer -- tier/next tier only (product pages)
@@ -131,6 +132,28 @@ class LoyaltyTierListView(APIView):
     def get(self, request):
         tiers = LoyaltyTier.objects.filter(is_active=True).order_by("min_spend")
         return success_response(data=[tier_payload(t) for t in tiers])
+
+
+class SignupBonusView(APIView):
+    """The launch gift for the storefront banner: "first 500 customers get 5 000 coins — N left"."""
+
+    permission_classes = [AllowAny]
+
+    @extend_schema(tags=["Loyalty"], summary="Sign-up gift campaign", responses={200: OpenApiResponse(description="Coins, limit, slots left, own slot")})
+    def get(self, request):
+        from apps.loyalty.infrastructure import signup_bonus
+        from apps.loyalty.infrastructure.models import SignupBonusGrant
+
+        st = signup_bonus.status()
+        mine = None
+        user = getattr(request, "user", None)
+        if user is not None and getattr(user, "is_authenticated", False) and getattr(user, "id", None):
+            row = SignupBonusGrant.objects.filter(user_id=user.id).only("number", "coins").first()
+            mine = {"number": row.number, "coins": row.coins} if row else None
+        return success_response(data={
+            "enabled": st.enabled, "open": st.is_open, "coins": st.coins, "limit": st.limit, "granted": st.granted,
+            "remaining": st.remaining, "max_redeem_percent": services.programme().max_redeem_percent, "mine": mine,
+        })
 
 
 class MyLoyaltyView(APIView):

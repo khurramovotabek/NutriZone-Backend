@@ -8,6 +8,7 @@ app_name = "loyalty"
 
 urlpatterns = [
     path("tiers", views.LoyaltyTierListView.as_view(), name="tier-list"),
+    path("signup-bonus", views.SignupBonusView.as_view(), name="signup-bonus"),
     path("me", views.MyLoyaltyView.as_view(), name="me"),
     path("me/rate", views.MyLoyaltyRateView.as_view(), name="my-rate"),
     path("me/transactions", views.MyWalletTransactionsView.as_view(), name="my-transactions"),

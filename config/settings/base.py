@@ -459,3 +459,5 @@ TELEGRAM_ANALYTICS_CHAT_IDS = os.environ.get("TELEGRAM_ANALYTICS_CHAT_IDS", "")
 # coins -- so launching the programme never retro-credits old orders. Set to
 # an empty string to reward every historical fulfilled order.
 LOYALTY_EARN_SINCE = os.environ.get("LOYALTY_EARN_SINCE", "2026-09-27")
+# Launch sign-up gift (apps/loyalty/infrastructure/signup_bonus.py); the amount/limit live in the dashboard settings.
+LOYALTY_SIGNUP_BONUS = True

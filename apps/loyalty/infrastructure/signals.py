@@ -15,7 +15,7 @@ from __future__ import annotations
 import logging
 
 from django.db import transaction
-from django.db.models.signals import post_save
+from django.db.models.signals import post_save, pre_save
 from django.dispatch import receiver
 
 from apps.loyalty.infrastructure.services import FULFILLED_STATUSES, REVERSING_STATUSES, sync_order_and_notify
@@ -46,3 +46,27 @@ def _wallet_for_new_user(sender, instance, created: bool, **kwargs) -> None:
         from apps.loyalty.infrastructure.models import Wallet
 
         Wallet.objects.get_or_create(user_id=instance.pk)
+
+
+# ---------------------------------------------------------------- sign-up gift (signup_bonus.py)
+
+def _remember_user_status(sender, instance, **kwargs) -> None:
+    instance._nz_was_active = bool(instance.pk) and not instance._state.adding and sender.objects.filter(pk=instance.pk, status="active").exists()
+
+
+def _on_user_saved(sender, instance, created: bool, **kwargs) -> None:
+    """The gift is paid the moment an account becomes active (a verified phone), once per customer."""
+    if instance.status != "active" or getattr(instance, "_nz_was_active", False) or getattr(instance, "is_deleted", False):
+        return
+    user_id = instance.pk
+
+    def _run() -> None:
+        from apps.loyalty.infrastructure.signup_bonus import safe_grant
+
+        safe_grant(user_id)
+
+    transaction.on_commit(_run)
+
+
+pre_save.connect(_remember_user_status, sender="identity.User", dispatch_uid="loyalty.signup_bonus_prev_status")
+post_save.connect(_on_user_saved, sender="identity.User", dispatch_uid="loyalty.signup_bonus")
