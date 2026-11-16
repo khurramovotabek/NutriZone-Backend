@@ -15,7 +15,7 @@ from __future__ import annotations
 import logging
 
 from django.db import transaction
-from django.db.models.signals import post_save, pre_save
+from django.db.models.signals import post_save
 from django.dispatch import receiver
 
 from apps.loyalty.infrastructure.services import FULFILLED_STATUSES, REVERSING_STATUSES, sync_order_and_notify
@@ -48,25 +48,18 @@ def _wallet_for_new_user(sender, instance, created: bool, **kwargs) -> None:
         Wallet.objects.get_or_create(user_id=instance.pk)
 
 
-# ---------------------------------------------------------------- sign-up gift (signup_bonus.py)
+# ---------------------------------------------------------------- opening gift (signup_bonus.py)
 
-def _remember_user_status(sender, instance, **kwargs) -> None:
-    instance._nz_was_active = bool(instance.pk) and not instance._state.adding and sender.objects.filter(pk=instance.pk, status="active").exists()
-
-
-def _on_user_saved(sender, instance, created: bool, **kwargs) -> None:
-    """The gift is paid the moment an account becomes active (a verified phone), once per customer."""
-    if instance.status != "active" or getattr(instance, "_nz_was_active", False) or getattr(instance, "is_deleted", False):
+@receiver(post_save, sender=OrderModel, dispatch_uid="loyalty.first_order_gift")
+def _on_order_confirmed(sender, instance: OrderModel, **kwargs) -> None:
+    """The gift goes to the first N customers who really ordered: paid once, when their first order is confirmed."""
+    if instance.customer_id is None or instance.status != "confirmed":
         return
-    user_id = instance.pk
+    customer_id = instance.customer_id
 
     def _run() -> None:
         from apps.loyalty.infrastructure.signup_bonus import safe_grant
 
-        safe_grant(user_id)
+        safe_grant(customer_id, source="first_order")
 
     transaction.on_commit(_run)
-
-
-pre_save.connect(_remember_user_status, sender="identity.User", dispatch_uid="loyalty.signup_bonus_prev_status")
-post_save.connect(_on_user_saved, sender="identity.User", dispatch_uid="loyalty.signup_bonus")

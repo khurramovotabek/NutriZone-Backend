@@ -16,3 +16,13 @@
 .nzo-items span.ph { display: grid; place-items: center; font-size: .7rem; font-weight: 800; color: var(--nz-text-secondary); background: var(--nz-surface-secondary); }
 .app-ordering.change-list #result_list tbody tr:hover, .app-cart.change-list #result_list tbody tr:hover { background: color-mix(in srgb, #6366f1 6%, transparent) !important; }
 .app-ordering.change-list #result_list td, .app-cart.change-list #result_list td { vertical-align: middle; }
+
+/* one-tap "next step" under the status pill in the Orders list */
+.nzo-next { display: inline-flex; align-items: center; gap: 5px; margin-top: 6px; padding: 4px 10px; border-radius: 999px; border: 1px solid rgba(59,130,246,.45);
+  background: rgba(59,130,246,.10); color: #2563eb; font-size: 12px; font-weight: 600; cursor: pointer; white-space: nowrap; line-height: 1.4; }
+.nzo-next:hover { background: #2563eb; color: #fff; }
+.nzo-next[disabled] { opacity: .6; cursor: progress; }
+.nzo-next.is-done { border-color: rgba(16,185,129,.5); background: rgba(16,185,129,.12); color: #059669; }
+.nzo-next.is-err { border-color: rgba(239,68,68,.5); background: rgba(239,68,68,.1); color: #dc2626; }
+td.field-status_col { white-space: normal; }
+.nzo-next-msg { display: block; max-width: 220px; margin-top: 4px; font-size: 11px; color: #dc2626; white-space: normal; }

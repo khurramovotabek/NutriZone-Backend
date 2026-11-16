@@ -1,12 +1,13 @@
 """
-Launch campaign: the first N customers who sign up get a one-time coin gift (default 5 000 coins for the first 500).
+Opening campaign: the first N customers who place an order get a one-time coin gift (default 5 000 coins, first 500).
 
-- Paid when an account becomes ACTIVE -- website accounts are created only after the SMS code is verified and bot
-  accounts only after Telegram shares the phone number, so a typed-in stranger's number can never take a slot.
+- Paid when the customer's first order is CONFIRMED (loyalty/signals.py) -- a real purchase, not a bare sign-up, so
+  throw-away accounts can't take the slots. One gift per customer, whatever happens to later orders.
 - `SignupBonusGrant` is the counter and the guard: one row per customer (unique), numbered 1..limit. Slots are taken
-  under a row lock on the settings singleton, so two sign-ups in the same second never both become "№500".
+  under a row lock on the settings singleton, so two orders confirmed in the same second never both become "№500".
 - Coins are an ordinary ledger credit (kind "adjustment", normal expiry), visible in the wallet history.
-- Customers who registered before the launch are given their slots by `manage.py grant_signup_bonus --existing`.
+- Customers who had already ordered before the switch are given their slots by `manage.py grant_signup_bonus --existing`.
+- Grants made while the gift was paid at sign-up (source "signup") stay as they are.
 """
 from __future__ import annotations
 
@@ -44,7 +45,7 @@ def status() -> CampaignStatus:
                           limit=int(cfg.signup_bonus_limit or 0), granted=SignupBonusGrant.objects.count())
 
 
-def grant(user_id: uuid.UUID, source: str = "signup", notify_customer: bool = True):
+def grant(user_id: uuid.UUID, source: str = "first_order", notify_customer: bool = True):
     """Gives `user_id` the next free slot and credits the coins. Returns the grant, or None when the campaign is
     off/full or the customer already has one. Never raises into the caller's business action."""
     from apps.loyalty.infrastructure.models import LoyaltySettings, SignupBonusGrant, WalletTransactionKind
@@ -66,7 +67,7 @@ def grant(user_id: uuid.UUID, source: str = "signup", notify_customer: bool = Tr
                 return None
             number = taken + 1
             row = SignupBonusGrant.objects.create(user_id=user_id, number=number, coins=coins, source=source)
-            tx = _credit(user_id, coins, WalletTransactionKind.ADJUSTMENT, note=f"Ro'yxatdan o'tish sovg'asi · №{number}")
+            tx = _credit(user_id, coins, WalletTransactionKind.ADJUSTMENT, note=f"Birinchi buyurtma sovg'asi · №{number}")
             if tx is None:
                 raise IntegrityError("signup bonus credit was not recorded")
             row.transaction = tx
@@ -78,10 +79,10 @@ def grant(user_id: uuid.UUID, source: str = "signup", notify_customer: bool = Tr
     return row
 
 
-def safe_grant(user_id: uuid.UUID, source: str = "signup") -> None:
+def safe_grant(user_id: uuid.UUID, source: str = "first_order") -> None:
     try:
         grant(user_id, source=source)
-    except Exception:  # noqa: BLE001 - a gift must never break a sign-up
+    except Exception:  # noqa: BLE001 - a gift must never break an order
         logger.exception("signup bonus failed for %s", user_id)
 
 

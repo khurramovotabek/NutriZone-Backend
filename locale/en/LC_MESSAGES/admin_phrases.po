@@ -6092,11 +6092,11 @@ msgstr "Location or product not found."
 msgid "Qoldiqni o‘zgartirish — bosing, yangi sonni yozing, Enter"
 msgstr "Change the count — click, type the number, Enter"
 
-msgid "Ro'yxatdan o'tish sovg'asi"
-msgstr "Sign-up gift"
+msgid "Birinchi buyurtma sovg'asi"
+msgstr "First-order gift"
 
-msgid "Ro'yxatdan o'tish sovg'asi yoqilgan"
-msgstr "Sign-up gift enabled"
+msgid "Birinchi buyurtma sovg'asi yoqilgan"
+msgstr "First-order gift enabled"
 
 msgid "Sovg'a miqdori (coin)"
 msgstr "Gift amount (coins)"
@@ -6107,8 +6107,8 @@ msgstr "How many first customers"
 msgid "Berilgan sovg'alar"
 msgstr "Gifts given"
 
-msgid "Ro'yxatdan o'tgan (telefon raqami tasdiqlangan) birinchi mijozlarga bir martalik coin sovg'a. Saytda qolgan joylar soni ko'rsatiladi."
-msgstr "A one-time coin gift for the first customers who sign up (verified phone number). The site shows how many spots are left."
+msgid "Birinchi buyurtmasi tasdiqlangan birinchi mijozlarga bir martalik coin sovg'a (har mijozga bir marta). Saytda qolgan joylar soni ko'rsatiladi."
+msgstr "A one-time coin gift for the first customers whose first order is confirmed (once per customer). The site shows how many spots are left."
 
 msgid "Har bir mijozga beriladigan coin (1 coin = 1 so'm)."
 msgstr "Coins per customer (1 coin = 1 UZS)."
@@ -6127,3 +6127,30 @@ msgstr "The estimated delivery date shown in chat and by the AI assistant is cou
 
 msgid "Hududi aniqlanmagan buyurtmalar uchun zaxira muddat (kun). Toshkent va viloyatlar buyurtmalari sanasi «Yetkazib berish narxlari» sahifasidagi ish kunlari bo'yicha hisoblanadi (yakshanba → dushanba)."
 msgstr "Fallback time (days) for orders without a zone. Tashkent and regions orders use the working days from the «Delivery prices» page (Sunday → Monday)."
+
+msgid "Yig'ishni boshlash"
+msgstr "Start packing"
+
+msgid "Kuryerga berish"
+msgstr "Hand to courier"
+
+msgid "Yetkazildi"
+msgstr "Delivered"
+
+msgid "Viloyatlar: narx hisoblash usuli"
+msgstr "Regions: pricing method"
+
+msgid "BTS rasmiy tarifi (zona + og'irlik + hajm)"
+msgstr "Official BTS tariff (zone + weight + volume)"
+
+msgid "Oddiy qoida (boshlang'ich narx + har kg)"
+msgstr "Simple rule (base price + per kg)"
+
+msgid "BTS: eshikkacha kuryer"
+msgstr "BTS: door-to-door courier"
+
+msgid "BTS: qishki yoqilg'i ustamasi (%)"
+msgstr "BTS: winter fuel surcharge (%)"
+
+msgid "Posilka hajmi (sm³ har 1 kg mahsulotga)"
+msgstr "Parcel volume (cm³ per 1 kg of goods)"

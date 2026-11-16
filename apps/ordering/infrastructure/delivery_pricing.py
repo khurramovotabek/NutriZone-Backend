@@ -4,8 +4,9 @@ What delivery costs the customer.
 Two zones, both priced on the dashboard (DeliverySettings, Buyurtmalar -> Yetkazib berish narxlari):
 - Tashkent city, delivered by Yandex Delivery: a starting price plus a price per km of (estimated) road distance from
   the nearest branch, never more than the cap ("30 000 so'mgacha"). An address without a map point pays the cap.
-- Every other region (Tashkent region included), sent by BTS: a base price for a parcel up to N kg ("30 000 so'mdan"),
-  then a price for every further started kilogram. The parcel weight comes from the variants' labelled weight
+- Every other region (Tashkent region included), sent by BTS: the official BTS tariff card (bts_tariff.py) by the
+  address's zone, the billable weight (actual vs volumetric) and the remote-office fee -- or, in "flat" mode, a base
+  price for a parcel up to N kg then a price for every further started kilogram. The parcel weight comes from the variants' labelled weight
   (g / kg / ml / l), an assumed weight for items labelled in tablets/capsules, plus the packaging.
 Picking the order up at a branch is always free and never reaches this module. An optional threshold makes delivery
 free for large orders.
@@ -68,11 +69,18 @@ def tashkent_fee(cfg, distance_km: float | None) -> Decimal:
     return min(cap, max(Decimal(cfg.tashkent_min_fee or 0), _round_up(fee)))
 
 
-def regions_fee(cfg, weight_kg: float | None, region_id=None) -> Decimal:
-    """The region's own BTS rate (RegionDeliveryRate) when the dashboard has one, else the general regions tariff."""
+def regions_fee(cfg, weight_kg: float | None, region_id=None, region_code: str | None = None, city_code: str | None = None) -> Decimal:
+    """The region's own contract rate (RegionDeliveryRate) when the dashboard has one; else the official BTS tariff
+    card (zone of the address + billable weight, bts_tariff.py); else -- "flat" mode -- base price + price per kg."""
+    from apps.ordering.infrastructure import bts_tariff
     from apps.ordering.infrastructure.models import RegionDeliveryRate
 
     rate = RegionDeliveryRate.objects.filter(region_id=region_id).first() if region_id else None
+    if rate is None and getattr(cfg, "regions_pricing", "flat") == "bts":
+        kg = weight_kg if weight_kg is not None else float(cfg.regions_base_kg or 1)
+        volume = kg * float(cfg.parcel_cm3_per_kg or 0)
+        return _round_up(bts_tariff.price(kg, region_code, city_code, volume_cm3=volume, door=cfg.bts_door_delivery,
+                                          fuel_surcharge_percent=cfg.bts_fuel_surcharge_percent))
     base = Decimal(rate.base_fee if rate else cfg.regions_fee or 0)
     per_kg = Decimal(rate.extra_per_kg if rate and rate.extra_per_kg is not None else cfg.regions_extra_per_kg or 0)
     if weight_kg is None:
@@ -123,12 +131,12 @@ def _haversine_km(lat1, lng1, lat2, lng2) -> float:
 
 
 def quote(zone: str, goods_total: Decimal | int | str, lang: str = "uz", *, weight_kg: float | None = None, distance_km: float | None = None,
-          region_id=None) -> DeliveryQuote:
+          region_id=None, region_code: str | None = None, city_code: str | None = None) -> DeliveryQuote:
     from apps.ordering.infrastructure.models import DeliverySettings
 
     cfg = DeliverySettings.load()
     zone = TASHKENT if zone == TASHKENT else REGIONS
-    base = tashkent_fee(cfg, distance_km) if zone == TASHKENT else regions_fee(cfg, weight_kg, region_id)
+    base = tashkent_fee(cfg, distance_km) if zone == TASHKENT else regions_fee(cfg, weight_kg, region_id, region_code, city_code)
     free_from = Decimal(cfg.free_from) if cfg.free_from else None
     fee = Decimal("0") if free_from is not None and Decimal(str(goods_total or 0)) >= free_from else base
     return DeliveryQuote(zone=zone, carrier=getattr(cfg, f"{zone}_carrier") or "", fee=fee, base_fee=base, eta=_eta(cfg, zone, lang), free_from=free_from,
@@ -138,7 +146,7 @@ def quote(zone: str, goods_total: Decimal | int | str, lang: str = "uz", *, weig
 def _address_row(address_id) -> dict | None:
     from apps.geo.infrastructure.models import Address
 
-    return Address.objects.filter(pk=address_id).values("region_id", "region__code", "city__region_id", "city__region__code", "coordinate_latitude", "coordinate_longitude").first()
+    return Address.objects.filter(pk=address_id).values("region_id", "region__code", "city__region_id", "city__region__code", "city__code", "coordinate_latitude", "coordinate_longitude").first()
 
 
 def region_code_for_address(address_id: uuid.UUID | str) -> str | None:
@@ -153,7 +161,22 @@ def quote_for_address(address_id: uuid.UUID | str, goods_total: Decimal | int | 
     zone = zone_for_region_code(row.get("region__code") or row.get("city__region__code"))
     if zone == TASHKENT:
         return quote(zone, goods_total, lang, distance_km=distance_to_nearest_branch_km(row.get("coordinate_latitude"), row.get("coordinate_longitude")))
-    return quote(zone, goods_total, lang, weight_kg=parcel_weight_kg(items) if items else None, region_id=row.get("region_id") or row.get("city__region_id"))
+    return quote(zone, goods_total, lang, weight_kg=parcel_weight_kg(items) if items else None, region_id=row.get("region_id") or row.get("city__region_id"),
+                 region_code=row.get("region__code") or row.get("city__region__code"), city_code=row.get("city__code"))
+
+
+def _regions_from(cfg) -> Decimal:
+    """The cheapest regions price a shopper can meet ("... so'mdan"): a 1 kg parcel to the cheapest zone, or a contract rate."""
+    contract = list(cfg.region_rates.values_list("base_fee", flat=True))
+    if getattr(cfg, "regions_pricing", "flat") == "bts":
+        from apps.ordering.infrastructure import bts_tariff
+
+        cheapest = min(bts_tariff.ZONE_BY_REGION, key=lambda code: bts_tariff.zone_for(code))
+        # a 1 kg parcel to the regional centre (no remote-office fee) of the cheapest zone
+        city = next((c for c, z in bts_tariff.COURIER_ZONE_BY_CITY.items() if z == bts_tariff.CITY and c.startswith(cheapest[3:] + "-")), None)
+        bts_min = _round_up(bts_tariff.price(1, cheapest, city, door=cfg.bts_door_delivery, fuel_surcharge_percent=cfg.bts_fuel_surcharge_percent))
+        return min([bts_min, *contract])
+    return min([Decimal(cfg.regions_fee or 0), *contract])
 
 
 def public_options(lang: str = "uz") -> dict:
@@ -168,7 +191,7 @@ def public_options(lang: str = "uz") -> dict:
         "zones": {
             TASHKENT: {"pricing": "up_to", "fee": str(Decimal(cfg.tashkent_fee or 0)), "min_fee": str(Decimal(cfg.tashkent_min_fee or 0)),
                        "carrier": cfg.tashkent_carrier or "", "eta": _eta(cfg, TASHKENT, lang)},
-            REGIONS: {"pricing": "from", "fee": str(min([Decimal(cfg.regions_fee or 0), *cfg.region_rates.values_list("base_fee", flat=True)])), "base_kg": str(Decimal(cfg.regions_base_kg or 0).normalize()),
+            REGIONS: {"pricing": "from", "fee": str(_regions_from(cfg)), "base_kg": str(Decimal(cfg.regions_base_kg or 0).normalize()),
                       "extra_per_kg": str(Decimal(cfg.regions_extra_per_kg or 0)), "carrier": cfg.regions_carrier or "", "eta": _eta(cfg, REGIONS, lang)},
         },
         "tashkent_region_ids": [str(pk) for pk in Region.objects.filter(code__in=TASHKENT_REGION_CODES).values_list("pk", flat=True)],

@@ -1,6 +1,7 @@
 {% extends "admin/products/analytics_change_list.html" %}
 {% load i18n static %}
-{% block extrastyle %}{{ block.super }}<link rel="stylesheet" href="{% static 'admin/css/nutrizone-orders.css' %}?v=1">{% endblock %}
+{% block extrastyle %}{{ block.super }}<link rel="stylesheet" href="{% static 'admin/css/nutrizone-orders.css' %}?v=2">{% endblock %}
+{% block extrahead %}{{ block.super }}<script src="{% static 'admin/js/nutrizone-order-quick.js' %}?v=1" defer></script>{% endblock %}
 {% block date_hierarchy %}
 {{ block.super }}
 {% if order_tabs %}

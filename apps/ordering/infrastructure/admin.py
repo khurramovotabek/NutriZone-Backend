@@ -9,6 +9,7 @@ from decimal import Decimal
 
 from django.contrib import admin
 from django.db.models import OuterRef, Q, Subquery
+from django.utils import timezone
 from django.utils.html import format_html
 from django.utils.safestring import mark_safe
 from django.utils.translation import gettext_lazy as _
@@ -159,6 +160,14 @@ class OrderArchivedFilter(admin.SimpleListFilter):
         if self.value() in ("0", "1"):
             return queryset.filter(is_archived=self.value() == "1")
         return queryset
+
+
+_QUICK_ACTION = {
+    "confirm": (_("Tasdiqlash"), "fa-check"),
+    "start_processing": (_("Yig'ishni boshlash"), "fa-box-open"),
+    "ship": (_("Kuryerga berish"), "fa-truck-fast"),
+    "deliver": (_("Yetkazildi"), "fa-flag-checkered"),
+}
 
 
 @admin.register(orm.OrderModel)
@@ -584,7 +593,20 @@ class OrderAdmin(ExcelExportMixin, admin.ModelAdmin):
     def status_col(self, obj: orm.OrderModel) -> str:
         color, icon = _STATUS_STYLE.get(obj.status, ("#64748b", "fa-circle"))
         archived = format_html(' <span class="nzc-pill" style="--t:#64748b">{}</span>', "Arxiv") if obj.is_archived else ""
-        return format_html('<span class="nzc-pill" style="--t:{}"><i class="fas {}"></i> {}</span>{}', color, icon, _ORDER_STATUS_LABELS.get(obj.status, obj.status), archived)
+        pill = format_html('<span class="nzc-pill" style="--t:{}"><i class="fas {}"></i> {}</span>{}', color, icon, _ORDER_STATUS_LABELS.get(obj.status, obj.status), archived)
+        from django.urls import reverse
+
+        from apps.ordering.infrastructure.admin_board import NEXT_ACTION
+
+        action = NEXT_ACTION.get(obj.status)
+        if not action or obj.is_archived:
+            return pill
+        # one tap moves the order a step forward (same service path as the Order board); "ship" asks where it leaves from
+        label, nicon = _QUICK_ACTION[action]
+        return format_html('{}<button type="button" class="nzo-next" data-nzo-move="{}" data-nzo-ship="{}" data-action="{}" data-number="{}">'
+                           '<i class="fas {}"></i> {}</button>', pill,
+                           reverse("admin:ordering_ordermodel_board_move", args=[obj.pk]), reverse("admin:ordering_ordermodel_board_ship_options", args=[obj.pk]),
+                           action, obj.order_number, nicon, label)
 
     @admin.display(description=_("Mijoz"), ordering="buyer_full_name")
     def customer_col(self, obj: orm.OrderModel) -> str:
@@ -1214,8 +1236,12 @@ def _order_payments(order) -> list[dict]:
 
 
 @admin.register(orm.Courier)
-class CourierAdmin(PremiumListMixin, PremiumFormMixin, admin.ModelAdmin):
+class CourierAdmin(ExcelExportMixin, PremiumListMixin, PremiumFormMixin, admin.ModelAdmin):
     """Couriers picked on the delivery desk (Yetkazib berish markazi)."""
+
+    excel_title = "Kuryerlar"
+    excel_columns = [Col("Kuryer", "name", 24), Col("Telefon", "phone", 16), Col("Transport", "vehicle", 20), Col("Telegram", "telegram_username", 16),
+                     Col("Faol", "is_active", 8), Col("Qo'shilgan", lambda c: timezone.localtime(c.created_at).replace(tzinfo=None), 17)]
 
     list_display = ("name", "phone", "vehicle", "is_active", "created_at")
     search_fields = ("name", "phone", "vehicle")
@@ -1282,8 +1308,9 @@ class DeliverySettingsAdmin(PremiumFormMixin, admin.ModelAdmin):
     fieldsets = (
         ("Toshkent shahri — masofa bo'yicha, maksimal narxgacha", {"fields": ("tashkent_carrier", "tashkent_min_fee", "tashkent_per_km", "tashkent_fee",
                                                                        "tashkent_eta_days", ("tashkent_eta_uz", "tashkent_eta_ru", "tashkent_eta_en"))}),
-        ("Viloyatlar (Toshkent viloyati ham) — og'irlik bo'yicha", {"fields": ("regions_carrier", "regions_fee", "regions_base_kg", "regions_extra_per_kg",
-                                                                          "unknown_item_kg", "packaging_kg", "regions_eta_days", ("regions_eta_uz", "regions_eta_ru", "regions_eta_en"))}),
+        ("Viloyatlar (Toshkent viloyati ham) — BTS", {"fields": ("regions_carrier", "regions_pricing", "bts_door_delivery", "bts_fuel_surcharge_percent",
+                                                               "unknown_item_kg", "packaging_kg", "parcel_cm3_per_kg", "regions_eta_days", ("regions_eta_uz", "regions_eta_ru", "regions_eta_en"))}),
+        ("Viloyatlar — oddiy qoida (faqat «Oddiy qoida» tanlansa)", {"fields": ("regions_fee", "regions_base_kg", "regions_extra_per_kg")}),
         ("Bepul yetkazish", {"fields": ("free_from",)}),
         ("Mijoz uchun qanday ko'rinadi", {"classes": ("nzi-panel",), "fields": ("preview_panel",)}),
     )
@@ -1327,14 +1354,35 @@ class DeliverySettingsAdmin(PremiumFormMixin, admin.ModelAdmin):
             lang = (get_language() or "uz")[:2]
             return getattr(obj, f"{zone}_eta_{lang if lang in ('uz', 'ru', 'en') else 'uz'}", "") or getattr(obj, f"{zone}_eta_uz")
 
+        if getattr(obj, "regions_pricing", "flat") == "bts":
+            from apps.ordering.infrastructure import bts_tariff, delivery_pricing
+
+            def bts(kg, region, city):
+                return money(delivery_pricing._round_up(bts_tariff.price(kg, region, city, volume_cm3=kg * float(obj.parcel_cm3_per_kg or 0),
+                                                                         door=obj.bts_door_delivery, fuel_surcharge_percent=obj.bts_fuel_surcharge_percent)))
+
+            regions_line = (f"BTS tarifi · {'eshikkacha' if obj.bts_door_delivery else 'BTS ofisigacha'} · {eta('regions')}",
+                            f"{bts(1, 'UZ-TO', 'TO-OLMAL')}dan")
+            examples = format_html_join("", "<tr><td style='padding:4px 10px 4px 0'>{}</td><td style='text-align:right;padding:4px 10px'>{}</td><td style='text-align:right;padding:4px 10px'>{}</td><td style='text-align:right;padding:4px 0'>{}</td></tr>", (
+                (label, bts(1, r, c), bts(3, r, c), bts(5, r, c)) for label, r, c in (
+                    ("Chirchiq (Toshkent vil.)", "UZ-TO", "TO-CHIRC"), ("Samarqand", "UZ-SA", "SA-SAMAR"), ("Andijon", "UZ-AN", "AN-ANDIJ"),
+                    ("Buxoro", "UZ-BU", "BU-BUXOR"), ("Termiz", "UZ-SU", "SU-TERMI"), ("Urganch", "UZ-XO", "XO-URGAN"), ("Nukus", "UZ-QR", "QR-NUKUS"),
+                )))
+            bts_table = format_html("<p style='margin-top:10px'><b>BTS namunalari</b></p><table style='width:100%;font-size:13px'><tr style='opacity:.7'><td></td>"
+                                    "<td style='text-align:right;padding:4px 10px'>1 kg</td><td style='text-align:right;padding:4px 10px'>3 kg</td>"
+                                    "<td style='text-align:right'>5 kg</td></tr>{}</table>", examples)
+        else:
+            regions_line = (f"{obj.regions_base_kg.normalize() if obj.regions_base_kg is not None else 0:f} kg gacha · har qo'shimcha kg +{money(obj.regions_extra_per_kg)} · {eta('regions')}",
+                            money(obj.regions_fee) + "dan")
+            bts_table = mark_safe("")
         rows = format_html_join("", "<div style='display:flex;justify-content:space-between;gap:12px;padding:10px 0;border-bottom:1px solid rgba(148,163,184,.25)'>"
                                     "<span><i class='fas {}' style='width:20px'></i> <b>{}</b><br><small style='opacity:.7'>{} · {}</small></span><b style='white-space:nowrap'>{}</b></div>", (
             ("fa-city", "Toshkent shahri", obj.tashkent_carrier, f"{money(obj.tashkent_min_fee)} + {money(obj.tashkent_per_km)}/km · {eta('tashkent')}", money(obj.tashkent_fee) + "gacha"),
-            ("fa-truck", "Viloyatlar", obj.regions_carrier, f"{obj.regions_base_kg.normalize() if obj.regions_base_kg is not None else 0:f} kg gacha · har qo'shimcha kg +{money(obj.regions_extra_per_kg)} · {eta('regions')}", money(obj.regions_fee) + "dan"),
+            ("fa-truck", "Viloyatlar", obj.regions_carrier, regions_line[0], regions_line[1]),
             ("fa-store", "Do'kondan olib ketish", "Filialdan", "tayyor bo'lgach", "Bepul"),
         ))
         # one text node per sentence, so the dashboard's phrase layer (locale/*/admin_phrases.po) can translate it whole
         free = (format_html("<p style='margin-top:8px'><i class='fas fa-gift'></i> {}</p>", f"{money(obj.free_from)} va undan qimmat buyurtmalar bepul yetkaziladi.")
                 if obj.free_from else mark_safe("<p style='margin-top:8px;opacity:.75'>Bepul yetkazish chegarasi o'rnatilmagan — yetkazib berish har doim pulli.</p>"))
-        return format_html("<div class='nzi-panel-body'>{}{}<p style='margin-top:8px;opacity:.75'>Narx buyurtma berilgan paytda belgilanadi va buyurtma jami summasiga "
-                           "qo'shiladi (onlayn to'lov ham, naqd ham). Oldingi buyurtmalar o'zgarmaydi.</p></div>", rows, free)
+        return format_html("<div class='nzi-panel-body'>{}{}{}<p style='margin-top:8px;opacity:.75'>Narx buyurtma berilgan paytda belgilanadi va buyurtma jami summasiga "
+                           "qo'shiladi (onlayn to'lov ham, naqd ham). Oldingi buyurtmalar o'zgarmaydi.</p></div>", rows, bts_table, free)

@@ -461,8 +461,23 @@ class CartAdmin(ExcelExportMixin, admin.ModelAdmin):
 
 
 @admin.register(orm.CartAuditEntryModel)
-class CartAuditEntryAdmin(admin.ModelAdmin):
+class CartAuditEntryAdmin(ExcelExportMixin, admin.ModelAdmin):
     """Savat tarixi: every cart event in plain words, read-only."""
+
+    excel_title = "Savat tarixi"
+    excel_select_related = ("cart",)
+    excel_columns = [
+        Col("Vaqt", lambda e: timezone.localtime(e.occurred_at).replace(tzinfo=None), 17), Col("Hodisa", lambda e: e.x_text, 48),
+        Col("Savat", lambda e: e.cart.code, 16), Col("Mijoz", lambda e: e.x_user[0], 24), Col("Telefon", lambda e: e.x_user[1], 16),
+    ]
+
+    def excel_prepare(self, objs):
+        cards, items_by_id = _entry_cards(objs)
+        users = _users(e.cart.customer_id for e in objs)
+        for e in objs:
+            e.x_text = describe(e, cards, items_by_id)
+            u = users.get(e.cart.customer_id)
+            e.x_user = ((getattr(u, "full_name", "") or "Mijoz", getattr(u, "phone_number", "") or "") if u else ("Mehmon", ""))
 
     list_display = ("cart", "action", "occurred_at")
     list_filter = ("action",)

@@ -106,17 +106,70 @@ class CartThrottle(ScopedRateLimitThrottle):
     identifier_source = "user"
 
 
+def _available_units(items) -> dict:
+    """{variant_id: sellable units} for the cart's lines -- the storefront marks short lines and blocks checkout."""
+    from apps.stores.infrastructure.availability import sellable
+
+    try:
+        return sellable([i.product_variant_id for i in items])
+    except Exception:  # noqa: BLE001 - availability is advisory here; the checkout guard is the real check
+        return {}
+
+
 def _cart_payload(cart) -> dict:
+    live = [i for i in cart.items.values() if i.status.value != "removed"]
+    stock = _available_units(live)
     return {
         "id": str(cart.id), "code": cart.code.value, "token": str(cart.token), "version": cart.version.value,
         "currency": cart.currency.value, "cart_type": cart.cart_type.value, "status": cart.status.value,
         "customer_id": str(cart.customer_id) if cart.customer_id else None,
         "region": cart.region.value if cart.region else None, "channel": cart.channel.value if cart.channel else None,
-        "items": [_item_payload(i) for i in cart.items.values() if i.status.value != "removed"],
+        "items": [{**_item_payload(i), "available_quantity": stock.get(i.product_variant_id, 0)} for i in live],
         "coupon_ids": [str(c) for c in cart.coupon_ids], "note": cart.note.text if cart.note else None,
         "gift_message": cart.gift_message.text if cart.gift_message else None,
         "expires_at": cart.expires_at.isoformat() if cart.expires_at else None, "is_locked": cart.lock_reason is not None,
     }
+
+
+_OUT_OF_STOCK_TEXT = {
+    "uz": "Bu mahsulot hozir omborda yetarli emas (mavjud: {available} ta).",
+    "ru": "Этого товара сейчас недостаточно на складе (в наличии: {available} шт.).",
+    "en": "Not enough of this item in stock right now (available: {available}).",
+}
+_CART_OUT_OF_STOCK_TEXT = {
+    "uz": "Savatdagi ba'zi mahsulotlar tugagan yoki yetarli emas. Ularni olib tashlang yoki sonini kamaytiring.",
+    "ru": "Некоторых товаров из корзины нет в наличии или недостаточно. Удалите их или уменьшите количество.",
+    "en": "Some items in your cart are sold out or short. Remove them or lower the quantity.",
+}
+
+
+def _lang(request) -> str:
+    lang = (request.query_params.get("lang") or getattr(request, "LANGUAGE_CODE", "uz") or "uz")[:2]
+    return lang if lang in _OUT_OF_STOCK_TEXT else "uz"
+
+
+def _stock_shortages(lines) -> list[dict]:
+    """[(variant_id, qty)] -> the lines the WMS can't cover (on hand − reserved at active locations, same numbers the
+    storefront shows). A variant with no stock row anywhere counts as 0 -- the storefront shows it as sold out too."""
+    from django.conf import settings
+
+    from apps.stores.infrastructure.availability import sellable
+
+    if not getattr(settings, "CART_STOCK_GUARD", True):
+        return []
+    wanted: dict = {}
+    for variant_id, qty in lines:
+        wanted[variant_id] = wanted.get(variant_id, 0) + int(qty)
+    have = sellable(list(wanted))
+    return [{"product_variant_id": str(v), "requested": q, "available": have.get(v, 0)} for v, q in wanted.items() if q > have.get(v, 0)]
+
+
+def _assert_line_in_stock(request, variant_id, quantity: int) -> None:
+    short = _stock_shortages([(variant_id, quantity)])
+    if short:
+        err = ConflictError(_OUT_OF_STOCK_TEXT[_lang(request)].format(available=short[0]["available"]), details={"shortages": short})
+        err.code = "OUT_OF_STOCK"
+        raise err
 
 
 def _item_payload(item) -> dict:
@@ -294,6 +347,9 @@ class CartItemListCreateView(APIView):
         cart = _load_cart_by_code(code, request)
         serializer = AddItemSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
+        variant_id = serializer.validated_data["product_variant_id"]
+        already = sum(i.quantity.value for i in cart.items.values() if i.status.value != "removed" and i.product_variant_id == variant_id)
+        _assert_line_in_stock(request, variant_id, already + serializer.validated_data["quantity"])
         updated = composition.build_add_item(_actor_id(request)).execute(cart_id=cart.id, **serializer.validated_data)
         return success_response(data=_cart_payload(updated), status_code=201)
 
@@ -310,6 +366,9 @@ class CartItemDetailView(APIView):
         cart = _load_cart_by_code(code, request)
         serializer = UpdateItemSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
+        line = cart.items.get(uuid.UUID(line_id)) if isinstance(cart.items, dict) else None
+        if line is not None and serializer.validated_data["quantity"] > line.quantity.value:  # lowering is always allowed
+            _assert_line_in_stock(request, line.product_variant_id, serializer.validated_data["quantity"])
         updated = composition.build_update_quantity(_actor_id(request)).execute(cart_id=cart.id, item_id=uuid.UUID(line_id), **serializer.validated_data)
         return success_response(data=_cart_payload(updated))
 
@@ -623,6 +682,12 @@ class CheckoutCartView(APIView):
             raise CartNotReadyForCheckout("Every item must have a confirmed price before checkout.")
 
         pickup = None
+        if method != "pickup":  # pickup checks the chosen branch's own shelf below
+            short = _stock_shortages([(i.product_variant_id, i.quantity.value) for i in active_items])
+            if short:
+                err = ConflictError(_CART_OUT_OF_STOCK_TEXT[_lang(request)], details={"shortages": short})
+                err.code = "CART_OUT_OF_STOCK"
+                raise err
         if method == "pickup":
             from apps.stores.infrastructure import store_orders
 
@@ -947,6 +1012,10 @@ class CheckoutPreviewView(APIView):
         readiness = composition.build_calculate_checkout_readiness().execute(cart.id, all_reservations_valid=True)
 
         active_items = [i for i in cart.items.values() if i.status.value != "removed"]
+        from apps.stores.infrastructure.availability import sellable
+
+        stock = sellable([i.product_variant_id for i in active_items])
+        shortages = _stock_shortages([(i.product_variant_id, i.quantity.value) for i in active_items])
         priced_items = [i for i in active_items if i.price_reference is not None]
         subtotal = None
         if priced_items:
@@ -964,7 +1033,8 @@ class CheckoutPreviewView(APIView):
         return success_response(data={
             "readiness": readiness,
             "issues": [{"severity": i.severity.value, "code": i.code.value, "message": i.message, "item_id": str(i.item_id) if i.item_id else None} for i in issues],
-            "items": [_item_payload(i) for i in active_items],
+            "items": [{**_item_payload(i), "available_quantity": stock.get(i.product_variant_id, 0)} for i in active_items],
+            "stock_shortages": [x for x in shortages],
             "priced_item_count": len(priced_items),
             "total_item_count": len(active_items),
             "subtotal": subtotal,

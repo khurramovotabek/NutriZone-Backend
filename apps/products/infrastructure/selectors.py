@@ -826,13 +826,18 @@ def _with_stock(cards: list[dict]) -> list[dict]:
     _with_family(cards, rows)
     totals: dict = {}
     tracked: set = set()
-    for variant_id, units in sellable(list(product_by_variant)).items():
+    per_variant = sellable(list(product_by_variant))
+    for variant_id, units in per_variant.items():
         product_id = str(product_by_variant[variant_id])
         tracked.add(product_id)
         totals[product_id] = totals.get(product_id, 0) + units
 
     for card in cards:
         product_id = str(card["id"])
+        # What the card's quick "Add to cart" would buy: the default variant only. A family whose default size is
+        # sold out (but other sizes aren't) must send the shopper to the product page instead of adding it.
+        default_id = card.get("default_variant_id")
+        card["default_variant_stock"] = per_variant.get(uuid.UUID(str(default_id)), 0) if default_id else 0
         if product_id not in tracked:
             card["stock_quantity"], card["stock_status"] = None, None
             continue

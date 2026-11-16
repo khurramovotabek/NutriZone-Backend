@@ -6131,11 +6131,11 @@ msgstr "Склад или товар не найден."
 msgid "Qoldiqni o‘zgartirish — bosing, yangi sonni yozing, Enter"
 msgstr "Изменить остаток — нажмите, введите число, Enter"
 
-msgid "Ro'yxatdan o'tish sovg'asi"
-msgstr "Подарок за регистрацию"
+msgid "Birinchi buyurtma sovg'asi"
+msgstr "Подарок за первый заказ"
 
-msgid "Ro'yxatdan o'tish sovg'asi yoqilgan"
-msgstr "Подарок за регистрацию включён"
+msgid "Birinchi buyurtma sovg'asi yoqilgan"
+msgstr "Подарок за первый заказ включён"
 
 msgid "Sovg'a miqdori (coin)"
 msgstr "Размер подарка (коины)"
@@ -6146,8 +6146,8 @@ msgstr "Скольким первым клиентам"
 msgid "Berilgan sovg'alar"
 msgstr "Выдано подарков"
 
-msgid "Ro'yxatdan o'tgan (telefon raqami tasdiqlangan) birinchi mijozlarga bir martalik coin sovg'a. Saytda qolgan joylar soni ko'rsatiladi."
-msgstr "Разовый подарок в коинах первым зарегистрированным клиентам (с подтверждённым номером). На сайте показано, сколько мест осталось."
+msgid "Birinchi buyurtmasi tasdiqlangan birinchi mijozlarga bir martalik coin sovg'a (har mijozga bir marta). Saytda qolgan joylar soni ko'rsatiladi."
+msgstr "Разовый подарок в коинах первым клиентам, чей первый заказ подтверждён (один раз на клиента). На сайте показано, сколько мест осталось."
 
 msgid "Har bir mijozga beriladigan coin (1 coin = 1 so'm)."
 msgstr "Коины каждому клиенту (1 коин = 1 сум)."
@@ -6166,3 +6166,30 @@ msgstr "Отсюда считается ориентировочная дата 
 
 msgid "Hududi aniqlanmagan buyurtmalar uchun zaxira muddat (kun). Toshkent va viloyatlar buyurtmalari sanasi «Yetkazib berish narxlari» sahifasidagi ish kunlari bo'yicha hisoblanadi (yakshanba → dushanba)."
 msgstr "Запасной срок (дни) для заказов без зоны. Для Ташкента и регионов дата считается по рабочим дням со страницы «Цены доставки» (воскресенье → понедельник)."
+
+msgid "Yig'ishni boshlash"
+msgstr "Начать сборку"
+
+msgid "Kuryerga berish"
+msgstr "Передать курьеру"
+
+msgid "Yetkazildi"
+msgstr "Доставлен"
+
+msgid "Viloyatlar: narx hisoblash usuli"
+msgstr "Регионы: способ расчёта"
+
+msgid "BTS rasmiy tarifi (zona + og'irlik + hajm)"
+msgstr "Официальный тариф BTS (зона + вес + объём)"
+
+msgid "Oddiy qoida (boshlang'ich narx + har kg)"
+msgstr "Простое правило (базовая цена + за кг)"
+
+msgid "BTS: eshikkacha kuryer"
+msgstr "BTS: курьер до двери"
+
+msgid "BTS: qishki yoqilg'i ustamasi (%)"
+msgstr "BTS: зимняя топливная надбавка (%)"
+
+msgid "Posilka hajmi (sm³ har 1 kg mahsulotga)"
+msgstr "Объём посылки (см³ на 1 кг товара)"

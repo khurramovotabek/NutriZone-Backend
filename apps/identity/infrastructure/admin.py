@@ -577,13 +577,23 @@ class SessionStateFilter(admin.SimpleListFilter):
 
 
 @admin.register(orm.UserSession)
-class UserSessionAdmin(ui.PremiumListMixin, admin.ModelAdmin):
+class UserSessionAdmin(ExcelExportMixin, ui.PremiumListMixin, admin.ModelAdmin):
     """
     Sessiyalar: every login (refresh-token session) -- who, which browser / device, IP, last activity, state; staff can
     close a session (RevokeSession) or sign a user out everywhere (LogoutAll). `refresh_token_hash` is a secret and is
     never listed or shown (readonly does not mean hidden).
     """
 
+    excel_title = "Sessiyalar"
+    excel_select_related = ("user",)
+    excel_columns = [
+        Col("Foydalanuvchi", lambda s: s.user.full_name or "", 24), Col("Telefon", lambda s: s.user.phone_number or "", 16),
+        Col("Qurilma / brauzer", lambda s: ui.parse_ua(s.user_agent)["label"] if s.user_agent else (s.device_name or ""), 24), Col("Turi", "device_type", 10),
+        Col("IP manzil", "ip_address", 18), Col("Kirgan", lambda s: timezone.localtime(s.created_at).replace(tzinfo=None), 17),
+        Col("Oxirgi faollik", lambda s: timezone.localtime(s.last_activity).replace(tzinfo=None) if s.last_activity else None, 17),
+        Col("Tugaydi", lambda s: timezone.localtime(s.expires_at).replace(tzinfo=None), 17),
+        Col("Holat", lambda s: ui.SESSION_STATE[ui.session_state(s)][0], 16),
+    ]
     list_display = ("user", "last_activity", "created_at")
     list_filter = (SessionStateFilter, ("device_type", _titled(admin.ChoicesFieldListFilter, "Qurilma turi")), ("last_activity", _titled(admin.DateFieldListFilter, "Oxirgi faollik")))
     search_fields = ("user__phone_number", "user__full_name", "ip_address")
@@ -676,11 +686,27 @@ class UserSessionAdmin(ui.PremiumListMixin, admin.ModelAdmin):
 
 
 @admin.register(orm.Device)
-class DeviceAdmin(ui.PremiumListMixin, admin.ModelAdmin):
+class DeviceAdmin(ExcelExportMixin, ui.PremiumListMixin, admin.ModelAdmin):
     """
     Qurilmalar: registered app / POS devices per user, trusted or not. `push_token` (abusable if leaked -- pushes can be
     sent to the device with it) is never listed or shown, only whether one exists.
     """
+
+    excel_title = "Qurilmalar"
+    excel_select_related = ("user",)
+    excel_columns = [
+        Col("Qurilma", "device_name", 26), Col("Turi", "device_type", 10), Col("Egasi", lambda d: (d.user.full_name or "") if d.user else "", 24),
+        Col("Telefon", lambda d: (d.user.phone_number or "") if d.user else "", 16), Col("Ishonchli", "is_trusted", 10),
+        Col("Push", lambda d: bool(d.push_token), 8), Col("Sessiyalar", lambda d: d.x_sessions, 11, number=True),
+        Col("Ro'yxatga olingan", lambda d: timezone.localtime(d.created_at).replace(tzinfo=None), 17),
+    ]
+
+    def excel_prepare(self, objs):
+        from django.db.models import Count
+
+        counts = dict(orm.UserSession.objects.filter(device_id__in=[d.id for d in objs]).values_list("device_id").annotate(n=Count("id")))
+        for d in objs:
+            d.x_sessions = counts.get(d.id, 0)
 
     list_display = ("device_name", "created_at")
     list_filter = (("device_type", _titled(admin.ChoicesFieldListFilter, "Qurilma turi")), ("is_trusted", _titled(admin.BooleanFieldListFilter, "Ishonchli")))
@@ -692,11 +718,11 @@ class DeviceAdmin(ui.PremiumListMixin, admin.ModelAdmin):
     readonly_fields = fields
 
     nz_icon, nz_tone, nz_title = "fa-mobile-screen", "#0891b2", "Qurilmalar"
-    nz_subtitle = "Mijozlar ilovasi va kassalardagi ro'yxatdan o'tgan qurilmalar: turi, egasi, ishonchliligi va push bildirishnoma holati."
+    nz_subtitle = "Mijozlar kirgan barcha qurilmalar (sayt, Telegram, ilova, kassa): turi, egasi, sessiyalari va push bildirishnoma holati."
     nz_columns = (("Qurilma", ""), ("Egasi", ""), ("Turi", ""), ("Push", ""), ("Sessiyalar", "r"), ("Ro'yxatga olingan", "r"))
     nz_grid = "minmax(200px,1.6fr) minmax(220px,2fr) 140px 120px 110px 130px"
     nz_search = "Qurilma nomi, ism yoki telefon…"
-    nz_empty = ("Hali qurilma ro'yxatdan o'tmagan", "Qurilmalar mobil ilova yoki kassa push bildirishnomaga ulanganda yoziladi. Veb-saytdagi kirishlar «Sessiyalar» bo'limida ko'rinadi.")
+    nz_empty = ("Hali qurilma ro'yxatdan o'tmagan", "Mijoz saytga, Telegram Mini App'ga, mobil ilovaga yoki kassaga kirganda qurilmasi shu yerga yoziladi.")
 
     def has_add_permission(self, request):
         return False
@@ -706,13 +732,14 @@ class DeviceAdmin(ui.PremiumListMixin, admin.ModelAdmin):
 
     def nz_stats(self, request):
         k = orm.Device.objects.aggregate(all=Count("id"), trusted=Count("id", filter=Q(is_trusted=True)), push=Count("id", filter=Q(push_token__isnull=False) & ~Q(push_token="")),
-                                         mobile=Count("id", filter=Q(device_type="mobile")), pos=Count("id", filter=Q(device_type="pos")))
+                                         mobile=Count("id", filter=Q(device_type="mobile")), pos=Count("id", filter=Q(device_type="pos")),
+                                         web=Count("id", filter=Q(device_type="web")))
         return [
-            ui.stat_card("Jami qurilma", k["all"], "#0891b2", "fa-mobile-screen", f"{k['mobile']} mobil · {k['pos']} kassa"),
+            ui.stat_card("Jami qurilma", k["all"], "#0891b2", "fa-mobile-screen", f"{k['web']} sayt · {k['mobile']} ilova · {k['pos']} kassa"),
             ui.stat_card("Ishonchli", k["trusted"], "#16a34a", "fa-circle-check", "tasdiqlangan qurilmalar", "?is_trusted__exact=1"),
             ui.stat_card("Push yoqilgan", k["push"], "#9333ea", "fa-bell", "bildirishnoma oladi"),
-            ui.stat_card("Veb sessiyalar", orm.UserSession.objects.filter(revoked_at__isnull=True, expires_at__gt=timezone.now(), device__isnull=True).count(),
-                         "#2563eb", "fa-globe", "qurilmasiz (brauzer) kirishlar", reverse("admin:identity_usersession_changelist") + "?state=active"),
+            ui.stat_card("Ochiq sessiyalar", orm.UserSession.objects.filter(revoked_at__isnull=True, expires_at__gt=timezone.now()).count(),
+                         "#2563eb", "fa-globe", "hozir kirgan holatda", reverse("admin:identity_usersession_changelist") + "?state=active"),
         ]
 
     def nz_prepare(self, request, objs):

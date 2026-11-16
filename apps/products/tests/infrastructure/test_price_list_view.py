@@ -182,6 +182,16 @@ class TestProductListQuickPriceEditor:
         page = client.get("/django-admin/products/product/").content.decode()
         assert 'data-nzq="' in page and "nutrizone-price-quick.js" in page
 
+    def test_first_price_of_a_new_variant_with_only_price_and_old_price(self):
+        """A variant added to a family has no price-list entry yet; the editor sends just price / old price."""
+        import json
+
+        client = _staff_client()
+        variant = _make_variant("New Flavour Whey")
+        r = client.post(f"/django-admin/products/price-list/api/save/{variant.id}", json.dumps({"price": 600000, "old_price": 800000}), content_type="application/json")
+        assert r.status_code == 200 and r.json()["data"] == {"base_price": None, "old_price": "800000", "price": "600000", "currency": r.json()["data"]["currency"]}
+        assert client.post(f"/django-admin/products/price-list/api/save/{_make_variant('Unpriced').id}", json.dumps({"old_price": 5}), content_type="application/json").status_code == 422
+
     def test_unknown_product_is_404_and_staff_only(self):
         assert _staff_client().get(f"/django-admin/products/price-list/api/product/{uuid.uuid4()}").status_code == 404
         assert Client().get(f"/django-admin/products/price-list/api/product/{uuid.uuid4()}").status_code == 302

@@ -615,7 +615,7 @@ class LoyaltySettingsForm(forms.ModelForm):
             "referral_enabled": "Referal dasturi", "referrer_reward": "Taklif qilganga mukofot (coin)", "referee_reward": "Yangi mijozga mukofot (coin)",
             "referral_min_order": "Referal: birinchi buyurtma minimal summasi (so'm)", "subscribe_gift_coins": "Telegram yangiliklariga obuna sovg'asi (coin)",
             "telegram_notifications": "Telegram xabarnomalari",
-            "signup_bonus_enabled": "Ro'yxatdan o'tish sovg'asi yoqilgan", "signup_bonus_coins": "Sovg'a miqdori (coin)",
+            "signup_bonus_enabled": "Birinchi buyurtma sovg'asi yoqilgan", "signup_bonus_coins": "Sovg'a miqdori (coin)",
             "signup_bonus_limit": "Nechta birinchi mijozga",
         }
         help_texts = {
@@ -628,7 +628,7 @@ class LoyaltySettingsForm(forms.ModelForm):
             "subscribe_gift_coins": "Botda yangiliklarga obuna bo'lgan mijoz birinchi xaridida bir marta oladi. 0 — sovg'a yo'q.",
             "telegram_notifications": "Coin tushishi, daraja oshishi, referal bonuslari va yonish eslatmalari.",
             "referrer_reward": "", "referee_reward": "",
-            "signup_bonus_enabled": "Ro'yxatdan o'tgan (telefon raqami tasdiqlangan) birinchi mijozlarga bir martalik coin sovg'a. Saytda qolgan joylar soni ko'rsatiladi.",
+            "signup_bonus_enabled": "Birinchi buyurtmasi tasdiqlangan birinchi mijozlarga bir martalik coin sovg'a (har mijozga bir marta). Saytda qolgan joylar soni ko'rsatiladi.",
             "signup_bonus_coins": "Har bir mijozga beriladigan coin (1 coin = 1 so'm).",
             "signup_bonus_limit": "Shuncha mijozga berilgach aksiya avtomatik yopiladi. 0 — cheklovsiz.",
         }
@@ -644,7 +644,7 @@ class LoyaltySettingsAdmin(PremiumFormMixin, admin.ModelAdmin):
         ("Coin muddati", {"fields": ("coin_expiry_days", "expiry_reminder_days")}),
         ("Xaridda coin bilan to'lash", {"fields": ("redeem_enabled", "max_redeem_percent", "min_redeem_coins")}),
         ("Referal dasturi", {"fields": ("referral_enabled", "referrer_reward", "referee_reward", "referral_min_order")}),
-        ("Ro'yxatdan o'tish sovg'asi", {"fields": ("signup_bonus_enabled", "signup_bonus_coins", "signup_bonus_limit", "signup_bonus_progress")}),
+        ("Birinchi buyurtma sovg'asi", {"fields": ("signup_bonus_enabled", "signup_bonus_coins", "signup_bonus_limit", "signup_bonus_progress")}),
         ("Telegram", {"fields": ("subscribe_gift_coins", "telegram_notifications")}),
         ("Mijoz uchun qanday ko'rinadi", {"classes": ("nzi-panel",), "fields": ("example_panel",)}),
     )

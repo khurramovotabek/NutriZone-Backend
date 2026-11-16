@@ -511,9 +511,9 @@ _TRANSLATIONS: dict[str, dict[str, str]] = {
         "en": "\U0001F9FE <b>ORDER</b>\n\n\U0001F4B0 Total: {total} {currency}\n\nChoose how to pay:",
     },
     "checkout_pay_cash_button": {
-        "uz": "\U0001F4B5 Naqd — yetkazib berishda",
-        "ru": "\U0001F4B5 Наличными при получении",
-        "en": "\U0001F4B5 Cash on delivery",
+        "uz": "\U0001F4B5 Naqd",
+        "ru": "\U0001F4B5 Наличные",
+        "en": "\U0001F4B5 Cash",
     },
     "checkout_pay_online_button": {
         "uz": "\U0001F4B3 {provider} orqali onlayn",
@@ -526,9 +526,9 @@ _TRANSLATIONS: dict[str, dict[str, str]] = {
         "en": "\U0001F389 Your order has been placed!\n\n\U0001F9FE Order \u2116 {order_number}\n\U0001F4B0 Total: {total} {currency}\n\U0001F4B3 Payment: {provider}\n\nPay with the button below — the order is confirmed automatically as soon as the payment arrives.",
     },
     "pay_cash_ok": {
-        "uz": "\u2705 Kelishdik! {order_number} buyurtmasi uchun kuryerga naqd to'laysiz. Operator tez orada siz bilan bog'lanadi.",
-        "ru": "\u2705 Договорились! За заказ {order_number} вы заплатите курьеру наличными. Оператор скоро свяжется с вами.",
-        "en": "\u2705 Done! You'll pay the courier in cash for order {order_number}. An operator will contact you shortly.",
+        "uz": "\u2705 Kelishdik! {order_number} buyurtmasi uchun to'lov — naqd. Operator tez orada siz bilan bog'lanadi.",
+        "ru": "\u2705 Договорились! Заказ {order_number} — оплата наличными. Оператор скоро свяжется с вами.",
+        "en": "\u2705 Done! Order {order_number} — payment in cash. An operator will contact you shortly.",
     },
     "pay_cash_paid": {
         "uz": "\u2705 {order_number} buyurtmasi allaqachon to'langan.",

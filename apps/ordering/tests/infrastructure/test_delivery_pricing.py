@@ -38,7 +38,7 @@ def test_tashkent_grows_with_distance_and_never_passes_the_cap():
 
 
 def test_regions_base_up_to_one_kg_then_per_started_kg():
-    cfg = _cfg(regions_fee=Decimal("30000"), regions_base_kg=Decimal("1"), regions_extra_per_kg=Decimal("10000"))
+    cfg = _cfg(regions_pricing="flat", regions_fee=Decimal("30000"), regions_base_kg=Decimal("1"), regions_extra_per_kg=Decimal("10000"))
     assert dp.regions_fee(cfg, 0.4) == Decimal("30000")
     assert dp.regions_fee(cfg, 1.0) == Decimal("30000")
     assert dp.regions_fee(cfg, 1.2) == Decimal("40000")  # 1 started extra kg
@@ -46,7 +46,7 @@ def test_regions_base_up_to_one_kg_then_per_started_kg():
 
 
 def test_free_threshold_makes_delivery_free():
-    _cfg(free_from=Decimal("500000"))
+    _cfg(free_from=Decimal("500000"), regions_pricing="flat")
     assert dp.quote(dp.REGIONS, Decimal("600000"), weight_kg=5).fee == 0
     q = dp.quote(dp.REGIONS, Decimal("100000"), weight_kg=0.5)
     assert q.fee == Decimal("30000") and q.carrier == "BTS"
@@ -68,7 +68,7 @@ def test_a_region_rate_overrides_the_general_tariff():
     from apps.geo.infrastructure.models import Country, Region
     from apps.ordering.infrastructure.models import RegionDeliveryRate
 
-    cfg = _cfg(regions_fee=Decimal("30000"), regions_base_kg=Decimal("1"), regions_extra_per_kg=Decimal("10000"))
+    cfg = _cfg(regions_pricing="flat", regions_fee=Decimal("30000"), regions_base_kg=Decimal("1"), regions_extra_per_kg=Decimal("10000"))
     country = Country.objects.first() or Country.objects.create(code="UZ")
     far = Region.objects.create(country=country, code="UZ-QRT")
     RegionDeliveryRate.objects.create(settings=cfg, region=far, base_fee=Decimal("45000"), extra_per_kg=None)
@@ -82,7 +82,7 @@ def test_dashboard_page_previews_and_saves_the_prices(admin_client):
 
     assert admin_client.get("/django-admin/ordering/deliverysettings/").url.endswith("/deliverysettings/1/change/")
     page = admin_client.get("/django-admin/ordering/deliverysettings/1/change/").content.decode()
-    assert "30 000 so&#x27;mgacha" in page and "1 kg gacha" in page  # Tashkent "up to", regions per kg (not "1.00 kg")
+    assert "30 000 so&#x27;mgacha" in page and "BTS tarifi" in page and "29 000 so&#x27;mdan" in page  # Tashkent "up to", regions by the BTS card
 
     data = {k: ("" if v is None else v) for k, v in model_to_dict(DeliverySettings.load()).items() if k != "id"}
     data.update({"tashkent_fee": "35000", "free_from": "1000000", "region_rates-TOTAL_FORMS": "0", "region_rates-INITIAL_FORMS": "0",
@@ -92,3 +92,27 @@ def test_dashboard_page_previews_and_saves_the_prices(admin_client):
     cfg = DeliverySettings.load()
     assert cfg.tashkent_fee == Decimal("35000") and cfg.free_from == Decimal("1000000")
     assert dp.quote(dp.TASHKENT, Decimal("1000000")).fee == 0  # free from the threshold
+
+
+# ---------------------------------------------------------------- official BTS tariff card (bts_tariff.py)
+
+def test_bts_card_prices_by_zone_and_billable_weight():
+    from apps.ordering.infrastructure import bts_tariff as bts
+
+    assert bts.price(1, "UZ-TO", "TO-CHIRC") == Decimal("29000")  # zone 0, regional city: no remote fee
+    assert bts.price(1, "UZ-SA", "SA-SAMAR") == Decimal("34000")  # zone 1
+    assert bts.price(2.3, "UZ-SA", "SA-SAMAR") == Decimal("52000")  # 2.3 kg is billed as 3 kg
+    assert bts.price(1, "UZ-QR", "QR-NUKUS") == Decimal("46000")  # zone 5
+    assert bts.price(1, "UZ-SA", "SA-ISHTI") == Decimal("37000")  # district office up to 50 km: +3 000
+    assert bts.price(1, "UZ-SA", "SA-SAMAR", door=True) == Decimal("69000")  # + city courier 35 000
+    assert bts.price(1, "UZ-SA", "SA-SAMAR", volume_cm3=18000) == Decimal("52000")  # 18 000 / 6000 = 3 kg volumetric
+    assert bts.price(25, "UZ-SA", "SA-SAMAR") == Decimal("274000")  # LTL: 250 000 + 4 x 6 000
+    assert bts.price(1, "UZ-SA", "SA-SAMAR", fuel_surcharge_percent=30) == Decimal("44200")
+
+
+def test_regions_quote_uses_the_bts_card_by_default():
+    cfg = _cfg(parcel_cm3_per_kg=Decimal("4500"))
+    assert cfg.regions_pricing == "bts"
+    assert dp.regions_fee(cfg, 0.9, None, "UZ-SU", "SU-TERMI") == Decimal("40000")  # Termiz, zone 3, 1 kg
+    assert dp.regions_fee(cfg, 4.2, None, "UZ-SU", "SU-TERMI") == Decimal("80000")  # 5 kg
+    assert dp.public_options()["zones"]["regions"]["fee"] == "29000"

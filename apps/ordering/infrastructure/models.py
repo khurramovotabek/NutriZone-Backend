@@ -367,7 +367,17 @@ class DeliverySettings(models.Model):
     tashkent_eta_uz = models.CharField(_("Toshkent: muddat (uz)"), max_length=80, blank=True, default="1 ish kuni ichida")
     tashkent_eta_ru = models.CharField(_("Toshkent: muddat (ru)"), max_length=80, blank=True, default="В течение 1 рабочего дня")
     tashkent_eta_en = models.CharField(_("Toshkent: muddat (en)"), max_length=80, blank=True, default="Within 1 working day")
-    # Regions (BTS): a base price for the first kilograms, then a price for every further started kilogram.
+    # Regions (BTS): the official BTS tariff card (bts_tariff.py) by zone + billable weight, or the simple rule below.
+    regions_pricing = models.CharField(_("Viloyatlar: narx hisoblash usuli"), max_length=8, default="bts",
+                                       choices=[("bts", _("BTS rasmiy tarifi (zona + og'irlik + hajm)")), ("flat", _("Oddiy qoida (boshlang'ich narx + har kg)"))],
+                                       help_text=_("«BTS rasmiy tarifi» — bts.uz tarif kartasi (01.09.2026): manzil zonasi, posilka og'irligi va hajmi bo'yicha. "
+                                                   "Viloyat uchun alohida tarif kiritilgan bo'lsa, o'sha ishlatiladi."))
+    bts_door_delivery = models.BooleanField(_("BTS: eshikkacha kuryer"), default=False,
+                                            help_text=_("Yoqilsa, narxga BTS kuryerining manzilgacha yetkazish haqi qo'shiladi. O'chiq bo'lsa — mijoz BTS ofisidan oladi."))
+    bts_fuel_surcharge_percent = models.DecimalField(_("BTS: qishki yoqilg'i ustamasi (%)"), max_digits=5, decimal_places=2, default=0,
+                                                     help_text=_("BTS dekabr–mart oylarida 30% gacha ustama qo'llashi mumkin. BTS e'lon qilsa, shu yerga yozing."))
+    parcel_cm3_per_kg = models.DecimalField(_("Posilka hajmi (sm³ har 1 kg mahsulotga)"), max_digits=8, decimal_places=0, default=4500,
+                                            help_text=_("Hajmiy og'irlik = hajm / 6000. Sport ozuqa bankasi o'rtacha 4 500 sm³/kg (qadoq bilan)."))
     regions_fee = models.DecimalField(_("Viloyatlar: boshlang'ich narx (so'm)"), max_digits=12, decimal_places=2, default=30000,
                                       help_text=_("Posilka og'irligi quyidagi chegaragacha bo'lsa shu narx («30 000 so'mdan»)."))
     regions_base_kg = models.DecimalField(_("Viloyatlar: boshlang'ich narxdagi og'irlik (kg)"), max_digits=6, decimal_places=2, default=1)

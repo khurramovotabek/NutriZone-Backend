@@ -461,3 +461,4 @@ TELEGRAM_ANALYTICS_CHAT_IDS = os.environ.get("TELEGRAM_ANALYTICS_CHAT_IDS", "")
 LOYALTY_EARN_SINCE = os.environ.get("LOYALTY_EARN_SINCE", "2026-09-27")
 # Launch sign-up gift (apps/loyalty/infrastructure/signup_bonus.py); the amount/limit live in the dashboard settings.
 LOYALTY_SIGNUP_BONUS = True
+CART_STOCK_GUARD = True  # cart add / quantity / checkout refuse more units than the WMS can sell

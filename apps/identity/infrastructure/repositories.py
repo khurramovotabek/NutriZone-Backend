@@ -194,6 +194,27 @@ class DjangoOTPChallengeRepository:
         return updated > 0
 
 
+def device_label(device_name: str | None, user_agent: str | None) -> str:
+    """"Safari · iOS" for a browser (from the User-Agent), else the name the client sent."""
+    from apps.identity.infrastructure.admin_ui import parse_ua
+
+    ua = parse_ua(user_agent)
+    label = ua["label"] if user_agent and not ua.get("tool") else ""
+    return (label or (device_name or "") or "Brauzer")[:128]
+
+
+def remember_device(user_id, device_type: str, device_name: str | None, user_agent: str | None):
+    """The user's Device row for this browser/app (found by type + label, else created); never breaks a sign-in."""
+    try:
+        name = device_label(device_name, user_agent)
+        device = orm.Device.objects.filter(user_id=user_id, device_type=device_type, device_name=name).order_by("created_at").first()
+        if device is None:
+            device = orm.Device.objects.create(user_id=user_id, device_type=device_type, device_name=name)
+        return device.id
+    except Exception:  # noqa: BLE001
+        return None
+
+
 class DjangoUserSessionRepository:
     """
     Session reuse-detection note (referenced from
@@ -207,8 +228,11 @@ class DjangoUserSessionRepository:
     """
 
     def create(self, session: UserSessionEntity) -> UserSessionEntity:
+        # every sign-in is tied to a Device row (Identity -> Devices): an app sends its own device id, a browser / the
+        # Telegram Mini App is remembered here by browser + OS, so the same phone isn't listed twice
+        device_id = session.device_id or remember_device(session.user_id, session.device_type.value, session.device_name, session.user_agent)
         row = orm.UserSession.objects.create(
-            id=session.id, user_id=session.user_id, device_id=session.device_id,
+            id=session.id, user_id=session.user_id, device_id=device_id,
             device_name=session.device_name, device_type=session.device_type.value,
             refresh_token_hash=session.refresh_token_hash, ip_address=session.ip_address,
             user_agent=session.user_agent, last_activity=session.last_activity,

@@ -126,3 +126,4 @@ CATALOG_CANDIDATES_TTL = 0  # catalogue candidates are rebuilt on every browse: 
 
 # Sign-up gift off by default so unrelated tests creating active users keep zero balances; its own tests enable it.
 LOYALTY_SIGNUP_BONUS = False
+CART_STOCK_GUARD = False  # legacy cart tests use untracked variants; test_stock_guard.py turns it on

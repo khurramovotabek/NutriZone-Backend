@@ -811,9 +811,10 @@ def price_list_api_save(request, variant_id: str):
             price_list=existing_list, product_variant_id=variant_uuid
         ).first()
 
-    effective_base_cost = existing_entry.cost_price_amount if base_cost == "unset" else base_cost
-    effective_price = existing_entry.base_price_amount if price == "unset" else price
-    effective_old_price = existing_entry.compare_at_price_amount if old_price == "unset" else old_price
+    # a variant priced for the first time has no entry yet: a field left out of the body is then simply empty
+    effective_base_cost = getattr(existing_entry, "cost_price_amount", None) if base_cost == "unset" else base_cost
+    effective_price = getattr(existing_entry, "base_price_amount", None) if price == "unset" else price
+    effective_old_price = getattr(existing_entry, "compare_at_price_amount", None) if old_price == "unset" else old_price
 
     if effective_price is None:
         return _err("Price (selling price) is required.")
