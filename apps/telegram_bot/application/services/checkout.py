@@ -36,6 +36,10 @@ class CheckoutNotReady(Exception):
     pass
 
 
+class CartOutOfStock(CheckoutNotReady):
+    """A line asks for more than the warehouse can sell (sold out since it was added)."""
+
+
 class NoDeliveryAddress(Exception):
     """Raised when checkout:confirm is reached with no real, saved delivery address on file -- the customer must share their location via checkout:start first."""
     pass
@@ -121,8 +125,11 @@ def get_checkout_summary(user) -> dict:
 
     delivery = delivery_quote(user, active_items, total)
     grand = total + (delivery.fee if delivery is not None else Decimal("0"))
+    from apps.cart.infrastructure.stock_guard import shortages
+
+    short = shortages([(i.product_variant_id, i.quantity.value) for i in active_items])
     return {"cart": cart, "readiness": readiness, "total": str(grand), "goods_total": str(total), "delivery": delivery, "currency": currency,
-            "item_count": len(active_items)}
+            "item_count": len(active_items), "shortages": short}
 
 
 def _latest_address(user):
@@ -169,6 +176,10 @@ def confirm_cash_order(user) -> dict:
     active_items = [i for i in cart.items.values() if i.status.value != "removed"]
     if any(i.price_reference is None for i in active_items):
         raise CheckoutNotReady("Every item must have a confirmed price before checkout.")
+    from apps.cart.infrastructure.stock_guard import shortages
+
+    if shortages([(i.product_variant_id, i.quantity.value) for i in active_items]):
+        raise CartOutOfStock("Some items are sold out.")
 
     def _address_snapshot(addr):
         country = DjangoCountryRepository().get_by_id(addr.country_id)

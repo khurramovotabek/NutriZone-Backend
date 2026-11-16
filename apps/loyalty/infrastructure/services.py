@@ -59,7 +59,7 @@ logger = logging.getLogger("nutrizone.app")
 
 FULFILLED_STATUSES = ("delivered", "completed")
 REVERSING_STATUSES = ("cancelled", "returned", "failed")
-CREDIT_KINDS = (WalletTransactionKind.EARN, WalletTransactionKind.REFERRAL, WalletTransactionKind.REFUND, WalletTransactionKind.ADJUSTMENT)
+CREDIT_KINDS = (WalletTransactionKind.EARN, WalletTransactionKind.REFERRAL, WalletTransactionKind.REFUND, WalletTransactionKind.ADJUSTMENT, WalletTransactionKind.BONUS)
 REFUND_GRACE_DAYS = 30  # refunded coins whose original lot already expired get this long to be used again
 
 

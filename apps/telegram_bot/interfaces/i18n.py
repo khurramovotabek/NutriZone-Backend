@@ -41,6 +41,16 @@ _TRANSLATIONS: dict[str, dict[str, str]] = {
         "ru": "👋 {name}",
         "en": "👋 {name}",
     },
+    "menu_coins_line": {
+        "uz": "\U0001FA99 Balans: <b>{coins} coin</b> (1 coin = 1 so'm)",
+        "ru": "\U0001FA99 Баланс: <b>{coins} коинов</b> (1 коин = 1 сум)",
+        "en": "\U0001FA99 Balance: <b>{coins} coins</b> (1 coin = 1 UZS)",
+    },
+    "menu_gift_line": {
+        "uz": "\U0001F381 Birinchi buyurtmangizga <b>{coins} coin</b> sovg'a",
+        "ru": "\U0001F381 <b>{coins} коинов</b> в подарок за первый заказ",
+        "en": "\U0001F381 <b>{coins} coins</b> gift for your first order",
+    },
     "menu_cart_line": {
         "uz": "🛒 Savatda: <b>{units} dona</b> · {total}",
         "ru": "🛒 В корзине: <b>{units} шт</b> · {total}",
@@ -240,14 +250,14 @@ _TRANSLATIONS: dict[str, dict[str, str]] = {
         "en": "\U0001F6CD Open the shop",
     },
     "menu_autologin": {
-        "uz": "\U0001F310 Saytga avtomatik kirish",
-        "ru": "\U0001F310 Автоматический вход на сайт",
-        "en": "\U0001F310 Auto-login to website",
+        "uz": "\U0001F310 Saytga kirish",
+        "ru": "\U0001F310 Войти на сайт",
+        "en": "\U0001F310 Sign in to website",
     },
     "menu_getcode": {
-        "uz": "\U0001F511 Sayt uchun kod olish",
-        "ru": "\U0001F511 Получить код для сайта",
-        "en": "\U0001F511 Get website login code",
+        "uz": "\U0001F511 Kirish kodi",
+        "ru": "\U0001F511 Код входа",
+        "en": "\U0001F511 Login code",
     },
     "menu_social": {
         "uz": "\U0001F4E2 Ijtimoiy tarmoqlar",
@@ -551,14 +561,34 @@ _TRANSLATIONS: dict[str, dict[str, str]] = {
         "en": "\U0001F389 Your order has been placed!\n\n\U0001F9FE Order \u2116 {order_number}\n\U0001F4B0 Total: {total} {currency}\n\U0001F4B5 Payment: Cash\n\nAn operator will contact you shortly.",
     },
     "auth_login_confirm_prompt": {
-        "uz": "\U0001F510 <b>nutrizone.uz saytiga kirish</b>\n\nPastdagi \u00ab\u2705 Saytga kirish\u00bb tugmasini bosing \u2014 sayt avtomatik ochiladi, kod kiritish shart emas.\n\n<i>Agar bu so'rovni siz yubormagan bo'lsangiz, \u00abBekor qilish\u00bbni bosing.</i>",
-        "ru": "\U0001F510 <b>Вход на nutrizone.uz</b>\n\nНажмите \u00ab\u2705 Войти на сайт\u00bb ниже \u2014 сайт войдёт автоматически, код вводить не нужно.\n\n<i>Если это были не вы, нажмите \u00abОтменить\u00bb.</i>",
-        "en": "\U0001F510 <b>Sign in to nutrizone.uz</b>\n\nTap \u00ab\u2705 Sign in to the website\u00bb below \u2014 the site signs you in automatically, no code needed.\n\n<i>If this wasn't you, tap \u00abCancel\u00bb.</i>",
+        "uz": "\U0001F510 <b>NutriZone \u2014 saytga kirish</b>\n\nTugmani bosing \u2014 sayt ochiladi va siz darhol kirasiz. Parol va kod kerak emas.\n\n\U0001F4BB {device} \u00b7 {time}\n\n<i>Bu siz bo'lmasangiz, \u00abBekor qilish\u00bbni bosing.</i>",
+        "ru": "\U0001F510 <b>NutriZone \u2014 вход на сайт</b>\n\nНажмите кнопку \u2014 сайт откроется, и вы сразу войдёте. Пароль и код не нужны.\n\n\U0001F4BB {device} \u00b7 {time}\n\n<i>Если это не вы, нажмите \u00abОтменить\u00bb.</i>",
+        "en": "\U0001F510 <b>NutriZone \u2014 sign in</b>\n\nTap the button \u2014 the site opens and you're signed in. No password or code.\n\n\U0001F4BB {device} \u00b7 {time}\n\n<i>If this wasn't you, tap \u00abCancel\u00bb.</i>",
+    },
+    "bot_sold_out": {
+        "uz": "\U0001F614 Bu mahsulot hozir tugagan. Boshqa ta'm yoki hajmni tanlang \u2014 yoki keyinroq qaytib ko'ring.",
+        "ru": "\U0001F614 Этот товар сейчас закончился. Выберите другой вкус или объём \u2014 или загляните позже.",
+        "en": "\U0001F614 This item is sold out right now. Pick another flavour or size \u2014 or check back later.",
+    },
+    "bot_only_left": {
+        "uz": "Omborda faqat {available} ta qoldi \u2014 savatingizda allaqachon shuncha bor.",
+        "ru": "На складе осталось только {available} шт. \u2014 столько уже в вашей корзине.",
+        "en": "Only {available} left in stock \u2014 that many are already in your cart.",
+    },
+    "cart_out_of_stock": {
+        "uz": "\u26A0\uFE0F Savatdagi ba'zi mahsulotlar tugagan yoki yetarli emas. Savatni ochib, ularni olib tashlang yoki sonini kamaytiring.",
+        "ru": "\u26A0\uFE0F Некоторых товаров из корзины нет в наличии. Откройте корзину и уберите их или уменьшите количество.",
+        "en": "\u26A0\uFE0F Some items in your cart are sold out or short. Open the cart and remove them or lower the quantity.",
+    },
+    "auth_login_device_unknown": {
+        "uz": "Brauzer",
+        "ru": "Браузер",
+        "en": "Browser",
     },
     "auth_login_confirm_button": {
         "uz": "\u2705 Saytga kirish",
         "ru": "\u2705 Войти на сайт",
-        "en": "\u2705 Sign in to the website",
+        "en": "\u2705 Sign in",
     },
     "auth_login_cancel_button": {
         "uz": "\u274C Bekor qilish",

@@ -539,7 +539,7 @@ class WalletTransactionAdmin(ExcelExportMixin, PremiumListMixin, admin.ModelAdmi
         by = dict(tx.values("kind").annotate(v=Sum("amount")).values_list("kind", "v"))
         issued = sum(v for k, v in by.items() if (v or 0) > 0)
         return [
-            ui.stat_card("Shu oy berilgan", f"+{_som(issued)}", "#16a34a", "fa-arrow-trend-up", f"keshbek {_som(by.get('earn'))} · referal {_som(by.get('referral'))}", "?dir=in"),
+            ui.stat_card("Shu oy berilgan", f"+{_som(issued)}", "#16a34a", "fa-arrow-trend-up", f"keshbek {_som(by.get('earn'))} · sovg'a {_som(by.get('bonus'))} · referal {_som(by.get('referral'))}", "?dir=in"),
             ui.stat_card("Shu oy sarflangan", _som(-(by.get("spend") or 0)), "#ea580c", "fa-bag-shopping", "xaridda to'langan", "?kind__exact=spend"),
             ui.stat_card("Yonib ketgan", _som(-(by.get("expiry") or 0)), "#64748b", "fa-hourglass-end", "shu oy muddati tugagan", "?kind__exact=expiry"),
             ui.stat_card("Qaytarib olingan", _som(-(by.get("reversal") or 0)), "#dc2626", "fa-ban", "bekor qilingan buyurtmalar", "?kind__exact=reversal"),

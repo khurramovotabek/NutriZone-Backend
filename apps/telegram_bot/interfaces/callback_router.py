@@ -52,8 +52,7 @@ def _main_menu_keyboard(lang: str) -> list:
         *_invite_row(lang),
         [{"text": t("menu_find", lang), "callback_data": "menu:find"}, {"text": t("menu_stores", lang), "callback_data": "menu:stores"}],
         [{"text": t("menu_chat", lang), "callback_data": "menu:chat"}, {"text": t("menu_news", lang), "callback_data": "menu:news"}],
-        [{"text": t("menu_autologin", lang), "callback_data": "menu:autologin"}],
-        [{"text": t("menu_getcode", lang), "callback_data": "menu:getcode"}],
+        [{"text": t("menu_autologin", lang), "callback_data": "menu:autologin"}, {"text": t("menu_getcode", lang), "callback_data": "menu:getcode"}],
         [{"text": t("menu_social", lang), "callback_data": "menu:social"}, {"text": "\U0001F310 Til / Язык / Language", "callback_data": "menu:lang"}],
     ]
     return rows
@@ -136,6 +135,24 @@ def _resolve_user(telegram_user_id: int):
     return identity_orm.User.objects.filter(id=customer_id).first()
 
 
+def _coins_lines(user, lang: str) -> list[str]:
+    """Coin balance under the greeting, plus the first-order gift while the campaign has places and the customer has none."""
+    out = []
+    try:
+        from apps.loyalty.infrastructure import signup_bonus
+        from apps.loyalty.infrastructure.models import SignupBonusGrant, Wallet
+
+        balance = Wallet.objects.filter(user_id=user.id).values_list("balance", flat=True).first() or 0
+        if balance:
+            out.append(t("menu_coins_line", lang, coins=f"{balance:,}".replace(",", " ")))
+        camp = signup_bonus.status()
+        if camp.enabled and camp.coins and (camp.remaining is None or camp.remaining > 0) and not SignupBonusGrant.objects.filter(user_id=user.id).exists():
+            out.append(t("menu_gift_line", lang, coins=f"{camp.coins:,}".replace(",", " ")))
+    except Exception:  # noqa: BLE001 - the menu never fails because of the loyalty lines
+        logger.info("main menu: coin lines unavailable")
+    return out
+
+
 def send_main_menu(chat_id: int, lang: str = "uz", user=None) -> None:
     """The main menu, greeting the shopper by name and showing what's in their cart (shared with the Mini App)."""
     if user is None:
@@ -154,6 +171,7 @@ def send_main_menu(chat_id: int, lang: str = "uz", user=None) -> None:
                 head.append(t("menu_cart_line", lang, units=units, total=money_text(cart["total"], lang)))
         except Exception:  # noqa: BLE001 - the menu never fails because of the cart line
             logger.info("main menu: cart line unavailable for chat %s", chat_id)
+        head += _coins_lines(user, lang)
     text = t("main_menu", lang)
     if head:
         text = text.replace("\n\n", "\n" + "\n".join(head) + "\n\n", 1)
@@ -563,9 +581,12 @@ def _handle_auth_login_action(telegram_user_id: int, chat_id: int, action: str, 
             return
 
         if action == "cancel":
+            from apps.identity.application.services.telegram_auth import cancel_paired_bot_session
+
             session.status = identity_orm.TelegramAuthSessionStatus.FAILED
             session.telegram_user_id = telegram_user_id
             session.save(update_fields=["status", "telegram_user_id"])
+            cancel_paired_bot_session(session.id)
             _send(chat_id, t("auth_login_cancelled", lang))
             return
 
@@ -677,6 +698,9 @@ def _handle_checkout(user, chat_id: int, action: str, lang: str, arg: str | None
         if summary["readiness"] != "ready":
             _send(chat_id, t("checkout_not_ready_prices", lang), [[{"text": t("menu_cart", lang), "callback_data": "menu:cart"}]])
             return
+        if summary.get("shortages"):
+            _send(chat_id, t("cart_out_of_stock", lang), [[{"text": t("menu_cart", lang), "callback_data": "menu:cart"}]])
+            return
 
         from apps.geo.infrastructure import models as geo_orm
 
@@ -693,6 +717,7 @@ def _handle_checkout(user, chat_id: int, action: str, lang: str, arg: str | None
     elif action in ("confirm", "pay"):
         # "confirm" = cash on delivery; "pay:<method>" = online (Payme / Click / Uzum / Uzcard / Humo) right after the order is created.
         from apps.telegram_bot.application.services.checkout import (
+            CartOutOfStock,
             CheckoutNotReady,
             NoDeliveryAddress,
             OrderAlreadyCreatedForThisCart,
@@ -705,6 +730,9 @@ def _handle_checkout(user, chat_id: int, action: str, lang: str, arg: str | None
             return
         except OrderAlreadyCreatedForThisCart as exc:
             _send(chat_id, t("order_already_placed", lang, order_number=exc.order_number))
+            return
+        except CartOutOfStock:
+            _send(chat_id, t("cart_out_of_stock", lang), [[{"text": t("menu_cart", lang), "callback_data": "menu:cart"}]])
             return
         except CheckoutNotReady:
             _send(chat_id, t("checkout_not_ready_generic", lang), [[{"text": t("menu_cart", lang), "callback_data": "menu:cart"}]])
@@ -1175,6 +1203,13 @@ def _handle_catalog(user, chat_id: int, action: str, arg: str | None, lang: str)
             return
         variants = product.get("variants") or []
         active_variants = [v for v in variants if v.get("status") == "active"]
+        try:  # only sizes that can actually be sold get a "buy" button
+            from apps.stores.infrastructure.availability import sellable
+
+            have = sellable([uuid.UUID(str(v["id"])) for v in active_variants])
+            active_variants = [v for v in active_variants if have.get(uuid.UUID(str(v["id"])), 0) > 0]
+        except Exception:  # noqa: BLE001 - the cart guard still refuses a sold-out size
+            pass
         text = f"<b>{product['name']}</b>\n\n"
         text += t("available", lang) if active_variants else t("unavailable", lang)
         keyboard = []
@@ -1186,14 +1221,25 @@ def _handle_catalog(user, chat_id: int, action: str, arg: str | None, lang: str)
         _send(chat_id, text, keyboard)
 
 
+def _send_out_of_stock(chat_id: int, lang: str, available: int) -> None:
+    text = t("bot_sold_out", lang) if available <= 0 else t("bot_only_left", lang, available=available)
+    _send(chat_id, text, [[{"text": t("menu_cart", lang), "callback_data": "menu:cart"}, {"text": t("menu_products", lang), "callback_data": "menu:products"}]])
+
+
 def _handle_cart(user, chat_id: int, action: str, arg: str | None, lang: str) -> None:
     from apps.telegram_bot.application.services.shopping import TelegramCartService
 
     cart_service = TelegramCartService()
 
+    from apps.cart.infrastructure.stock_guard import OutOfStock
+
     if action == "add_done" or (action == "add" and arg):
         if action == "add":
-            cart_service.add_item(user, uuid.UUID(arg), quantity=1)
+            try:
+                cart_service.add_item(user, uuid.UUID(arg), quantity=1)
+            except OutOfStock as exc:
+                _send_out_of_stock(chat_id, lang, exc.available)
+                return
         _send(chat_id, t("added_to_cart", lang), [
             [{"text": t("view_cart_button", lang), "callback_data": "menu:cart"}],
             [{"text": t("continue_shopping_button", lang), "callback_data": "menu:catalog"}],
@@ -1206,7 +1252,11 @@ def _handle_cart(user, chat_id: int, action: str, arg: str | None, lang: str) ->
         if item is None:
             raise ResourceNotFound("Item not found.")
         new_qty = item["quantity"] + 1 if action == "increase" else max(1, item["quantity"] - 1)
-        cart_service.update_quantity(user, item_id, new_qty)
+        try:
+            cart_service.update_quantity(user, item_id, new_qty)
+        except OutOfStock as exc:
+            _send_out_of_stock(chat_id, lang, exc.available)
+            return
         _show_cart(user, chat_id, lang)
     elif action == "remove" and arg:
         cart_service.remove_item(user, uuid.UUID(arg))
@@ -1848,8 +1898,13 @@ def _pc_buynow(user, chat_id: int, lang: str, message_id: str, state: dict, acti
     if product is None or not product.get("default_variant_id"):
         _send(chat_id, t("product_gone", lang))
         return
+    from apps.cart.infrastructure.stock_guard import OutOfStock
+
     try:
         TelegramCartService().add_item(user, uuid.UUID(product["default_variant_id"]), quantity=1)
+    except OutOfStock as exc:
+        _send_out_of_stock(chat_id, lang, exc.available)
+        return
     except ResourceNotFound:
         _send(chat_id, t("price_pending", lang))
         return
@@ -1876,8 +1931,13 @@ def _handle_product_open(user, chat_id: int, action: str, arg: str | None, lang:
         if not _send_rich(chat_id, lambda: shop_rich.product_doc(target, lang), _rich_product_keyboard(lang)):
             show_product_link(user, chat_id, str(target))
     elif action in ("add", "buy"):
+        from apps.cart.infrastructure.stock_guard import OutOfStock
+
         try:
             TelegramCartService().add_item(user, target, quantity=1)
+        except OutOfStock as exc:
+            _send_out_of_stock(chat_id, lang, exc.available)
+            return
         except ResourceNotFound:
             _send(chat_id, t("price_pending", lang))
             return

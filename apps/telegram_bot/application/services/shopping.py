@@ -259,6 +259,10 @@ class TelegramCartService:
         from apps.pricing.infrastructure import composition as pricing_composition
 
         cart, user = self._get_or_create_cart(user)
+        from apps.cart.infrastructure.stock_guard import assert_in_stock
+
+        in_cart = sum(i.quantity.value for i in cart.items.values() if i.product_variant_id == product_variant_id and i.status.value != "removed")
+        assert_in_stock(product_variant_id, in_cart + quantity)  # sold out / last units already in the cart -> OutOfStock
 
         # Phase 15I: shared transaction across all three service calls --
         # found via reconnaissance that this was the same class of bug
@@ -307,6 +311,11 @@ class TelegramCartService:
         cart = self._load_owned_cart(user)
         if item_id not in cart.items:
             raise ResourceNotFound("Item not found in your cart.")
+        line = cart.items[item_id]
+        if quantity > line.quantity.value:  # lowering is always allowed
+            from apps.cart.infrastructure.stock_guard import assert_in_stock
+
+            assert_in_stock(line.product_variant_id, quantity)
         updated = cart_composition.build_update_quantity(user.id).execute(cart_id=cart.id, item_id=item_id, quantity=quantity)
         return self._cart_payload(updated)
 

@@ -9936,3 +9936,6 @@ msgstr "Joy yoki mahsulot topilmadi."
 
 msgid "Qoldiqni o‘zgartirish — bosing, yangi sonni yozing, Enter"
 msgstr "Qoldiqni o‘zgartirish — bosing, yangi sonni yozing, Enter"
+
+msgid "Gift (campaign)"
+msgstr "Sovg'a (aksiya)"

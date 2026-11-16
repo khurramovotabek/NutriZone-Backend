@@ -12,6 +12,7 @@ KIND = {  # ledger kind -> (label, icon, colour)
     "referral": ("Referal bonusi", "fa-user-plus", "#9333ea"),
     "refund": ("Qaytarildi (bekor qilingan to'lov)", "fa-rotate-left", "#0891b2"),
     "adjustment": ("Qo'lda tuzatish", "fa-hand", "#6366f1"),
+    "bonus": ("Sovg'a", "fa-gift", "#f59e0b"),
     "spend": ("Xaridda ishlatildi", "fa-bag-shopping", "#ea580c"),
     "reversal": ("Keshbek qaytarib olindi", "fa-ban", "#dc2626"),
     "expiry": ("Muddati tugadi", "fa-hourglass-end", "#64748b"),

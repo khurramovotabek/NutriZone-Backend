@@ -695,8 +695,13 @@ class TestWebsiteLoginForANewCustomer:
             post({"update_id": 4, "message": {"message_id": 4, "chat": chat, "from": {"id": tg_user_id}, "contact": {"phone_number": f"99890{uuid.uuid4().int % 10000000:07d}", "user_id": tg_user_id}}})
             post({"update_id": 5, "callback_query": {"id": "c2", "from": {"id": tg_user_id}, "message": {"chat": chat}, "data": "onboarding:confirm"}})
             keyboards = [c.args[2] for c in mock_send.call_args_list if len(c.args) > 2 and c.args[2]]
-            assert any(f"authlogin:confirm:{session_id}" in json.dumps(k) for k in keyboards)
-            post({"update_id": 6, "callback_query": {"id": "c3", "from": {"id": tg_user_id}, "message": {"chat": chat}, "data": f"authlogin:confirm:{session_id}"}})
+            prompt = next(k for k in keyboards if f"authlogin:cancel:{session_id}" in json.dumps(k))
+            button = prompt[0][0]
+            if "url" in button:  # one tap: the button opens the site signed in -- completing it signs in the asking tab too
+                ready_id = button["url"].split("session=")[1]
+                assert json.loads(client.get(f"/api/v1/identity/auth/telegram/session/{ready_id}").content)["data"]["status"] == "verified"
+            else:
+                post({"update_id": 6, "callback_query": {"id": "c3", "from": {"id": tg_user_id}, "message": {"chat": chat}, "data": f"authlogin:confirm:{session_id}"}})
 
         poll = json.loads(client.get(f"/api/v1/identity/auth/telegram/session/{session_id}").content)["data"]
         assert poll["status"] == "verified" and "access_token" in poll

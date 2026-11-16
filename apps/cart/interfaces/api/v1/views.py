@@ -149,19 +149,9 @@ def _lang(request) -> str:
 
 
 def _stock_shortages(lines) -> list[dict]:
-    """[(variant_id, qty)] -> the lines the WMS can't cover (on hand − reserved at active locations, same numbers the
-    storefront shows). A variant with no stock row anywhere counts as 0 -- the storefront shows it as sold out too."""
-    from django.conf import settings
+    from apps.cart.infrastructure.stock_guard import shortages
 
-    from apps.stores.infrastructure.availability import sellable
-
-    if not getattr(settings, "CART_STOCK_GUARD", True):
-        return []
-    wanted: dict = {}
-    for variant_id, qty in lines:
-        wanted[variant_id] = wanted.get(variant_id, 0) + int(qty)
-    have = sellable(list(wanted))
-    return [{"product_variant_id": str(v), "requested": q, "available": have.get(v, 0)} for v, q in wanted.items() if q > have.get(v, 0)]
+    return shortages(lines)
 
 
 def _assert_line_in_stock(request, variant_id, quantity: int) -> None:

@@ -10152,3 +10152,6 @@ msgstr "Склад или товар не найден."
 
 msgid "Qoldiqni o‘zgartirish — bosing, yangi sonni yozing, Enter"
 msgstr "Изменить остаток — нажмите, введите число, Enter"
+
+msgid "Gift (campaign)"
+msgstr "Подарок (акция)"

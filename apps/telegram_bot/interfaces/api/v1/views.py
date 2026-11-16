@@ -21,6 +21,7 @@ hit a failing endpoint.
 from __future__ import annotations
 from core import http_pool
 
+import html
 import json
 import logging
 
@@ -234,13 +235,23 @@ def _handle_telegram_auth_start(payload: str, from_user: dict, chat: dict) -> No
         session.telegram_user_id = from_user["id"]
         session.save(update_fields=["telegram_user_id"])
 
+    from django.conf import settings as django_settings
+
+    from apps.identity.application.services.telegram_auth import CreateBotInitiatedAuthSession, login_request_device, pair_login_sessions
     from apps.telegram_bot.interfaces.callback_router import _send
 
-    keyboard = [
-        [{"text": t("auth_login_confirm_button", lang), "callback_data": f"authlogin:confirm:{session.id}"}],
-        [{"text": t("auth_login_cancel_button", lang), "callback_data": f"authlogin:cancel:{session.id}"}],
-    ]
-    _send(chat["id"], t("auth_login_confirm_prompt", lang), keyboard)
+    # One tap: the button opens the site already signed in, and the tab that asked signs in with it.
+    frontend_url = (getattr(django_settings, "FRONTEND_URL", None) or "").rstrip("/")
+    if frontend_url.startswith("https://") or (frontend_url and django_settings.DEBUG):
+        ready = CreateBotInitiatedAuthSession().execute(customer_id=customer_id, telegram_user_id=from_user["id"])
+        pair_login_sessions(session.id, ready.session_id)
+        confirm = {"text": t("auth_login_confirm_button", lang), "url": f"{frontend_url}/auto-login?session={ready.session_id}"}
+    else:
+        confirm = {"text": t("auth_login_confirm_button", lang), "callback_data": f"authlogin:confirm:{session.id}"}
+    keyboard = [[confirm], [{"text": t("auth_login_cancel_button", lang), "callback_data": f"authlogin:cancel:{session.id}"}]]
+    device = login_request_device(session.id)
+    when = django_timezone.localtime().strftime("%H:%M")
+    _send(chat["id"], t("auth_login_confirm_prompt", lang, device=html.escape(device or t("auth_login_device_unknown", lang)), time=when), keyboard)
 
 
 _AUTH_LOGIN_PENDING_TTL = 15 * 60

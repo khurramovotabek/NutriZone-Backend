@@ -238,6 +238,14 @@ class CreateTelegramAuthSessionView(APIView):
 
         with timed("identity.create_telegram_auth_session"):
             created = CreateTelegramAuthSession().execute()
+        try:  # "Chrome · Android" in the bot's prompt, so the customer recognises their own request
+            from apps.identity.application.services.telegram_auth import remember_login_request
+            from apps.identity.infrastructure.repositories import device_label
+
+            ua = request.META.get("HTTP_X_CLIENT_USER_AGENT") or request.META.get("HTTP_USER_AGENT") or ""
+            remember_login_request(created.session_id, device_label(None, ua) if ua else None)
+        except Exception:  # noqa: BLE001 -- a label must never block a login
+            pass
 
         bot_username = getattr(settings, "TELEGRAM_BOT_USERNAME", None)
         telegram_url = f"https://t.me/{bot_username}?start={created.raw_token}" if bot_username else None
@@ -311,6 +319,9 @@ class GetTelegramAuthSessionStatusView(APIView):
             return success_response(data={"status": "consumed"}, status_code=200)
 
         default_collector.counter("identity_telegram_auth_completed_total")
+        from apps.identity.application.services.telegram_auth import verify_paired_request
+
+        verify_paired_request(session_uuid)  # one-tap link from the bot: the tab that asked signs in too
         return success_response(
             data={
                 "status": "verified",

@@ -166,3 +166,72 @@ class CompleteTelegramAuthSession:
             session.save(update_fields=["status", "consumed_at"])
 
         return result
+
+
+# --- One-tap website login from the bot --------------------------------------------------------------------------
+# The site asks for a login (PENDING request "A", polled by the shopper's tab). The bot answers with a URL button
+# carrying a ready bot-initiated session "B": tapping it opens the site already signed in, and completing B also
+# signs in the tab that asked (A) -- for the same Telegram user only. "Cancel" kills both.
+_PAIR_KEY = "tg:authpair:{}"        # B -> A
+_PAIR_REV_KEY = "tg:authpair-rev:{}"  # A -> B
+_REQUEST_KEY = "tg:authreq:{}"      # A -> {"device": "Chrome · Android"}
+
+
+def remember_login_request(session_id, device: str | None) -> None:
+    from django.core.cache import cache
+
+    if device:
+        cache.set(_REQUEST_KEY.format(session_id), {"device": device[:80]}, SESSION_TTL_SECONDS + 60)
+
+
+def login_request_device(session_id) -> str | None:
+    from django.core.cache import cache
+
+    return (cache.get(_REQUEST_KEY.format(session_id)) or {}).get("device")
+
+
+def pair_login_sessions(request_session_id, bot_session_id) -> None:
+    from django.core.cache import cache
+
+    cache.set(_PAIR_KEY.format(bot_session_id), str(request_session_id), SESSION_TTL_SECONDS + 60)
+    cache.set(_PAIR_REV_KEY.format(request_session_id), str(bot_session_id), SESSION_TTL_SECONDS + 60)
+
+
+def verify_paired_request(bot_session_id) -> bool:
+    """B was just completed: sign in the tab that asked (A) too, if it is still waiting and belongs to the same Telegram user."""
+    from django.core.cache import cache
+    from django.db import transaction
+
+    from apps.identity.infrastructure import models as identity_orm
+
+    request_id = cache.get(_PAIR_KEY.format(bot_session_id))
+    if not request_id:
+        return False
+    cache.delete(_PAIR_KEY.format(bot_session_id))
+    with transaction.atomic():
+        bot = identity_orm.TelegramAuthSession.objects.filter(id=bot_session_id).first()
+        req = identity_orm.TelegramAuthSession.objects.select_for_update().filter(id=request_id).first()
+        if bot is None or req is None or req.status != identity_orm.TelegramAuthSessionStatus.PENDING or req.expires_at <= django_timezone.now():
+            return False
+        if req.telegram_user_id is not None and req.telegram_user_id != bot.telegram_user_id:
+            return False
+        req.status = identity_orm.TelegramAuthSessionStatus.VERIFIED
+        req.telegram_user_id = bot.telegram_user_id
+        req.user_id = bot.user_id
+        req.verified_at = django_timezone.now()
+        req.save(update_fields=["status", "telegram_user_id", "user_id", "verified_at"])
+    return True
+
+
+def cancel_paired_bot_session(request_session_id) -> None:
+    """"Cancel" on the prompt: the ready-made one-tap link must die with the request."""
+    from django.core.cache import cache
+
+    from apps.identity.infrastructure import models as identity_orm
+
+    bot_id = cache.get(_PAIR_REV_KEY.format(request_session_id))
+    if not bot_id:
+        return
+    cache.delete_many([_PAIR_REV_KEY.format(request_session_id), _PAIR_KEY.format(bot_id)])
+    identity_orm.TelegramAuthSession.objects.filter(id=bot_id, status=identity_orm.TelegramAuthSessionStatus.VERIFIED).update(
+        status=identity_orm.TelegramAuthSessionStatus.FAILED)

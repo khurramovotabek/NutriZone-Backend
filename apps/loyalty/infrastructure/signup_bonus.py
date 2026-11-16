@@ -5,7 +5,7 @@ Opening campaign: the first N customers who place an order get a one-time coin g
   throw-away accounts can't take the slots. One gift per customer, whatever happens to later orders.
 - `SignupBonusGrant` is the counter and the guard: one row per customer (unique), numbered 1..limit. Slots are taken
   under a row lock on the settings singleton, so two orders confirmed in the same second never both become "№500".
-- Coins are an ordinary ledger credit (kind "adjustment", normal expiry), visible in the wallet history.
+- Coins are an ordinary ledger credit (kind "bonus", normal expiry), visible in the wallet history as a gift.
 - Customers who had already ordered before the switch are given their slots by `manage.py grant_signup_bonus --existing`.
 - Grants made while the gift was paid at sign-up (source "signup") stay as they are.
 """
@@ -67,7 +67,7 @@ def grant(user_id: uuid.UUID, source: str = "first_order", notify_customer: bool
                 return None
             number = taken + 1
             row = SignupBonusGrant.objects.create(user_id=user_id, number=number, coins=coins, source=source)
-            tx = _credit(user_id, coins, WalletTransactionKind.ADJUSTMENT, note=f"Birinchi buyurtma sovg'asi · №{number}")
+            tx = _credit(user_id, coins, WalletTransactionKind.BONUS, note=f"Birinchi buyurtma sovg'asi · №{number}")
             if tx is None:
                 raise IntegrityError("signup bonus credit was not recorded")
             row.transaction = tx

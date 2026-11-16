@@ -125,6 +125,7 @@ class WalletTransactionKind(models.TextChoices):
     REFERRAL = "referral", _("Referral bonus")
     REFUND = "refund", _("Refund (order with coin payment cancelled)")
     ADJUSTMENT = "adjustment", _("Manual adjustment")
+    BONUS = "bonus", _("Gift (campaign)")
     # debits (−) -- consume lots first-to-expire-first (FIFO), recorded in `allocations`
     SPEND = "spend", _("Spent at checkout")
     REVERSAL = "reversal", _("Reversed (order cancelled/returned)")
