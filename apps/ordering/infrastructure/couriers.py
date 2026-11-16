@@ -165,6 +165,55 @@ def find_users(term: str, limit: int = 8) -> list[dict]:
     return out
 
 
+def normalize_phone(raw: str) -> str:
+    """'90 123 45 67', '8 90…', '998901234567', '+998 (90) 123-45-67' → '+998901234567'; '' when it isn't an Uzbek mobile number."""
+    import re
+
+    digits = re.sub(r"\D", "", raw or "")
+    if len(digits) == 9:
+        digits = "998" + digits
+    elif len(digits) == 10 and digits.startswith("8"):
+        digits = "998" + digits[1:]
+    return "+" + digits if re.fullmatch(r"998\d{9}", digits) else ""
+
+
+def account_for_phone(phone: str):
+    """The active customer account registered with this phone, if exactly one exists."""
+    from apps.identity.infrastructure.models import User
+
+    phone = normalize_phone(phone)
+    if not phone:
+        return None
+    users = list(User.objects.filter(phone_number=phone)[:2])  # default manager hides soft-deleted accounts
+    return users[0] if len(users) == 1 else None
+
+
+def auto_link_account(user) -> "orm.Courier | None":
+    """
+    A courier entered by the admin before they had an account gets it the moment someone signs up
+    (site, bot, Mini App) with the courier's phone -- no second trip to the dashboard.
+    """
+    from apps.ordering.infrastructure import models as orm
+
+    phone = normalize_phone(getattr(user, "phone_number", "") or "")
+    if not phone or orm.Courier.objects.filter(user=user).exists():
+        return None
+    courier = orm.Courier.objects.filter(user__isnull=True, is_active=True, phone=phone).first()
+    if courier is None:
+        return None
+    link_user(courier, user)
+    courier.save(update_fields=["user", "name", "phone", "telegram_username", "updated_at"])
+    return courier
+
+
+def connect_link() -> str:
+    """The shop bot link a courier opens to sign in with their phone (which links the account automatically)."""
+    from django.conf import settings
+
+    username = (getattr(settings, "TELEGRAM_BOT_USERNAME", "") or "").lstrip("@")
+    return f"https://t.me/{username}" if username else ""
+
+
 def link_user(courier, user) -> list[str]:
     """Attach the account and fill the courier's empty contact fields from it. Returns the fields filled."""
     filled = []

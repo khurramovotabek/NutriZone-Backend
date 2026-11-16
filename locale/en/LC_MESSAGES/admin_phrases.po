@@ -7963,3 +7963,27 @@ msgstr "Connection works: endpoint, signature and keys are correct."
 
 msgid "ta algoritm · har kuni ertalab va «Hozir tekshirish» bosilganda"
 msgstr "algorithms · every morning and on “Check now”"
+
+msgid "Ixtiyoriy: telefon, ism yoki @username bo'yicha toping. Bo'sh qolsa, telefon raqami bo'yicha avtomatik bog'lanadi; bog'langach har bir biriktirilgan buyurtma kuryerga Telegram'da keladi."
+msgstr "Optional: search by phone, name or @username. If empty, it links automatically by phone number; once linked, every assigned order reaches the courier in Telegram."
+
+msgid "Akkaunt tanlanmasa: shu raqamli akkaunt bo'lsa darhol, bo'lmasa kuryer shu raqam bilan ro'yxatdan o'tganda avtomatik bog'lanadi."
+msgstr "If no account is chosen: an account with this number links right away, otherwise when the courier signs up with this number."
+
+msgid "— kuryer shu raqam bilan botga kirsin, akkaunt o'zi bog'lanadi."
+msgstr "— the courier signs in to the bot with this number and the account links itself."
+
+msgid "Telefon raqamini kiriting yoki yuqoridan akkauntni tanlang."
+msgstr "Enter the phone number or pick the account above."
+
+msgid "Havolani nusxalash"
+msgstr "Copy link"
+
+msgid "Telefon raqami noto'g'ri. Masalan: +{0} {1} {2} {3} {4}"
+msgstr "Invalid phone number. Example: +{0} {1} {2} {3} {4}"
+
+msgid "Kuryer haqi manfiy bo'lishi mumkin emas."
+msgstr "Courier fee cannot be negative."
+
+msgid "masalan {0} {1}"
+msgstr "e.g. {0} {1}"

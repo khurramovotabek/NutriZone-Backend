@@ -8002,3 +8002,27 @@ msgstr "Подключение работает: endpoint, подпись и к�
 
 msgid "ta algoritm · har kuni ertalab va «Hozir tekshirish» bosilganda"
 msgstr "алгоритмов · каждое утро и по кнопке «Проверить сейчас»"
+
+msgid "Ixtiyoriy: telefon, ism yoki @username bo'yicha toping. Bo'sh qolsa, telefon raqami bo'yicha avtomatik bog'lanadi; bog'langach har bir biriktirilgan buyurtma kuryerga Telegram'da keladi."
+msgstr "Необязательно: найдите по телефону, имени или @username. Если пусто — привяжется автоматически по номеру телефона; после привязки каждый назначенный заказ приходит курьеру в Telegram."
+
+msgid "Akkaunt tanlanmasa: shu raqamli akkaunt bo'lsa darhol, bo'lmasa kuryer shu raqam bilan ro'yxatdan o'tganda avtomatik bog'lanadi."
+msgstr "Если аккаунт не выбран: аккаунт с этим номером привяжется сразу, а если его нет — когда курьер зарегистрируется с этим номером."
+
+msgid "— kuryer shu raqam bilan botga kirsin, akkaunt o'zi bog'lanadi."
+msgstr "— пусть курьер войдёт в бот с этим номером, аккаунт привяжется сам."
+
+msgid "Telefon raqamini kiriting yoki yuqoridan akkauntni tanlang."
+msgstr "Введите номер телефона или выберите аккаунт выше."
+
+msgid "Havolani nusxalash"
+msgstr "Копировать ссылку"
+
+msgid "Telefon raqami noto'g'ri. Masalan: +{0} {1} {2} {3} {4}"
+msgstr "Неверный номер телефона. Например: +{0} {1} {2} {3} {4}"
+
+msgid "Kuryer haqi manfiy bo'lishi mumkin emas."
+msgstr "Оплата курьеру не может быть отрицательной."
+
+msgid "masalan {0} {1}"
+msgstr "например {0} {1}"

@@ -133,6 +133,8 @@ html[data-nz-theme="dark"] .nzk-cr-id { color: #7dd3fc; }
 .nzk-acc span { flex: 1; }
 .nzk-acc small { color: var(--nz-text-secondary); }
 .nzk-acc a { font-weight: 700; font-size: .82rem; white-space: nowrap; }
+.nzk-acc .nzk-copy { border: 0; border-radius: 8px; padding: 6px 10px; font-size: .78rem; font-weight: 700; cursor: pointer; background: color-mix(in srgb, var(--nz-primary) 12%, transparent); color: var(--nz-primary); white-space: nowrap; }
+@media (max-width: 640px) { .nzk-acc { flex-wrap: wrap; } }
 .nzk-tiles { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 10px; margin-top: 12px; }
 .nzk-tile { padding: 12px; border-radius: 14px; border: 1px solid var(--nz-border, #e2e8f0); background: var(--nz-surface, #fff); }
 .nzk-tile small { display: block; font-size: .7rem; font-weight: 700; text-transform: uppercase; letter-spacing: .04em; color: var(--nz-text-secondary); }

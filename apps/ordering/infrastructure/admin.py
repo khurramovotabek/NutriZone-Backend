@@ -1249,10 +1249,50 @@ class CourierForm(forms.ModelForm):
         super().__init__(*args, **kwargs)
         self.fields["name"].required = False  # filled from the linked account when left empty
         self.fields["name"].help_text = "Bo'sh qolsa, bog'langan akkauntdagi ism olinadi."
+        self.fields["user"].help_text = ("Ixtiyoriy: telefon, ism yoki @username bo'yicha toping. Bo'sh qolsa, telefon raqami bo'yicha avtomatik bog'lanadi; "
+                                         "bog'langach har bir biriktirilgan buyurtma kuryerga Telegram'da keladi.")
+        if self.instance.pk and self.instance.default_fee is not None and self.instance.default_fee == self.instance.default_fee.to_integral_value():
+            self.initial["default_fee"] = int(self.instance.default_fee)
+        self.fields["phone"].help_text = "Akkaunt tanlanmasa: shu raqamli akkaunt bo'lsa darhol, bo'lmasa kuryer shu raqam bilan ro'yxatdan o'tganda avtomatik bog'lanadi."
+        self.fields["phone"].widget.attrs.update({"placeholder": "+998 90 123 45 67", "inputmode": "tel"})
+        self.fields["default_fee"].widget.attrs.update({"placeholder": "masalan 25 000", "inputmode": "decimal"})
+        self.fields["telegram_username"].widget.attrs.update({"placeholder": "@username"})
+
+    def clean_phone(self):
+        from apps.ordering.infrastructure import couriers
+
+        raw = (self.cleaned_data.get("phone") or "").strip()
+        if not raw:
+            return ""
+        phone = couriers.normalize_phone(raw)
+        if not phone:
+            raise forms.ValidationError("Telefon raqami noto'g'ri. Masalan: +998 90 123 45 67")
+        other = orm.Courier.objects.filter(phone=phone).exclude(pk=self.instance.pk).first()
+        if other:
+            raise forms.ValidationError(f"Bu raqam allaqachon {other.name} ({other.code}) kuryerida.")
+        return phone
+
+    def clean_telegram_username(self):
+        return (self.cleaned_data.get("telegram_username") or "").strip().lstrip("@")
+
+    def clean_default_fee(self):
+        fee = self.cleaned_data.get("default_fee")
+        if fee is not None and fee < 0:
+            raise forms.ValidationError("Kuryer haqi manfiy bo'lishi mumkin emas.")
+        return fee
 
     def clean(self):
+        from apps.ordering.infrastructure import couriers
+
         data = super().clean()
         user = data.get("user")
+        if user is None and data.get("phone") and data.get("is_active", True):
+            found = couriers.account_for_phone(data["phone"])
+            if found is not None and not orm.Courier.objects.filter(user=found).exclude(pk=self.instance.pk).exists():
+                data["user"] = user = found  # same phone → the courier's own account
+                self.instance.user = found
+                if "user" not in self.changed_data:
+                    self.changed_data.append("user")
         if user is not None:
             other = orm.Courier.objects.filter(user=user).exclude(pk=self.instance.pk).first()
             if other:
@@ -1292,8 +1332,7 @@ class CourierAdmin(ExcelExportMixin, PremiumListMixin, PremiumFormMixin, admin.M
     ordering = ("-is_active", "name")
     actions = None
     fieldsets = (
-        ("Akkaunt", {"fields": ("user",), "description": "Kuryerning sayt yoki Telegram botdagi akkauntini telefon, ism yoki @username bo'yicha toping. "
-                                                       "Bog'langach unga biriktirilgan har bir buyurtma Telegram'ga keladi."}),
+        ("Akkaunt", {"fields": ("user",)}),
         ("Kuryer", {"fields": ("name", "phone", "kind", "vehicle", "telegram_username")}),
         ("Hisob-kitob", {"fields": ("default_fee", "note", "is_active")}),
         ("Kuryer kartasi", {"classes": ("nzi-panel",), "fields": ("card_panel",)}),
@@ -1373,9 +1412,17 @@ class CourierAdmin(ExcelExportMixin, PremiumListMixin, PremiumFormMixin, admin.M
     def save_model(self, request, obj, form, change):
         from apps.ordering.infrastructure import couriers
 
+        from django.contrib import messages
+
+        if not obj.user_id and obj.phone and obj.is_active:
+            found = couriers.account_for_phone(obj.phone)
+            if found is not None and not orm.Courier.objects.filter(user=found).exclude(pk=obj.pk).exists():
+                obj.user = found
+                form.changed_data.append("user")
+            elif not change:
+                messages.info(request, f"{obj.phone} raqamli akkaunt hali yo'q — kuryer shu raqam bilan saytga yoki Telegram botga kirganda akkaunt avtomatik bog'lanadi.")
         if "user" in form.changed_data and obj.user_id:
             filled = couriers.link_user(obj, obj.user)
-            from django.contrib import messages
 
             note = " Akkauntdan to'ldirildi: " + ", ".join({"name": "ism", "phone": "telefon", "telegram_username": "Telegram"}[f] for f in filled) + "." if filled else ""
             tg = "" if obj.user.telegram_user_id else " Diqqat: akkaunt Telegram'ga ulanmagan — xabarlar faqat sayt bildirishnomalariga boradi."
@@ -1439,7 +1486,12 @@ class CourierAdmin(ExcelExportMixin, PremiumListMixin, PremiumFormMixin, admin.M
                               u.full_name or "—", u.phone_number or "", "Telegram ulangan — buyurtmalar Telegram'ga keladi" if u.telegram_user_id else "Telegram ulanmagan — faqat sayt bildirishnomalari",
                               reverse("admin:identity_user_change", args=[u.pk]))
         else:
-            acc = mark_safe("<div class='nzk-acc'><i class='fas fa-link-slash'></i> <span><b>Akkaunt bog'lanmagan</b><br><small>Yuqoridan akkauntni tanlang — kuryer buyurtmalarni Telegram'da oladi.</small></span></div>")
+            link = couriers.connect_link()
+            how = (format_html("<b>{}</b> <span>{}</span>", obj.phone, "— kuryer shu raqam bilan botga kirsin, akkaunt o'zi bog'lanadi.") if obj.phone
+                   else "Telefon raqamini kiriting yoki yuqoridan akkauntni tanlang.")
+            btn = format_html("<a href='{}' target='_blank' rel='noopener'>Botni ochish</a><button type='button' class='nzk-copy' data-copy='{}' "
+                              "onclick=\"navigator.clipboard&&navigator.clipboard.writeText(this.dataset.copy);this.textContent='Nusxalandi'\">Havolani nusxalash</button>", link, link) if link else ""
+            acc = format_html("<div class='nzk-acc'><i class='fas fa-link-slash'></i> <span><b>Akkaunt bog'lanmagan</b><br><small>{}</small></span>{}</div>", how, btn)
         rows = couriers.recent(obj)
         table = format_html_join("", "<tr><td><a href='{}'><b>{}</b></a><br><small>{}</small></td><td>{}</td><td>{}</td><td>{}</td><td class='r'>{}</td><td class='r'>{}</td><td>{}</td></tr>", (
             (r["url"], r["number"], r["address"], format_html("<span class='nzk-st' style='--t:{}'>{}</span>", r["status"]["color"], r["status"]["label"]),

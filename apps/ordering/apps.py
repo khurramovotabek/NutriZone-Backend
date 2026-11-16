@@ -18,6 +18,7 @@ class OrderingConfig(AppConfig):
         module's `ready()` pattern.
         """
 
+        from apps.ordering.infrastructure import courier_signals  # noqa: F401 -- courier ↔ account auto-link by phone
         from apps.ordering.infrastructure import admin  # noqa: F401 -- registers admin.py, which Django default discovery cannot reach at this project's infrastructure/admin.py location
         from shared.event_contracts import ordering as ordering_event_contracts  # noqa: F401
 
