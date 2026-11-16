@@ -7093,3 +7093,6 @@ msgstr "Regions section →"
 
 msgid "Xodimlar (Orders bot)"
 msgstr "Staff (Orders bot)"
+
+msgid "Ombor bo'limida boshqarish →"
+msgstr "Manage in Warehouse →"

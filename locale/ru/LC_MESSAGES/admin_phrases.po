@@ -7132,3 +7132,6 @@ msgstr "Раздел «Регионы» →"
 
 msgid "Xodimlar (Orders bot)"
 msgstr "Сотрудники (Orders bot)"
+
+msgid "Ombor bo'limida boshqarish →"
+msgstr "Управлять в разделе «Склад» →"

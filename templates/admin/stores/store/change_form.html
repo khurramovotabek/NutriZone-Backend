@@ -12,7 +12,7 @@
   <div class="nzf-sum-kpis">
     <div style="--t:#10b981"><span>30 kunlik tushum</span><b>{{ nzs_summary.revenue }}</b><small>{{ nzs_summary.sales }} ta savdo</small></div>
     <div style="--t:#f59e0b"><span>Reyting</span><b>{{ nzs_summary.stars }}</b><small>{{ nzs_summary.rating_count }} ta baho</small></div>
-    <div style="--t:#2563eb"><span>Qoldiq</span><b>{{ nzs_summary.units }} dona</b><small>{{ nzs_summary.skus }} xil mahsulot</small></div>
+    <div style="--t:#2563eb"><span>Qoldiq</span><b>{{ nzs_summary.units }} dona</b><small>{{ nzs_summary.skus }} xil mahsulot{% if nzs_summary.skus > 50 %} · <a href="/django-admin/wms/stock/?store={{ original.pk }}">Ombor bo'limida boshqarish →</a>{% endif %}</small></div>
     <div style="--t:#8b5cf6"><span>Kassa</span><b>{{ nzs_summary.shift }}</b><small>{{ nzs_summary.shift_sub }}</small></div>
   </div>
 </div>

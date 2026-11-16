@@ -505,6 +505,14 @@ class StoreAdmin(ExcelExportMixin, admin.ModelAdmin):
         }
         return super().changelist_view(request, {**(extra_context or {}), "nzc": nzc, "title": _("Do'konlar")})
 
+    STOCK_INLINE_MAX = 50  # a warehouse with 1 500 stock rows froze the browser (one autocomplete per row)
+
+    def get_inlines(self, request, obj):
+        inlines = list(super().get_inlines(request, obj))
+        if obj is not None and obj.stock_entries.count() > self.STOCK_INLINE_MAX:
+            inlines = [i for i in inlines if i is not StoreProductStockInline]
+        return inlines
+
     def change_view(self, request, object_id, form_url="", extra_context=None):
         from django.db.models import Avg, Count, Sum
 
