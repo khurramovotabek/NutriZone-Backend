@@ -82,7 +82,7 @@
     rowsEl.innerHTML = d.regions.map(function (r) {
       var cls = (state.selected === r.code ? "is-on " : "") + (r.orders ? "" : "is-zero");
       return '<tr data-code="' + esc(r.code) + '" class="' + cls.trim() + '">' +
-        '<td><span class="nzrg-name">' + escr.name + "</span></td>" +
+        '<td><span class="nzrg-name">' + esc(r.name) + "</span></td>" +
         '<td class="num"><b>' + money(r.revenue) + "</b></td>" +
         '<td class="num"><span class="nzrg-share"><i style="width:' + Math.min(100, r.share) + '%"></i></span>' + r.share + "%</td>" +
         '<td class="num">' + compact(r.online_revenue) + '</td><td class="num">' + compact(r.pos_revenue) + "</td>" +
@@ -108,7 +108,7 @@
       return '<li><span>' + esc(c.city) + "</span><b>" + compact(c.revenue) + '</b><small>' + num(c.orders) + " " + t("orders") + '</small><i style="width:' + w + '%"></i></li>';
     }).join("") : '<li class="is-empty">—</li>';
     detail.innerHTML =
-      '<div class="nzrg-d-head"><h4>' + escr.name + "</h4>" + changeHtml(r.change) + "</div>" +
+      '<div class="nzrg-d-head"><h4>' + esc(r.name) + "</h4>" + changeHtml(r.change) + "</div>" +
       '<div class="nzrg-d-big">' + money(r.revenue) + "<small>" + r.share + "% " + esc(t("share")) + "</small></div>" +
       '<div class="nzrg-d-grid">' +
       "<div><small>" + esc(t("online")) + "</small><b>" + compact(r.online_revenue) + "</b></div>" +
