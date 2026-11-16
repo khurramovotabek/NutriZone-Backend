@@ -27,6 +27,7 @@ logger = logging.getLogger("nutrizone.app")
 import types
 
 _original_index = admin.site.index
+HOME_RANGES = {"today": "Bugun", "7d": "7 kun", "30d": "30 kun", "this_month": "Shu oy", "month": "O'tgan oy"}
 
 
 def _safe(section_name: str, fn):
@@ -43,10 +44,13 @@ def _nz_dashboard_index(self, request, extra_context=None):
     if request.user.is_authenticated and request.user.is_staff:
         from django.utils.translation import gettext as _t
 
+        range_key = request.GET.get("p") if request.GET.get("p") in HOME_RANGES else "7d"
         period = DashboardPeriod.last_n_days(7, _t("Last 7 Days"))
-        aggregator = DashboardHomeAggregator(period)
+        aggregator = DashboardHomeAggregator(period, range_key)
 
         extra_context["nz_dashboard"] = {
+            "range_key": range_key,
+            "ranges": [(k, _t(label)) for k, label in HOME_RANGES.items()],
             "period_label": period.label,
             "last_updated": timezone.now(),
             "kpis": _safe("kpis", aggregator.kpis),
@@ -57,6 +61,7 @@ def _nz_dashboard_index(self, request, extra_context=None):
 
         extra_context["nz_tasks"] = _safe("tasks", dashboard_tasks.build)
         extra_context["nzsc_labels"] = _store_sales_labels()
+        extra_context["nzrg_labels"] = _regions_labels()
         from apps.platform.infrastructure import dashboard_rankings
 
         try:
@@ -84,3 +89,21 @@ def _store_sales_labels() -> dict:
         "share": _t("ulush"), "noSales": _t("savdo yo'q"), "open": _t("Savdolarni ochish"),
         "months": [_t("yanvar"), _t("fevral"), _t("mart"), _t("aprel"), _t("may"), _t("iyun"), _t("iyul"), _t("avgust"), _t("sentabr"), _t("oktabr"), _t("noyabr"), _t("dekabr")],
     }
+
+
+def _regions_labels() -> str:
+    """UI strings for the "Hududlar" map script, as JSON (rendered in the admin's current language)."""
+    import json
+
+    from django.utils.translation import gettext as _t
+
+    return json.dumps({
+        "som": _t("so'm"), "mln": _t("mln"), "mlrd": _t("mlrd"), "ming": _t("ming"),
+        "orders": _t("buyurtma"), "customers": _t("mijoz"), "avg": _t("o'rtacha chek"), "share": _t("ulush"),
+        "online": _t("Onlayn"), "pos": _t("Kassa"), "pipeline": _t("Jarayonda"), "lost": _t("Bekor"), "delivery": _t("Yetkazish to'lovi"),
+        "branches": _t("Filiallar"), "noBranches": _t("Filial yo'q"), "cities": _t("Shaharlar"), "noSales": _t("Bu davrda savdo yo'q"),
+        "regionsOf": _t("hududdan"), "prev": _t("oldingi davr"), "noPrev": _t("Oldingi davrda savdo yo'q"),
+        "tashkent": _t("Toshkent sh."), "regions": _t("viloyatlar"), "inPipeline": _t("jarayonda"),
+        "openOrders": _t("Buyurtmalarni ochish"), "pick": _t("Batafsil ko'rish uchun hududni tanlang"),
+        "error": _t("Ma'lumotni yuklab bo'lmadi. Qayta urinib ko'ring."), "retry": _t("Qayta urinish"), "unknown": _t("Aniqlanmagan"),
+    }, ensure_ascii=False).replace("</", "<\\/")

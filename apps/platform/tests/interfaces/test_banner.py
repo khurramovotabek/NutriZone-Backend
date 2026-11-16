@@ -114,3 +114,27 @@ class TestBannerAdminForm:
         form = BannerAdminForm(data={"title": "Bad Duration Banner", "subtitle": "", "cta_text": "", "cta_url": "", "duration_seconds": "1", "sort_order": "0", "is_active": "on"})
         assert not form.is_valid()
         assert "duration_seconds" in form.errors
+
+
+@pytest.mark.django_db
+def test_banner_schedule_window_and_click_counter():
+    from datetime import timedelta
+
+    from django.core.cache import cache
+    from django.test import Client
+    from django.utils import timezone
+
+    from apps.platform.infrastructure.models import Banner
+
+    now = timezone.now()
+    live = Banner.objects.create(title="Live", is_active=True)
+    Banner.objects.create(title="Later", is_active=True, starts_at=now + timedelta(days=1))
+    Banner.objects.create(title="Over", is_active=True, ends_at=now - timedelta(minutes=1))
+    titles = [b["title"] for b in Client().get("/api/v1/settings/banners").json()["data"]]
+    assert titles == ["Live"]
+    cache.clear()
+    c = Client()
+    assert c.post(f"/api/v1/settings/banners/{live.pk}/click").status_code == 204
+    c.post(f"/api/v1/settings/banners/{live.pk}/click")  # same visitor within 30 s: not counted twice
+    live.refresh_from_db()
+    assert live.clicks == 1

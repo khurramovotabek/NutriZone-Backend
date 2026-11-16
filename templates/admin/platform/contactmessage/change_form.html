@@ -4,7 +4,7 @@
 
 {% block extrastyle %}
 {{ block.super }}
-<link rel="stylesheet" href="{% static 'admin/css/nutrizone-platform.css' %}?v=5">
+<link rel="stylesheet" href="{% static 'admin/css/nutrizone-platform.css' %}?v=7">
 {% endblock %}
 
 {% block content_title %}{% endblock %}
@@ -45,6 +45,28 @@
           <span class="nzp-status s-{{ original.status }}">{{ original.get_status_display }}</span>
         </header>
         <div class="nzp-letter-body">{{ original.message|linebreaksbr }}</div>
+        {% if original.reply_text %}
+        <div class="nzp-replied">
+          <div class="nzp-replied-head"><i class="fas fa-reply" aria-hidden="true"></i> {% translate "Javob" %} · {{ original.replied_by }} · {{ original.replied_at|date:"d.m.Y H:i" }}
+            <span class="nzp-chip">{% if original.reply_channel == "inbox" %}{% translate "Sayt + Telegram" %}{% else %}{% translate "Email" %}{% endif %}</span></div>
+          <div class="nzp-replied-body">{{ original.reply_text|linebreaksbr }}</div>
+        </div>
+        {% endif %}
+        {% if has_change_permission %}
+        <div class="nzp-composer">
+          <label for="nz-reply"><i class="fas fa-pen-to-square" aria-hidden="true"></i> {% if original.reply_text %}{% translate "Yana javob yozish" %}{% else %}{% translate "Javob yozish" %}{% endif %}</label>
+          <textarea id="nz-reply" name="nz_reply" rows="4" maxlength="4000" placeholder="{% if nz_customer %}{% translate "Javob mijozning sayt kabinetiga va Telegram'iga boradi…" %}{% else %}{% translate "Javob matni saqlanadi — mijozga email orqali yuboring…" %}{% endif %}"></textarea>
+          <div class="nzp-composer-foot">
+            <div class="nzp-quick" data-nzp-quick>
+              <button type="button" data-text="{% translate "Assalomu alaykum! Murojaatingiz uchun rahmat. " %}">{% translate "Salomlashish" %}</button>
+              <button type="button" data-text="{% translate "Buyurtmangiz holatini tekshirdik: " %}">{% translate "Buyurtma holati" %}</button>
+              <button type="button" data-text="{% translate "Mahsulot omborda mavjud, saytdan yoki Telegram botdan buyurtma berishingiz mumkin. " %}">{% translate "Mavjudlik" %}</button>
+              <button type="button" data-text="{% translate "Qo'shimcha savollar bo'lsa, sayt chatiga yozing — yordam beramiz. Hurmat bilan, NutriZone jamoasi." %}">{% translate "Yakunlash" %}</button>
+            </div>
+            <button type="submit" name="_continue" class="nzp-btn nzp-btn-primary"><i class="fas fa-paper-plane" aria-hidden="true"></i> {% if nz_customer %}{% translate "Javobni yuborish" %}{% else %}{% translate "Javobni saqlash" %}{% endif %}</button>
+          </div>
+        </div>
+        {% endif %}
         <footer class="nzp-letter-foot">
           <a class="nzp-btn nzp-btn-primary" href="{{ nz_reply_href }}" data-nzp-reply><i class="fas fa-reply" aria-hidden="true"></i> {% translate "Reply by email" %}</a>
           <button type="button" class="nzp-btn nzp-btn-ghost" data-nzp-copy="{{ original.message }}"><i class="fas fa-copy" aria-hidden="true"></i> {% translate "Copy text" %}</button>
@@ -64,6 +86,27 @@
           </div>
           <p class="nzp-help" data-nzp-reply-hint hidden>{% translate "Sent your reply? Set the status to “Replied” and save." %}</p>
           {% for e in adminform.form.status.errors %}<p class="nzp-error">{{ e }}</p>{% endfor %}
+        </section>
+
+        <section class="nzp-card">
+          <header class="nzp-card-head nzp-card-head-sm"><span class="nzp-card-icon" style="--c:#10b981"><i class="fas fa-id-card" aria-hidden="true"></i></span><div><h3>{% translate "Mijoz akkaunti" %}</h3><p>{% if nz_customer %}{% translate "Bu email saytda ro'yxatdan o'tgan" %}{% else %}{% translate "Bu email bilan akkaunt topilmadi" %}{% endif %}</p></div></header>
+          {% if nz_customer %}
+          <ul class="nzp-facts">
+            <li><span>{% translate "Ism" %}</span><b>{% if nz_customer.url %}<a href="{{ nz_customer.url }}">{{ nz_customer.name }}</a>{% else %}{{ nz_customer.name }}{% endif %}</b></li>
+            {% if nz_customer.phone %}<li><span>{% translate "Telefon" %}</span><b><a href="tel:{{ nz_customer.phone }}">{{ nz_customer.phone }}</a></b></li>{% endif %}
+            <li><span>Telegram</span><b>{% if nz_customer.telegram %}<i class="fas fa-circle-check" style="color:#10b981"></i> {% translate "ulangan" %}{% else %}{% translate "ulanmagan" %}{% endif %}</b></li>
+            <li><span>{% translate "Buyurtmalar" %}</span><b>{{ nz_customer.orders }} · {% translate "yetkazilgan" %} {{ nz_customer.delivered }}</b></li>
+            {% if nz_customer.last %}<li><span>{% translate "Oxirgi buyurtma" %}</span><b>{{ nz_customer.last.order_number }} · {{ nz_customer.last.created_at|date:"d.m.Y" }}</b></li>{% endif %}
+            <li><span>{% translate "Mijoz" %}</span><b>{{ nz_customer.since|date:"d.m.Y" }} {% translate "dan beri" %}</b></li>
+          </ul>
+          {% else %}
+          <p class="nzp-muted">{% translate "Javob faqat email orqali yetib boradi." %}</p>
+          {% endif %}
+        </section>
+
+        <section class="nzp-card">
+          <header class="nzp-card-head nzp-card-head-sm"><span class="nzp-card-icon" style="--c:#8b5cf6"><i class="fas fa-note-sticky" aria-hidden="true"></i></span><div><h3>{% translate "Ichki izoh" %}</h3><p>{% translate "Faqat jamoa ko'radi" %}</p></div></header>
+          <textarea name="internal_note" rows="3" class="nzp-note-input"{% if not has_change_permission %} disabled{% endif %} placeholder="{% translate "Masalan: qayta qo'ng'iroq qilish kerak" %}">{{ original.internal_note }}</textarea>
         </section>
 
         <section class="nzp-card">
@@ -111,4 +154,9 @@
 {% block extrajs %}
 {{ block.super }}
 <script src="{% static 'admin/js/nutrizone-platform.js' %}?v=5"></script>
+<script>
+document.querySelectorAll("[data-nzp-quick] button").forEach(function (b) {
+  b.addEventListener("click", function () { var t = document.getElementById("nz-reply"); t.value = (t.value ? t.value + " " : "") + b.dataset.text; t.focus(); t.dispatchEvent(new Event("input", { bubbles: true })); });
+});
+</script>
 {% endblock %}

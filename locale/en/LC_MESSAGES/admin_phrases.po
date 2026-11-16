@@ -6154,3 +6154,420 @@ msgstr "BTS: winter fuel surcharge (%)"
 
 msgid "Posilka hajmi (sm³ har 1 kg mahsulotga)"
 msgstr "Parcel volume (cm³ per 1 kg of goods)"
+
+msgid "Boshqaruv markazi"
+msgstr "Control center"
+
+msgid "Yangilandi"
+msgstr "Updated"
+
+msgid "Biznes pulsi"
+msgstr "Business pulse"
+
+msgid "marja"
+msgstr "margin"
+
+msgid "tannarx kiritilmagan"
+msgstr "cost prices not entered"
+
+msgid "tannarx {0}% mahsulotda ma'lum"
+msgstr "cost known for {0}% of products"
+
+msgid "ro'yxatdan o'tganlar"
+msgstr "sign-ups"
+
+msgid "Qayta xarid"
+msgstr "Repeat purchase"
+
+msgid "{0} / {1} xaridor qaytib kelgan"
+msgstr "{0} / {1} buyers came back"
+
+msgid "Jarayonda"
+msgstr "In progress"
+
+msgid "{0} ta buyurtma yo'lda"
+msgstr "{0} orders on the way"
+
+msgid "{0} ta bekor / qaytgan"
+msgstr "{0} cancelled / returned"
+
+msgid "Sotilgan dona"
+msgstr "Units sold"
+
+msgid "kassa + onlayn"
+msgstr "till + online"
+
+msgid "Hududlar bo'yicha savdo"
+msgstr "Sales by region"
+
+msgid "Ko'rsatkich"
+msgstr "Metric"
+
+msgid "Mijozlar"
+msgstr "Customers"
+
+msgid "Jami tushum"
+msgstr "Total revenue"
+
+msgid "Faol hududlar"
+msgstr "Active regions"
+
+msgid "Yetakchi hudud"
+msgstr "Top region"
+
+msgid "Toshkent / viloyatlar"
+msgstr "Tashkent / regions"
+
+msgid "O'zbekiston hududlari xaritasi"
+msgstr "Map of Uzbekistan's regions"
+
+msgid "kam"
+msgstr "low"
+
+msgid "ko'p"
+msgstr "high"
+
+msgid "Hudud"
+msgstr "Region"
+
+msgid "Ulush"
+msgstr "Share"
+
+msgid "Bekor %"
+msgstr "Cancelled %"
+
+msgid "Filiallar"
+msgstr "Branches"
+
+msgid "mln"
+msgstr "mln"
+
+msgid "mlrd"
+msgstr "bn"
+
+msgid "ming"
+msgstr "k"
+
+msgid "buyurtma"
+msgstr "orders"
+
+msgid "mijoz"
+msgstr "customers"
+
+msgid "o'rtacha chek"
+msgstr "average receipt"
+
+msgid "ulush"
+msgstr "share"
+
+msgid "Yetkazish to'lovi"
+msgstr "Delivery fees"
+
+msgid "Filial yo'q"
+msgstr "No branch"
+
+msgid "Bu davrda savdo yo'q"
+msgstr "No sales in this period"
+
+msgid "hududdan"
+msgstr "regions"
+
+msgid "oldingi davr"
+msgstr "previous period"
+
+msgid "Oldingi davrda savdo yo'q"
+msgstr "No sales in the previous period"
+
+msgid "Toshkent sh."
+msgstr "Tashkent city"
+
+msgid "viloyatlar"
+msgstr "regions"
+
+msgid "Buyurtmalarni ochish"
+msgstr "Open orders"
+
+msgid "Batafsil ko'rish uchun hududni tanlang"
+msgstr "Pick a region for details"
+
+msgid "Ma'lumotni yuklab bo'lmadi. Qayta urinib ko'ring."
+msgstr "Could not load the data. Please try again."
+
+msgid "Qayta urinish"
+msgstr "Retry"
+
+msgid "Aniqlanmagan"
+msgstr "Unknown"
+
+msgid "Aniqlanmagan manzil"
+msgstr "Unknown address"
+
+msgid "Markaziy kassa (filialsiz)"
+msgstr "Central till (no branch)"
+
+msgid "Qoraqalpog'iston"
+msgstr "Karakalpakstan"
+
+msgid "Xorazm"
+msgstr "Khorezm"
+
+msgid "Navoiy"
+msgstr "Navoiy"
+
+msgid "Buxoro"
+msgstr "Bukhara"
+
+msgid "Samarqand"
+msgstr "Samarkand"
+
+msgid "Qashqadaryo"
+msgstr "Kashkadarya"
+
+msgid "Surxondaryo"
+msgstr "Surkhandarya"
+
+msgid "Jizzax"
+msgstr "Jizzakh"
+
+msgid "Sirdaryo"
+msgstr "Syrdarya"
+
+msgid "Toshkent vil."
+msgstr "Tashkent reg."
+
+msgid "Namangan"
+msgstr "Namangan"
+
+msgid "Farg'ona"
+msgstr "Fergana"
+
+msgid "Andijon"
+msgstr "Andijan"
+
+msgid "Hisobotlar markazi"
+msgstr "Reports center"
+
+msgid "dona sotildi"
+msgstr "units sold"
+
+msgid "tannarx"
+msgstr "cost"
+
+msgid "Yo'qotish va qaytarish"
+msgstr "Losses and returns"
+
+msgid "{0} bekor"
+msgstr "{0} cancelled"
+
+msgid "qaytarildi"
+msgstr "refunded"
+
+msgid "Bu davrda sotuv bo'lmadi."
+msgstr "No sales in this period."
+
+msgid "ta"
+msgstr "pcs"
+
+msgid "To'lovlar yo'q"
+msgstr "No payments"
+
+msgid "Ma'lumot yo'q"
+msgstr "No data"
+
+msgid "Onlayn buyurtmalar holati"
+msgstr "Online order status"
+
+msgid "Joylangan"
+msgstr "Placed"
+
+msgid "Hozir {0} ta buyurtma ishlov kutmoqda"
+msgstr "{0} orders are waiting to be handled now"
+
+msgid "Jami mijozlar"
+msgstr "All customers"
+
+msgid "Xaridorlar"
+msgstr "Buyers"
+
+msgid "Chastota"
+msgstr "Frequency"
+
+msgid "Anonim chek"
+msgstr "Anonymous receipts"
+
+msgid "Hududlar"
+msgstr "Regions"
+
+msgid "Xarita"
+msgstr "Map"
+
+msgid "xarid"
+msgstr "purchases"
+
+msgid "Kupon ishlatildi"
+msgstr "Coupons redeemed"
+
+msgid "Chegirmalar"
+msgstr "Discounts"
+
+msgid "Kupon"
+msgstr "Coupon"
+
+msgid "faol"
+msgstr "active"
+
+msgid "nofaol"
+msgstr "inactive"
+
+msgid "qoralama"
+msgstr "draft"
+
+msgid "rejalashtirilgan"
+msgstr "scheduled"
+
+msgid "to'xtatilgan"
+msgstr "paused"
+
+msgid "Tasdiqlangan"
+msgstr "Approved"
+
+msgid "Rad etilgan"
+msgstr "Rejected"
+
+msgid "Yashirilgan"
+msgstr "Hidden"
+
+msgid "Shikoyat qilingan"
+msgstr "Flagged"
+
+msgid "Tushum = kassa cheklari (qaytarishlarsiz) + yetkazilgan onlayn buyurtmalar, mijoz buyurtma bergan kun bo'yicha. Biznes analitikasi, bosh sahifa va analitika boti bilan bir xil formula."
+msgstr "Revenue = till receipts (net of refunds) + delivered online orders, by the day the customer ordered. The same formula as Business analytics, the home page and the analytics bot."
+
+msgid "Davr"
+msgstr "Period"
+
+msgid "Sayt + Telegram"
+msgstr "Site + Telegram"
+
+msgid "Email"
+msgstr "Email"
+
+msgid "Yana javob yozish"
+msgstr "Write another reply"
+
+msgid "Javob yozish"
+msgstr "Write a reply"
+
+msgid "Javob mijozning sayt kabinetiga va Telegram'iga boradi…"
+msgstr "The reply goes to the customer's account and Telegram…"
+
+msgid "Javob matni saqlanadi — mijozga email orqali yuboring…"
+msgstr "The reply is saved — send it to the customer by email…"
+
+msgid "Salomlashish"
+msgstr "Greeting"
+
+msgid "Mavjudlik"
+msgstr "Availability"
+
+msgid "Yakunlash"
+msgstr "Closing"
+
+msgid "Javobni yuborish"
+msgstr "Send reply"
+
+msgid "Javobni saqlash"
+msgstr "Save reply"
+
+msgid "Mijoz akkaunti"
+msgstr "Customer account"
+
+msgid "Bu email saytda ro'yxatdan o'tgan"
+msgstr "This email is registered on the site"
+
+msgid "Bu email bilan akkaunt topilmadi"
+msgstr "No account with this email"
+
+msgid "Ism"
+msgstr "Name"
+
+msgid "ulangan"
+msgstr "connected"
+
+msgid "ulanmagan"
+msgstr "not connected"
+
+msgid "yetkazilgan"
+msgstr "delivered"
+
+msgid "Oxirgi buyurtma"
+msgstr "Last order"
+
+msgid "dan beri"
+msgstr "since"
+
+msgid "Javob faqat email orqali yetib boradi."
+msgstr "The reply can only reach them by email."
+
+msgid "Faqat jamoa ko'radi"
+msgstr "Visible to the team only"
+
+msgid "Masalan: qayta qo'ng'iroq qilish kerak"
+msgstr "E.g. call back later"
+
+msgid "Javob mijozning sayt kabinetiga va Telegram'iga yuborildi."
+msgstr "The reply was sent to the customer's account and Telegram."
+
+msgid "Javob saqlandi. Bu email bilan mijoz akkaunti yo'q — javobni email orqali yuboring."
+msgstr "Reply saved. No customer account has this email — send the reply by email."
+
+msgid "Faqat jamoa ko'radi -- mijozga yuborilmaydi."
+msgstr "Visible to the team only — never sent to the customer."
+
+msgid "Javob berilgan vaqt"
+msgstr "Replied at"
+
+msgid "Javob kanali"
+msgstr "Reply channel"
+
+msgid "Murojaat"
+msgstr "Message"
+
+msgid "Assalomu alaykum! Murojaatingiz uchun rahmat. "
+msgstr "Hello! Thank you for your message. "
+
+msgid "Buyurtmangiz holatini tekshirdik: "
+msgstr "We checked your order status: "
+
+msgid "Mahsulot omborda mavjud, saytdan yoki Telegram botdan buyurtma berishingiz mumkin. "
+msgstr "The product is in stock — you can order it on the site or in the Telegram bot. "
+
+msgid "Qo'shimcha savollar bo'lsa, sayt chatiga yozing — yordam beramiz. Hurmat bilan, NutriZone jamoasi."
+msgstr "If you have more questions, write to the site chat — we're happy to help. Best regards, the NutriZone team."
+
+msgid "Bosishlar"
+msgstr "Clicks"
+
+msgid "dan"
+msgstr "from"
+
+msgid "muddati tugagan"
+msgstr "ended"
+
+msgid "Ko'rsatish muddati"
+msgstr "Display window"
+
+msgid "Ixtiyoriy. Aksiya bannerlarini oldindan qo'ying — o'z vaqtida chiqadi va muddati tugaganda o'zi yashiriladi."
+msgstr "Optional. Set campaign banners in advance — they appear on time and hide themselves when the window ends."
+
+msgid "Saytda {0} marta bosilgan"
+msgstr "Clicked {0} times on the site"
+
+msgid "Ko'rsatish boshlanishi"
+msgstr "Show from"
+
+msgid "Ko'rsatish tugashi"
+msgstr "Show until"
+
+msgid "Tugash vaqti boshlanishdan keyin bo'lishi kerak."
+msgstr "The end must be after the start."

@@ -108,7 +108,18 @@ class BannerAdminForm(forms.ModelForm):
 
     class Meta:
         model = orm.Banner
-        fields = ["title", "subtitle", "cta_text", "title_ru", "subtitle_ru", "cta_text_ru", "title_en", "subtitle_en", "cta_text_en", "cta_url", "duration_seconds", "sort_order", "is_active", "image_upload"]  # image_storage_path/image_thumbnail_paths are internal implementation detail, never a real admin-editable field.
+        fields = ["title", "subtitle", "cta_text", "title_ru", "subtitle_ru", "cta_text_ru", "title_en", "subtitle_en", "cta_text_en", "cta_url", "duration_seconds", "sort_order", "is_active", "starts_at", "ends_at", "image_upload"]  # image_storage_path/image_thumbnail_paths are internal implementation detail, never a real admin-editable field.
+
+    starts_at = forms.DateTimeField(required=False, input_formats=["%Y-%m-%dT%H:%M", "%Y-%m-%d %H:%M"],
+                                    widget=forms.DateTimeInput(attrs={"type": "datetime-local"}, format="%Y-%m-%dT%H:%M"))
+    ends_at = forms.DateTimeField(required=False, input_formats=["%Y-%m-%dT%H:%M", "%Y-%m-%d %H:%M"],
+                                  widget=forms.DateTimeInput(attrs={"type": "datetime-local"}, format="%Y-%m-%dT%H:%M"))
+
+    def clean(self):
+        data = super().clean()
+        if data.get("starts_at") and data.get("ends_at") and data["ends_at"] <= data["starts_at"]:
+            self.add_error("ends_at", _("Tugash vaqti boshlanishdan keyin bo'lishi kerak."))
+        return data
 
     def clean_duration_seconds(self):
         return self.cleaned_data.get("duration_seconds") or 45
@@ -212,6 +223,7 @@ class BannerAdmin(admin.ModelAdmin):
         for banner in cl.result_list:  # iterating fills the queryset's result cache, so the template sees these attributes
             thumbs = banner.image_thumbnail_paths or {}
             banner.nz_image = _media_url(thumbs.get("medium") or thumbs.get("large") or banner.image_storage_path)
+            banner.nz_state = banner.schedule_state()
         return cl
 
     def changelist_view(self, request, extra_context=None):
@@ -222,7 +234,9 @@ class BannerAdmin(admin.ModelAdmin):
             active=Count("id", filter=Q(is_active=True)),
             no_image=Count("id", filter=Q(image_storage_path="")),
             cycle=Sum("duration_seconds", filter=Q(is_active=True)),
+            clicks=Sum("clicks"),
         )
+        agg["clicks"] = agg["clicks"] or 0
         agg["hidden"] = agg["total"] - agg["active"]
         agg["cycle"] = agg["cycle"] or 0
         extra = {"nz_banner_stats": agg, "nz_filter_active": request.GET.get("is_active__exact", ""), "nz_can_change": self.has_change_permission(request)}
@@ -262,6 +276,15 @@ class BannerAdmin(admin.ModelAdmin):
     image_display.short_description = ""
 
 
+def _contact_customer(email: str):
+    """The customer account that owns this email (case-insensitive), if any."""
+    from apps.identity.infrastructure.models import User
+
+    if not email:
+        return None
+    return User.objects.filter(email__iexact=email.strip()).order_by("-created_at").first()
+
+
 def _initials(name: str) -> str:
     parts = [p for p in (name or "").split() if p]
     return ("".join(p[0] for p in parts[:2]) or "?").upper()
@@ -280,9 +303,34 @@ class ContactMessageAdmin(ExcelExportMixin, admin.ModelAdmin):
     list_filter = ("status",)
     search_fields = ("name", "email", "subject", "message")
     list_per_page = 25
-    readonly_fields = ("id", "name", "email", "subject", "message", "created_at", "updated_at")
-    fields = ("name", "email", "subject", "message", "status", "created_at", "updated_at")
+    readonly_fields = ("id", "name", "email", "subject", "message", "reply_text", "replied_at", "replied_by", "reply_channel", "created_at", "updated_at")
+    fields = ("name", "email", "subject", "message", "status", "internal_note", "reply_text", "replied_at", "replied_by", "reply_channel", "created_at", "updated_at")
     actions = ("mark_read", "mark_replied", "mark_new")
+
+    def save_model(self, request, obj, form, change):
+        """A reply typed in the reading view (`nz_reply`) is kept on the message and, when the sender has a customer
+        account, delivered to its site inbox + Telegram; the message then counts as replied."""
+        from django.utils import timezone
+
+        reply = (request.POST.get("nz_reply") or "").strip()[:4000]
+        if reply and change:
+            customer = _contact_customer(obj.email)
+            obj.reply_text = reply
+            obj.replied_at = timezone.now()
+            obj.replied_by = (request.user.get_full_name() or request.user.get_username())[:150]
+            obj.reply_channel = "inbox" if customer else "email"
+            obj.status = orm.ContactMessageStatus.REPLIED
+            super().save_model(request, obj, form, change)
+            if customer:
+                from apps.notifications.infrastructure.notify import notify
+
+                notify(customer.id, "contact_reply", {"subject": obj.subject or str(_("Murojaat")), "reply": reply},
+                       link="/account/notifications", dedupe_key=f"contact-reply:{obj.pk}:{obj.replied_at:%s}")
+                self.message_user(request, _("Javob mijozning sayt kabinetiga va Telegram'iga yuborildi."))
+            else:
+                self.message_user(request, _("Javob saqlandi. Bu email bilan mijoz akkaunti yo'q — javobni email orqali yuboring."), level="warning")
+            return
+        super().save_model(request, obj, form, change)
 
     def has_add_permission(self, request):
         return False  # a contact message is only ever created by a real public form submission, never fabricated by an admin.
@@ -355,8 +403,30 @@ class ContactMessageAdmin(ExcelExportMixin, admin.ModelAdmin):
                     for m in orm.ContactMessage.objects.filter(email__iexact=msg.email).exclude(pk=msg.pk).order_by("-created_at")[:5]
                 ],
                 "nz_status_choices": orm.ContactMessageStatus.choices,
+                "nz_customer": _contact_customer_card(msg.email),
             })
         return super().change_view(request, object_id, form_url, {**extra, **(extra_context or {})})
+
+
+def _contact_customer_card(email: str) -> dict | None:
+    """Sender's customer account for the reading view: name, phone, Telegram link, orders and spend (delivered)."""
+    from django.db.models import Count, Q
+    from django.urls import NoReverseMatch, reverse
+
+    user = _contact_customer(email)
+    if not user:
+        return None
+    from apps.ordering.infrastructure.models import OrderModel
+
+    stats = OrderModel.objects.filter(customer_id=user.id).exclude(status="draft").aggregate(
+        orders=Count("id"), delivered=Count("id", filter=Q(status__in=("delivered", "completed"))))
+    last = OrderModel.objects.filter(customer_id=user.id).exclude(status="draft").order_by("-created_at").values("order_number", "status", "created_at").first()
+    try:
+        url = reverse("admin:identity_user_change", args=[user.pk])
+    except NoReverseMatch:
+        url = ""
+    return {"name": getattr(user, "full_name", "") or str(user), "phone": getattr(user, "phone_number", "") or "", "telegram": bool(getattr(user, "telegram_user_id", None)),
+            "orders": stats["orders"], "delivered": stats["delivered"], "last": last, "url": url, "since": user.created_at}
 
 
 def _connect_branding_invalidation() -> None:

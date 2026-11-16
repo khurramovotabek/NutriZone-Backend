@@ -338,3 +338,36 @@ def phrases_js_view(request, lang: str):
 
 def phrases_version(lang: str) -> str:
     return js_catalog(lang)[1]
+
+
+ADMIN_LANG_SESSION_KEY = "nz_admin_lang"
+
+
+class AdminDefaultLanguageMiddleware:
+    """The dashboard always opens in Uzbek (owner, 2026-11-16).
+
+    The browser's Accept-Language and an old `django_language` cookie no longer pick the dashboard language:
+    only a choice made in the dashboard's own switcher (or on its login page) does, and only for that
+    session -- every new login starts in `settings.ADMIN_DEFAULT_LANGUAGE` again. Placed after LocaleMiddleware.
+    `ADMIN_FORCE_DEFAULT_LANGUAGE = False` (the test settings) keeps Django's plain negotiation.
+    """
+
+    def __init__(self, get_response):
+        self.get_response = get_response
+
+    def __call__(self, request):
+        enabled = getattr(settings, "ADMIN_FORCE_DEFAULT_LANGUAGE", False)
+        session = getattr(request, "session", None)
+        if enabled and session is not None and request.method == "POST" and request.path.rstrip("/").endswith("/i18n/setlang"):
+            nxt = request.POST.get("next", "") or request.META.get("HTTP_REFERER", "")
+            lang = (request.POST.get("language") or "")[:2]
+            if ADMIN_PREFIX in nxt and lang in {code for code, _ in settings.LANGUAGES}:
+                session[ADMIN_LANG_SESSION_KEY] = lang
+        if enabled and session is not None and request.path.startswith(ADMIN_PREFIX):
+            languages = {code for code, _ in settings.LANGUAGES}
+            lang = session.get(ADMIN_LANG_SESSION_KEY) or getattr(settings, "ADMIN_DEFAULT_LANGUAGE", settings.LANGUAGE_CODE)
+            if lang not in languages:
+                lang = settings.LANGUAGE_CODE
+            translation.activate(lang)
+            request.LANGUAGE_CODE = lang
+        return self.get_response(request)

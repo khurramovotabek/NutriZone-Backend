@@ -1,0 +1,229 @@
+/*
+ * NutriZone "liquid glass" layer -- add class `nz-lg` to a page root (dashboard home, Analitika pages...).
+ * Translucent, blurred surfaces with a light top edge over a soft aurora; only surfaces change, layouts stay.
+ * Light and dark follow the admin theme (html[data-nz-theme]).
+ */
+.nz-lg, body.nz-glass-page {
+  --lg-surface: rgba(255, 255, 255, 0.62);
+  --lg-surface-strong: rgba(255, 255, 255, 0.78);
+  --lg-surface-soft: rgba(255, 255, 255, 0.42);
+  --lg-border: rgba(255, 255, 255, 0.75);
+  --lg-hairline: rgba(15, 23, 42, 0.08);
+  --lg-edge: inset 0 1px 0 rgba(255, 255, 255, 0.9), inset 0 0 0 1px rgba(255, 255, 255, 0.35);
+  --lg-shadow: 0 1px 2px rgba(15, 23, 42, 0.04), 0 18px 40px -24px rgba(30, 41, 79, 0.28);
+  --lg-shadow-hover: 0 2px 4px rgba(15, 23, 42, 0.05), 0 26px 50px -24px rgba(30, 41, 79, 0.38);
+  --lg-blur: blur(22px) saturate(170%);
+  --lg-a1: rgba(99, 102, 241, 0.22);
+  --lg-a2: rgba(16, 185, 129, 0.18);
+  --lg-a3: rgba(14, 165, 233, 0.18);
+  --lg-radius: 20px;
+}
+.nz-lg { position: relative; isolation: isolate; }
+html[data-nz-theme="dark"] .nz-lg, html[data-nz-theme="dark"] body.nz-glass-page {
+  --lg-surface: rgba(17, 24, 39, 0.55);
+  --lg-surface-strong: rgba(23, 32, 50, 0.72);
+  --lg-surface-soft: rgba(30, 41, 59, 0.38);
+  --lg-border: rgba(255, 255, 255, 0.09);
+  --lg-hairline: rgba(255, 255, 255, 0.07);
+  --lg-edge: inset 0 1px 0 rgba(255, 255, 255, 0.08), inset 0 0 0 1px rgba(255, 255, 255, 0.025);
+  --lg-shadow: 0 1px 2px rgba(0, 0, 0, 0.3), 0 24px 48px -26px rgba(0, 0, 0, 0.75);
+  --lg-shadow-hover: 0 2px 4px rgba(0, 0, 0, 0.35), 0 30px 60px -26px rgba(0, 0, 0, 0.85);
+  --lg-a1: rgba(99, 102, 241, 0.2);
+  --lg-a2: rgba(16, 185, 129, 0.13);
+  --lg-a3: rgba(14, 165, 233, 0.14);
+}
+
+/* aurora behind the glass */
+.nz-lg-aurora { position: absolute; inset: -24px -24px auto; height: 900px; z-index: -1; pointer-events: none; overflow: hidden; border-radius: 32px; }
+.nz-lg-aurora span { position: absolute; border-radius: 50%; filter: blur(70px); opacity: 0.9; animation: nz-lg-drift 22s ease-in-out infinite alternate; }
+.nz-lg-aurora span:nth-child(1) { width: 560px; height: 420px; left: -80px; top: -120px; background: var(--lg-a1); }
+.nz-lg-aurora span:nth-child(2) { width: 520px; height: 380px; right: -60px; top: -60px; background: var(--lg-a2); animation-delay: -7s; }
+.nz-lg-aurora span:nth-child(3) { width: 620px; height: 360px; left: 35%; top: 320px; background: var(--lg-a3); animation-delay: -14s; }
+@keyframes nz-lg-drift { from { transform: translate3d(0, 0, 0) scale(1); } to { transform: translate3d(40px, 30px, 0) scale(1.08); } }
+@media (prefers-reduced-motion: reduce) { .nz-lg-aurora span { animation: none; } }
+
+/* glass surfaces */
+.nz-lg .nz-card,
+.nz-lg .nzx-pulse-card,
+.nz-lg .nzrg-detail {
+  background: var(--lg-surface) !important;
+  -webkit-backdrop-filter: var(--lg-blur);
+  backdrop-filter: var(--lg-blur);
+  border: 1px solid var(--lg-border) !important;
+  border-radius: var(--lg-radius) !important;
+  box-shadow: var(--lg-edge), var(--lg-shadow) !important;
+}
+.nz-lg .nz-kpi-card { position: relative; overflow: hidden; transition: transform .2s ease, box-shadow .2s ease; }
+.nz-lg .nz-kpi-card::after,
+.nz-lg .nzx-pulse-card::after {
+  content: ""; position: absolute; inset: 0 0 55% 0; pointer-events: none; border-radius: inherit;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.35), transparent);
+  opacity: .55;
+}
+html[data-nz-theme="dark"] .nz-lg .nz-kpi-card::after,
+html[data-nz-theme="dark"] .nz-lg .nzx-pulse-card::after { background: linear-gradient(180deg, rgba(255, 255, 255, 0.06), transparent); opacity: 1; }
+.nz-lg a.nz-kpi-card:hover, .nz-lg .nzx-pulse-card:hover { transform: translateY(-2px); box-shadow: var(--lg-edge), var(--lg-shadow-hover) !important; }
+.nz-lg .nzsc-kpi,
+.nz-lg .nzq-tile,
+.nz-lg .nzt-item,
+.nz-lg .nzh-app {
+  background: var(--lg-surface-soft) !important;
+  border-color: var(--lg-border) !important;
+  box-shadow: var(--lg-edge);
+  -webkit-backdrop-filter: blur(10px);
+  backdrop-filter: blur(10px);
+}
+.nz-lg .nzsc-ranges { background: var(--lg-surface-soft); border-color: var(--lg-border); box-shadow: var(--lg-edge); }
+.nz-lg .nz-table thead th { background: transparent !important; border-bottom: 1px solid var(--lg-hairline) !important; }
+.nz-lg .nz-table td { border-color: var(--lg-hairline) !important; }
+
+/* hero */
+.nzx-hero { display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: 16px; margin: 4px 0 18px; }
+.nzx-eyebrow { display: inline-flex; align-items: center; gap: 6px; padding: 4px 10px; border-radius: 999px; font-size: 11px; font-weight: 800; letter-spacing: .08em; text-transform: uppercase;
+  color: var(--nz-primary); background: color-mix(in srgb, var(--nz-primary) 12%, transparent); border: 1px solid color-mix(in srgb, var(--nz-primary) 25%, transparent); }
+.nzx-hero .nz-dashboard-title { margin: 10px 0 4px; font-size: clamp(20px, 2.4vw, 28px); font-weight: 850; letter-spacing: -0.02em; }
+.nzx-hero .nz-dashboard-subtitle { margin: 0; color: var(--nz-text-muted); font-size: 13px; font-variant-numeric: tabular-nums; }
+.nzx-range { display: inline-flex; flex-wrap: wrap; gap: 4px; padding: 5px; border-radius: 14px; background: var(--lg-surface); border: 1px solid var(--lg-border);
+  box-shadow: var(--lg-edge), var(--lg-shadow); -webkit-backdrop-filter: var(--lg-blur); backdrop-filter: var(--lg-blur); }
+.nzx-range a { padding: 7px 14px; border-radius: 10px; font-size: 12.5px; font-weight: 750; color: var(--nz-text-secondary) !important; text-decoration: none !important; transition: background .15s, color .15s; }
+.nzx-range a:hover { color: var(--nz-text-primary) !important; background: var(--lg-surface-soft); }
+.nzx-range a.on { color: #fff !important; background: linear-gradient(135deg, var(--nz-primary), color-mix(in srgb, var(--nz-primary) 70%, #7c3aed)); box-shadow: 0 8px 18px -10px var(--nz-primary); }
+
+/* pulse row */
+.nzx-pulse { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 12px; margin: 0 0 18px; }
+.nzx-pulse-card { position: relative; overflow: hidden; display: flex; gap: 12px; align-items: flex-start; padding: 14px 15px; transition: transform .2s ease, box-shadow .2s ease; }
+.nzx-pulse-card > div { min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.nzx-pulse-icon { flex: none; width: 36px; height: 36px; border-radius: 12px; display: grid; place-items: center; color: #fff; font-size: 14px;
+  background: linear-gradient(140deg, var(--c), color-mix(in srgb, var(--c) 60%, #000)); box-shadow: 0 10px 20px -12px var(--c); }
+.nzx-pulse-card small { font-size: 10.5px; font-weight: 800; letter-spacing: .07em; text-transform: uppercase; color: var(--nz-text-muted); }
+.nzx-pulse-card strong { font-size: 17px; font-weight: 850; color: var(--nz-text-primary); font-variant-numeric: tabular-nums; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.nzx-pulse-card strong.is-muted { color: var(--nz-text-muted); }
+.nzx-pulse-card em { font-style: normal; font-size: 11.5px; color: var(--nz-text-muted); line-height: 1.35; }
+.nzx-up { color: #16a34a; } .nzx-down { color: #dc2626; } .nzx-flat { color: var(--nz-text-muted); }
+html[data-nz-theme="dark"] .nzx-up { color: #4ade80; } html[data-nz-theme="dark"] .nzx-down { color: #f87171; }
+
+/* regions */
+.nzrg { padding: 20px 22px; margin-bottom: 18px; }
+.nzrg h3 { margin: 0; font-size: 1.05rem; font-weight: 800; display: flex; align-items: center; gap: 8px; color: var(--nz-text-primary); }
+.nzrg h3 i { color: var(--nz-primary); }
+.nzrg-tools { display: flex; flex-wrap: wrap; gap: 8px; }
+.nzrg-body { display: grid; grid-template-columns: minmax(0, 1.55fr) minmax(280px, 1fr); gap: 16px; margin-bottom: 16px; }
+.nzrg-map-wrap { position: relative; padding: 16px; border-radius: 18px; background: var(--lg-surface-soft, var(--nz-surface-secondary)); border: 1px solid var(--lg-border, var(--nz-border)); min-height: 280px; display: flex; flex-direction: column; justify-content: center; gap: 12px; }
+.nzrg-map { display: grid; gap: 8px; }
+.nzrg-tile { --tone: var(--nz-primary); position: relative; display: flex; flex-direction: column; justify-content: space-between; gap: 6px; min-height: 76px; padding: 9px 10px; text-align: left; cursor: pointer;
+  border-radius: 14px; border: 1px solid color-mix(in srgb, var(--tone) calc(18% + var(--k) * 50%), transparent);
+  background: color-mix(in srgb, var(--tone) calc(8% + var(--k) * 74%), var(--nz-surface));
+  color: var(--nz-text-primary); box-shadow: inset 0 1px 0 rgba(255, 255, 255, .25); transition: transform .15s ease, box-shadow .15s ease, outline-color .15s; outline: 2px solid transparent; outline-offset: 2px; }
+.nzrg-tile small { font-size: 10.5px; font-weight: 750; line-height: 1.2; opacity: .85; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.nzrg-tile b { font-size: 14px; font-weight: 850; font-variant-numeric: tabular-nums; }
+.nzrg-tile i { position: absolute; top: 8px; right: 9px; font-size: 9px; opacity: .7; }
+.nzrg-tile.is-zero { background: color-mix(in srgb, var(--nz-surface) 70%, transparent); border-style: dashed; border-color: var(--nz-border); color: var(--nz-text-muted); }
+.nzrg-tile[style*="--k:0.6"], .nzrg-tile[style*="--k:0.7"], .nzrg-tile[style*="--k:0.8"], .nzrg-tile[style*="--k:0.9"], .nzrg-tile[style*="--k:1.0"] { color: #fff; }
+.nzrg-tile:hover { transform: translateY(-2px); box-shadow: 0 12px 24px -16px var(--tone); }
+.nzrg-tile.is-on { outline-color: var(--nz-primary); box-shadow: 0 0 0 4px color-mix(in srgb, var(--nz-primary) 18%, transparent); }
+.nzrg-tile:focus-visible { outline-color: var(--nz-focus-ring, var(--nz-primary)); }
+.nzrg-scale { display: flex; align-items: center; gap: 8px; justify-content: flex-end; font-size: 11px; color: var(--nz-text-muted); }
+.nzrg-scale i { width: 120px; height: 6px; border-radius: 6px; background: linear-gradient(90deg, color-mix(in srgb, var(--nz-primary) 10%, var(--nz-surface)), var(--nz-primary)); }
+.nzrg .nzsc-state { border-radius: 18px; }
+
+.nzrg-detail { padding: 16px 18px; min-width: 0; }
+.nzrg-pick { margin: 40px 0; text-align: center; color: var(--nz-text-muted); font-size: 13px; }
+.nzrg-d-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.nzrg-d-head h4 { margin: 0; font-size: 15px; font-weight: 850; color: var(--nz-text-primary); }
+.nzrg-d-big { margin: 6px 0 12px; font-size: 22px; font-weight: 850; font-variant-numeric: tabular-nums; color: var(--nz-text-primary); display: flex; align-items: baseline; gap: 8px; flex-wrap: wrap; }
+.nzrg-d-big small { font-size: 12px; font-weight: 700; color: var(--nz-text-muted); }
+.nzrg-d-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; margin-bottom: 12px; }
+.nzrg-d-grid div { padding: 8px 9px; border-radius: 11px; background: var(--lg-surface-soft, var(--nz-surface-secondary)); border: 1px solid var(--lg-hairline, var(--nz-border)); min-width: 0; }
+.nzrg-d-grid small { display: block; font-size: 10px; font-weight: 750; color: var(--nz-text-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.nzrg-d-grid b { font-size: 13px; font-weight: 850; font-variant-numeric: tabular-nums; color: var(--nz-text-primary); }
+.nzrg-detail h5 { margin: 10px 0 6px; font-size: 11px; font-weight: 800; letter-spacing: .07em; text-transform: uppercase; color: var(--nz-text-muted); }
+.nzrg-cities { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 6px; }
+.nzrg-cities li { position: relative; display: grid; grid-template-columns: minmax(0, 1fr) auto auto; gap: 8px; align-items: center; padding: 6px 9px; border-radius: 9px; overflow: hidden; font-size: 12.5px; }
+.nzrg-cities li i { position: absolute; inset: 0 auto 0 0; z-index: -1; background: color-mix(in srgb, var(--nz-primary) 13%, transparent); border-radius: 9px; }
+.nzrg-cities li span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--nz-text-primary); font-weight: 650; }
+.nzrg-cities li b { font-variant-numeric: tabular-nums; }
+.nzrg-cities li small { color: var(--nz-text-muted); font-size: 11px; }
+.nzrg-cities li.is-empty { color: var(--nz-text-muted); }
+.nzrg-branches { display: flex; flex-wrap: wrap; gap: 5px; margin: 0; font-size: 12px; color: var(--nz-text-muted); }
+.nzrg-branches span { padding: 3px 9px; border-radius: 999px; background: color-mix(in srgb, #10b981 12%, transparent); color: var(--nz-text-primary); font-weight: 650; }
+
+.nzrg-table th.num, .nzrg-table td.num { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.nzrg-table tbody tr { cursor: pointer; transition: background .12s; }
+.nzrg-table tbody tr:hover { background: color-mix(in srgb, var(--nz-primary) 6%, transparent); }
+.nzrg-table tbody tr.is-on { background: color-mix(in srgb, var(--nz-primary) 11%, transparent); }
+.nzrg-table tbody tr.is-zero { opacity: .55; }
+.nzrg-name { font-weight: 700; color: var(--nz-text-primary); }
+.nzrg-share { display: inline-block; width: 46px; height: 5px; margin-right: 7px; border-radius: 5px; background: var(--nz-surface-secondary); vertical-align: middle; overflow: hidden; }
+.nzrg-share i { display: block; height: 100%; background: var(--nz-primary); border-radius: 5px; }
+.nzrg-chg { font-weight: 800; font-size: 12px; color: var(--nz-text-muted); }
+.nzrg-chg.up { color: #16a34a; } .nzrg-chg.down { color: #dc2626; }
+.nzrg-badge { display: inline-grid; place-items: center; min-width: 22px; height: 22px; padding: 0 6px; border-radius: 999px; font-size: 11px; font-weight: 800; color: #047857; background: rgba(16, 185, 129, .14); }
+html[data-nz-theme="dark"] .nzrg-badge { color: #6ee7b7; }
+
+@media (max-width: 1280px) { .nzx-pulse { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+@media (max-width: 1100px) { .nzrg-body { grid-template-columns: 1fr; } }
+@media (max-width: 760px) {
+  .nzx-pulse { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .nzrg { padding: 16px; }
+  .nzrg-map { gap: 5px; }
+  .nzrg-tile { min-height: 58px; padding: 6px; border-radius: 10px; }
+  .nzrg-tile small { font-size: 9px; } .nzrg-tile b { font-size: 11px; }
+  .nzrg-map-wrap { overflow-x: auto; }
+  .nzrg-map { min-width: 560px; }
+  .nzrg-d-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .nzx-range { width: 100%; justify-content: space-between; }
+}
+.nz-lg .nza-trend { display: inline-flex; align-items: center; gap: 2px; padding: 2px 8px; border-radius: 999px; font-size: 11.5px; font-weight: 750; white-space: nowrap; font-variant-numeric: tabular-nums; }
+.nz-lg .nza-trend.is-up { color: #15803d; background: color-mix(in srgb, #22c55e 15%, transparent); }
+.nz-lg .nza-trend.is-down { color: #b91c1c; background: color-mix(in srgb, #ef4444 14%, transparent); }
+.nz-lg .nza-trend.is-flat, .nza-trend.is-new { color: var(--nz-text-secondary); background: var(--nz-surface-secondary); }
+html[data-nz-theme="dark"] .nza-trend.is-up { color: #4ade80; }
+html[data-nz-theme="dark"] .nza-trend.is-down { color: #f87171; }
+
+
+/* KPI row: six glass cards in one line, figures never wrap */
+.nz-lg .nz-kpi-grid { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 12px; margin-bottom: 14px; }
+.nz-lg .nz-kpi-card { padding: 16px !important; min-width: 0; }
+.nz-lg .nz-kpi-card .nz-stat-number { font-size: clamp(18px, 1.55vw, 24px); font-weight: 850; letter-spacing: -0.02em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-variant-numeric: tabular-nums; }
+.nz-lg .nz-kpi-card .nz-kpi-label { font-size: 10.5px; letter-spacing: .07em; }
+.nz-lg .nz-kpi-card .nz-kpi-trend { font-size: 11.5px; }
+.nz-lg .nzrg-body { grid-template-columns: minmax(0, 2fr) minmax(280px, 1fr); }
+@media (max-width: 1280px) { .nz-lg .nz-kpi-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+@media (max-width: 760px) { .nz-lg .nz-kpi-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+.nz-lg .nz-kpi-card .nz-stat-number { font-size: clamp(16px, 1.3vw, 22px); }
+.nz-lg .nzx-pulse-card strong { font-size: clamp(14px, 1.05vw, 17px); }
+.nz-lg .nzx-pulse-card { padding: 13px 12px; gap: 10px; }
+.nz-lg .nzx-pulse-icon { width: 32px; height: 32px; border-radius: 10px; font-size: 13px; }
+
+
+/* ---------------------------------------------------------------- whole pages (body.nz-glass-page: Analitika, Platforma, Nazorat) */
+body.nz-glass-page .content-wrapper { position: relative; isolation: isolate; }
+body.nz-glass-page .content-wrapper::before {
+  content: ""; position: fixed; inset: 0; z-index: -1; pointer-events: none;
+  background:
+    radial-gradient(900px 560px at 12% -8%, var(--lg-a1), transparent 62%),
+    radial-gradient(760px 520px at 100% 6%, var(--lg-a2), transparent 62%),
+    radial-gradient(820px 520px at 55% 110%, var(--lg-a3), transparent 62%);
+}
+body.nz-glass-page :is(.nza-card, .nza-kpi, .nzp-card, .nzp-hero, .nzr-card, .nz-card, .nzg-card, .nz-st-card, .nzc-card, .card:not(.nz-lg *)) {
+  background-color: var(--lg-surface) !important;
+  -webkit-backdrop-filter: var(--lg-blur);
+  backdrop-filter: var(--lg-blur);
+  border: 1px solid var(--lg-border) !important;
+  box-shadow: var(--lg-edge), var(--lg-shadow) !important;
+}
+body.nz-glass-page :is(.nza-card, .nzp-card, .nzr-card, .nz-card, .card) { border-radius: var(--lg-radius) !important; }
+body.nz-glass-page :is(.nza-kpi, .nzp-card) { transition: transform .2s ease, box-shadow .2s ease; }
+body.nz-glass-page :is(a.nza-kpi, .nza-kpi:hover) { transform: translateY(-2px); box-shadow: var(--lg-edge), var(--lg-shadow-hover) !important; }
+/* the hero banners keep their gradient, gain the glass edge */
+body.nz-glass-page .nzp-hero { background-image: linear-gradient(120deg, color-mix(in srgb, var(--nz-primary) 30%, transparent), color-mix(in srgb, #10b981 18%, transparent)) !important; }
+/* change lists (Bannerlar, Murojaatlar, Qidiruv tahlili) */
+body.nz-glass-page #changelist .results, body.nz-glass-page #changelist-filter, body.nz-glass-page .nzi-toolbar, body.nz-glass-page #toolbar {
+  background: var(--lg-surface) !important; border: 1px solid var(--lg-border) !important; border-radius: 16px !important;
+  -webkit-backdrop-filter: var(--lg-blur); backdrop-filter: var(--lg-blur); box-shadow: var(--lg-edge), var(--lg-shadow);
+}
+body.nz-glass-page #changelist table thead th { background: transparent !important; }
+body.nz-glass-page .nza-tabs, body.nz-glass-page .nza-periods, body.nz-glass-page .nzsc-ranges { background: var(--lg-surface-soft) !important; border-color: var(--lg-border) !important; box-shadow: var(--lg-edge); }
+@media (prefers-reduced-transparency: reduce) {
+  body.nz-glass-page :is(.nza-card, .nza-kpi, .nzp-card, .nz-card, .card), .nz-lg .nz-card { -webkit-backdrop-filter: none; backdrop-filter: none; background-color: var(--nz-surface) !important; }
+}

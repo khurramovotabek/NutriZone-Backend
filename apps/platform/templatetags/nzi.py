@@ -53,3 +53,18 @@ def nz_pager(cl, page_range) -> dict:
         "current": current,
         "total": total,
     }
+
+
+GLASS_PAGES = ("analytics/", "reports/", "sales-plan/", "segments/", "stores/branch-report/", "wms/reports/", "search/searchterm/",
+               "chat/operators/", "control/", "platform/", "settings-overview/")
+
+
+@register.filter
+def nz_glass(path: str) -> bool:
+    """Dashboard pages drawn on the liquid glass layer (nutrizone-liquid-glass.css): the home page, Analitika, Platforma, Nazorat."""
+    from apps.platform.infrastructure.admin_i18n import ADMIN_PREFIX
+
+    if not path or not path.startswith(ADMIN_PREFIX):
+        return False
+    rest = path[len(ADMIN_PREFIX):]
+    return rest == "" or rest.startswith(GLASS_PAGES)

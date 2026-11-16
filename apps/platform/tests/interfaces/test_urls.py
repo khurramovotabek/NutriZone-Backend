@@ -9,9 +9,9 @@ from __future__ import annotations
 import apps.platform.interfaces.api.v1.urls as platform_urls_module
 
 
-def test_exactly_5_routes_registered():
-    """Count updated to 5 after this phase added the real, public contact-messages route -- confirmed live via a real HTTP request before being wired here."""
-    assert len(platform_urls_module.urlpatterns) == 5
+def test_exactly_6_routes_registered():
+    """5 + the public banner click counter (2026-11-16)."""
+    assert len(platform_urls_module.urlpatterns) == 6
 
 
 def test_contact_message_create_route_pattern():

@@ -38,6 +38,11 @@ class Kind:
 
 K = Kind
 KINDS: dict[str, Kind] = {
+    # ---- support
+    "contact_reply": K("mail-check", "primary", "high",
+        ("Murojaatingizga javob", "«{subject}» murojaatingizga javob:\n\n{reply}"),
+        ("Ответ на ваше обращение", "Ответ на ваше обращение «{subject}»:\n\n{reply}"),
+        ("Reply to your message", "Reply to your message “{subject}”:\n\n{reply}")),
     # ---- orders
     "order_confirmed": K("package-check", "success", "high",
         ("Buyurtma tasdiqlandi", "{order} raqamli buyurtmangiz tasdiqlandi va tayyorlanmoqda.{note}"),

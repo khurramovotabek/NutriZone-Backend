@@ -16,6 +16,7 @@ app_name = "platform"
 urlpatterns = [
     path("settings/public", views.SiteSettingsPublicView.as_view(), name="site-settings-public"),
     path("settings/banners", views.BannerListView.as_view(), name="banner-list"),
+    path("settings/banners/<uuid:banner_id>/click", views.BannerClickView.as_view(), name="banner-click"),
     path("settings/feature-flags", views.FeatureFlagListView.as_view(), name="feature-flag-list"),
     path("settings/feature-flags/<str:flag_id>", views.FeatureFlagDetailView.as_view(), name="feature-flag-detail"),
     path("contact-messages", views.ContactMessageCreateView.as_view(), name="contact-message-create"),

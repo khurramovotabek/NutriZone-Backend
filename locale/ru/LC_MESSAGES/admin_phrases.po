@@ -6193,3 +6193,420 @@ msgstr "BTS: зимняя топливная надбавка (%)"
 
 msgid "Posilka hajmi (sm³ har 1 kg mahsulotga)"
 msgstr "Объём посылки (см³ на 1 кг товара)"
+
+msgid "Boshqaruv markazi"
+msgstr "Центр управления"
+
+msgid "Yangilandi"
+msgstr "Обновлено"
+
+msgid "Biznes pulsi"
+msgstr "Пульс бизнеса"
+
+msgid "marja"
+msgstr "маржа"
+
+msgid "tannarx kiritilmagan"
+msgstr "себестоимость не введена"
+
+msgid "tannarx {0}% mahsulotda ma'lum"
+msgstr "себестоимость известна для {0}% товаров"
+
+msgid "ro'yxatdan o'tganlar"
+msgstr "регистрации"
+
+msgid "Qayta xarid"
+msgstr "Повторные покупки"
+
+msgid "{0} / {1} xaridor qaytib kelgan"
+msgstr "{0} / {1} покупателей вернулись"
+
+msgid "Jarayonda"
+msgstr "В работе"
+
+msgid "{0} ta buyurtma yo'lda"
+msgstr "{0} заказов в пути"
+
+msgid "{0} ta bekor / qaytgan"
+msgstr "{0} отменено / возвращено"
+
+msgid "Sotilgan dona"
+msgstr "Продано штук"
+
+msgid "kassa + onlayn"
+msgstr "касса + онлайн"
+
+msgid "Hududlar bo'yicha savdo"
+msgstr "Продажи по регионам"
+
+msgid "Ko'rsatkich"
+msgstr "Показатель"
+
+msgid "Mijozlar"
+msgstr "Клиенты"
+
+msgid "Jami tushum"
+msgstr "Общая выручка"
+
+msgid "Faol hududlar"
+msgstr "Активные регионы"
+
+msgid "Yetakchi hudud"
+msgstr "Лидирующий регион"
+
+msgid "Toshkent / viloyatlar"
+msgstr "Ташкент / регионы"
+
+msgid "O'zbekiston hududlari xaritasi"
+msgstr "Карта регионов Узбекистана"
+
+msgid "kam"
+msgstr "мало"
+
+msgid "ko'p"
+msgstr "много"
+
+msgid "Hudud"
+msgstr "Регион"
+
+msgid "Ulush"
+msgstr "Доля"
+
+msgid "Bekor %"
+msgstr "Отмены %"
+
+msgid "Filiallar"
+msgstr "Филиалы"
+
+msgid "mln"
+msgstr "млн"
+
+msgid "mlrd"
+msgstr "млрд"
+
+msgid "ming"
+msgstr "тыс."
+
+msgid "buyurtma"
+msgstr "заказов"
+
+msgid "mijoz"
+msgstr "клиентов"
+
+msgid "o'rtacha chek"
+msgstr "средний чек"
+
+msgid "ulush"
+msgstr "доля"
+
+msgid "Yetkazish to'lovi"
+msgstr "Оплата доставки"
+
+msgid "Filial yo'q"
+msgstr "Нет филиала"
+
+msgid "Bu davrda savdo yo'q"
+msgstr "За этот период продаж нет"
+
+msgid "hududdan"
+msgstr "регионов"
+
+msgid "oldingi davr"
+msgstr "предыдущий период"
+
+msgid "Oldingi davrda savdo yo'q"
+msgstr "В предыдущем периоде продаж не было"
+
+msgid "Toshkent sh."
+msgstr "г. Ташкент"
+
+msgid "viloyatlar"
+msgstr "регионы"
+
+msgid "Buyurtmalarni ochish"
+msgstr "Открыть заказы"
+
+msgid "Batafsil ko'rish uchun hududni tanlang"
+msgstr "Выберите регион для подробностей"
+
+msgid "Ma'lumotni yuklab bo'lmadi. Qayta urinib ko'ring."
+msgstr "Не удалось загрузить данные. Попробуйте ещё раз."
+
+msgid "Qayta urinish"
+msgstr "Повторить"
+
+msgid "Aniqlanmagan"
+msgstr "Не определено"
+
+msgid "Aniqlanmagan manzil"
+msgstr "Адрес не определён"
+
+msgid "Markaziy kassa (filialsiz)"
+msgstr "Центральная касса (без филиала)"
+
+msgid "Qoraqalpog'iston"
+msgstr "Каракалпакстан"
+
+msgid "Xorazm"
+msgstr "Хорезм"
+
+msgid "Navoiy"
+msgstr "Навои"
+
+msgid "Buxoro"
+msgstr "Бухара"
+
+msgid "Samarqand"
+msgstr "Самарканд"
+
+msgid "Qashqadaryo"
+msgstr "Кашкадарья"
+
+msgid "Surxondaryo"
+msgstr "Сурхандарья"
+
+msgid "Jizzax"
+msgstr "Джизак"
+
+msgid "Sirdaryo"
+msgstr "Сырдарья"
+
+msgid "Toshkent vil."
+msgstr "Ташкентская обл."
+
+msgid "Namangan"
+msgstr "Наманган"
+
+msgid "Farg'ona"
+msgstr "Фергана"
+
+msgid "Andijon"
+msgstr "Андижан"
+
+msgid "Hisobotlar markazi"
+msgstr "Центр отчётов"
+
+msgid "dona sotildi"
+msgstr "шт. продано"
+
+msgid "tannarx"
+msgstr "себестоимость"
+
+msgid "Yo'qotish va qaytarish"
+msgstr "Потери и возвраты"
+
+msgid "{0} bekor"
+msgstr "{0} отменено"
+
+msgid "qaytarildi"
+msgstr "возвращено"
+
+msgid "Bu davrda sotuv bo'lmadi."
+msgstr "За этот период продаж не было."
+
+msgid "ta"
+msgstr "шт."
+
+msgid "To'lovlar yo'q"
+msgstr "Платежей нет"
+
+msgid "Ma'lumot yo'q"
+msgstr "Нет данных"
+
+msgid "Onlayn buyurtmalar holati"
+msgstr "Статус онлайн-заказов"
+
+msgid "Joylangan"
+msgstr "Оформлено"
+
+msgid "Hozir {0} ta buyurtma ishlov kutmoqda"
+msgstr "Сейчас {0} заказов ждут обработки"
+
+msgid "Jami mijozlar"
+msgstr "Всего клиентов"
+
+msgid "Xaridorlar"
+msgstr "Покупатели"
+
+msgid "Chastota"
+msgstr "Частота"
+
+msgid "Anonim chek"
+msgstr "Анонимные чеки"
+
+msgid "Hududlar"
+msgstr "Регионы"
+
+msgid "Xarita"
+msgstr "Карта"
+
+msgid "xarid"
+msgstr "покупок"
+
+msgid "Kupon ishlatildi"
+msgstr "Использовано купонов"
+
+msgid "Chegirmalar"
+msgstr "Скидки"
+
+msgid "Kupon"
+msgstr "Купон"
+
+msgid "faol"
+msgstr "активные"
+
+msgid "nofaol"
+msgstr "неактивные"
+
+msgid "qoralama"
+msgstr "черновик"
+
+msgid "rejalashtirilgan"
+msgstr "запланировано"
+
+msgid "to'xtatilgan"
+msgstr "приостановлено"
+
+msgid "Tasdiqlangan"
+msgstr "Одобрено"
+
+msgid "Rad etilgan"
+msgstr "Отклонено"
+
+msgid "Yashirilgan"
+msgstr "Скрыто"
+
+msgid "Shikoyat qilingan"
+msgstr "Есть жалоба"
+
+msgid "Tushum = kassa cheklari (qaytarishlarsiz) + yetkazilgan onlayn buyurtmalar, mijoz buyurtma bergan kun bo'yicha. Biznes analitikasi, bosh sahifa va analitika boti bilan bir xil formula."
+msgstr "Выручка = чеки кассы (за вычетом возвратов) + доставленные онлайн-заказы, по дню оформления. Та же формула, что в бизнес-аналитике, на главной и в боте аналитики."
+
+msgid "Davr"
+msgstr "Период"
+
+msgid "Sayt + Telegram"
+msgstr "Сайт + Telegram"
+
+msgid "Email"
+msgstr "Email"
+
+msgid "Yana javob yozish"
+msgstr "Написать ещё ответ"
+
+msgid "Javob yozish"
+msgstr "Написать ответ"
+
+msgid "Javob mijozning sayt kabinetiga va Telegram'iga boradi…"
+msgstr "Ответ придёт в личный кабинет клиента и в Telegram…"
+
+msgid "Javob matni saqlanadi — mijozga email orqali yuboring…"
+msgstr "Текст ответа сохранится — отправьте его клиенту по email…"
+
+msgid "Salomlashish"
+msgstr "Приветствие"
+
+msgid "Mavjudlik"
+msgstr "Наличие"
+
+msgid "Yakunlash"
+msgstr "Завершение"
+
+msgid "Javobni yuborish"
+msgstr "Отправить ответ"
+
+msgid "Javobni saqlash"
+msgstr "Сохранить ответ"
+
+msgid "Mijoz akkaunti"
+msgstr "Аккаунт клиента"
+
+msgid "Bu email saytda ro'yxatdan o'tgan"
+msgstr "Этот email зарегистрирован на сайте"
+
+msgid "Bu email bilan akkaunt topilmadi"
+msgstr "Аккаунт с этим email не найден"
+
+msgid "Ism"
+msgstr "Имя"
+
+msgid "ulangan"
+msgstr "подключён"
+
+msgid "ulanmagan"
+msgstr "не подключён"
+
+msgid "yetkazilgan"
+msgstr "доставлено"
+
+msgid "Oxirgi buyurtma"
+msgstr "Последний заказ"
+
+msgid "dan beri"
+msgstr "с"
+
+msgid "Javob faqat email orqali yetib boradi."
+msgstr "Ответ дойдёт только по email."
+
+msgid "Faqat jamoa ko'radi"
+msgstr "Видит только команда"
+
+msgid "Masalan: qayta qo'ng'iroq qilish kerak"
+msgstr "Например: нужно перезвонить"
+
+msgid "Javob mijozning sayt kabinetiga va Telegram'iga yuborildi."
+msgstr "Ответ отправлен в кабинет клиента и в Telegram."
+
+msgid "Javob saqlandi. Bu email bilan mijoz akkaunti yo'q — javobni email orqali yuboring."
+msgstr "Ответ сохранён. Аккаунта с этим email нет — отправьте ответ по email."
+
+msgid "Faqat jamoa ko'radi -- mijozga yuborilmaydi."
+msgstr "Видит только команда — клиенту не отправляется."
+
+msgid "Javob berilgan vaqt"
+msgstr "Время ответа"
+
+msgid "Javob kanali"
+msgstr "Канал ответа"
+
+msgid "Murojaat"
+msgstr "Обращение"
+
+msgid "Assalomu alaykum! Murojaatingiz uchun rahmat. "
+msgstr "Здравствуйте! Спасибо за обращение. "
+
+msgid "Buyurtmangiz holatini tekshirdik: "
+msgstr "Мы проверили статус вашего заказа: "
+
+msgid "Mahsulot omborda mavjud, saytdan yoki Telegram botdan buyurtma berishingiz mumkin. "
+msgstr "Товар в наличии — можно заказать на сайте или в Telegram-боте. "
+
+msgid "Qo'shimcha savollar bo'lsa, sayt chatiga yozing — yordam beramiz. Hurmat bilan, NutriZone jamoasi."
+msgstr "Если остались вопросы, пишите в чат на сайте — поможем. С уважением, команда NutriZone."
+
+msgid "Bosishlar"
+msgstr "Клики"
+
+msgid "dan"
+msgstr "с"
+
+msgid "muddati tugagan"
+msgstr "срок истёк"
+
+msgid "Ko'rsatish muddati"
+msgstr "Период показа"
+
+msgid "Ixtiyoriy. Aksiya bannerlarini oldindan qo'ying — o'z vaqtida chiqadi va muddati tugaganda o'zi yashiriladi."
+msgstr "Необязательно. Поставьте акционные баннеры заранее — они появятся вовремя и скроются по окончании срока."
+
+msgid "Saytda {0} marta bosilgan"
+msgstr "Нажали на сайте {0} раз"
+
+msgid "Ko'rsatish boshlanishi"
+msgstr "Показ с"
+
+msgid "Ko'rsatish tugashi"
+msgstr "Показ до"
+
+msgid "Tugash vaqti boshlanishdan keyin bo'lishi kerak."
+msgstr "Окончание должно быть позже начала."

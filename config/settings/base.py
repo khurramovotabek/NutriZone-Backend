@@ -174,6 +174,7 @@ MIDDLEWARE = [
     "corsheaders.middleware.CorsMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.locale.LocaleMiddleware",
+    "apps.platform.infrastructure.admin_i18n.AdminDefaultLanguageMiddleware",  # dashboard always opens in Uzbek; only its own switcher changes it, per session
     "apps.platform.infrastructure.admin_i18n.AdminTextTranslationMiddleware",  # dashboard HTML phrase by phrase in the staff language (locale/*/admin_phrases.po)
     "apps.platform.infrastructure.branding.AdminBrandingMiddleware",  # Jazzmin header/footer/login follow SiteSettings.site_name  # Phase 08.1: activates the already-configured LANGUAGES/LOCALE_PATHS for the admin dashboard's own language switcher
     "django.middleware.common.CommonMiddleware",
@@ -223,6 +224,8 @@ AUTH_PASSWORD_VALIDATORS = [
 # localization, not hardcoded)
 # ---------------------------------------------------------------------------
 LANGUAGE_CODE = "uz"
+ADMIN_DEFAULT_LANGUAGE = "uz"
+ADMIN_FORCE_DEFAULT_LANGUAGE = True
 TIME_ZONE = "Asia/Tashkent"
 USE_I18N = True
 USE_TZ = True

@@ -41,7 +41,7 @@ class TestBannerGallery:
         body = response.content.decode()
         assert "data-nzp-banners" in body
         assert body.count('<article class="nzp-banner') == 3
-        assert response.context["nz_banner_stats"] == {"total": 3, "active": 2, "no_image": 3, "cycle": 90, "hidden": 1}
+        assert response.context["nz_banner_stats"] == {"total": 3, "active": 2, "no_image": 3, "cycle": 90, "hidden": 1, "clicks": 0}
 
     def test_drag_reorder_is_disabled_while_filtering(self, admin_client, banners):
         body = admin_client.get("/django-admin/platform/banner/?is_active__exact=1").content.decode()

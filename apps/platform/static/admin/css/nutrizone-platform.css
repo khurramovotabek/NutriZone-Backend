@@ -422,3 +422,22 @@ main.app-main:has(.nzp) { overflow-x: clip !important; overflow-y: visible !impo
 .nzp-lang[open] > summary { border-bottom: 1px solid var(--nz-border); margin-bottom: 10px; }
 .nzp-lang[open] { padding-bottom: 6px; }
 .nzp-lang-ok { color: #16a34a; font-size: .75rem; margin-left: 6px; }
+
+/* Contact message: reply composer, sent reply, internal note (2026-11-16) */
+.nzp-composer { margin: 16px 0 4px; padding: 14px; border-radius: 16px; border: 1px solid var(--nz-border); background: color-mix(in srgb, var(--nz-primary) 5%, var(--nz-surface)); }
+.nzp-composer label { display: flex; align-items: center; gap: 7px; font-weight: 800; font-size: 13px; margin-bottom: 8px; color: var(--nz-text-primary); }
+.nzp-composer textarea, .nzp-note-input { width: 100%; border-radius: 12px; border: 1px solid var(--nz-border); background: var(--nz-surface); color: var(--nz-text-primary); padding: 10px 12px; font-size: 13.5px; line-height: 1.5; resize: vertical; }
+.nzp-composer textarea:focus, .nzp-note-input:focus { outline: none; border-color: var(--nz-primary); box-shadow: 0 0 0 4px var(--nz-focus-ring); }
+.nzp-composer-foot { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px; margin-top: 10px; }
+.nzp-quick { display: flex; flex-wrap: wrap; gap: 6px; }
+.nzp-quick button { border: 1px solid var(--nz-border); background: var(--nz-surface); color: var(--nz-text-secondary); font-size: 12px; font-weight: 700; padding: 5px 11px; border-radius: 999px; cursor: pointer; }
+.nzp-quick button:hover { color: var(--nz-primary); border-color: var(--nz-primary); }
+.nzp-replied { margin-top: 16px; padding: 12px 14px; border-radius: 14px; border-left: 3px solid #10b981; background: color-mix(in srgb, #10b981 8%, var(--nz-surface)); }
+.nzp-replied-head { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; font-size: 12px; font-weight: 700; color: var(--nz-text-muted); margin-bottom: 6px; }
+.nzp-replied-body { font-size: 13.5px; line-height: 1.55; color: var(--nz-text-primary); }
+.nzp-chip { padding: 2px 8px; border-radius: 999px; font-size: 11px; background: color-mix(in srgb, #10b981 16%, transparent); color: #047857; }
+.nzp-dates { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.nzp-dates input { height: 38px; border-radius: 10px; border: 1px solid var(--nz-border); background: var(--nz-surface); color: var(--nz-text-primary); padding: 0 10px; font-size: 13px; }
+.nzp-sched { display: inline-flex; align-items: center; gap: 4px; padding: 1px 8px; border-radius: 999px; font-size: 11px; font-weight: 700; background: color-mix(in srgb, #0ea5e9 14%, transparent); color: #0369a1; }
+.nzp-sched.is-wait { background: color-mix(in srgb, #f59e0b 16%, transparent); color: #b45309; }
+.nzp-sched.is-end { background: color-mix(in srgb, #ef4444 14%, transparent); color: #b91c1c; }

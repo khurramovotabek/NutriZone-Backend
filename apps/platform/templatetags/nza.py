@@ -65,3 +65,12 @@ def trend(ch, unit: str = "pct"):
         body = f"{_num(abs(ch['diff']))} {unit}"
     arrow = "▲" if ch["dir"] == "up" else "▼"
     return format_html('<span class="nza-trend is-{}">{} {}</span>', ch["dir"], arrow, body)
+
+
+@register.filter
+def get_item(mapping, key):
+    """dict lookup by a variable key in templates; None when absent."""
+    try:
+        return mapping.get(key)
+    except AttributeError:
+        return None

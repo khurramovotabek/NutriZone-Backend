@@ -1,5 +1,10 @@
 {% extends "admin/base_site.html" %}
-{% load i18n static %}
+{% load i18n static nza %}
+
+{% block extrastyle %}{{ block.super }}
+<link rel="stylesheet" href="{% static 'admin/css/nutrizone-liquid-glass.css' %}?v=4">
+<link rel="stylesheet" href="{% static 'admin/css/nutrizone-reports.css' %}?v=2">
+{% endblock %}
 
 {% block breadcrumbs %}
 <div class="breadcrumbs">
@@ -9,149 +14,186 @@
 {% endblock %}
 
 {% block content %}
-<div class="nz-dashboard" data-nz-reports>
-  <div class="nz-dashboard-header">
-    <div>
+<div class="nz-dashboard nz-lg nzr" data-nz-reports>
+  <div class="nz-lg-aurora" aria-hidden="true"><span></span><span></span><span></span></div>
+
+  <header class="nzx-hero">
+    <div class="nzx-hero-text">
+      <span class="nzx-eyebrow"><i class="fas fa-file-invoice-dollar" aria-hidden="true"></i> {% translate "Hisobotlar markazi" %}</span>
       <h2 class="nz-dashboard-title">{% translate "Reports & Business Intelligence" %}</h2>
       <p class="nz-dashboard-subtitle">
         {% blocktranslate with period=period_label %}Showing data for {{ period }}{% endblocktranslate %}
-        &middot; {% translate "Last updated" %}: {{ last_updated|date:"Y-m-d H:i" }}
+        &middot; {% translate "Last updated" %}: {{ last_updated|date:"d.m.Y H:i" }}
       </p>
     </div>
-  </div>
-
-  {# --- Sales Report --- #}
-  <div class="nz-card">
-    <h3>{% translate "Sales" %} <a href="{% url 'admin:nz_reports_sales_export' %}" class="btn btn-sm btn-outline-primary">{% translate "Export to Excel" %}</a></h3>
-    {% if sales.ok %}
-      {% with s=sales.data %}
-      <div class="nz-kpi-grid">
-        <div class="nz-card nz-kpi-card">
-          <div class="nz-kpi-label">{% translate "Gross Sales" %}</div>
-          <div class="nz-stat-number">{{ s.gross_sales|floatformat:0 }} UZS</div>
-          {% if s.revenue_change.value is not None %}
-          <div class="nz-kpi-trend nz-trend-{{ s.revenue_change.direction }}">{{ s.revenue_change.value }}% {% translate "vs previous period" %}</div>
-          {% else %}
-          <div class="nz-kpi-trend nz-trend-muted">{% translate "No previous data" %}</div>
-          {% endif %}
-        </div>
-        <div class="nz-card nz-kpi-card">
-          <div class="nz-kpi-label">{% translate "Orders" %}</div>
-          <div class="nz-stat-number">{{ s.orders }}</div>
-          {% if s.orders_change.value is not None %}
-          <div class="nz-kpi-trend nz-trend-{{ s.orders_change.direction }}">{{ s.orders_change.value }}%</div>
-          {% else %}
-          <div class="nz-kpi-trend nz-trend-muted">{% translate "No previous data" %}</div>
-          {% endif %}
-        </div>
-        <div class="nz-card nz-kpi-card">
-          <div class="nz-kpi-label">{% translate "Average Order Value" %}</div>
-          <div class="nz-stat-number">{{ s.average_order_value|floatformat:0 }} UZS</div>
-        </div>
-        <div class="nz-card nz-kpi-card">
-          <div class="nz-kpi-label">{% translate "Cancelled Orders" %}</div>
-          <div class="nz-stat-number">{{ s.cancelled_orders }}</div>
-        </div>
-      </div>
-      {% if s.order_status_distribution %}
-        <div style="height:200px; margin-top: var(--nz-space-4);">
-          <canvas id="nz-order-status-chart"></canvas>
-        </div>
-        {{ s.order_status_distribution|json_script:"nz-order-status-series-data" }}
-      {% endif %}
-      {% endwith %}
-    {% else %}
-      <p class="nz-error-state">&#9888; {% translate "Unable to load sales data" %}</p>
-    {% endif %}
-  </div>
-
-  <div class="nz-dashboard-columns">
-    {# --- Customers --- #}
-    <div class="nz-card">
-      <h3>{% translate "Customers" %}</h3>
-      {% if customers.ok %}
-        <div class="nz-stat-number">{{ customers.data.total_customers }}</div>
-        <div class="nz-kpi-trend nz-trend-muted">{% translate "Total registered customers" %}</div>
-      {% else %}
-        <p class="nz-error-state">&#9888; {% translate "Unable to load customer data" %}</p>
-      {% endif %}
+    <div class="nzr-hero-tools">
+      <nav class="nzx-range" aria-label="{% translate 'Davr' %}">
+        {% for key, label in ranges %}<a href="?p={{ key }}" class="{% if key == range_key %}on{% endif %}">{{ label }}</a>{% endfor %}
+      </nav>
+      <a class="nzr-btn" href="{% url 'admin:nz_reports_sales_export' %}?p={{ range_key }}"><i class="fas fa-file-excel" aria-hidden="true"></i> {% translate "Export to Excel" %}</a>
     </div>
+  </header>
 
-    {# --- Products --- #}
-    <div class="nz-card">
-      <h3>{% translate "Top Products" %} {% if products.ok %}<a href="{% url 'admin:nz_reports_section_export' 'products' %}" class="btn btn-sm btn-outline-primary">{% translate "Export to Excel" %}</a>{% endif %}</h3>
+  {# ---------------- Sales ---------------- #}
+  {% if sales.ok %}{% with s=sales.data %}
+  <section class="nzr-kpis" aria-label="{% translate 'Sales' %}">
+    <article class="nzr-kpi is-hero" data-value="{{ s.gross_sales|floatformat:0 }}">
+      <small>{% translate "Tushum" %}</small>
+      <strong>{{ s.gross_sales|som }}</strong>
+      <span class="nzr-sub">{% if s.revenue_change.value is not None %}<b class="nzx-{{ s.revenue_change.direction }}">{% if s.revenue_change.direction == "up" %}▲{% elif s.revenue_change.direction == "down" %}▼{% endif %} {{ s.revenue_change.value|pct }}</b> {{ period.compare }}{% else %}{% translate "No previous data" %}{% endif %}</span>
+      <div class="nzr-split">
+        <span style="--w:{% widthratio s.online_revenue s.gross_sales|default:1 100 %}%" class="is-online"></span><span class="is-pos" style="--w:{% widthratio s.pos_revenue s.gross_sales|default:1 100 %}%"></span>
+      </div>
+      <span class="nzr-legend"><i class="is-online"></i>{% translate "Onlayn" %} {{ s.online_revenue|compact }} · <i class="is-pos"></i>{% translate "Kassa" %} {{ s.pos_revenue|compact }}</span>
+    </article>
+    <article class="nzr-kpi">
+      <small>{% translate "Xaridlar" %}</small>
+      <strong>{{ s.orders|num }}</strong>
+      <span class="nzr-sub">{% if s.orders_change.value is not None %}<b class="nzx-{{ s.orders_change.direction }}">{% if s.orders_change.direction == "up" %}▲{% elif s.orders_change.direction == "down" %}▼{% endif %} {{ s.orders_change.value|pct }}</b>{% endif %} {% translate "Onlayn" %} {{ s.online_orders }} · {% translate "Kassa" %} {{ s.pos_sales }}</span>
+    </article>
+    <article class="nzr-kpi">
+      <small>{% translate "O'rtacha chek" %}</small>
+      <strong>{{ s.average_order_value|som }}</strong>
+      <span class="nzr-sub">{% if s.average_change.value is not None %}<b class="nzx-{{ s.average_change.direction }}">{% if s.average_change.direction == "up" %}▲{% elif s.average_change.direction == "down" %}▼{% endif %} {{ s.average_change.value|pct }}</b>{% endif %} {{ s.units|num }} {% translate "dona sotildi" %}</span>
+    </article>
+    <article class="nzr-kpi">
+      <small>{% translate "Yalpi foyda" %}</small>
+      {% if profit.ok and profit.data.reliable %}<strong>{{ profit.data.gross_profit|som }}</strong><span class="nzr-sub">{% translate "marja" %} {{ profit.data.margin|pct }} · {% translate "tannarx" %} {{ profit.data.cogs|compact }}</span>
+      {% else %}<strong class="is-muted">—</strong><span class="nzr-sub">{% if profit.ok and profit.data.coverage is not None %}{% blocktranslate with n=profit.data.coverage %}tannarx {{ n }}% mahsulotda ma'lum{% endblocktranslate %}{% else %}{% translate "tannarx kiritilmagan" %}{% endif %}</span>{% endif %}
+    </article>
+    <article class="nzr-kpi">
+      <small>{% translate "Jarayonda" %}</small>
+      <strong>{{ s.pipeline_value|som }}</strong>
+      <span class="nzr-sub">{% blocktranslate with n=s.pipeline_orders %}{{ n }} ta buyurtma yo'lda{% endblocktranslate %}</span>
+    </article>
+    <article class="nzr-kpi">
+      <small>{% translate "Yo'qotish va qaytarish" %}</small>
+      <strong>{{ s.lost_value|som }}</strong>
+      <span class="nzr-sub">{% blocktranslate with n=s.lost_orders %}{{ n }} bekor{% endblocktranslate %} · {% translate "qaytarildi" %} {{ s.refunds_total|compact }} ({{ s.refunds_count }})</span>
+    </article>
+  </section>
+  {% endwith %}{% else %}
+  <div class="nz-card nz-error-state">&#9888; {% translate "Unable to load sales data" %}</div>
+  {% endif %}
+
+  <div class="nzr-grid">
+    {# ---------------- Best sellers ---------------- #}
+    <section class="nz-card nzr-card nzr-span-2">
+      <header class="nzr-head"><h3><i class="fas fa-trophy" aria-hidden="true"></i> {% translate "Top Products" %}</h3>
+        {% if products.ok %}<a class="nzr-link" href="{% url 'admin:nz_reports_section_export' 'products' %}?p={{ range_key }}"><i class="fas fa-download"></i> Excel</a>{% endif %}</header>
       {% if products.ok and products.data.top_products %}
-        <div style="height:260px;">
-          <canvas id="nz-top-products-chart"></canvas>
-        </div>
-        {{ products.data.top_products|json_script:"nz-top-products-series-data" }}
-      {% elif products.ok %}
-        <p class="nz-empty-state">{% translate "No product sales data available yet." %}</p>
-      {% else %}
-        <p class="nz-error-state">&#9888; {% translate "Unable to load product data" %}</p>
-      {% endif %}
-    </div>
-
-    {# --- Phase E2: real category distribution --- #}
-    <div class="nz-card">
-      <h3>{% translate "Products by Category" %}</h3>
-      {% if products.ok and products.data.products_by_category %}
-        <div style="height:220px;">
-          <canvas id="nz-category-chart"></canvas>
-        </div>
-        {{ products.data.products_by_category|json_script:"nz-category-series-data" }}
-      {% elif products.ok %}
-        <p class="nz-empty-state">{% translate "No category data available yet." %}</p>
-      {% else %}
-        <p class="nz-error-state">&#9888; {% translate "Unable to load product data" %}</p>
-      {% endif %}
-    </div>
-  </div>
-
-  <div class="nz-dashboard-columns">
-    {# --- Inventory --- #}
-    <div class="nz-card">
-      <h3>{% translate "Inventory" %} {% if inventory.ok %}<a href="{% url 'admin:nz_reports_section_export' 'inventory' %}" class="btn btn-sm btn-outline-primary">{% translate "Export to Excel" %}</a>{% endif %}</h3>
-      {% if inventory.ok %}
-        <div class="nz-kpi-trend nz-trend-muted">{% translate "Low stock" %}: {{ inventory.data.low_stock_total }}</div>
-        <div class="nz-kpi-trend nz-trend-muted">{% translate "Out of stock" %}: {{ inventory.data.out_of_stock_total }}</div>
-      {% else %}
-        <p class="nz-error-state">&#9888; {% translate "Unable to load inventory data" %}</p>
-      {% endif %}
-    </div>
-
-    {# --- Marketing --- #}
-    <div class="nz-card">
-      <h3>{% translate "Marketing" %} {% if marketing.ok %}<a href="{% url 'admin:nz_reports_section_export' 'marketing' %}" class="btn btn-sm btn-outline-primary">{% translate "Export to Excel" %}</a>{% endif %}</h3>
-      {% if marketing.ok %}
-        <div class="nz-kpi-trend nz-trend-muted">{% translate "Total coupon redemptions" %}: {{ marketing.data.total_redemptions }}</div>
-        {% for status, count in marketing.data.coupon_counts_by_status.items %}
-        <div class="nz-kpi-trend nz-trend-muted">{% translate "Coupons" %} ({{ status }}): {{ count }}</div>
+      <ol class="nzr-rank">
+        {% for t in products.data.top_products %}
+        <li><span class="nzr-n">{{ forloop.counter }}</span><span class="nzr-name">{{ t.name }}{% if t.sku %}<small>{{ t.sku }}</small>{% endif %}</span><span class="nzr-units">{{ t.units|num }} {% translate "dona" %}</span><b>{{ t.revenue|som }}</b></li>
         {% endfor %}
-        {% for status, count in marketing.data.campaign_counts_by_status.items %}
-        <div class="nz-kpi-trend nz-trend-muted">{% translate "Campaigns" %} ({{ status }}): {{ count }}</div>
-        {% endfor %}
-      {% else %}
-        <p class="nz-error-state">&#9888; {% translate "Unable to load marketing data" %}</p>
-      {% endif %}
-    </div>
-  </div>
+      </ol>
+      {% elif products.ok %}<p class="nz-empty-state">{% translate "Bu davrda sotuv bo'lmadi." %}</p>
+      {% else %}<p class="nz-error-state">&#9888; {% translate "Unable to load product data" %}</p>{% endif %}
+    </section>
 
-  {# --- Reviews --- #}
-  <div class="nz-card">
-    <h3>{% translate "Reviews" %} {% if reviews.ok %}<a href="{% url 'admin:nz_reports_section_export' 'reviews' %}" class="btn btn-sm btn-outline-primary">{% translate "Export to Excel" %}</a>{% endif %}</h3>
-    {% if reviews.ok and reviews.data.counts_by_status %}
-      <div style="height:220px;">
-        <canvas id="nz-reviews-chart"></canvas>
+    {# ---------------- Payment methods ---------------- #}
+    <section class="nz-card nzr-card">
+      <header class="nzr-head"><h3><i class="fas fa-credit-card" aria-hidden="true"></i> {% translate "To'lov usullari" %}</h3></header>
+      {% if payments.ok and payments.data.rows %}
+      <ul class="nzr-bars">
+        {% for m in payments.data.rows %}
+        <li><span>{% translate m.label %}<small>{{ m.count }} {% translate "ta" %}</small></span><b>{{ m.amount|compact }}</b><i style="--w:{{ m.share|floatformat:0 }}%"></i><em>{{ m.share|pct }}</em></li>
+        {% endfor %}
+      </ul>
+      {% elif payments.ok %}<p class="nz-empty-state">{% translate "To'lovlar yo'q" %}</p>{% else %}<p class="nz-error-state">&#9888;</p>{% endif %}
+    </section>
+
+    {# ---------------- Categories / brands ---------------- #}
+    <section class="nz-card nzr-card">
+      <header class="nzr-head"><h3><i class="fas fa-layer-group" aria-hidden="true"></i> {% translate "Kategoriyalar ulushi" %}</h3></header>
+      {% if mix.ok and mix.data.categories %}
+      <ul class="nzr-bars">{% for c in mix.data.categories %}<li><span>{{ c.name }}</span><b>{{ c.revenue|compact }}</b><i style="--w:{{ c.share|floatformat:0 }}%"></i><em>{{ c.share|pct }}</em></li>{% endfor %}</ul>
+      {% else %}<p class="nz-empty-state">{% translate "Ma'lumot yo'q" %}</p>{% endif %}
+    </section>
+    <section class="nz-card nzr-card">
+      <header class="nzr-head"><h3><i class="fas fa-tags" aria-hidden="true"></i> {% translate "Brendlar ulushi" %}</h3></header>
+      {% if mix.ok and mix.data.brands %}
+      <ul class="nzr-bars is-violet">{% for c in mix.data.brands %}<li><span>{{ c.name }}</span><b>{{ c.revenue|compact }}</b><i style="--w:{{ c.share|floatformat:0 }}%"></i><em>{{ c.share|pct }}</em></li>{% endfor %}</ul>
+      {% else %}<p class="nz-empty-state">{% translate "Ma'lumot yo'q" %}</p>{% endif %}
+    </section>
+
+    {# ---------------- Online orders funnel ---------------- #}
+    <section class="nz-card nzr-card">
+      <header class="nzr-head"><h3><i class="fas fa-route" aria-hidden="true"></i> {% translate "Onlayn buyurtmalar holati" %}</h3>
+        <a class="nzr-link" href="{% url 'admin:ordering_ordermodel_changelist' %}">{% translate "Ochish" %} →</a></header>
+      {% if orders.ok %}{% with o=orders.data %}
+      <div class="nzr-mini">
+        <div><small>{% translate "Joylangan" %}</small><b>{{ o.placed }}</b>{{ o.change|trend }}</div>
+        <div><small>{% translate "Yetkazilgan" %}</small><b>{{ o.delivered }}</b></div>
+        <div><small>{% translate "Bekor %" %}</small><b class="{% if o.cancel_spike %}nzx-down{% endif %}">{{ o.cancel_rate|pct }}</b></div>
       </div>
-      {{ reviews.data.counts_by_status|json_script:"nz-reviews-series-data" }}
-    {% elif reviews.ok %}
-      <p class="nz-empty-state">{% translate "No review data available yet." %}</p>
-    {% else %}
-      <p class="nz-error-state">&#9888; {% translate "Unable to load review data" %}</p>
-    {% endif %}
+      {% if o.statuses %}<ul class="nzr-chips">{% for st in o.statuses %}<li class="st-{{ st.code }}">{% translate st.label %} <b>{{ st.count }}</b></li>{% endfor %}</ul>{% endif %}
+      {% if o.backlog_total %}<p class="nzr-note"><i class="fas fa-hourglass-half"></i> {% blocktranslate with n=o.backlog_total %}Hozir {{ n }} ta buyurtma ishlov kutmoqda{% endblocktranslate %}</p>{% endif %}
+      {% endwith %}{% else %}<p class="nz-error-state">&#9888;</p>{% endif %}
+    </section>
+
+    {# ---------------- Customers ---------------- #}
+    <section class="nz-card nzr-card">
+      <header class="nzr-head"><h3><i class="fas fa-users" aria-hidden="true"></i> {% translate "Customers" %}</h3>
+        <a class="nzr-link" href="{% url 'admin:nz_segments' %}">{% translate "Segmentlar" %} →</a></header>
+      <div class="nzr-mini">
+        <div><small>{% translate "Jami mijozlar" %}</small><b>{% if customers.ok %}{{ customers.data.total_customers|num }}{% else %}—{% endif %}</b></div>
+        {% if buyers.ok %}{% with b=buyers.data %}
+        <div><small>{% translate "Yangi" %}</small><b>{{ b.new|default_if_none:"—" }}</b>{{ b.new_change|trend }}</div>
+        <div><small>{% translate "Xaridorlar" %}</small><b>{{ b.buyers }}</b></div>
+        <div><small>{% translate "Qayta xarid" %}</small><b>{% if b.repeat_share is not None %}{{ b.repeat_share }}%{% else %}—{% endif %}</b></div>
+        <div><small>{% translate "Chastota" %}</small><b>{{ b.frequency|default_if_none:"—" }}</b></div>
+        <div><small>{% translate "Anonim chek" %}</small><b>{{ b.anonymous }}</b></div>
+        {% endwith %}{% endif %}
+      </div>
+    </section>
+
+    {# ---------------- Regions ---------------- #}
+    <section class="nz-card nzr-card">
+      <header class="nzr-head"><h3><i class="fas fa-map-location-dot" aria-hidden="true"></i> {% translate "Hududlar" %}</h3>
+        <a class="nzr-link" href="{% url 'admin:index' %}?p={{ range_key }}#nz-regions">{% translate "Xarita" %} →</a></header>
+      {% if regions.ok and regions.data.rows %}
+      <ul class="nzr-bars is-teal">{% for r in regions.data.rows %}<li><span>{{ r.name }}<small>{{ r.orders }} {% translate "xarid" %}</small></span><b>{{ r.revenue|compact }}</b><i style="--w:{{ r.share|floatformat:0 }}%"></i><em>{{ r.share|pct }}</em></li>{% endfor %}</ul>
+      {% else %}<p class="nz-empty-state">{% translate "Bu davrda savdo yo'q" %}</p>{% endif %}
+    </section>
+
+    {# ---------------- Inventory ---------------- #}
+    <section class="nz-card nzr-card">
+      <header class="nzr-head"><h3><i class="fas fa-warehouse" aria-hidden="true"></i> {% translate "Inventory" %}</h3>
+        {% if inventory.ok %}<a class="nzr-link" href="{% url 'admin:nz_reports_section_export' 'inventory' %}"><i class="fas fa-download"></i> Excel</a>{% endif %}</header>
+      {% if inventory.ok %}
+      <div class="nzr-mini">
+        <div><small>{% translate "Low stock" %}</small><b>{{ inventory.data.low_stock_total }}</b></div>
+        <div><small>{% translate "Out of stock" %}</small><b class="{% if inventory.data.out_of_stock_total %}nzx-down{% endif %}">{{ inventory.data.out_of_stock_total }}</b></div>
+      </div>
+      <p class="nzr-note"><a href="{% url 'admin:nz_wms_reports' %}">{% translate "Ombor hisobotlari" %} →</a></p>
+      {% else %}<p class="nz-error-state">&#9888; {% translate "Unable to load inventory data" %}</p>{% endif %}
+    </section>
+
+    {# ---------------- Marketing ---------------- #}
+    <section class="nz-card nzr-card">
+      <header class="nzr-head"><h3><i class="fas fa-bullhorn" aria-hidden="true"></i> {% translate "Marketing" %}</h3>
+        {% if marketing.ok %}<a class="nzr-link" href="{% url 'admin:nz_reports_section_export' 'marketing' %}"><i class="fas fa-download"></i> Excel</a>{% endif %}</header>
+      {% if marketing.ok %}
+      <div class="nzr-mini">
+        <div><small>{% translate "Kupon ishlatildi" %}</small><b>{{ marketing.data.total_redemptions }}</b></div>
+        <div><small>{% translate "Chegirmalar" %}</small><b>{% if sales.ok %}{{ sales.data.discounts|compact }}{% else %}—{% endif %}</b></div>
+      </div>
+      {% if marketing.data.coupon_counts_by_status %}<ul class="nzr-chips">{% for st, n in marketing.data.coupon_counts_by_status.items %}<li>{% translate "Kupon" %} · {{ marketing.data.statuses_label|get_item:st|default:st }} <b>{{ n }}</b></li>{% endfor %}{% for st, n in marketing.data.campaign_counts_by_status.items %}<li>{% translate "Aksiya" %} · {{ marketing.data.statuses_label|get_item:st|default:st }} <b>{{ n }}</b></li>{% endfor %}</ul>{% endif %}
+      {% else %}<p class="nz-error-state">&#9888; {% translate "Unable to load marketing data" %}</p>{% endif %}
+    </section>
+
+    {# ---------------- Reviews ---------------- #}
+    <section class="nz-card nzr-card">
+      <header class="nzr-head"><h3><i class="fas fa-star" aria-hidden="true"></i> {% translate "Reviews" %}</h3>
+        {% if reviews.ok %}<a class="nzr-link" href="{% url 'admin:nz_reports_section_export' 'reviews' %}"><i class="fas fa-download"></i> Excel</a>{% endif %}</header>
+      {% if reviews.ok and reviews.data.counts_by_status %}
+      <ul class="nzr-chips">{% for st in reviews.data.statuses %}<li class="st-{{ st.code }}">{{ st.label }} <b>{{ st.count }}</b></li>{% endfor %}</ul>
+      {% elif reviews.ok %}<p class="nz-empty-state">{% translate "No review data available yet." %}</p>
+      {% else %}<p class="nz-error-state">&#9888; {% translate "Unable to load review data" %}</p>{% endif %}
+    </section>
   </div>
+
+  <p class="nzr-foot"><i class="fas fa-circle-info" aria-hidden="true"></i> {% translate "Tushum = kassa cheklari (qaytarishlarsiz) + yetkazilgan onlayn buyurtmalar, mijoz buyurtma bergan kun bo'yicha. Biznes analitikasi, bosh sahifa va analitika boti bilan bir xil formula." %}</p>
 </div>
-<script src="{% static 'admin/vendor/chartjs/chart.umd.js' %}"></script>
-<script src="{% static 'admin/js/nutrizone-dashboard-charts.js' %}"></script>
 {% endblock %}

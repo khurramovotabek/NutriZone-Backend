@@ -111,7 +111,12 @@ class BannerListView(APIView):
         from common.utils.localization import resolve_locale
 
         locale = resolve_locale(request, request.query_params.get("locale"))
-        banners = Banner.objects.filter(is_active=True).order_by("sort_order", "-created_at")
+        from django.db.models import Q
+        from django.utils import timezone
+
+        now = timezone.now()
+        banners = (Banner.objects.filter(is_active=True).filter(Q(starts_at__isnull=True) | Q(starts_at__lte=now))
+                   .filter(Q(ends_at__isnull=True) | Q(ends_at__gt=now)).order_by("sort_order", "-created_at"))
         data = []
         for banner in banners:
             image_url = None
@@ -127,6 +132,26 @@ class BannerListView(APIView):
                 "duration_seconds": banner.duration_seconds,
             })
         return success_response(data=data)
+
+
+class BannerClickView(APIView):
+    """`POST /settings/banners/<id>/click` -- public: the storefront reports a tap on a banner's button (counted for the dashboard)."""
+
+    permission_classes = [AllowAny]
+    authentication_classes: list = []
+
+    @extend_schema(tags=["Platform"], summary="Count a banner click", responses={204: OpenApiResponse(description="Counted")})
+    def post(self, request, banner_id):
+        from django.core.cache import cache
+        from django.db.models import F
+        from django.http import HttpResponse
+
+        from apps.platform.infrastructure.models import Banner
+
+        ip = (request.META.get("HTTP_X_FORWARDED_FOR") or request.META.get("REMOTE_ADDR") or "").split(",")[0].strip()
+        if cache.add(f"banner-click:{banner_id}:{ip}", 1, 30):  # one count per visitor per banner per 30 s
+            Banner.objects.filter(pk=banner_id, is_active=True).update(clicks=F("clicks") + 1)
+        return HttpResponse(status=204)
 
 
 class FeatureFlagListView(APIView):

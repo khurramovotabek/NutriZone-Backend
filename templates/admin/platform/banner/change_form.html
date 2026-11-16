@@ -4,7 +4,7 @@
 
 {% block extrastyle %}
 {{ block.super }}
-<link rel="stylesheet" href="{% static 'admin/css/nutrizone-platform.css' %}?v=6">
+<link rel="stylesheet" href="{% static 'admin/css/nutrizone-platform.css' %}?v=7">
 {% endblock %}
 
 {% block content_title %}{% endblock %}
@@ -126,6 +126,13 @@
               </div>
               <p class="nzp-help">{% translate "3 to 300 seconds. 6–10 seconds suits most slides." %}</p>
               {% for e in f.duration_seconds.errors %}<p class="nzp-error">{{ e }}</p>{% endfor %}
+            </div>
+            <div class="nzp-field{% if f.starts_at.errors or f.ends_at.errors %} has-error{% endif %}">
+              <label>{% translate "Ko'rsatish muddati" %}</label>
+              <div class="nzp-dates">{{ f.starts_at }}<span aria-hidden="true">→</span>{{ f.ends_at }}</div>
+              <p class="nzp-help">{% translate "Ixtiyoriy. Aksiya bannerlarini oldindan qo'ying — o'z vaqtida chiqadi va muddati tugaganda o'zi yashiriladi." %}</p>
+              {% for e in f.starts_at.errors %}<p class="nzp-error">{{ e }}</p>{% endfor %}{% for e in f.ends_at.errors %}<p class="nzp-error">{{ e }}</p>{% endfor %}
+              {% if original %}<p class="nzp-help"><i class="fas fa-hand-pointer"></i> {% blocktranslate with n=original.clicks %}Saytda {{ n }} marta bosilgan{% endblocktranslate %}</p>{% endif %}
             </div>
             <div class="nzp-field{% if f.sort_order.errors %} has-error{% endif %}">
               <label for="{{ f.sort_order.id_for_label }}">{% translate "Sort order" %}</label>

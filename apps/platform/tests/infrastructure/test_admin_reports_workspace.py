@@ -282,8 +282,7 @@ class TestWalletAndOrderStatusVisibility:
         response = staff_client.get("/django-admin/reports/")
         assert response.status_code == 200
         content = response.content.decode()
-        assert "nz-order-status-chart" in content
-        assert "nz-order-status-series-data" in content
+        assert 'class="nzr-chips"' in content  # online order statuses of the period (2026-11-16 Reports redesign)
 
     def test_order_status_chart_data_reflects_a_real_persisted_order(self, staff_client):
         import json
@@ -299,12 +298,12 @@ class TestWalletAndOrderStatusVisibility:
         ordering_composition.build_order_repository().save(order)
 
         response = staff_client.get("/django-admin/reports/")
-        content = response.content.decode()
-        start = content.index('id="nz-order-status-series-data"')
-        json_start = content.index(">", start) + 1
-        json_end = content.index("</script>", json_start)
-        distribution = json.loads(content[json_start:json_end])
+        assert response.status_code == 200
+        from apps.platform.infrastructure.reports import ReportPeriod, ReportsAggregator
+
+        distribution = ReportsAggregator(ReportPeriod.last_n_days(30, "")).sales_report()["order_status_distribution"]
         assert distribution.get("completed", 0) >= 1
+        assert "st-completed" in response.content.decode()
 
     def test_top_products_chart_canvas_and_data_reflect_a_real_order(self, staff_client):
         """Real, closed gap: Top Products previously showed only a plain ranked text list -- now a real bar chart, built from the same, already-certified sales-report data (no separate/fabricated data source)."""
@@ -327,11 +326,9 @@ class TestWalletAndOrderStatusVisibility:
         response = staff_client.get("/django-admin/reports/")
         assert response.status_code == 200
         content = response.content.decode()
-        assert "nz-top-products-chart" in content
-        assert "nz-top-products-series-data" in content
+        assert 'class="nzr-rank"' in content
+        assert "Top Chart Product" in content
+        from apps.platform.infrastructure.reports import ReportPeriod, ReportsAggregator
 
-        start = content.index('id="nz-top-products-series-data"')
-        json_start = content.index(">", start) + 1
-        json_end = content.index("</script>", json_start)
-        top_products = json.loads(content[json_start:json_end])
-        assert any(p["name"] == "Top Chart Product" and p["quantity_sold"] == 3 for p in top_products)
+        top_products = ReportsAggregator(ReportPeriod.last_n_days(30, "")).product_report()["top_products"]
+        assert any(p["name"].startswith("Top Chart Product") and p["units"] == 3 for p in top_products)

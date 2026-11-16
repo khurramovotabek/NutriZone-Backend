@@ -52,6 +52,7 @@ class Command(BaseCommand):
     def add_arguments(self, parser):
         parser.add_argument("--lang", default="en", choices=["en", "ru"])
         parser.add_argument("--top", type=int, default=200)
+        parser.add_argument("--paths", nargs="*", default=None, help="only these dashboard paths (default: every page)")
 
     def _urls(self) -> list[str]:
         urls = ["/django-admin/"]
@@ -81,7 +82,7 @@ class Command(BaseCommand):
         walk(get_resolver().url_patterns)
         return list(dict.fromkeys(urls))
 
-    def handle(self, *args, lang, top, **options):
+    def handle(self, *args, lang, top, paths=None, **options):
         user = get_user_model().objects.filter(is_superuser=True).order_by("pk").first()
         if user is None:
             self.stderr.write("No superuser to browse the dashboard as.")
@@ -89,10 +90,15 @@ class Command(BaseCommand):
         client = Client(HTTP_X_FORWARDED_PROTO="https")
         client.force_login(user)
         client.cookies["django_language"] = lang
+        from apps.platform.infrastructure.admin_i18n import ADMIN_LANG_SESSION_KEY
+
+        session = client.session  # the dashboard language lives in the session (AdminDefaultLanguageMiddleware)
+        session[ADMIN_LANG_SESSION_KEY] = lang
+        session.save()
         found: collections.Counter[str] = collections.Counter()
         where: dict[str, str] = {}
         pages = 0
-        for url in self._urls():
+        for url in (paths or self._urls()):
             try:
                 resp = client.get(url, HTTP_ACCEPT_LANGUAGE=lang, secure=True, follow=True)
             except Exception:  # noqa: BLE001 -- one broken page must not stop the audit

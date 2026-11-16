@@ -278,17 +278,36 @@ def roles_overview_view(request):
     return render(request, "admin/roles_overview.html", context)
 
 
+REPORT_RANGES = {"today": "Bugun", "yesterday": "Kecha", "7d": "7 kun", "30d": "30 kun", "this_month": "Shu oy", "month": "O'tgan oy"}
+
+
+def _report_range(request) -> str:
+    key = request.GET.get("p") or "30d"
+    return key if key in REPORT_RANGES else "30d"
+
+
 @staff_member_required
 def reports_view(request):
+    key = _report_range(request)
     period = ReportPeriod.last_n_days(30, "Last 30 Days")
-    aggregator = ReportsAggregator(period)
+    aggregator = ReportsAggregator(period, key)
+    info = aggregator.period_info()
 
     context = {
         **admin.site.each_context(request),
         "title": _("Reports & Business Intelligence"),
-        "period_label": period.label,
+        "period_label": f"{_(info['title'])} · {info['range']}",
+        "period": info,
+        "range_key": key,
+        "ranges": [(k, _(v)) for k, v in REPORT_RANGES.items()],
         "last_updated": timezone.now(),
         "sales": _safe("sales", aggregator.sales_report),
+        "profit": _safe("profit", aggregator.profit_report),
+        "payments": _safe("payments", aggregator.payments_report),
+        "orders": _safe("orders", aggregator.orders_report),
+        "mix": _safe("mix", aggregator.mix_report),
+        "buyers": _safe("buyers", aggregator.buyers_report),
+        "regions": _safe("regions", aggregator.regions_report),
         "customers": _safe("customers", aggregator.customer_report),
         "products": _safe("products", aggregator.product_report),
         "inventory": _safe("inventory", aggregator.inventory_report),
@@ -316,7 +335,7 @@ def sales_report_excel_export(request):
     from openpyxl.styles import Font
 
     period = ReportPeriod.last_n_days(30, "Last 30 Days")
-    aggregator = ReportsAggregator(period)
+    aggregator = ReportsAggregator(period, _report_range(request) if request.GET.get("p") else None)
     sales = aggregator.sales_report()
 
     workbook = Workbook()
@@ -339,7 +358,11 @@ def sales_report_excel_export(request):
     rows = [
         ("Gross Sales (UZS)", float(sales["gross_sales"])),
         ("Revenue Change (%)", revenue_change if revenue_change is not None else "N/A"),
-        ("Completed Orders", sales["orders"]),
+        ("Purchases (till + delivered online)", sales["orders"]),
+        ("Online revenue (UZS)", float(sales["online_revenue"])),
+        ("Till revenue (UZS)", float(sales["pos_revenue"])),
+        ("Units sold", sales["units"]),
+        ("Refunds (UZS)", float(sales["refunds_total"])),
         ("Orders Change (%)", orders_change if orders_change is not None else "N/A"),
         ("Cancelled Orders", sales["cancelled_orders"]),
         ("Average Order Value (UZS)", float(sales["average_order_value"])),
@@ -413,7 +436,7 @@ def report_section_excel_export(request, section: str):
 
     title, get_report_data = _SECTION_REPORT_EXPORTERS[section]
     period = ReportPeriod.last_n_days(30, "Last 30 Days")
-    aggregator = ReportsAggregator(period)
+    aggregator = ReportsAggregator(period, _report_range(request) if request.GET.get("p") else None)
     data = get_report_data(aggregator)
 
     workbook = Workbook()
@@ -532,6 +555,7 @@ def _get_urls_with_reports():
         path("profile/", _profile_view, name="nz_profile"),
         *_notification_urls(),
         path("dashboard/online-orders.json", _online_orders_json, name="nz_online_orders_json"),
+        path("dashboard/regions.json", _regions_json, name="nz_regions_json"),
         path("inventory/", inventory_view.inventory_dashboard_view, name="nz_inventory_dashboard"),
         path("inventory/api/stock-list", inventory_view.inventory_api_stock_list, name="nz_inventory_stock_list"),
         path("inventory/api/adjust-stock", inventory_view.inventory_api_adjust_stock, name="nz_inventory_adjust_stock"),
@@ -608,6 +632,12 @@ def _online_orders_json(request):
     from apps.platform.infrastructure.online_orders_report import online_orders_json
 
     return online_orders_json(request)
+
+
+def _regions_json(request):
+    from apps.platform.infrastructure.regions_report import regions_json
+
+    return regions_json(request)
 
 
 def _notification_urls():

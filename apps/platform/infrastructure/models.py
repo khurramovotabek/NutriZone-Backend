@@ -204,8 +204,25 @@ class Banner(models.Model):
     duration_seconds = models.PositiveIntegerField(default=45, validators=[MinValueValidator(3), MaxValueValidator(300)])
     sort_order = models.PositiveIntegerField(default=0, db_index=True)
     is_active = models.BooleanField(default=True, db_index=True)
+    # Schedule + clicks (2026-11-16): a shown banner appears only inside its window; the storefront counts CTA taps.
+    starts_at = models.DateTimeField(_("Ko'rsatish boshlanishi"), null=True, blank=True)
+    ends_at = models.DateTimeField(_("Ko'rsatish tugashi"), null=True, blank=True)
+    clicks = models.PositiveIntegerField(_("Bosishlar"), default=0)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
+
+    def schedule_state(self, now=None) -> str:
+        """live / scheduled (window not open yet) / ended (window closed) / hidden (switched off)."""
+        from django.utils import timezone
+
+        now = now or timezone.now()
+        if not self.is_active:
+            return "hidden"
+        if self.starts_at and self.starts_at > now:
+            return "scheduled"
+        if self.ends_at and self.ends_at <= now:
+            return "ended"
+        return "live"
 
     objects = AllObjectsManager()
 
@@ -247,6 +264,13 @@ class ContactMessage(models.Model):
     subject = models.CharField(max_length=200, blank=True, default="")
     message = models.TextField()
     status = models.CharField(max_length=16, choices=ContactMessageStatus.choices, default=ContactMessageStatus.NEW, db_index=True)
+    # Answered from the dashboard (2026-11-16): the reply goes to the customer's site inbox + Telegram when the email
+    # belongs to a customer account; otherwise staff answer by email and only the text is kept here.
+    reply_text = models.TextField(_("Javob"), blank=True, default="")
+    replied_at = models.DateTimeField(_("Javob berilgan vaqt"), null=True, blank=True)
+    replied_by = models.CharField(_("Javob bergan"), max_length=150, blank=True, default="")
+    reply_channel = models.CharField(_("Javob kanali"), max_length=16, blank=True, default="", choices=[("", "—"), ("inbox", "Sayt + Telegram"), ("email", "Email")])
+    internal_note = models.TextField(_("Ichki izoh"), blank=True, default="", help_text=_("Faqat jamoa ko'radi -- mijozga yuborilmaydi."))
     created_at = models.DateTimeField(auto_now_add=True, db_index=True)
     updated_at = models.DateTimeField(auto_now=True)
 

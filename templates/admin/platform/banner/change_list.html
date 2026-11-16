@@ -4,7 +4,7 @@
 
 {% block extrastyle %}
 {{ block.super }}
-<link rel="stylesheet" href="{% static 'admin/css/nutrizone-platform.css' %}?v=5">
+<link rel="stylesheet" href="{% static 'admin/css/nutrizone-platform.css' %}?v=7">
 {% endblock %}
 
 {% block content_title %}{% endblock %}
@@ -93,6 +93,10 @@
         <footer class="nzp-banner-foot">
           <div class="nzp-banner-meta">
             <span title="{% translate 'Display duration' %}"><i class="fas fa-stopwatch" aria-hidden="true"></i> {{ b.duration_seconds }} {% translate "sec" %}</span>
+            <span title="{% translate 'Bosishlar' %}"><i class="fas fa-hand-pointer" aria-hidden="true"></i> {{ b.clicks }}</span>
+            {% if b.nz_state == "scheduled" %}<span class="nzp-sched is-wait" title="{{ b.starts_at|date:'d.m.Y H:i' }}"><i class="fas fa-clock"></i> {{ b.starts_at|date:"d.m H:i" }} {% translate "dan" %}</span>
+            {% elif b.nz_state == "ended" %}<span class="nzp-sched is-end"><i class="fas fa-calendar-xmark"></i> {% translate "muddati tugagan" %}</span>
+            {% elif b.ends_at and b.nz_state == "live" %}<span class="nzp-sched" title="{{ b.ends_at|date:'d.m.Y H:i' }}"><i class="fas fa-hourglass-half"></i> {{ b.ends_at|date:"d.m H:i" }} {% translate "gacha" %}</span>{% endif %}
             {% if b.cta_url %}<span class="nzp-link-meta" title="{{ b.cta_url }}"><i class="fas fa-link" aria-hidden="true"></i> {{ b.cta_url|cut:"https://"|cut:"http://"|truncatechars:28 }}</span>{% endif %}
           </div>
           <div class="nzp-banner-actions">

@@ -21,6 +21,8 @@
 </h1>
 {% endblock %}
 
+{% block bodyclass %}{{ block.super }}{% if request.path|nz_glass %} nz-glass-page{% endif %}{% endblock %}
+
 {% block extrahead %}
 {{ block.super }}
 <script src="{% static 'admin/js/nutrizone-theme.js' %}"></script>
@@ -34,6 +36,7 @@
 <link rel="stylesheet" href="{% static 'admin/css/nutrizone-palette.css' %}?v=1">
 <link rel="stylesheet" href="{% static 'admin/css/nutrizone-sidebar.css' %}?v=3">
 <link rel="stylesheet" href="{% static 'admin/css/nutrizone-forms.css' %}?v=3">
+<link rel="stylesheet" href="{% static 'admin/css/nutrizone-liquid-glass.css' %}?v=4">
 {% include "admin/nz_branding.html" %}
 {% endblock %}
 

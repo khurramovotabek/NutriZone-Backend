@@ -74,8 +74,9 @@ def wms_low_stock() -> list[dict]:
 class DashboardHomeAggregator:
     """One aggregation pass per dashboard-home request. Every selector call below is read-only and already exists in its own bounded context -- see this module's own docstring."""
 
-    def __init__(self, period: DashboardPeriod) -> None:
+    def __init__(self, period: DashboardPeriod, range_key: str | None = None) -> None:
         self._period = period
+        self._range_key = range_key  # business_analytics period key picked on the home page (today/7d/30d/this_month)
         self._low_stock_cache = None
 
     def _low_stock(self, page_size: int = 1000):
@@ -97,8 +98,9 @@ class DashboardHomeAggregator:
 
         p = self._period
         days = max(1, round((p.current_end - p.current_start).total_seconds() / 86400))
-        bp = ba.period("7d" if days <= 7 else "30d")
+        bp = ba.period(self._range_key or ("7d" if days <= 7 else "30d"))
         cur, prev = ba._base(bp.start, bp.end), ba._base(bp.prev_start, bp.prev_end)
+        pulse = self._pulse(ba, bp, cur, prev)
 
         current_revenue, previous_revenue = cur["revenue"], prev["revenue"]
         current_order_count, previous_order_count = cur["purchases"], prev["purchases"]
@@ -111,6 +113,10 @@ class DashboardHomeAggregator:
 
         return {
             "range": bp.title,
+            "range_key": bp.key,
+            "range_text": bp.range_text(),
+            "compare": bp.compare_label,
+            "pulse": pulse,
             "revenue": {"current": current_revenue, "change": _percentage_change(current_revenue, previous_revenue)},
             "online_revenue": cur["online_revenue"],
             "pos_revenue": cur["pos_revenue"],
@@ -128,6 +134,28 @@ class DashboardHomeAggregator:
             "low_stock_total": low_stock_total,
             "out_of_stock_total": out_of_stock_total,
         }
+
+    @staticmethod
+    def _pulse(ba, bp, cur: dict, prev: dict) -> dict:
+        """Second KPI row: profit, customers and the money still on the way / lost -- Analitika formulas, each guarded."""
+        out: dict = {}
+        try:
+            lines = ba._sold_lines(cur)
+            out["profit"] = ba._cost(lines, cur["revenue"])
+        except Exception:  # noqa: BLE001 -- a missing cost source must not hide the sales KPIs
+            out["profit"] = None
+        try:
+            out["customers"] = ba._customers(bp, cur)
+        except Exception:  # noqa: BLE001
+            out["customers"] = None
+        out["pipeline_orders"], out["pipeline_value"] = cur["pipeline_orders"], cur["pipeline_value"]
+        out["lost_orders"], out["lost_value"] = cur["lost_orders"], cur["lost_value"]
+        placed = len(cur["online"])
+        out["loss_rate"] = round(cur["lost_orders"] / placed * 100, 1) if placed else None
+        out["refunds_total"], out["refunds_count"] = cur["refunds_total"], cur["refunds_count"]
+        out["units"] = cur["units"]
+        out["units_change"] = ba.change(cur["units"], prev["units"])
+        return out
 
     def revenue_series(self, days: int = 7) -> list[dict]:
         """Daily completed-order revenue for the last N days -- reuses total_revenue_by_status's own certified formula per day, one query per day (bounded, small N, never per-order)."""

@@ -51,37 +51,99 @@ class ReportPeriod:
 
 
 class ReportsAggregator:
-    """One aggregation pass per Reports page request. Every selector call below is read-only and already exists in its own bounded context (or is this phase's own minimal, disclosed selector extension)."""
+    """One aggregation pass per Reports page request.
 
-    def __init__(self, period: ReportPeriod) -> None:
+    Money follows the Analitika formula (business_analytics): Tashkent calendar days, kept till receipts +
+    delivered/completed online orders by the day the customer placed them, a running period compared with the same
+    elapsed span before it -- so Reports, Biznes analitikasi, the home page and the analytics bot agree. (Until
+    2026-11-16 this page counted only online orders in status "completed" and showed 0 while the business sold.)
+    """
+
+    def __init__(self, period: ReportPeriod, range_key: str | None = None) -> None:
         self._period = period
+        self._range_key = range_key
+        self._cache: dict = {}
+
+    # ------------------------------------------------------------ shared period data
+    def _ba(self):
+        if "ba" not in self._cache:
+            from apps.platform.infrastructure import business_analytics as ba
+
+            if self._range_key:
+                bp = ba.period(self._range_key)
+            else:  # an explicit ReportPeriod (tests, exports): the same window, Analitika formula
+                p = self._period
+                bp = ba.Period("custom", "", p.current_start, p.current_end, p.previous_start, p.previous_end, "oldingi davrga nisbatan", True)
+            cur, prev = ba._base(bp.start, bp.end), ba._base(bp.prev_start, bp.prev_end)
+            self._cache["ba"] = (ba, bp, cur, prev)
+        return self._cache["ba"]
+
+    def _lines(self):
+        if "lines" not in self._cache:
+            ba, _bp, cur, _prev = self._ba()
+            self._cache["lines"] = ba._sold_lines(cur)
+        return self._cache["lines"]
+
+    def period_info(self) -> dict:
+        _ba, bp, _cur, _prev = self._ba()
+        return {"key": bp.key, "title": bp.title, "range": bp.range_text() if bp.title else "", "compare": bp.compare_label}
 
     def sales_report(self) -> dict:
-        """Reuses OrderStatisticsSelector.total_revenue_by_status() (Phase 08.2's own date-range extension) and OrderModel counts directly -- the exact same formula already certified for the Dashboard Home KPI, not a second calculation."""
-        from apps.ordering.infrastructure.selectors import OrderStatisticsSelector
-        from apps.ordering.infrastructure import models as ordering_orm
-
-        order_stats = OrderStatisticsSelector()
-        p = self._period
-
-        current_revenue = Decimal(order_stats.total_revenue_by_status("completed", date_from=p.current_start, date_to=p.current_end).get("UZS", "0"))
-        previous_revenue = Decimal(order_stats.total_revenue_by_status("completed", date_from=p.previous_start, date_to=p.previous_end).get("UZS", "0"))
-
-        current_orders = ordering_orm.OrderModel.objects.filter(status="completed", created_at__gte=p.current_start, created_at__lt=p.current_end).count()
-        previous_orders = ordering_orm.OrderModel.objects.filter(status="completed", created_at__gte=p.previous_start, created_at__lt=p.previous_end).count()
-        cancelled_orders = ordering_orm.OrderModel.objects.filter(status="cancelled", created_at__gte=p.current_start, created_at__lt=p.current_end).count()
-
-        avg_order_value = (current_revenue / current_orders) if current_orders else Decimal("0")
-
+        ba, _bp, cur, prev = self._ba()
+        revenue, prev_revenue = cur["revenue"], prev["revenue"]
+        orders, prev_orders = cur["purchases"], prev["purchases"]
+        avg = (revenue / orders) if orders else Decimal("0")
+        prev_avg = (prev_revenue / prev_orders) if prev_orders else Decimal("0")
+        statuses: dict = {}
+        for o in cur["online"]:
+            statuses[o["status"]] = statuses.get(o["status"], 0) + 1
         return {
-            "gross_sales": current_revenue,
-            "revenue_change": _percentage_change(current_revenue, previous_revenue),
-            "orders": current_orders,
-            "orders_change": _percentage_change(Decimal(current_orders), Decimal(previous_orders)),
-            "cancelled_orders": cancelled_orders,
-            "average_order_value": avg_order_value,
-            "order_status_distribution": order_stats.counts_by_status(),
+            "gross_sales": revenue,
+            "revenue_change": _percentage_change(revenue, prev_revenue),
+            "previous_revenue": prev_revenue,
+            "orders": orders,
+            "orders_change": _percentage_change(Decimal(orders), Decimal(prev_orders)),
+            "cancelled_orders": sum(1 for o in cur["online"] if o["status"] in ("cancelled", "failed")),
+            "average_order_value": avg.quantize(Decimal("1")) if avg else avg,
+            "average_change": _percentage_change(avg, prev_avg),
+            "online_revenue": cur["online_revenue"], "pos_revenue": cur["pos_revenue"],
+            "online_orders": len(cur["earned"]), "pos_sales": orders - len(cur["earned"]),
+            "units": cur["units"], "refunds_total": cur["refunds_total"], "refunds_count": cur["refunds_count"],
+            "discounts": cur["discounts"], "pipeline_orders": cur["pipeline_orders"], "pipeline_value": cur["pipeline_value"],
+            "lost_orders": cur["lost_orders"], "lost_value": cur["lost_value"],
+            "order_status_distribution": statuses,
         }
+
+    def profit_report(self) -> dict:
+        ba, _bp, cur, _prev = self._ba()
+        return ba._cost(self._lines(), cur["revenue"])
+
+    def payments_report(self) -> dict:
+        ba, _bp, cur, _prev = self._ba()
+        return ba._payments(cur)
+
+    def orders_report(self) -> dict:
+        ba, _bp, cur, prev = self._ba()
+        return ba._orders(cur, prev)
+
+    def mix_report(self) -> dict:
+        ba, _bp, _cur, _prev = self._ba()
+        return ba._mix(self._lines())
+
+    def top_sellers(self, limit: int = 10) -> list[dict]:
+        ba, _bp, _cur, _prev = self._ba()
+        return ba.top_products(self._lines(), limit)
+
+    def buyers_report(self) -> dict:
+        ba, bp, cur, _prev = self._ba()
+        return ba._customers(bp, cur)
+
+    def regions_report(self) -> dict:
+        from apps.platform.infrastructure import regions_report
+
+        _ba, bp, _cur, _prev = self._ba()
+        data = regions_report.report(bp.key if bp.key != "custom" else "30d")
+        return {"summary": data["summary"], "rows": [r for r in data["regions"] if r["orders"]][:8]}
 
     def customer_report(self) -> dict:
         from apps.identity.infrastructure.selectors import UserStatisticsSelector
@@ -93,7 +155,8 @@ class ReportsAggregator:
         from apps.products.infrastructure.selectors import StatisticsSelector as ProductStatisticsSelector
 
         selector = ProductStatisticsSelector()
-        return {"counts_by_status": selector.counts_by_status(), "top_products": selector.top_products(limit=10), "products_by_category": selector.products_by_category(limit=8)}
+        top = [{"name": f"{t['name']} {t['size']}".strip(), "sku": t["sku"], "units": t["units"], "revenue": t["revenue"]} for t in self.top_sellers(10)]
+        return {"counts_by_status": selector.counts_by_status(), "top_products": top, "products_by_category": selector.products_by_category(limit=8)}
 
     def inventory_report(self) -> dict:
         """Inventory 'value' is deliberately not calculated -- no certified source connects Inventory quantities to Pricing amounts (a genuine, disclosed limitation, not an oversight)."""
@@ -106,8 +169,11 @@ class ReportsAggregator:
     def marketing_report(self) -> dict:
         from apps.pricing.infrastructure.selectors import MarketingStatisticsSelector
 
+        from django.utils.translation import gettext as _t
+
         selector = MarketingStatisticsSelector()
         return {
+            "statuses_label": {"active": _t("faol"), "inactive": _t("nofaol"), "expired": _t("muddati o'tgan"), "draft": _t("qoralama"), "scheduled": _t("rejalashtirilgan"), "paused": _t("to'xtatilgan"), "ended": _t("tugagan")},
             "coupon_counts_by_status": selector.coupon_counts_by_status(),
             "campaign_counts_by_status": selector.campaign_counts_by_status(),
             "total_redemptions": selector.total_redemptions(),
@@ -116,4 +182,9 @@ class ReportsAggregator:
     def review_report(self) -> dict:
         from apps.reviews.infrastructure.selectors import ReviewStatisticsSelector
 
-        return {"counts_by_status": ReviewStatisticsSelector().counts_by_status()}
+        from django.utils.translation import gettext as _t
+
+        labels = {"published": _t("Chop etilgan"), "approved": _t("Tasdiqlangan"), "draft": _t("Qoralama"), "pending": _t("Kutilmoqda"),
+                  "rejected": _t("Rad etilgan"), "hidden": _t("Yashirilgan"), "flagged": _t("Shikoyat qilingan")}
+        counts = ReviewStatisticsSelector().counts_by_status()
+        return {"counts_by_status": counts, "statuses": [{"code": k, "label": labels.get(k, k), "count": v} for k, v in counts.items()]}

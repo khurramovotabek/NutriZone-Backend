@@ -97,6 +97,7 @@ NUTRIZONE_SMS_LOGIN_ENABLED = True
 
 # The suite asserts Django/admin chrome in English; production serves the dashboard in Uzbek (base.LANGUAGE_CODE).
 LANGUAGE_CODE = "en"
+ADMIN_FORCE_DEFAULT_LANGUAGE = False  # tests pick the dashboard language with Accept-Language
 # The suite asserts the dashboard's own (Uzbek) source text; the phrase layer has its own tests (test_admin_phrases.py).
 ADMIN_PHRASES_ENABLED = False
 

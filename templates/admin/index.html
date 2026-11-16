@@ -3,16 +3,21 @@
 
 {% block content %}
 {% if nz_dashboard %}
-<div class="nz-dashboard" data-nz-dashboard>
-  <div class="nz-dashboard-header">
-    <div>
+<div class="nz-dashboard nz-lg" data-nz-dashboard>
+  <div class="nz-lg-aurora" aria-hidden="true"><span></span><span></span><span></span></div>
+  <header class="nzx-hero">
+    <div class="nzx-hero-text">
+      <span class="nzx-eyebrow"><i class="fas fa-sparkles" aria-hidden="true"></i> {% translate "Boshqaruv markazi" %}</span>
       <h2 class="nz-dashboard-title">{{ brand_name }} · {% translate "biznes ko'rinishi" %}</h2>
       <p class="nz-dashboard-subtitle">
-        {% blocktranslate with period=nz_dashboard.period_label %}Showing data for {{ period }}{% endblocktranslate %}
-        &middot; {% translate "Last updated" %}: <span data-nz-timestamp>{{ nz_dashboard.last_updated|date:"Y-m-d H:i" }}</span>
+        {% if nz_dashboard.kpis.ok %}{{ nz_dashboard.kpis.data.range }} · {{ nz_dashboard.kpis.data.range_text }}{% endif %}
+        &middot; {% translate "Yangilandi" %}: <span data-nz-timestamp>{{ nz_dashboard.last_updated|date:"d.m.Y H:i" }}</span>
       </p>
     </div>
-  </div>
+    <nav class="nzx-range" aria-label="{% translate 'Davr' %}">
+      {% for key, label in nz_dashboard.ranges %}<a href="?p={{ key }}" class="{% if key == nz_dashboard.range_key %}on{% endif %}"{% if key == nz_dashboard.range_key %} aria-current="true"{% endif %}>{{ label }}</a>{% endfor %}
+    </nav>
+  </header>
 
   {# --- Bugungi vazifalar: every queue waiting on a person, most urgent first (dashboard_tasks.py) --- #}
   {% if nz_tasks.ok %}{% with t=nz_tasks.data %}
@@ -106,6 +111,98 @@
       </div>
     {% endif %}
   </div>
+
+  {# --- Biznes pulsi: profit, customers, money on the way / lost (Analitika formulas) --- #}
+  {% if nz_dashboard.kpis.ok %}{% with k=nz_dashboard.kpis.data pu=nz_dashboard.kpis.data.pulse %}
+  <section class="nzx-pulse" aria-label="{% translate 'Biznes pulsi' %}">
+    <div class="nzx-pulse-card" style="--c:#10b981">
+      <span class="nzx-pulse-icon"><i class="fas fa-sack-dollar" aria-hidden="true"></i></span>
+      <div><small>{% translate "Yalpi foyda" %}</small>
+      {% if pu.profit and pu.profit.reliable %}<strong>{{ pu.profit.gross_profit|som }}</strong><em>{% translate "marja" %} {{ pu.profit.margin }}%</em>
+      {% else %}<strong class="is-muted">—</strong><em>{% if pu.profit and pu.profit.coverage is not None %}{% blocktranslate with n=pu.profit.coverage %}tannarx {{ n }}% mahsulotda ma'lum{% endblocktranslate %}{% else %}{% translate "tannarx kiritilmagan" %}{% endif %}</em>{% endif %}</div>
+    </div>
+    <div class="nzx-pulse-card" style="--c:#6366f1">
+      <span class="nzx-pulse-icon"><i class="fas fa-user-plus" aria-hidden="true"></i></span>
+      <div><small>{% translate "Yangi mijozlar" %}</small>
+      <strong>{{ pu.customers.new|default_if_none:"—" }}</strong>
+      <em>{% if pu.customers.new_change.pct is not None %}{{ pu.customers.new_change|trend }} {{ k.compare }}{% else %}{% translate "ro'yxatdan o'tganlar" %}{% endif %}</em></div>
+    </div>
+    <div class="nzx-pulse-card" style="--c:#f59e0b">
+      <span class="nzx-pulse-icon"><i class="fas fa-rotate" aria-hidden="true"></i></span>
+      <div><small>{% translate "Qayta xarid" %}</small>
+      <strong>{% if pu.customers.repeat_share is not None %}{{ pu.customers.repeat_share }}%{% else %}—{% endif %}</strong>
+      <em>{% blocktranslate with b=pu.customers.buyers|default:0 r=pu.customers.repeat|default:0 %}{{ r }} / {{ b }} xaridor qaytib kelgan{% endblocktranslate %}</em></div>
+    </div>
+    <div class="nzx-pulse-card" style="--c:#0ea5e9">
+      <span class="nzx-pulse-icon"><i class="fas fa-truck-fast" aria-hidden="true"></i></span>
+      <div><small>{% translate "Jarayonda" %}</small>
+      <strong>{{ pu.pipeline_value|som }}</strong>
+      <em>{% blocktranslate with n=pu.pipeline_orders %}{{ n }} ta buyurtma yo'lda{% endblocktranslate %}</em></div>
+    </div>
+    <div class="nzx-pulse-card" style="--c:#ef4444">
+      <span class="nzx-pulse-icon"><i class="fas fa-ban" aria-hidden="true"></i></span>
+      <div><small>{% translate "Yo'qotilgan" %}</small>
+      <strong>{{ pu.lost_value|som }}</strong>
+      <em>{% blocktranslate with n=pu.lost_orders %}{{ n }} ta bekor / qaytgan{% endblocktranslate %}{% if pu.loss_rate is not None %} · {{ pu.loss_rate }}%{% endif %}</em></div>
+    </div>
+    <div class="nzx-pulse-card" style="--c:#8b5cf6">
+      <span class="nzx-pulse-icon"><i class="fas fa-boxes-stacked" aria-hidden="true"></i></span>
+      <div><small>{% translate "Sotilgan dona" %}</small>
+      <strong>{{ pu.units|num }}</strong>
+      <em>{% if pu.units_change.pct is not None %}{{ pu.units_change|trend }} {{ k.compare }}{% else %}{% translate "kassa + onlayn" %}{% endif %}</em></div>
+    </div>
+  </section>
+  {% endwith %}{% endif %}
+
+  {# --- Hududlar rejimi: every region of Uzbekistan (regions_report.py) --- #}
+  <section class="nz-card nzrg" id="nz-regions" data-range="{{ nz_dashboard.range_key }}" data-endpoint="{% url 'admin:nz_regions_json' %}" data-orders-url="{% url 'admin:ordering_ordermodel_changelist' %}" aria-labelledby="nzrg-title">
+    <div class="nzsc-head">
+      <div>
+        <h3 id="nzrg-title"><i class="fas fa-map-location-dot" aria-hidden="true"></i> {% translate "Hududlar bo'yicha savdo" %}</h3>
+        <p class="nzsc-sub" data-rg-period>&nbsp;</p>
+      </div>
+      <div class="nzrg-tools">
+        <div class="nzsc-ranges" role="group" aria-label="{% translate "Ko'rsatkich" %}" data-rg-metrics>
+          <button type="button" data-metric="revenue" class="on">{% translate "Tushum" %}</button>
+          <button type="button" data-metric="orders">{% translate "Buyurtmalar" %}</button>
+          <button type="button" data-metric="customers">{% translate "Mijozlar" %}</button>
+          <button type="button" data-metric="average">{% translate "O'rtacha chek" %}</button>
+        </div>
+        <div class="nzsc-ranges" role="group" aria-label="{% translate 'Davr' %}" data-rg-ranges>
+          <button type="button" data-range="today">{% translate "Bugun" %}</button>
+          <button type="button" data-range="7d">{% translate "7 kun" %}</button>
+          <button type="button" data-range="30d" class="on">{% translate "30 kun" %}</button>
+          <button type="button" data-range="this_month">{% translate "Shu oy" %}</button>
+          <button type="button" data-range="month">{% translate "O'tgan oy" %}</button>
+        </div>
+      </div>
+    </div>
+    <div class="nzsc-kpis">
+      <div class="nzsc-kpi"><span>{% translate "Jami tushum" %}</span><strong data-rg="revenue">—</strong><small data-rg="change">&nbsp;</small></div>
+      <div class="nzsc-kpi"><span>{% translate "Faol hududlar" %}</span><strong data-rg="active">—</strong><small data-rg="orders">&nbsp;</small></div>
+      <div class="nzsc-kpi"><span>{% translate "Yetakchi hudud" %}</span><strong data-rg="top">—</strong><small data-rg="top-share">&nbsp;</small></div>
+      <div class="nzsc-kpi"><span>{% translate "Toshkent / viloyatlar" %}</span><strong data-rg="split">—</strong><small data-rg="pipeline">&nbsp;</small></div>
+    </div>
+    <div class="nzrg-body">
+      <div class="nzrg-map-wrap">
+        <div class="nzrg-map" data-rg-map role="list" aria-label="{% translate "O'zbekiston hududlari xaritasi" %}"></div>
+        <div class="nzrg-scale"><span>{% translate "kam" %}</span><i></i><span>{% translate "ko'p" %}</span></div>
+        <div class="nzsc-state" data-state="loading"><i class="fas fa-circle-notch fa-spin"></i> {% translate "Yuklanmoqda…" %}</div>
+      </div>
+      <aside class="nzrg-detail" data-rg-detail aria-live="polite"></aside>
+    </div>
+    <div class="table-responsive nzrg-table-wrap">
+      <table class="nz-table nzrg-table">
+        <thead><tr>
+          <th>{% translate "Hudud" %}</th><th class="num">{% translate "Tushum" %}</th><th class="num">{% translate "Ulush" %}</th>
+          <th class="num">{% translate "Onlayn" %}</th><th class="num">{% translate "Kassa" %}</th><th class="num">{% translate "Buyurtmalar" %}</th>
+          <th class="num">{% translate "Mijozlar" %}</th><th class="num">{% translate "O'rtacha chek" %}</th><th class="num">{% translate "Jarayonda" %}</th>
+          <th class="num">{% translate "Bekor %" %}</th><th class="num">{% translate "O'zgarish" %}</th><th>{% translate "Filiallar" %}</th>
+        </tr></thead>
+        <tbody data-rg-rows></tbody>
+      </table>
+    </div>
+  </section>
 
   {# --- Daily sales by store: every branch its own line, in its own lifelong colour --- #}
   <section class="nz-card nzsc" id="nz-store-sales" data-endpoint="{% url 'admin:pos_salemodel_by_store' %}" data-sales-url="{% url 'admin:pos_salemodel_changelist' %}" aria-labelledby="nzsc-title">
@@ -303,6 +400,9 @@
 <script src="{% static 'admin/js/nutrizone-store-sales-chart.js' %}?v=1"></script>
 <script src="{% static 'admin/js/nutrizone-online-orders-chart.js' %}?v=2"></script>
 <link rel="stylesheet" href="{% static 'admin/css/nutrizone-home.css' %}?v=5">
+<link rel="stylesheet" href="{% static 'admin/css/nutrizone-liquid-glass.css' %}?v=4">
+<script id="nzrg-i18n" type="application/json">{{ nzrg_labels|safe }}</script>
+<script src="{% static 'admin/js/nutrizone-regions.js' %}?v=2"></script>
 <script src="{% static 'admin/js/nutrizone-home.js' %}?v=1"></script>
 {% include "admin/includes/nz_home_sections.html" %}
 {% else %}
