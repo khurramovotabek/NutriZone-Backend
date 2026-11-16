@@ -7,28 +7,62 @@
 {% endblock %}
 
 {% block fin_body %}
-<section class="nzf-kpis is-3">
-  <div class="nzf-kpi"><span>Jami kirim</span><b class="nzf-in">{{ r.sum_in }}</b><em>{{ n }} oy</em></div>
-  <div class="nzf-kpi"><span>Jami chiqim</span><b class="nzf-out">{{ r.sum_out }}</b><em>{{ n }} oy</em></div>
-  <div class="nzf-kpi is-main"><span>Sof pul oqimi</span><b>{{ r.sum_net }}</b><em>kirim − chiqim</em></div>
+<section class="nzf-kpis is-5">
+  <div class="nzf-kpi"><span>Jami kirim</span><b class="nzf-in" data-nzf-count>{{ r.sum_in }}</b><em><span>oylik o'rtacha</span>: {{ avg_in }}</em></div>
+  <div class="nzf-kpi"><span>Jami chiqim</span><b class="nzf-out" data-nzf-count>{{ r.sum_out }}</b><em><span>oylik o'rtacha</span>: {{ avg_out }}</em></div>
+  <div class="nzf-kpi is-main"><span>Sof pul oqimi</span><b data-nzf-count>{{ r.sum_net }}</b><em><span>oylik o'rtacha</span>: {{ avg_net }}</em></div>
+  <div class="nzf-kpi"><span>Asosiy kirim manbai</span><b class="nzf-kpi-text">{% if top_in %}{{ top_in.label }}{% else %}—{% endif %}</b><em>{{ top_in_fmt }}{% if top_in %} · {{ top_in.share }}%{% endif %}</em></div>
+  <div class="nzf-kpi"><span>Asosiy chiqim</span><b class="nzf-kpi-text">{% if top_out %}{{ top_out.label }}{% else %}—{% endif %}</b><em>{{ top_out_fmt }}{% if top_out %} · {{ top_out.share }}%{% endif %}</em></div>
+</section>
+
+<section class="nzf-panel">
+  <h3><i class="fas fa-chart-column" aria-hidden="true"></i> Kirim, chiqim va hisoblardagi qoldiq <small class="nzf-h-note">hozir hisoblarda: {{ closing_now }} so'm</small></h3>
+  <div class="nzf-chart is-short"><canvas id="nzf-cf" aria-label="Pul oqimi grafigi"></canvas></div>
 </section>
 
 <section class="nzf-panel nzf-table-wrap">
   <table class="nzf-table">
-    <thead><tr><th>Manba / modda</th>{% for m in r.months %}<th class="r">{{ m.label }}</th>{% endfor %}<th class="r">Jami</th></tr></thead>
+    <thead><tr><th>Manba / modda</th>{% for m in r.months %}<th class="r">{{ m.label }}</th>{% endfor %}<th class="r">Jami</th><th class="r">Ulushi</th></tr></thead>
     <tbody>
-      <tr class="is-head"><td colspan="{{ r.months|length|add:2 }}"><i class="fas fa-arrow-down nzf-in" aria-hidden="true"></i> Kirim</td></tr>
-      {% for row in r.inflow %}<tr><td><i class="fas {{ row.icon }}" aria-hidden="true"></i> {{ row.label }}</td>{% for c in row.cells %}<td class="r">{{ c.v }}</td>{% endfor %}<td class="r"><b>{{ row.total_fmt }}</b></td></tr>
-      {% empty %}<tr><td colspan="{{ r.months|length|add:2 }}" class="nzf-muted">Kirim yo'q</td></tr>{% endfor %}
-      <tr class="is-sub"><td>Jami kirim</td>{% for c in r.total_in_fmt %}<td class="r">{{ c.v }}</td>{% endfor %}<td class="r"><b>{{ r.sum_in }}</b></td></tr>
-      <tr class="is-head"><td colspan="{{ r.months|length|add:2 }}"><i class="fas fa-arrow-up nzf-out" aria-hidden="true"></i> Chiqim</td></tr>
-      {% for row in r.outflow %}<tr><td><i class="fas {{ row.icon }}" aria-hidden="true"></i> {{ row.label }}</td>{% for c in row.cells %}<td class="r">{{ c.v }}</td>{% endfor %}<td class="r"><b>{{ row.total_fmt }}</b></td></tr>
-      {% empty %}<tr><td colspan="{{ r.months|length|add:2 }}" class="nzf-muted">Chiqim yo'q</td></tr>{% endfor %}
-      <tr class="is-sub"><td>Jami chiqim</td>{% for c in r.total_out_fmt %}<td class="r">{{ c.v }}</td>{% endfor %}<td class="r"><b>{{ r.sum_out }}</b></td></tr>
-      <tr class="is-grand"><td>Sof pul oqimi</td>{% for c in r.net_fmt %}<td class="r{% if c.neg %} neg{% endif %}">{{ c.v }}</td>{% endfor %}<td class="r"><b>{{ r.sum_net }}</b></td></tr>
-      <tr class="is-margin"><td>Oy oxirida hisoblarda</td>{% for c in r.closing_fmt %}<td class="r{% if c.neg %} neg{% endif %}">{{ c.v }}</td>{% endfor %}<td></td></tr>
+      <tr class="is-head"><td colspan="{{ r.months|length|add:3 }}"><i class="fas fa-arrow-down nzf-in" aria-hidden="true"></i> Kirim</td></tr>
+      {% for row in r.inflow %}<tr><td><i class="fas {{ row.icon }}" aria-hidden="true"></i> {{ row.label }}</td>{% for c in row.cells %}<td class="r">{{ c.v }}</td>{% endfor %}<td class="r"><b>{{ row.total_fmt }}</b></td><td class="r nzf-share-cell">{{ row.share }}%</td></tr>
+      {% empty %}<tr><td colspan="{{ r.months|length|add:3 }}" class="nzf-muted">Kirim yo'q</td></tr>{% endfor %}
+      <tr class="is-sub"><td>Jami kirim</td>{% for c in r.total_in_fmt %}<td class="r">{{ c.v }}</td>{% endfor %}<td class="r"><b>{{ r.sum_in }}</b></td><td></td></tr>
+      <tr class="is-head"><td colspan="{{ r.months|length|add:3 }}"><i class="fas fa-arrow-up nzf-out" aria-hidden="true"></i> Chiqim</td></tr>
+      {% for row in r.outflow %}<tr><td><i class="fas {{ row.icon }}" aria-hidden="true"></i> {{ row.label }}</td>{% for c in row.cells %}<td class="r">{{ c.v }}</td>{% endfor %}<td class="r"><b>{{ row.total_fmt }}</b></td><td class="r nzf-share-cell">{{ row.share }}%</td></tr>
+      {% empty %}<tr><td colspan="{{ r.months|length|add:3 }}" class="nzf-muted">Chiqim yo'q</td></tr>{% endfor %}
+      <tr class="is-sub"><td>Jami chiqim</td>{% for c in r.total_out_fmt %}<td class="r">{{ c.v }}</td>{% endfor %}<td class="r"><b>{{ r.sum_out }}</b></td><td></td></tr>
+      <tr class="is-grand"><td>Sof pul oqimi</td>{% for c in r.net_fmt %}<td class="r{% if c.neg %} neg{% endif %}">{{ c.v }}</td>{% endfor %}<td class="r"><b>{{ r.sum_net }}</b></td><td></td></tr>
+      <tr class="is-margin"><td>Oy oxirida hisoblarda</td>{% for c in r.closing_fmt %}<td class="r{% if c.neg %} neg{% endif %}">{{ c.v }}</td>{% endfor %}<td></td><td></td></tr>
     </tbody>
   </table>
 </section>
 <section class="nzf-notes"><p><i class="fas fa-circle-info" aria-hidden="true"></i> «Oy oxirida hisoblarda» — faol hisoblarning qoldig'i (har bir hisob o'zining boshlangan sanasidan hisoblanadi).</p></section>
+{{ chart|json_script:"nzf-cf-data" }}
+{% endblock %}
+
+{% block extrajs %}
+{{ block.super }}
+{% load static %}
+<script src="{% static 'admin/vendor/chartjs/chart.umd.js' %}"></script>
+<script>
+(function () {
+  var d = JSON.parse(document.getElementById("nzf-cf-data").textContent);
+  if (!window.Chart) return;
+  var dark = document.documentElement.getAttribute("data-bs-theme") === "dark" || matchMedia("(prefers-color-scheme: dark)").matches;
+  var ink = dark ? "#cbd5e1" : "#334155", grid = dark ? "rgba(148,163,184,.15)" : "rgba(15,23,42,.08)";
+  var fmt = function (v) { return Math.round(v).toLocaleString("ru-RU"); };
+  var short = function (v) { var a = Math.abs(v); return a >= 1e9 ? (v / 1e9).toFixed(1) + " " + d.t.b : a >= 1e6 ? (v / 1e6).toFixed(1) + " " + d.t.m : a >= 1e3 ? Math.round(v / 1e3) + " " + d.t.k : v; };
+  new Chart(document.getElementById("nzf-cf"), {
+    data: { labels: d.labels, datasets: [
+      { type: "bar", label: d.t.in, data: d.in, backgroundColor: "rgba(22,163,74,.7)", borderRadius: 6, maxBarThickness: 36 },
+      { type: "bar", label: d.t.out, data: d.out, backgroundColor: "rgba(220,38,38,.65)", borderRadius: 6, maxBarThickness: 36 },
+      { type: "line", label: d.t.closing, data: d.closing, borderColor: "#6366f1", backgroundColor: "#6366f1", tension: .35, borderWidth: 3, pointRadius: 4 },
+    ] },
+    options: { responsive: true, maintainAspectRatio: false, interaction: { mode: "index", intersect: false }, animation: { duration: 900, easing: "easeOutQuart" },
+      plugins: { legend: { labels: { color: ink, usePointStyle: true } }, tooltip: { callbacks: { label: function (c) { return c.dataset.label + ": " + fmt(c.parsed.y) + " " + d.t.som; } } } },
+      scales: { x: { ticks: { color: ink }, grid: { display: false } }, y: { ticks: { color: ink, callback: short }, grid: { color: grid } } } },
+  });
+})();
+</script>
 {% endblock %}

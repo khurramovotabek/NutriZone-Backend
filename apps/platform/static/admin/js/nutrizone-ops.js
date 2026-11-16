@@ -46,3 +46,29 @@
   function boot() { document.querySelectorAll(".nzdp-calc[data-endpoint]").forEach(init); }
   if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", boot); else boot();
 })();
+
+/* Moliya: KPI numbers count up from 0 on load ([data-nzf-count]; "1 234 567" style, sign kept). */
+(function () {
+  "use strict";
+  if (window.matchMedia && matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+  function run() {
+    document.querySelectorAll("[data-nzf-count]").forEach(function (el) {
+      var node = el.firstChild;
+      if (!node || node.nodeType !== 3) return;
+      var m = node.textContent.match(/^(\s*)([−-]?)([\d ]+)(.*)$/);
+      if (!m) return;
+      var target = parseInt(m[3].replace(/\s/g, ""), 10);
+      if (!target || target < 10) return;
+      var t0 = null, dur = 900;
+      function fmt(n) { return String(n).replace(/\B(?=(\d{3})+(?!\d))/g, " "); }
+      function step(ts) {
+        if (t0 === null) t0 = ts;
+        var p = Math.min(1, (ts - t0) / dur), e = 1 - Math.pow(1 - p, 3);
+        node.textContent = m[1] + m[2] + fmt(Math.round(target * e)) + m[4];
+        if (p < 1) requestAnimationFrame(step);
+      }
+      requestAnimationFrame(step);
+    });
+  }
+  if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", run); else run();
+})();

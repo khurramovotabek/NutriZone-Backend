@@ -7,25 +7,35 @@
   <span class="is-on">{{ month_label }}</span>
   <a href="?month={{ next|date:'Y-m' }}" aria-label="Keyingi oy"><i class="fas fa-chevron-right" aria-hidden="true"></i></a>
 </div>
+<a class="nzp-btn nzp-btn-ghost" href="?month={{ month|date:'Y-m' }}&export=xlsx"><i class="fas fa-file-excel" aria-hidden="true"></i> Excel</a>
 {% endblock %}
 
 {% block fin_body %}
-<section class="nzf-kpis is-3">
-  <div class="nzf-kpi"><span>Reja</span><b>{{ plan_total }}</b><em>{{ month_label }}</em></div>
-  <div class="nzf-kpi"><span>Haqiqiy xarajat</span><b class="nzf-out">{{ actual_total }}</b><em>{% if pct_total is not None %}rejaning {{ pct_total }}%{% else %}reja qo'yilmagan{% endif %}</em></div>
-  <div class="nzf-kpi is-main"><span>Qoldi</span><b>{{ left_total }}</b><em>reja − haqiqiy</em></div>
+<section class="nzf-kpis is-5">
+  <div class="nzf-kpi"><span>Reja</span><b data-nzf-count>{{ plan_total }}</b><em>{{ month_label }}</em></div>
+  <div class="nzf-kpi"><span>Haqiqiy xarajat</span><b class="nzf-out" data-nzf-count>{{ actual_total }}</b><em>{% if pct_total is not None %}<span>rejaning</span> {{ pct_total }}%{% else %}reja qo'yilmagan{% endif %}</em></div>
+  <div class="nzf-kpi is-main"><span>Qoldi</span><b data-nzf-count>{{ left_total }}</b><em>reja − haqiqiy</em></div>
+  <div class="nzf-kpi"><span>Oy oxiriga prognoz</span><b class="{% if forecast_over %}nzf-out{% endif %}" data-nzf-count>{{ forecast_total }}</b><em>{% if month_progress is not None %}<span>oy o'tdi</span>: {{ month_progress }}%{% else %}haqiqiy xarajat{% endif %}</em></div>
+  <div class="nzf-kpi"><span>Moddalar holati</span><b class="nzf-states"><i class="is-over" title="Oshdi">{{ states.over }}</i><i class="is-warn" title="85%+">{{ states.warn }}</i><i class="is-ok" title="Me'yorda">{{ states.ok }}</i></b><em>oshdi · yaqin · me'yorda</em></div>
 </section>
+{% if chart.labels %}
+<section class="nzf-panel">
+  <h3><i class="fas fa-chart-bar" aria-hidden="true"></i> Reja va haqiqiy xarajat — eng katta moddalar</h3>
+  <div class="nzf-chart is-short"><canvas id="nzf-bud" aria-label="Reja va haqiqiy"></canvas></div>
+</section>
+{% endif %}
 
 <form method="post" class="nzf-panel">
   {% csrf_token %}
   <input type="hidden" name="month" value="{{ month|date:'Y-m' }}">
   <div class="nzf-budget">
-    <div class="nzf-budget-head"><span>Modda</span><span>Reja, so'm</span><span>Haqiqiy</span><span>Bajarilishi</span></div>
+    <div class="nzf-budget-head"><span>Modda</span><span>Reja, so'm</span><span>Haqiqiy</span><span>Prognoz</span><span>Bajarilishi</span></div>
     {% for r in rows %}
     <div class="nzf-budget-row is-{{ r.state }}">
       <span class="nzf-acc"><i class="fas {{ r.c.icon }}" style="--c:{{ r.c.color }}" aria-hidden="true"></i><span><b>{{ r.c.name }}</b><small>{{ r.c.get_section_display }}</small></span></span>
-      <span>{% if can_edit %}<input name="plan_{{ r.c.id }}" value="{{ r.plan }}" inputmode="numeric" placeholder="—" aria-label="Reja: {{ r.c.name }}">{% else %}{{ r.plan_fmt }}{% endif %}</span>
+      <span>{% if can_edit %}<input name="plan_{{ r.c.id }}" value="{{ r.plan }}" inputmode="numeric" placeholder="{% if r.avg3_fmt %}≈ {{ r.avg3_fmt }}{% else %}—{% endif %}" title="{% if r.avg3_fmt %}O'tgan 3 oy o'rtachasi: {{ r.avg3_fmt }}{% endif %}" aria-label="Reja: {{ r.c.name }}">{% else %}{{ r.plan_fmt }}{% endif %}</span>
       <span class="nzf-out">{{ r.actual_fmt }}</span>
+      <span class="{% if r.forecast_over %}nzf-out{% else %}nzf-muted{% endif %}">{{ r.forecast_fmt }}{% if r.forecast_over %} <i class="fas fa-triangle-exclamation" title="Prognoz rejadan oshadi" aria-hidden="true"></i>{% endif %}</span>
       <span class="nzf-progress">{% if r.pct is not None %}<i style="width:{{ r.bar }}%"></i><em>{{ r.pct }}%{% if r.left %} · qoldi {{ r.left }}{% endif %}</em>{% else %}<em class="nzf-muted">reja yo'q</em>{% endif %}</span>
     </div>
     {% endfor %}
@@ -37,5 +47,32 @@
   </div>
   {% endif %}
 </form>
-<section class="nzf-notes"><p><i class="fas fa-circle-info" aria-hidden="true"></i> Haqiqiy xarajat — shu oy «Operatsiyalar»da kiritilgan xarajatlar. Tovar xaridi va kassir oyligi avtomatik hisoblanadi, ular budjetga kirmaydi.</p></section>
+<section class="nzf-notes"><p><i class="fas fa-circle-info" aria-hidden="true"></i> Prognoz — shu oydagi xarajat sur'ati oy oxirigacha davom etsa. Bo'sh reja maydonidagi «≈» — o'tgan 3 oyning o'rtachasi, reja uchun yo'l-yo'riq.</p>
+<p><i class="fas fa-circle-info" aria-hidden="true"></i> Haqiqiy xarajat — shu oy «Operatsiyalar»da kiritilgan xarajatlar. Tovar xaridi va kassir oyligi avtomatik hisoblanadi, ular budjetga kirmaydi.</p></section>
+{% endblock %}
+{% block extrajs %}
+{{ block.super }}
+{% load static %}
+{% if chart.labels %}
+{{ chart|json_script:"nzf-bud-data" }}
+<script src="{% static 'admin/vendor/chartjs/chart.umd.js' %}"></script>
+<script>
+(function () {
+  var d = JSON.parse(document.getElementById("nzf-bud-data").textContent);
+  if (!window.Chart) return;
+  var dark = document.documentElement.getAttribute("data-bs-theme") === "dark" || matchMedia("(prefers-color-scheme: dark)").matches;
+  var ink = dark ? "#cbd5e1" : "#334155", grid = dark ? "rgba(148,163,184,.15)" : "rgba(15,23,42,.08)";
+  var fmt = function (v) { return Math.round(v).toLocaleString("ru-RU"); };
+  var short = function (v) { var a = Math.abs(v); return a >= 1e9 ? (v / 1e9).toFixed(1) + " " + d.t.b : a >= 1e6 ? (v / 1e6).toFixed(1) + " " + d.t.m : a >= 1e3 ? Math.round(v / 1e3) + " " + d.t.k : v; };
+  new Chart(document.getElementById("nzf-bud"), { type: "bar",
+    data: { labels: d.labels, datasets: [
+      { label: d.t.plan, data: d.plan, backgroundColor: "rgba(99,102,241,.35)", borderColor: "#6366f1", borderWidth: 1, borderRadius: 6, maxBarThickness: 28 },
+      { label: d.t.actual, data: d.actual, backgroundColor: d.actual.map(function (v, i) { return d.plan[i] && v > d.plan[i] ? "rgba(220,38,38,.75)" : "rgba(13,148,136,.75)"; }), borderRadius: 6, maxBarThickness: 28 },
+    ] },
+    options: { responsive: true, maintainAspectRatio: false, animation: { duration: 900, easing: "easeOutQuart" },
+      plugins: { legend: { labels: { color: ink, usePointStyle: true } }, tooltip: { callbacks: { label: function (c) { return c.dataset.label + ": " + fmt(c.parsed.y) + " " + d.t.som; } } } },
+      scales: { x: { ticks: { color: ink }, grid: { display: false } }, y: { ticks: { color: ink, callback: short }, grid: { color: grid } } } } });
+})();
+</script>
+{% endif %}
 {% endblock %}

@@ -7,6 +7,7 @@
 {% endblock %}
 
 {% block fin_body %}
+<nav class="nzf-presets">{% for p in presets %}<a href="?from={{ p.from|date:'Y-m-d' }}&to={{ p.to|date:'Y-m-d' }}" class="{% if p.on %}is-on{% endif %}">{{ p.label }}</a>{% endfor %}</nav>
 <form class="nzf-filter" method="get">
   <label>Dan <input type="date" name="from" value="{{ start|date:'Y-m-d' }}"></label>
   <label>Gacha <input type="date" name="to" value="{{ end|date:'Y-m-d' }}"></label>
@@ -20,6 +21,12 @@
   <div class="nzf-kpi is-main"><span>Yakuniy qoldiq</span><b>{{ closing }}</b><em>{{ st.end|date:"d.m.Y" }}</em></div>
 </section>
 
+{% if curve.values|length > 1 and st.rows %}
+<section class="nzf-panel">
+  <h3><i class="fas fa-chart-line" aria-hidden="true"></i> Qoldiq dinamikasi <small class="nzf-h-note">{{ autos }} ta avtomatik · {{ manual }} ta qo'lda</small></h3>
+  <div class="nzf-chart is-xs"><canvas id="nzf-curve" aria-label="Qoldiq grafigi"></canvas></div>
+</section>
+{% endif %}
 <section class="nzf-panel nzf-table-wrap">
   <table class="nzf-table is-statement">
     <thead><tr><th>Sana</th><th>Operatsiya</th><th class="r">Summa</th><th class="r">Qoldiq</th></tr></thead>
@@ -40,4 +47,27 @@
   </table>
 </section>
 <section class="nzf-notes"><p><i class="fas fa-circle-info" aria-hidden="true"></i> «avto» — kassa savdosi, sayt to'lovlari, yetkazib beruvchilarga to'lovlar va ish haqi: kunlik jamlanma. Hisob {{ a.opening_date|date:"d.m.Y" }} dan boshlab yuritiladi.</p></section>
+{% endblock %}
+{% block extrajs %}
+{{ block.super }}
+{% load static %}
+{% if curve.values|length > 1 and st.rows %}
+{{ curve|json_script:"nzf-curve-data" }}
+<script src="{% static 'admin/vendor/chartjs/chart.umd.js' %}"></script>
+<script>
+(function () {
+  var d = JSON.parse(document.getElementById("nzf-curve-data").textContent), el = document.getElementById("nzf-curve");
+  if (!window.Chart || !el) return;
+  var dark = document.documentElement.getAttribute("data-bs-theme") === "dark" || matchMedia("(prefers-color-scheme: dark)").matches;
+  var ink = dark ? "#cbd5e1" : "#334155", grid = dark ? "rgba(148,163,184,.15)" : "rgba(15,23,42,.08)";
+  var fmt = function (v) { return Math.round(v).toLocaleString("ru-RU"); };
+  var short = function (v) { var a = Math.abs(v); return a >= 1e9 ? (v / 1e9).toFixed(1) + " " + d.t.b : a >= 1e6 ? (v / 1e6).toFixed(1) + " " + d.t.m : a >= 1e3 ? Math.round(v / 1e3) + " " + d.t.k : v; };
+  var g = el.getContext("2d").createLinearGradient(0, 0, 0, 220); g.addColorStop(0, d.color + "55"); g.addColorStop(1, d.color + "00");
+  new Chart(el, { type: "line", data: { labels: d.labels, datasets: [{ label: d.t.bal, data: d.values, borderColor: d.color, backgroundColor: g, fill: true, tension: .3, pointRadius: 0, borderWidth: 2.5, stepped: false }] },
+    options: { responsive: true, maintainAspectRatio: false, animation: { duration: 900 }, interaction: { mode: "index", intersect: false },
+      plugins: { legend: { display: false }, tooltip: { callbacks: { label: function (c) { return d.t.bal + ": " + fmt(c.parsed.y) + " " + d.t.som; } } } },
+      scales: { x: { ticks: { color: ink, maxRotation: 0, autoSkipPadding: 12 }, grid: { display: false } }, y: { ticks: { color: ink, callback: short }, grid: { color: grid } } } } });
+})();
+</script>
+{% endif %}
 {% endblock %}

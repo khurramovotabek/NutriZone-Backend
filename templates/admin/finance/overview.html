@@ -3,6 +3,7 @@
 {% block fin_icon %}fa-gauge-high{% endblock %}
 {% block fin_subtitle %}Pul qayerda, bu oy qancha kirdi-chiqdi va biznes qancha foyda qilyapti — bir sahifada.{% endblock %}
 {% block fin_actions %}
+<a class="nzp-btn nzp-btn-ghost" href="{% url 'admin:nz_finance_report' %}?months=6"><i class="fas fa-file-excel" aria-hidden="true"></i> To'liq hisobot</a>
 {% if can_add %}
 <a class="nzp-btn nzp-btn-ghost" href="{{ add_url }}?kind=income"><i class="fas fa-arrow-down" aria-hidden="true"></i> Kirim</a>
 <a class="nzp-btn nzp-btn-ghost" href="{{ add_url }}?kind=transfer"><i class="fas fa-right-left" aria-hidden="true"></i> O'tkazma</a>
@@ -19,25 +20,58 @@
   {% for o in orphans %}{{ o.label }} — {{ o.amount }} so'm{% if not forloop.last %}; {% endif %}{% endfor %}.
   <a href="{% url 'admin:finance_moneyaccount_changelist' %}">Hisoblar</a>da bu manbani biror hisobga belgilang — aks holda qoldiq to'liq bo'lmaydi.</div></div>
 {% endif %}
-{% for c in negative %}
-<div class="nzf-alert is-bad"><i class="fas fa-circle-exclamation" aria-hidden="true"></i><div><b>{{ c.a.name }}</b> qoldig'i manfiy: {{ c.balance }} so'm. Boshlang'ich qoldiqni yoki operatsiyalarni tekshiring.</div></div>
-{% endfor %}
 
 <section class="nzf-kpis">
-  <div class="nzf-kpi is-main"><span>Jami pul</span><b>{{ total }} <small>so'm</small></b><em>{{ cards|length }} ta hisobda</em></div>
-  <div class="nzf-kpi"><span>Bu oy kirim</span><b class="nzf-in">{{ month_in }}</b><em>savdo va boshqa tushumlar</em></div>
-  <div class="nzf-kpi"><span>Bu oy chiqim</span><b class="nzf-out">{{ month_out }}</b><em>xarid, ish haqi, xarajatlar</em></div>
-  <div class="nzf-kpi"><span>Bu oy sof foyda</span><b class="{% if profit_neg %}nzf-out{% else %}nzf-in{% endif %}">{{ profit }}</b><em>{% if margin is not None %}<span>Rentabellik</span>: {{ margin }}%{% else %}savdo yo'q{% endif %}{% if coverage is not None and coverage < 100 %} · <span>Tannarx ma'lum</span>: {{ coverage }}%{% endif %}</em></div>
-  <div class="nzf-kpi"><span>Yetkazib beruvchilarga qarz</span><b class="{% if debts.overdue_raw %}nzf-out{% endif %}">{{ debts.payable }}</b><em>{% if debts.overdue_raw %}muddati o'tgan: {{ debts.overdue }}{% else %}muddati o'tgani yo'q{% endif %}</em></div>
-  <div class="nzf-kpi"><span>Kuryerlardagi naqd</span><b>{{ debts.courier }}</b><em>{{ debts.courier_orders }} ta buyurtma yo'lda</em></div>
+  <div class="nzf-kpi is-main"><span>Jami pul</span><b data-nzf-count>{{ total }} <small>so'm</small></b><em>{{ cards|length }} ta hisobda</em></div>
+  <div class="nzf-kpi"><span>Tushum — {{ month_label }}</span><b data-nzf-count>{{ pf.revenue }}</b>
+    <em>{% include "admin/finance/_delta.html" with v=p.d_revenue %} <span>o'tgan oy shu kunlari</span>: {{ pf.prev_revenue }}</em></div>
+  <div class="nzf-kpi"><span>Sof foyda</span><b class="{% if pf.net_neg %}nzf-out{% else %}nzf-in{% endif %}" data-nzf-count>{{ pf.net }}</b>
+    <em>{% include "admin/finance/_delta.html" with v=p.d_net %}{% if p.margin is not None %} · <span>rentabellik</span> {{ p.margin }}%{% endif %}</em></div>
+  <div class="nzf-kpi"><span>Bu oy kirim</span><b class="nzf-in" data-nzf-count>{{ pf.in }}</b><em>{% include "admin/finance/_delta.html" with v=p.d_in %} <span>o'tgan oyga nisbatan</span></em></div>
+  <div class="nzf-kpi"><span>Bu oy chiqim</span><b class="nzf-out" data-nzf-count>{{ pf.out }}</b><em>{% include "admin/finance/_delta.html" with v=p.d_out inverse=1 %} <span>o'tgan oyga nisbatan</span></em></div>
+  <div class="nzf-kpi"><span>Yetkazib beruvchilarga qarz</span><b class="{% if debts.overdue_raw %}nzf-out{% endif %}" data-nzf-count>{{ debts.payable }}</b><em>{% if debts.overdue_raw %}<span>muddati o'tgan</span>: {{ debts.overdue }}{% else %}muddati o'tgani yo'q{% endif %}</em></div>
 </section>
+
+<div class="nzf-grid">
+  <section class="nzf-panel nzf-forecast">
+    <h3><i class="fas fa-wand-magic-sparkles" aria-hidden="true"></i> Oy oxiriga prognoz</h3>
+    <div class="nzf-month-bar" style="--p:{{ p.progress }}%"><i></i><span>{{ p.day }} / {{ p.days_in }} kun</span></div>
+    <dl class="nzf-dl">
+      <div><dt>Tushum</dt><dd>{{ pf.f_revenue }} <small>so'm</small></dd></div>
+      <div><dt>Sof foyda</dt><dd class="{% if pf.f_net_neg %}nzf-out{% else %}nzf-in{% endif %}">{{ pf.f_net }} <small>so'm</small></dd></div>
+      <div><dt>Yalpi marja</dt><dd>{% if p.gross_margin is not None %}{{ p.gross_margin }}%{% else %}—{% endif %}</dd></div>
+    </dl>
+    <p class="nzf-muted">Joriy sur'at bilan: shu {{ p.day }} kunning natijasi oyning qolgan kunlariga cho'zilgan.</p>
+  </section>
+  <section class="nzf-panel nzf-runway">
+    <h3><i class="fas fa-gauge-simple-high" aria-hidden="true"></i> Pul zaxirasi</h3>
+    {% if run.basis %}
+    <div class="nzf-big">{% if run.months is not None %}{{ run.months }} <small>oy</small>{% elif run.cover is not None %}{{ run.cover }} <small>oylik chiqim</small>{% else %}—{% endif %}</div>
+    <p class="nzf-muted">{% if run.months is not None %}O'rtacha sof chiqim bilan hisobdagi pul shuncha oyga yetadi.{% elif run.cover is not None %}Pul oqimi musbat — hisobdagi pul o'rtacha {{ run.cover }} oylik xarajatni qoplaydi.{% else %}Hisoblarda pul ko'rinmayapti — boshlang'ich qoldiqni «Hisoblar»da kiriting.{% endif %}</p>
+    <dl class="nzf-dl">
+      <div><dt>O'rtacha oylik chiqim</dt><dd>{{ run_fmt.avg_out }}</dd></div>
+      <div><dt>O'rtacha sof pul oqimi</dt><dd class="{% if run_fmt.neg %}nzf-out{% else %}nzf-in{% endif %}">{{ run_fmt.avg_net }}</dd></div>
+    </dl>
+    <p class="nzf-muted">So'nggi {{ run.basis }} ta to'liq oy bo'yicha.</p>
+    {% else %}<p class="nzf-muted">Hisoblash uchun kamida bitta to'liq oy ma'lumoti kerak.</p>{% endif %}
+  </section>
+  <section class="nzf-panel nzf-advice">
+    <h3><i class="fas fa-lightbulb" aria-hidden="true"></i> Moliyaviy tahlil</h3>
+    <ul>
+      {% for a in advice|slice:":6" %}
+      <li class="is-{{ a.level }}"><i class="fas {{ a.icon }}" aria-hidden="true"></i><span>{{ a.text }}</span>{% if a.url %}<a href="{{ a.url }}">{{ a.link }} →</a>{% endif %}</li>
+      {% endfor %}
+    </ul>
+  </section>
+</div>
 
 <section class="nzf-accounts">
   {% for c in cards %}
   <a class="nzf-card" href="{{ c.url }}" style="--c:{{ c.a.color }}">
     <header><span class="nzf-card-ico"><i class="fas {% if c.a.kind == 'cash' %}fa-money-bill-wave{% elif c.a.kind == 'bank' %}fa-building-columns{% elif c.a.kind == 'card' %}fa-credit-card{% elif c.a.kind == 'online' %}fa-mobile-screen{% else %}fa-wallet{% endif %}" aria-hidden="true"></i></span>
-      <span><b>{{ c.a.name }}</b><small>{{ c.a.get_kind_display }}{% if c.a.store %} · {{ c.a.store.name }}{% endif %}</small></span></header>
+      <span><b>{{ c.a.name }}</b><small>{{ c.a.get_kind_display }}{% if c.a.store %} · {{ c.a.store.name }}{% endif %}</small></span><em class="nzf-share">{{ c.share }}%</em></header>
     <strong class="{% if c.neg %}nzf-out{% endif %}">{{ c.balance }} <small>so'm</small></strong>
+    <span class="nzf-bar"><i style="width:{{ c.share }}%"></i></span>
     <footer><span class="nzf-in">+{{ c.in }}</span><span class="nzf-out">−{{ c.out }}</span><span class="nzf-more">Ko'chirma <i class="fas fa-arrow-right" aria-hidden="true"></i></span></footer>
   </a>
   {% empty %}
@@ -47,7 +81,20 @@
 
 <div class="nzf-grid">
   <section class="nzf-panel nzf-span2">
-    <h3><i class="fas fa-chart-column" aria-hidden="true"></i> Kirim, chiqim va sof foyda — 6 oy</h3>
+    <h3><i class="fas fa-chart-area" aria-hidden="true"></i> {{ month_label }} — kunma-kun{% if best_day %}<small class="nzf-h-note">eng yaxshi kun: {{ best_day.day|date:"d.m" }} · {{ best_day.amount }} so'm</small>{% endif %}</h3>
+    <div class="nzf-chart"><canvas id="nzf-daily" aria-label="Kunlik pul oqimi"></canvas></div>
+  </section>
+  <section class="nzf-panel">
+    <h3><i class="fas fa-ranking-star" aria-hidden="true"></i> <span>Eng katta xarajatlar</span> — {{ month_label }}</h3>
+    {% if top %}<ul class="nzf-rank">
+      {% for t in top %}<li style="--c:{{ t.color }}"><span><i class="fas {{ t.icon }}" aria-hidden="true"></i> {{ t.label }}</span><b>{{ t.value_fmt }}</b><span class="nzf-bar"><i style="width:{{ t.pct }}%"></i></span><small>{{ t.share }}%</small></li>{% endfor %}
+    </ul>{% else %}<p class="nzf-muted">Bu oy hali xarajat yo'q.</p>{% endif %}
+  </section>
+</div>
+
+<div class="nzf-grid">
+  <section class="nzf-panel nzf-span2">
+    <h3><i class="fas fa-chart-column" aria-hidden="true"></i> Kirim, chiqim va sof foyda — 6 oy <a href="{% url 'admin:nz_finance_pnl' %}">Foyda va zarar</a></h3>
     <div class="nzf-chart"><canvas id="nzf-flow" aria-label="Kirim va chiqim grafigi"></canvas></div>
   </section>
   <section class="nzf-panel">
@@ -75,15 +122,24 @@
     </ul>
   </section>
   <section class="nzf-panel">
-    <h3><i class="fas fa-bullseye" aria-hidden="true"></i> Budjet — {{ month_label }} <a href="{% url 'admin:nz_finance_budget' %}">Ochish</a></h3>
+    <h3><i class="fas fa-hourglass-half" aria-hidden="true"></i> Qarzlar muddati bo'yicha <a href="{% url 'admin:nz_finance_debts' %}">Qarzlar</a></h3>
+    {% if aging.total %}
+    <div class="nzf-stack">{% for b in aging.buckets %}{% if b.amount %}<i style="width:{{ b.w }}%;--c:{{ b.color }}" title="{{ b.label }}: {{ b.amount_fmt }}"></i>{% endif %}{% endfor %}</div>
+    <ul class="nzf-legend">{% for b in aging.buckets %}<li style="--c:{{ b.color }}"><span>{{ b.label }}</span><b>{{ b.amount_fmt }}</b></li>{% endfor %}</ul>
+    {% else %}<p class="nzf-muted">Yetkazib beruvchilarga ochiq qarz yo'q.</p>{% endif %}
+    <h3 class="nzf-mt"><i class="fas fa-bullseye" aria-hidden="true"></i> Budjet — {{ month_label }} <a href="{% url 'admin:nz_finance_budget' %}">Ochish</a></h3>
     {% if over_budget %}
       {% for b in over_budget %}<div class="nzf-alert is-bad is-sm"><i class="fas fa-fire" aria-hidden="true"></i><div><b>{{ b.c.name }}</b>: {{ b.actual_fmt }} / {{ b.plan_fmt }} ({{ b.pct }}%)</div></div>{% endfor %}
     {% else %}<p class="nzf-muted">Rejadan oshib ketgan modda yo'q.</p>{% endif %}
-    <h3 class="nzf-mt"><i class="fas fa-coins" aria-hidden="true"></i> Mijozlar coinlari</h3>
-    <p class="nzf-muted">Mijozlar hamyonidagi jami <b>{{ debts.coins }}</b> coin — kelgusida chegirma sifatida ishlatiladigan majburiyat (1 coin = 1 so'm).</p>
+    <h3 class="nzf-mt"><i class="fas fa-coins" aria-hidden="true"></i> Majburiyatlar</h3>
+    <dl class="nzf-dl">
+      <div><dt>Mijozlar coinlari</dt><dd>{{ debts.coins }}</dd></div>
+      <div><dt>Kuryerlardagi naqd (yo'lda)</dt><dd>{{ debts.courier }}</dd></div>
+    </dl>
   </section>
 </div>
 
+{{ daily|json_script:"nzf-daily-data" }}
 {{ chart|json_script:"nzf-chart-data" }}
 {% endblock %}
 
@@ -109,6 +165,23 @@
       plugins: { legend: { labels: { color: ink, usePointStyle: true } }, tooltip: { callbacks: { label: function (c) { return c.dataset.label + ": " + fmt(c.parsed.y) + " " + d.t.som; } } } },
       scales: { x: { ticks: { color: ink }, grid: { display: false } }, y: { ticks: { color: ink, callback: short }, grid: { color: grid } } } },
   });
+  var dd = JSON.parse(document.getElementById("nzf-daily-data").textContent), dl = document.getElementById("nzf-daily");
+  if (dl) {
+    var g = dl.getContext("2d").createLinearGradient(0, 0, 0, 300); g.addColorStop(0, "rgba(13,148,136,.35)"); g.addColorStop(1, "rgba(13,148,136,0)");
+    new Chart(dl, {
+      data: { labels: dd.labels, datasets: [
+        { type: "bar", label: dd.t.in, data: dd.in, backgroundColor: "rgba(22,163,74,.55)", borderRadius: 4, maxBarThickness: 14, yAxisID: "y" },
+        { type: "bar", label: dd.t.out, data: dd.out, backgroundColor: "rgba(220,38,38,.5)", borderRadius: 4, maxBarThickness: 14, yAxisID: "y" },
+        { type: "line", label: dd.t.cum, data: dd.cum, borderColor: "#0d9488", backgroundColor: g, fill: true, tension: .35, pointRadius: 0, borderWidth: 3, yAxisID: "y2" },
+        { type: "line", label: dd.t.prev, data: dd.prev, borderColor: "rgba(100,116,139,.7)", borderDash: [6, 5], tension: .35, pointRadius: 0, borderWidth: 2, yAxisID: "y2" },
+      ] },
+      options: { responsive: true, maintainAspectRatio: false, interaction: { mode: "index", intersect: false }, animation: { duration: 900, easing: "easeOutQuart" },
+        plugins: { legend: { labels: { color: ink, usePointStyle: true, boxWidth: 8 } }, tooltip: { callbacks: { label: function (c) { return c.dataset.label + ": " + fmt(c.parsed.y) + " " + dd.t.som; } } } },
+        scales: { x: { ticks: { color: ink, maxRotation: 0, autoSkipPadding: 8 }, grid: { display: false } },
+          y: { position: "left", ticks: { color: ink, callback: short }, grid: { color: grid } },
+          y2: { position: "right", ticks: { color: ink, callback: short }, grid: { display: false } } } },
+    });
+  }
   var st = document.getElementById("nzf-structure");
   if (st && d.structure.length) {
     var palette = ["#7c3aed", "#0ea5e9", "#f59e0b", "#ec4899", "#14b8a6", "#ef4444", "#84cc16", "#6366f1", "#f97316", "#64748b"];

@@ -1,7 +1,7 @@
 {% extends "admin/finance/base.html" %}
 {% block fin_icon %}fa-file-invoice-dollar{% endblock %}
 {% block fin_subtitle %}Kimga qarzdormiz, kimdan pul olishimiz kerak va mijozlar oldidagi coin majburiyati.{% endblock %}
-{% block fin_actions %}<a class="nzp-btn nzp-btn-ghost" href="{% url 'admin:stores_supplier_changelist' %}"><i class="fas fa-truck-field" aria-hidden="true"></i> Yetkazib beruvchilar</a>{% endblock %}
+{% block fin_actions %}<a class="nzp-btn nzp-btn-ghost" href="?export=xlsx"><i class="fas fa-file-excel" aria-hidden="true"></i> Excel</a><a class="nzp-btn nzp-btn-ghost" href="{% url 'admin:stores_supplier_changelist' %}"><i class="fas fa-truck-field" aria-hidden="true"></i> Yetkazib beruvchilar</a>{% endblock %}
 
 {% block fin_body %}
 <section class="nzf-kpis">
@@ -11,8 +11,37 @@
   <div class="nzf-kpi"><span>Mijozlar coinlari</span><b>{{ d.coins }}</b><em>kelajakdagi chegirma majburiyati</em></div>
 </section>
 
+<div class="nzf-grid is-2-1">
 <section class="nzf-panel">
-  <h3><i class="fas fa-truck-field" aria-hidden="true"></i> Yetkazib beruvchilarga qarzlar</h3>
+  <h3><i class="fas fa-hourglass-half" aria-hidden="true"></i> Qarz muddati bo'yicha (aging) <small class="nzf-h-note">jami ochiq: {{ aging_total }} so'm</small></h3>
+  {% if aging.total %}
+  <div class="nzf-stack is-lg">{% for b in aging.buckets %}{% if b.amount %}<i style="width:{{ b.w }}%;--c:{{ b.color }}" title="{{ b.label }}"></i>{% endif %}{% endfor %}</div>
+  <div class="nzf-aging">{% for b in aging.buckets %}<div style="--c:{{ b.color }}"><span>{{ b.label }}</span><b>{{ b.amount_fmt }}</b><small>{{ b.count }} ta hujjat · {{ b.pct }}%</small></div>{% endfor %}</div>
+  {% else %}<p class="nzf-muted">Ochiq qarz yo'q — barcha kirim hujjatlari to'langan.</p>{% endif %}
+</section>
+<section class="nzf-panel">
+  <h3><i class="fas fa-motorcycle" aria-hidden="true"></i> Kuryerlar qo'lidagi naqd <a href="{% url 'admin:ordering_courier_changelist' %}">Kuryerlar</a></h3>
+  {% if couriers %}<ul class="nzf-rank">{% for c in couriers %}<li style="--c:#0ea5e9"><span><a href="{{ c.url }}">{{ c.name }}</a></span><b>{{ c.cash_fmt }}</b><small>{{ c.orders }} ta buyurtma</small></li>{% endfor %}</ul>
+  <p class="nzf-muted">Jami: <b>{{ held }}</b> so'm — kuryer kartasidagi «Naqdni qabul qildim» bilan yopiladi.</p>
+  {% else %}<p class="nzf-muted">Yetkazilgan buyurtmalar puli to'liq topshirilgan.</p>{% endif %}
+</section>
+</div>
+
+<section class="nzf-panel">
+  <h3><i class="fas fa-truck-field" aria-hidden="true"></i> Yetkazib beruvchilar — muddat bo'yicha</h3>
+  <div class="nzf-table-wrap">
+  <table class="nzf-table">
+    <thead><tr><th>Yetkazib beruvchi</th><th class="r">Muddati kelmagan</th><th class="r">1–30 kun</th><th class="r">31–60 kun</th><th class="r">61–90 kun</th><th class="r">90+ kun</th><th class="r">Jami</th></tr></thead>
+    <tbody>
+      {% for s in aging.suppliers %}<tr><td><b>{{ s.name }}</b>{% if s.late_days > 0 %}<br><small class="nzf-out">{{ s.late_days }} kun kechikkan</small>{% endif %}</td>{% for c in s.cells %}<td class="r{% if forloop.counter > 1 and c != '—' %} neg{% endif %}">{{ c }}</td>{% endfor %}<td class="r"><b>{{ s.total_fmt }}</b></td></tr>
+      {% empty %}<tr><td colspan="7" class="nzf-muted">Ochiq qarz yo'q.</td></tr>{% endfor %}
+    </tbody>
+  </table>
+  </div>
+</section>
+
+<section class="nzf-panel">
+  <h3><i class="fas fa-file-invoice-dollar" aria-hidden="true"></i> Yetkazib beruvchilarga qarzlar</h3>
   <div class="nzf-table-wrap">
   <table class="nzf-table">
     <thead><tr><th>Yetkazib beruvchi</th><th class="r">Qarz</th><th class="r">Muddati o'tgan</th><th>Eng eski muddat</th><th></th></tr></thead>

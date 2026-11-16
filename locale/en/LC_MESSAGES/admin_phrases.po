@@ -7096,3 +7096,330 @@ msgstr "Staff (Orders bot)"
 
 msgid "Ombor bo'limida boshqarish →"
 msgstr "Manage in Warehouse →"
+
+msgid "To'liq hisobot"
+msgstr "Full report"
+
+msgid "Tushum — {0}"
+msgstr "Revenue — {0}"
+
+msgid "o'tgan oy shu kunlari"
+msgstr "same days last month"
+
+msgid "o'tgan oyga nisbatan"
+msgstr "vs last month"
+
+msgid "rentabellik"
+msgstr "net margin"
+
+msgid "Oy oxiriga prognoz"
+msgstr "Month-end forecast"
+
+msgid "{0} / {1} kun"
+msgstr "{0} / {1} days"
+
+msgid "Joriy sur'at bilan: shu {0} kunning natijasi oyning qolgan kunlariga cho'zilgan."
+msgstr "At the current pace: the result of these {0} days stretched over the rest of the month."
+
+msgid "Pul zaxirasi"
+msgstr "Cash runway"
+
+msgid "oy"
+msgstr "months"
+
+msgid "oylik chiqim"
+msgstr "months of spending"
+
+msgid "O'rtacha sof chiqim bilan hisobdagi pul shuncha oyga yetadi."
+msgstr "At the average net outflow the money on the accounts lasts this many months."
+
+msgid "Pul oqimi musbat — hisobdagi pul o'rtacha {0} oylik xarajatni qoplaydi."
+msgstr "Cash flow is positive — the money on the accounts covers {0} months of average spending."
+
+msgid "Hisoblarda pul ko'rinmayapti — boshlang'ich qoldiqni «Hisoblar»da kiriting."
+msgstr "No money on the accounts — enter the opening balance in «Accounts»."
+
+msgid "O'rtacha oylik chiqim"
+msgstr "Average monthly outflow"
+
+msgid "O'rtacha sof pul oqimi"
+msgstr "Average net cash flow"
+
+msgid "So'nggi {0} ta to'liq oy bo'yicha."
+msgstr "Based on the last {0} full months."
+
+msgid "Hisoblash uchun kamida bitta to'liq oy ma'lumoti kerak."
+msgstr "At least one full month of data is needed."
+
+msgid "Moliyaviy tahlil"
+msgstr "Financial analysis"
+
+msgid "{0} — kunma-kun"
+msgstr "{0} — day by day"
+
+msgid "eng yaxshi kun: {0} · {1} so'm"
+msgstr "best day: {0} · {1} so'm"
+
+msgid "Eng katta xarajatlar — {0}"
+msgstr "Biggest expenses — {0}"
+
+msgid "Qarzlar muddati bo'yicha"
+msgstr "Debts by age"
+
+msgid "Yetkazib beruvchilarga ochiq qarz yo'q."
+msgstr "No open supplier debt."
+
+msgid "Majburiyatlar"
+msgstr "Liabilities"
+
+msgid "Kuryerlardagi naqd (yo'lda)"
+msgstr "Cash with couriers (on the road)"
+
+msgid "Yig'ilgan sof pul"
+msgstr "Running net cash"
+
+msgid "Bu oy kirim (yig'ma)"
+msgstr "This month in (cumulative)"
+
+msgid "O'tgan oy kirim (yig'ma)"
+msgstr "Last month in (cumulative)"
+
+msgid "Sof tushum — {0} oy"
+msgstr "Net revenue — {0} months"
+
+msgid "oylik o'rtacha"
+msgstr "monthly average"
+
+msgid "yalpi marja"
+msgstr "gross margin"
+
+msgid "tushumning"
+msgstr "of revenue"
+
+msgid "Eng foydali oy"
+msgstr "Most profitable month"
+
+msgid "Tushum, yalpi va sof foyda"
+msgstr "Revenue, gross and net profit"
+
+msgid "Tushumdan sof foydagacha — {0} oy"
+msgstr "From revenue to net profit — {0} months"
+
+msgid "Tovar tannarxi"
+msgstr "Cost of goods"
+
+msgid "Soliq va boshqa"
+msgstr "Taxes and other"
+
+msgid "Har bir qator tushumning qancha qismini «yeyishini» ko'rsatadi."
+msgstr "Each row shows how much of the revenue it «eats»."
+
+msgid "Tushumdan"
+msgstr "Of revenue"
+
+msgid "Asosiy kirim manbai"
+msgstr "Main source of income"
+
+msgid "Asosiy chiqim"
+msgstr "Main outflow"
+
+msgid "Kirim, chiqim va hisoblardagi qoldiq"
+msgstr "In, out and balance on the accounts"
+
+msgid "hozir hisoblarda: {0} so'm"
+msgstr "on the accounts now: {0} so'm"
+
+msgid "Ulushi"
+msgstr "Share"
+
+msgid "Prognoz"
+msgstr "Forecast"
+
+msgid "rejaning"
+msgstr "of plan"
+
+msgid "oy o'tdi"
+msgstr "month passed"
+
+msgid "Moddalar holati"
+msgstr "Items status"
+
+msgid "oshdi · yaqin · me'yorda"
+msgstr "over · close · on track"
+
+msgid "Reja va haqiqiy xarajat — eng katta moddalar"
+msgstr "Plan vs actual — biggest items"
+
+msgid "Prognoz — shu oydagi xarajat sur'ati oy oxirigacha davom etsa. Bo'sh reja maydonidagi «≈» — o'tgan 3 oyning o'rtachasi, reja uchun yo'l-yo'riq."
+msgstr "Forecast — if this month's spending pace continues to month end. «≈» in an empty plan field is the average of the last 3 months, a guide for the plan."
+
+msgid "O'tgan 3 oy o'rtachasi: {0}"
+msgstr "Last 3 months average: {0}"
+
+msgid "Prognoz rejadan oshadi"
+msgstr "Forecast exceeds the plan"
+
+msgid "Qarz muddati bo'yicha (aging)"
+msgstr "Debt by age (aging)"
+
+msgid "jami ochiq: {0} so'm"
+msgstr "open in total: {0} so'm"
+
+msgid "Muddati kelmagan"
+msgstr "Not due"
+
+msgid "1–30 kun"
+msgstr "1–30 days"
+
+msgid "31–60 kun"
+msgstr "31–60 days"
+
+msgid "61–90 kun"
+msgstr "61–90 days"
+
+msgid "90+ kun"
+msgstr "90+ days"
+
+msgid "{0} ta hujjat · {1}%"
+msgstr "{0} documents · {1}%"
+
+msgid "Ochiq qarz yo'q — barcha kirim hujjatlari to'langan."
+msgstr "No open debt — every receipt is paid."
+
+msgid "Kuryerlar qo'lidagi naqd"
+msgstr "Cash held by couriers"
+
+msgid "Jami: {0} so'm — kuryer kartasidagi «Naqdni qabul qildim» bilan yopiladi."
+msgstr "Total: {0} so'm — closed with «I received the cash» on the courier card."
+
+msgid "Yetkazilgan buyurtmalar puli to'liq topshirilgan."
+msgstr "Money for delivered orders is fully handed in."
+
+msgid "Yetkazib beruvchilar — muddat bo'yicha"
+msgstr "Suppliers — by age"
+
+msgid "{0} kun kechikkan"
+msgstr "{0} days late"
+
+msgid "Ochiq qarz yo'q."
+msgstr "No open debt."
+
+msgid "90 kun"
+msgstr "90 days"
+
+msgid "Yil boshidan"
+msgstr "Year to date"
+
+msgid "Qoldiq dinamikasi"
+msgstr "Balance trend"
+
+msgid "{0} ta avtomatik · {1} ta qo'lda"
+msgstr "{0} automatic · {1} manual"
+
+msgid "{0} — hisob ko'chirmasi: boshlang'ich qoldiq, har bir kirim va chiqim, yakuniy qoldiq."
+msgstr "{0} — account statement: opening balance, every in and out, closing balance."
+
+msgid "hisob ko'chirmasi: boshlang'ich qoldiq, har bir kirim va chiqim, yakuniy qoldiq."
+msgstr "account statement: opening balance, every in and out, closing balance."
+
+msgid "«avto» — kassa savdosi, sayt to'lovlari, yetkazib beruvchilarga to'lovlar va ish haqi: kunlik jamlanma. Hisob {0} dan boshlab yuritiladi."
+msgstr "«auto» — till sales, site payments, supplier payments and payroll: daily totals. The account is kept from {0}."
+
+msgid "jami pulning {0}%"
+msgstr "{0}% of all money"
+
+msgid "Bu oy sof harakat"
+msgstr "Net movement this month"
+
+msgid "Bu oy xarajat (qo'lda)"
+msgstr "Expenses this month (manual)"
+
+msgid "Ishlatilgan moddalar"
+msgstr "Items in use"
+
+msgid "bu oy operatsiyasi bor"
+msgstr "with operations this month"
+
+msgid "6 oy o'rtacha"
+msgstr "6-month average"
+
+msgid "o'tgan oy: {0}"
+msgstr "last month: {0}"
+
+msgid "Kunlik o'rtacha xarajat"
+msgstr "Average daily spending"
+
+msgid "{0} ta operatsiya bu oy"
+msgstr "{0} operations this month"
+
+msgid "bu oy · hisobga kirmaydi"
+msgstr "this month · not counted"
+
+msgid "o'tgan oy shu kunlari: {0}"
+msgstr "same days last month: {0}"
+
+msgid "o'tgan oy shu kunlari: {0} ({1}%)"
+msgstr "same days last month: {0} ({1}%)"
+
+msgid "«{0}» qoldig'i manfiy: {1} so'm — boshlang'ich qoldiq yoki operatsiyalarda xato bor."
+msgstr "«{0}» balance is negative: {1} so'm — the opening balance or an operation is wrong."
+
+msgid "{0} ta avtomatik manba hech bir hisobga bog'lanmagan — qoldiqlar to'liq emas."
+msgstr "{0} automatic sources are not linked to any account — balances are incomplete."
+
+msgid "Yetkazib beruvchilarga {0} so'm qarzning to'lov muddati o'tgan."
+msgstr "{0} so'm of supplier debt is overdue."
+
+msgid "Bu oy hozircha zarar: {0} so'm. Xarajatlar tarkibini tekshiring."
+msgstr "This month is at a loss so far: {0} so'm. Check the expense structure."
+
+msgid "Oxirgi oylardagi o'rtacha sof chiqim bilan hisobdagi pul taxminan {0} oyga yetadi."
+msgstr "At the recent average net outflow the money lasts about {0} months."
+
+msgid "«{0}» budjetdan oshdi: {1} / {2} so'm ({3}%)."
+msgstr "«{0}» is over budget: {1} / {2} so'm ({3}%)."
+
+msgid "Tushum o'tgan oyning shu kunlariga nisbatan {0}% kam."
+msgstr "Revenue is {0}% lower than the same days last month."
+
+msgid "Xarajatlar o'tgan oyning shu kunlariga nisbatan {0}% ko'p."
+msgstr "Expenses are {0}% higher than the same days last month."
+
+msgid "Bu oy sotilgan tovarlarning faqat {0}% tannarxi ma'lum — foyda taxminiy. Kirim hujjatlarida narxlarni to'ldiring."
+msgstr "Cost is known for only {0}% of goods sold this month — profit is an estimate. Fill in prices on receipts."
+
+msgid "Kuryerlar qo'lida {0} so'm naqd turibdi — kassaga topshirilmagan."
+msgstr "Couriers hold {0} so'm in cash — not handed in."
+
+msgid "Bu oy qo'lda birorta xarajat kiritilmagan (ijara, kommunal, reklama…) — sof foyda haqiqatdan yuqori ko'rinadi."
+msgstr "No manual expense entered this month (rent, utilities, ads…) — net profit looks higher than it is."
+
+msgid "Mijozlar hamyonidagi coinlar ({0}) hisobdagi pulning 20% dan ko'p — bu kelajakdagi chegirma majburiyati."
+msgstr "Customer coins ({0}) exceed 20% of the money on the accounts — a future discount liability."
+
+msgid "Tushum o'tgan oyning shu kunlariga nisbatan {0}% ko'p."
+msgstr "Revenue is {0}% higher than the same days last month."
+
+msgid "Hammasi joyida: manfiy hisob, muddati o'tgan qarz va budjetdan oshish yo'q."
+msgstr "All good: no negative accounts, overdue debt or budget overruns."
+
+msgid "Tushum o'tgan oyning shu kunlariga nisbatan {0}.{1}% kam."
+msgstr "Revenue is {0}.{1}% lower than the same days last month."
+
+msgid "Tushum o'tgan oyning shu kunlariga nisbatan {0}.{1}% ko'p."
+msgstr "Revenue is {0}.{1}% higher than the same days last month."
+
+msgid "Xarajatlar o'tgan oyning shu kunlariga nisbatan {0}.{1}% ko'p."
+msgstr "Expenses are {0}.{1}% higher than the same days last month."
+
+msgid "Kirimlar"
+msgstr "Receipts"
+
+msgid "Xarajat kiritish"
+msgstr "Add expense"
+
+msgid "Hamyonlar"
+msgstr "Wallets"
+
+msgid "Eng katta xarajatlar"
+msgstr "Biggest expenses"

@@ -7135,3 +7135,330 @@ msgstr "Сотрудники (Orders bot)"
 
 msgid "Ombor bo'limida boshqarish →"
 msgstr "Управлять в разделе «Склад» →"
+
+msgid "To'liq hisobot"
+msgstr "Полный отчёт"
+
+msgid "Tushum — {0}"
+msgstr "Выручка — {0}"
+
+msgid "o'tgan oy shu kunlari"
+msgstr "те же дни прошлого месяца"
+
+msgid "o'tgan oyga nisbatan"
+msgstr "к прошлому месяцу"
+
+msgid "rentabellik"
+msgstr "рентабельность"
+
+msgid "Oy oxiriga prognoz"
+msgstr "Прогноз на конец месяца"
+
+msgid "{0} / {1} kun"
+msgstr "{0} / {1} дн."
+
+msgid "Joriy sur'at bilan: shu {0} kunning natijasi oyning qolgan kunlariga cho'zilgan."
+msgstr "При текущем темпе: результат этих {0} дней продлён на остаток месяца."
+
+msgid "Pul zaxirasi"
+msgstr "Запас денег"
+
+msgid "oy"
+msgstr "мес."
+
+msgid "oylik chiqim"
+msgstr "мес. расходов"
+
+msgid "O'rtacha sof chiqim bilan hisobdagi pul shuncha oyga yetadi."
+msgstr "При среднем чистом оттоке денег на счетах хватит на столько месяцев."
+
+msgid "Pul oqimi musbat — hisobdagi pul o'rtacha {0} oylik xarajatni qoplaydi."
+msgstr "Денежный поток положительный — деньги на счетах покрывают {0} мес. средних расходов."
+
+msgid "Hisoblarda pul ko'rinmayapti — boshlang'ich qoldiqni «Hisoblar»da kiriting."
+msgstr "На счетах нет денег — укажите начальный остаток в разделе «Счета»."
+
+msgid "O'rtacha oylik chiqim"
+msgstr "Средний расход в месяц"
+
+msgid "O'rtacha sof pul oqimi"
+msgstr "Средний чистый денежный поток"
+
+msgid "So'nggi {0} ta to'liq oy bo'yicha."
+msgstr "По последним {0} полным месяцам."
+
+msgid "Hisoblash uchun kamida bitta to'liq oy ma'lumoti kerak."
+msgstr "Нужны данные хотя бы за один полный месяц."
+
+msgid "Moliyaviy tahlil"
+msgstr "Финансовый анализ"
+
+msgid "{0} — kunma-kun"
+msgstr "{0} — по дням"
+
+msgid "eng yaxshi kun: {0} · {1} so'm"
+msgstr "лучший день: {0} · {1} сум"
+
+msgid "Eng katta xarajatlar — {0}"
+msgstr "Крупнейшие расходы — {0}"
+
+msgid "Qarzlar muddati bo'yicha"
+msgstr "Долги по срокам"
+
+msgid "Yetkazib beruvchilarga ochiq qarz yo'q."
+msgstr "Открытых долгов поставщикам нет."
+
+msgid "Majburiyatlar"
+msgstr "Обязательства"
+
+msgid "Kuryerlardagi naqd (yo'lda)"
+msgstr "Наличные у курьеров (в пути)"
+
+msgid "Yig'ilgan sof pul"
+msgstr "Накопленный чистый поток"
+
+msgid "Bu oy kirim (yig'ma)"
+msgstr "Приход за месяц (нарастающий)"
+
+msgid "O'tgan oy kirim (yig'ma)"
+msgstr "Приход прошлого месяца (нарастающий)"
+
+msgid "Sof tushum — {0} oy"
+msgstr "Чистая выручка — {0} мес."
+
+msgid "oylik o'rtacha"
+msgstr "в среднем за месяц"
+
+msgid "yalpi marja"
+msgstr "валовая маржа"
+
+msgid "tushumning"
+msgstr "от выручки"
+
+msgid "Eng foydali oy"
+msgstr "Самый прибыльный месяц"
+
+msgid "Tushum, yalpi va sof foyda"
+msgstr "Выручка, валовая и чистая прибыль"
+
+msgid "Tushumdan sof foydagacha — {0} oy"
+msgstr "От выручки до чистой прибыли — {0} мес."
+
+msgid "Tovar tannarxi"
+msgstr "Себестоимость"
+
+msgid "Soliq va boshqa"
+msgstr "Налоги и прочее"
+
+msgid "Har bir qator tushumning qancha qismini «yeyishini» ko'rsatadi."
+msgstr "Каждая строка показывает, какую часть выручки она «съедает»."
+
+msgid "Tushumdan"
+msgstr "От выручки"
+
+msgid "Asosiy kirim manbai"
+msgstr "Основной источник прихода"
+
+msgid "Asosiy chiqim"
+msgstr "Основной расход"
+
+msgid "Kirim, chiqim va hisoblardagi qoldiq"
+msgstr "Приход, расход и остаток на счетах"
+
+msgid "hozir hisoblarda: {0} so'm"
+msgstr "сейчас на счетах: {0} сум"
+
+msgid "Ulushi"
+msgstr "Доля"
+
+msgid "Prognoz"
+msgstr "Прогноз"
+
+msgid "rejaning"
+msgstr "от плана"
+
+msgid "oy o'tdi"
+msgstr "прошло месяца"
+
+msgid "Moddalar holati"
+msgstr "Статус статей"
+
+msgid "oshdi · yaqin · me'yorda"
+msgstr "превышено · близко · в норме"
+
+msgid "Reja va haqiqiy xarajat — eng katta moddalar"
+msgstr "План и факт — крупнейшие статьи"
+
+msgid "Prognoz — shu oydagi xarajat sur'ati oy oxirigacha davom etsa. Bo'sh reja maydonidagi «≈» — o'tgan 3 oyning o'rtachasi, reja uchun yo'l-yo'riq."
+msgstr "Прогноз — если темп расходов сохранится до конца месяца. «≈» в пустом поле плана — среднее за 3 прошлых месяца, ориентир для плана."
+
+msgid "O'tgan 3 oy o'rtachasi: {0}"
+msgstr "Среднее за 3 прошлых месяца: {0}"
+
+msgid "Prognoz rejadan oshadi"
+msgstr "Прогноз превысит план"
+
+msgid "Qarz muddati bo'yicha (aging)"
+msgstr "Долг по срокам (aging)"
+
+msgid "jami ochiq: {0} so'm"
+msgstr "всего открыто: {0} сум"
+
+msgid "Muddati kelmagan"
+msgstr "Срок не наступил"
+
+msgid "1–30 kun"
+msgstr "1–30 дн."
+
+msgid "31–60 kun"
+msgstr "31–60 дн."
+
+msgid "61–90 kun"
+msgstr "61–90 дн."
+
+msgid "90+ kun"
+msgstr "90+ дн."
+
+msgid "{0} ta hujjat · {1}%"
+msgstr "{0} док. · {1}%"
+
+msgid "Ochiq qarz yo'q — barcha kirim hujjatlari to'langan."
+msgstr "Открытых долгов нет — все приходы оплачены."
+
+msgid "Kuryerlar qo'lidagi naqd"
+msgstr "Наличные у курьеров"
+
+msgid "Jami: {0} so'm — kuryer kartasidagi «Naqdni qabul qildim» bilan yopiladi."
+msgstr "Итого: {0} сум — закрывается кнопкой «Принял наличные» в карточке курьера."
+
+msgid "Yetkazilgan buyurtmalar puli to'liq topshirilgan."
+msgstr "Деньги за доставленные заказы полностью сданы."
+
+msgid "Yetkazib beruvchilar — muddat bo'yicha"
+msgstr "Поставщики — по срокам"
+
+msgid "{0} kun kechikkan"
+msgstr "просрочено на {0} дн."
+
+msgid "Ochiq qarz yo'q."
+msgstr "Открытых долгов нет."
+
+msgid "90 kun"
+msgstr "90 дней"
+
+msgid "Yil boshidan"
+msgstr "С начала года"
+
+msgid "Qoldiq dinamikasi"
+msgstr "Динамика остатка"
+
+msgid "{0} ta avtomatik · {1} ta qo'lda"
+msgstr "{0} автоматических · {1} ручных"
+
+msgid "{0} — hisob ko'chirmasi: boshlang'ich qoldiq, har bir kirim va chiqim, yakuniy qoldiq."
+msgstr "{0} — выписка по счёту: начальный остаток, каждый приход и расход, конечный остаток."
+
+msgid "hisob ko'chirmasi: boshlang'ich qoldiq, har bir kirim va chiqim, yakuniy qoldiq."
+msgstr "выписка по счёту: начальный остаток, каждый приход и расход, конечный остаток."
+
+msgid "«avto» — kassa savdosi, sayt to'lovlari, yetkazib beruvchilarga to'lovlar va ish haqi: kunlik jamlanma. Hisob {0} dan boshlab yuritiladi."
+msgstr "«авто» — продажи касс, оплаты на сайте, оплаты поставщикам и зарплата: дневные итоги. Счёт ведётся с {0}."
+
+msgid "jami pulning {0}%"
+msgstr "{0}% всех денег"
+
+msgid "Bu oy sof harakat"
+msgstr "Чистое движение за месяц"
+
+msgid "Bu oy xarajat (qo'lda)"
+msgstr "Расходы за месяц (вручную)"
+
+msgid "Ishlatilgan moddalar"
+msgstr "Использованные статьи"
+
+msgid "bu oy operatsiyasi bor"
+msgstr "есть операции в этом месяце"
+
+msgid "6 oy o'rtacha"
+msgstr "Среднее за 6 мес."
+
+msgid "o'tgan oy: {0}"
+msgstr "прошлый месяц: {0}"
+
+msgid "Kunlik o'rtacha xarajat"
+msgstr "Средний расход в день"
+
+msgid "{0} ta operatsiya bu oy"
+msgstr "{0} операций в этом месяце"
+
+msgid "bu oy · hisobga kirmaydi"
+msgstr "в этом месяце · не учитываются"
+
+msgid "o'tgan oy shu kunlari: {0}"
+msgstr "те же дни прошлого месяца: {0}"
+
+msgid "o'tgan oy shu kunlari: {0} ({1}%)"
+msgstr "те же дни прошлого месяца: {0} ({1}%)"
+
+msgid "«{0}» qoldig'i manfiy: {1} so'm — boshlang'ich qoldiq yoki operatsiyalarda xato bor."
+msgstr "Остаток «{0}» отрицательный: {1} сум — ошибка в начальном остатке или операциях."
+
+msgid "{0} ta avtomatik manba hech bir hisobga bog'lanmagan — qoldiqlar to'liq emas."
+msgstr "{0} автоматических источников не привязаны к счетам — остатки неполные."
+
+msgid "Yetkazib beruvchilarga {0} so'm qarzning to'lov muddati o'tgan."
+msgstr "Просрочена оплата {0} сум долга поставщикам."
+
+msgid "Bu oy hozircha zarar: {0} so'm. Xarajatlar tarkibini tekshiring."
+msgstr "Месяц пока в убытке: {0} сум. Проверьте структуру расходов."
+
+msgid "Oxirgi oylardagi o'rtacha sof chiqim bilan hisobdagi pul taxminan {0} oyga yetadi."
+msgstr "При среднем чистом оттоке денег хватит примерно на {0} мес."
+
+msgid "«{0}» budjetdan oshdi: {1} / {2} so'm ({3}%)."
+msgstr "«{0}» превысила бюджет: {1} / {2} сум ({3}%)."
+
+msgid "Tushum o'tgan oyning shu kunlariga nisbatan {0}% kam."
+msgstr "Выручка на {0}% ниже тех же дней прошлого месяца."
+
+msgid "Xarajatlar o'tgan oyning shu kunlariga nisbatan {0}% ko'p."
+msgstr "Расходы на {0}% выше тех же дней прошлого месяца."
+
+msgid "Bu oy sotilgan tovarlarning faqat {0}% tannarxi ma'lum — foyda taxminiy. Kirim hujjatlarida narxlarni to'ldiring."
+msgstr "Себестоимость известна только для {0}% проданных товаров — прибыль приблизительна. Заполните цены в приходах."
+
+msgid "Kuryerlar qo'lida {0} so'm naqd turibdi — kassaga topshirilmagan."
+msgstr "У курьеров {0} сум наличными — не сдано в кассу."
+
+msgid "Bu oy qo'lda birorta xarajat kiritilmagan (ijara, kommunal, reklama…) — sof foyda haqiqatdan yuqori ko'rinadi."
+msgstr "В этом месяце не внесено ни одного расхода (аренда, коммунальные, реклама…) — чистая прибыль выглядит выше реальной."
+
+msgid "Mijozlar hamyonidagi coinlar ({0}) hisobdagi pulning 20% dan ko'p — bu kelajakdagi chegirma majburiyati."
+msgstr "Коины клиентов ({0}) превышают 20% денег на счетах — это будущее обязательство по скидкам."
+
+msgid "Tushum o'tgan oyning shu kunlariga nisbatan {0}% ko'p."
+msgstr "Выручка на {0}% выше тех же дней прошлого месяца."
+
+msgid "Hammasi joyida: manfiy hisob, muddati o'tgan qarz va budjetdan oshish yo'q."
+msgstr "Всё в порядке: нет отрицательных счетов, просроченных долгов и превышений бюджета."
+
+msgid "Tushum o'tgan oyning shu kunlariga nisbatan {0}.{1}% kam."
+msgstr "Выручка на {0}.{1}% ниже тех же дней прошлого месяца."
+
+msgid "Tushum o'tgan oyning shu kunlariga nisbatan {0}.{1}% ko'p."
+msgstr "Выручка на {0}.{1}% выше тех же дней прошлого месяца."
+
+msgid "Xarajatlar o'tgan oyning shu kunlariga nisbatan {0}.{1}% ko'p."
+msgstr "Расходы на {0}.{1}% выше тех же дней прошлого месяца."
+
+msgid "Kirimlar"
+msgstr "Приходы"
+
+msgid "Xarajat kiritish"
+msgstr "Внести расход"
+
+msgid "Hamyonlar"
+msgstr "Кошельки"
+
+msgid "Eng katta xarajatlar"
+msgstr "Крупнейшие расходы"

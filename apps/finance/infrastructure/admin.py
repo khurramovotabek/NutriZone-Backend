@@ -48,7 +48,7 @@ class MoneyAccountForm(forms.ModelForm):
 
 
 @admin.register(MoneyAccount)
-class MoneyAccountAdmin(PremiumListMixin, PremiumFormMixin, admin.ModelAdmin):
+class MoneyAccountAdmin(ExcelExportMixin, PremiumListMixin, PremiumFormMixin, admin.ModelAdmin):
     form = MoneyAccountForm
     list_display = ("name", "kind", "opening_date", "is_active")
     search_fields = ("name", "note")
@@ -62,8 +62,19 @@ class MoneyAccountAdmin(PremiumListMixin, PremiumFormMixin, admin.ModelAdmin):
     )
     nz_icon, nz_tone, nz_title = "fa-wallet", "#2563eb", "Hisoblar"
     nz_subtitle = "Kassalar, bank hisoblari va kartalar. Qoldiq = boshlang'ich qoldiq + avtomatik tushumlar + qo'lda kiritilgan operatsiyalar."
-    nz_columns = (("Hisob", ""), ("Turi", ""), ("Avtomatik manbalar", ""), ("Bu oy kirim", "r"), ("Bu oy chiqim", "r"), ("Qoldiq", "r"))
-    nz_grid = "minmax(220px,2fr) 140px minmax(220px,2fr) 130px 130px 150px"
+    nz_columns = (("Hisob", ""), ("Turi", ""), ("Avtomatik manbalar", ""), ("Bu oy kirim", "r"), ("Bu oy chiqim", "r"), ("Ulushi", ""), ("Qoldiq", "r"))
+    nz_grid = "minmax(220px,2fr) 130px minmax(200px,2fr) 125px 125px 110px 150px"
+    excel_title = "Moliya hisoblari"
+    excel_columns = [Col("Hisob", "name", 26), Col("Turi", lambda a: a.get_kind_display(), 16), Col("Filial", lambda a: a.store.name if a.store else "", 20),
+                     Col("Avtomatik manbalar", lambda a: ", ".join(str(SOURCES[s][0]) for s in (a.sources or []) if s in SOURCES), 44),
+                     Col("Boshlangan", "opening_date", 12), Col("Boshlang'ich qoldiq", "opening_balance", 17, money=True),
+                     Col("Bu oy kirim", lambda a: a._x.get("in_month"), 15, money=True), Col("Bu oy chiqim", lambda a: a._x.get("out_month"), 15, money=True),
+                     Col("Qoldiq", lambda a: a._x.get("balance"), 17, money=True), Col("Faol", "is_active", 8)]
+
+    def excel_prepare(self, objs):
+        bal = ledger.balances(None, [o for o in objs if o.is_active]) if objs else {}
+        for o in objs:
+            o._x = bal.get(o.id, {})
     nz_search = "Hisob nomi…"
     nz_empty = ("Hali hisob yo'q", "«Qo'shish» bilan birinchi kassa yoki bank hisobini oching.")
     nz_css = FIN_CSS
@@ -76,15 +87,20 @@ class MoneyAccountAdmin(PremiumListMixin, PremiumFormMixin, admin.ModelAdmin):
 
     def nz_prepare(self, request, objs):
         self._bal = ledger.balances(None, [o for o in objs if o.is_active]) if objs else {}
+        self._share_total = sum((max(b["balance"], 0) for b in self._bal.values()), 0)
 
     def nz_stats(self, request):
         accounts = list(MoneyAccount.objects.filter(is_active=True))
         bal = ledger.balances(None, accounts)
         total = sum((b["balance"] for b in bal.values()), 0)
         cash = sum((bal[a.id]["balance"] for a in accounts if a.kind == AccountKind.CASH), 0)
+        inn = sum((b["in_month"] for b in bal.values()), 0)
+        out = sum((b["out_month"] for b in bal.values()), 0)
+        cash_pct = round(cash * 100 / total) if total else 0
         return [ui.stat_card("Jami pul", money(total), "#2563eb", "fa-sack-dollar", f"{len(accounts)} ta faol hisob"),
-                ui.stat_card("Naqd kassalarda", money(cash), "#16a34a", "fa-money-bill-wave"),
-                ui.stat_card("Bank va kartalarda", money(total - cash), "#7c3aed", "fa-building-columns")]
+                ui.stat_card("Naqd kassalarda", money(cash), "#16a34a", "fa-money-bill-wave", f"jami pulning {cash_pct}%"),
+                ui.stat_card("Bank va kartalarda", money(total - cash), "#7c3aed", "fa-building-columns", f"jami pulning {100 - cash_pct}%" if total else ""),
+                ui.stat_card("Bu oy sof harakat", money(inn - out), "#0d9488" if inn >= out else "#dc2626", "fa-arrow-right-arrow-left", f"+{money(inn)} / −{money(out)}")]
 
     def nz_row(self, a):
         b = getattr(self, "_bal", {}).get(a.id)
@@ -92,10 +108,13 @@ class MoneyAccountAdmin(PremiumListMixin, PremiumFormMixin, admin.ModelAdmin):
                            KIND_ICON.get(a.kind, "fa-wallet"), a.color, a.name, a.store.name if a.store else (a.note or f"{a.opening_date:%d.%m.%Y} dan"))
         src = format_html_join_chips([str(SOURCES[s][0]).split(": ")[-1] for s in (a.sources or []) if s in SOURCES]) or ui.muted("Faqat qo'lda")
         if not a.is_active:
-            return [name, ui.chip("Yopilgan", "#94a3b8"), src, ui.muted(), ui.muted(), ui.muted()]
+            return [name, ui.chip("Yopilgan", "#94a3b8"), src, ui.muted(), ui.muted(), ui.muted(), ui.muted()]
         bal = b["balance"] if b else 0
+        total = getattr(self, "_share_total", 0)
+        pct = round(bal * 100 / total) if total and bal > 0 else 0
+        share = format_html('<span class="nzf-rowshare" style="--c:{}"><span class="nzf-bar"><i style="width:{}%"></i></span><small>{}%</small></span>', a.color, pct, pct)
         return [name, a.get_kind_display(), src, format_html('<span class="nzf-in">+{}</span>', money(b["in_month"])) if b else ui.muted(),
-                format_html('<span class="nzf-out">−{}</span>', money(b["out_month"])) if b else ui.muted(),
+                format_html('<span class="nzf-out">−{}</span>', money(b["out_month"])) if b else ui.muted(), share,
                 format_html('<b class="nzf-bal{}">{}</b>', " is-neg" if bal < 0 else "", money(bal))]
 
     def nz_href(self, obj):
@@ -119,7 +138,7 @@ def format_html_join_chips(items) -> str:
 
 
 @admin.register(Category)
-class CategoryAdmin(PremiumListMixin, PremiumFormMixin, admin.ModelAdmin):
+class CategoryAdmin(ExcelExportMixin, PremiumListMixin, PremiumFormMixin, admin.ModelAdmin):
     list_display = ("name", "kind", "section", "is_active")
     search_fields = ("name",)
     list_filter = ("kind", "section", "is_active")
@@ -128,8 +147,30 @@ class CategoryAdmin(PremiumListMixin, PremiumFormMixin, admin.ModelAdmin):
     fieldsets = ((None, {"fields": ("name", "kind", "section", "icon", "color", "sort_order", "is_active")}),)
     nz_icon, nz_tone, nz_title = "fa-tags", "#0ea5e9", "Moliya moddalari"
     nz_subtitle = "Xarajat va kirim turlari: ijara, kommunal, marketing, soliq… Har biri Foyda va zarar hisobotida o'z qatoriga tushadi."
-    nz_columns = (("Modda", ""), ("Turi", ""), ("Hisobotda", ""), ("Holat", ""), ("Bu oy", "r"))
-    nz_grid = "minmax(220px,2fr) 120px minmax(200px,1.5fr) 110px 150px"
+    nz_columns = (("Modda", ""), ("Turi", ""), ("Hisobotda", ""), ("Holat", ""), ("O'tgan oy", "r"), ("6 oy o'rtacha", "r"), ("Bu oy", "r"))
+    nz_grid = "minmax(220px,2fr) 110px minmax(180px,1.4fr) 100px 130px 130px 160px"
+    excel_title = "Moliya moddalari"
+    excel_columns = [Col("Modda", "name", 28), Col("Turi", lambda c: c.get_kind_display(), 12), Col("Hisobotda", lambda c: c.get_section_display(), 26),
+                     Col("Faol", "is_active", 8), Col("Bu oy", lambda c: c._x[0], 15, money=True), Col("O'tgan oy", lambda c: c._x[1], 15, money=True),
+                     Col("6 oy jami", lambda c: c._x[2], 16, money=True), Col("6 oy o'rtacha", lambda c: c._x[3], 16, money=True)]
+
+    @staticmethod
+    def _periods():
+        from datetime import timedelta
+
+        from apps.finance.infrastructure import pnl
+
+        today = timezone.localdate()
+        m0 = today.replace(day=1)
+        prev0 = pnl.months_back(m0, 2)[0]
+        m6 = pnl.months_back(m0, 7)[0]
+        return (ledger.manual_totals(m0, today), ledger.manual_totals(prev0, m0 - timedelta(days=1)), ledger.manual_totals(m6, m0 - timedelta(days=1)))
+
+    def excel_prepare(self, objs):
+        cur, prev, six = self._periods()
+        for c in objs:
+            k = (c.kind, c.id)
+            c._x = (cur.get(k) or 0, prev.get(k) or 0, six.get(k) or 0, round((six.get(k) or 0) / 6))
     nz_search = "Modda nomi…"
     nz_css = FIN_CSS
 
@@ -141,21 +182,39 @@ class CategoryAdmin(PremiumListMixin, PremiumFormMixin, admin.ModelAdmin):
     def nz_hero_actions(self, request):
         return _hero_links()
 
+    def nz_stats(self, request):
+        cur, prev, _six = self._periods()
+        exp = sum((v for (k, _c), v in cur.items() if k == CategoryKind.EXPENSE), 0)
+        pexp = sum((v for (k, _c), v in prev.items() if k == CategoryKind.EXPENSE), 0)
+        inc = sum((v for (k, _c), v in cur.items() if k == CategoryKind.INCOME), 0)
+        used = len({c for (_k, c) in cur})
+        delta = f"o'tgan oy: {money(pexp)}" if pexp else ""
+        return [ui.stat_card("Bu oy xarajat (qo'lda)", money(exp), "#dc2626", "fa-arrow-up", delta),
+                ui.stat_card("Bu oy kirim (qo'lda)", money(inc), "#16a34a", "fa-arrow-down"),
+                ui.stat_card("Ishlatilgan moddalar", f"{used} / {Category.objects.filter(is_active=True).count()}", "#0ea5e9", "fa-tags", "bu oy operatsiyasi bor")]
+
     def nz_tabs(self, request):
         counts = dict(Category.objects.values_list("kind").annotate(n=Count("id")))
         return ui.tabs_for(request, "kind__exact", [("", "Hammasi", sum(counts.values())), ("expense", "Xarajat", counts.get("expense", 0)), ("income", "Kirim", counts.get("income", 0))],
                            {"expense": "#dc2626", "income": "#16a34a"})
 
     def nz_prepare(self, request, objs):
-        today = timezone.localdate()
-        self._month = ledger.manual_totals(today.replace(day=1), today)
+        self._month, self._prev, self._six = self._periods()
 
     def nz_row(self, c):
         name = format_html('<span class="nzf-acc"><i class="fas {}" style="--c:{}"></i><span><b>{}</b></span></span>', c.icon, c.color, c.name)
         kind = ui.chip(c.get_kind_display(), "#16a34a" if c.kind == CategoryKind.INCOME else "#dc2626")
         state = ui.chip("Faol", "#16a34a") if c.is_active else ui.chip("O'chirilgan", "#94a3b8")
-        v = getattr(self, "_month", {}).get((c.kind, c.id))
-        return [name, kind, c.get_section_display(), state, format_html("<b>{}</b>", money(v)) if v else ui.muted()]
+        k = (c.kind, c.id)
+        v, prev, six = getattr(self, "_month", {}).get(k), getattr(self, "_prev", {}).get(k), getattr(self, "_six", {}).get(k)
+        avg = six / 6 if six else None
+        trend = ""
+        if v and prev:
+            ch = round((v - prev) * 100 / prev)
+            bad = ch > 0 if c.kind == CategoryKind.EXPENSE else ch < 0
+            trend = format_html(' <span class="nzf-delta {}">{}{}%</span>', "is-bad" if bad else "is-good", "+" if ch > 0 else "", ch)
+        return [name, kind, c.get_section_display(), state, money(prev) if prev else ui.muted(), money(avg) if avg else ui.muted(),
+                format_html("<b>{}</b>{}", money(v), trend) if v else ui.muted()]
 
     def form_hero(self, request, obj):
         return {"title": obj.name if obj else "", "subtitle": "Modda — operatsiyani guruhlash uchun. «Hisobotdagi o'rni» Foyda va zarar qatorini belgilaydi."}
@@ -300,9 +359,22 @@ class TransactionAdmin(ExcelExportMixin, PremiumListMixin, PremiumFormMixin, adm
         live = Transaction.objects.filter(voided_at__isnull=True, occurred_on__gte=m0)
         agg = live.aggregate(e=Sum("amount", filter=Q(kind="expense")), i=Sum("amount", filter=Q(kind="income")), n=Count("id"))
         top = (live.filter(kind="expense").values("category__name").annotate(s=Sum("amount")).order_by("-s").first())
-        return [ui.stat_card("Bu oy xarajat", money(agg["e"] or 0), "#dc2626", "fa-arrow-up", f"{agg['n']} ta operatsiya"),
+        from datetime import timedelta
+
+        from apps.finance.infrastructure import insights, pnl
+
+        prev0 = pnl.months_back(m0, 2)[0]
+        prev_end = min(prev0 + timedelta(days=today.day - 1), m0 - timedelta(days=1))
+        pexp = Transaction.objects.filter(voided_at__isnull=True, kind="expense", occurred_on__gte=prev0, occurred_on__lte=prev_end).aggregate(s=Sum("amount"))["s"] or 0
+        ch = insights.pct_change(agg["e"] or 0, pexp)
+        voided = Transaction.objects.filter(voided_at__isnull=False, occurred_on__gte=m0).count()
+        per_day = (agg["e"] or 0) / today.day
+        return [ui.stat_card("Bu oy xarajat", money(agg["e"] or 0), "#dc2626", "fa-arrow-up",
+                             f"o'tgan oy shu kunlari: {money(pexp)}" + (f" ({'+' if ch > 0 else ''}{ch}%)" if ch is not None else "")),
+                ui.stat_card("Kunlik o'rtacha xarajat", money(per_day), "#f59e0b", "fa-calendar-day", f"{agg['n']} ta operatsiya bu oy"),
                 ui.stat_card("Bu oy kirim (qo'lda)", money(agg["i"] or 0), "#16a34a", "fa-arrow-down"),
-                ui.stat_card("Eng katta modda", top["category__name"] if top else "—", "#7c3aed", "fa-chart-pie", money(top["s"]) if top else "")]
+                ui.stat_card("Eng katta modda", top["category__name"] if top else "—", "#7c3aed", "fa-chart-pie", money(top["s"]) if top else ""),
+                ui.stat_card("Bekor qilingan", voided, "#94a3b8", "fa-ban", "bu oy · hisobga kirmaydi")]
 
     def nz_row(self, t):
         color, icon, label = TX_STYLE[t.kind]

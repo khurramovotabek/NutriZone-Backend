@@ -10,27 +10,46 @@
 {% endblock %}
 
 {% block fin_body %}
+<section class="nzf-kpis is-5">
+  <div class="nzf-kpi"><span>Sof tushum — {{ n }} oy</span><b data-nzf-count>{{ k.revenue }}</b><em><span>oylik o'rtacha</span>: {{ k.avg }}</em></div>
+  <div class="nzf-kpi"><span>Yalpi foyda</span><b data-nzf-count>{{ k.gross }}</b><em>{% if k.gross_margin is not None %}<span>yalpi marja</span> {{ k.gross_margin }}%{% endif %}</em></div>
+  <div class="nzf-kpi"><span>Operatsion xarajatlar</span><b class="nzf-out" data-nzf-count>{{ k.opex }}</b><em>{% if k.opex_share is not None %}<span>tushumning</span> {{ k.opex_share }}%{% endif %}</em></div>
+  <div class="nzf-kpi is-main"><span>Sof foyda</span><b data-nzf-count>{{ k.net }}</b><em>{% if total_margin is not None %}<span>rentabellik</span> {{ total_margin }}%{% endif %}</em></div>
+  <div class="nzf-kpi"><span>Eng foydali oy</span><b>{{ k.best }}</b><em>{{ k.best_net }}</em></div>
+</section>
+
+<div class="nzf-grid is-2-1">
 <section class="nzf-panel">
+  <h3><i class="fas fa-chart-column" aria-hidden="true"></i> Tushum, yalpi va sof foyda</h3>
   <div class="nzf-chart is-short"><canvas id="nzf-pnl" aria-label="Tushum va foyda grafigi"></canvas></div>
 </section>
+<section class="nzf-panel">
+  <h3><i class="fas fa-water" aria-hidden="true"></i> Tushumdan sof foydagacha — {{ n }} oy</h3>
+  <ul class="nzf-fall">
+    {% for f in fall %}<li class="is-{{ f.kind }}{% if f.neg %} is-neg{% endif %}"><span>{{ f.label }}</span><div><i style="left:{{ f.left }}%;width:{{ f.width }}%"></i></div><b>{{ f.value }}</b></li>{% endfor %}
+  </ul>
+  <p class="nzf-muted">Har bir qator tushumning qancha qismini «yeyishini» ko'rsatadi.</p>
+</section>
+</div>
 
 <section class="nzf-panel nzf-table-wrap">
   <table class="nzf-table">
-    <thead><tr><th>Modda</th>{% for m in r.months %}<th class="r">{{ m.label }}</th>{% endfor %}<th class="r">Jami</th></tr></thead>
+    <thead><tr><th>Modda</th>{% for m in r.months %}<th class="r">{{ m.label }}</th>{% endfor %}<th class="r">Jami</th><th class="r">Tushumdan</th></tr></thead>
     <tbody>
       {% for row in r.rows %}
         {% if row.kind == "head" %}
-        <tr class="is-head"><td colspan="{{ r.months|length|add:2 }}">{{ row.label }}</td></tr>
+        <tr class="is-head"><td colspan="{{ r.months|length|add:3 }}">{{ row.label }}</td></tr>
         {% else %}
         <tr class="is-{{ row.kind }}">
           <td>{% if row.icon %}<i class="fas {{ row.icon }}" style="{% if row.color %}color:{{ row.color }}{% endif %}" aria-hidden="true"></i> {% endif %}{{ row.label }}</td>
           {% for c in row.cells %}<td class="r{% if c.neg %} neg{% endif %}">{{ c.v }}</td>{% endfor %}
           <td class="r{% if row.total_neg %} neg{% endif %}"><b>{{ row.total_fmt }}</b></td>
+          <td class="r nzf-share-cell">{% if row.share is not None %}{{ row.share }}%{% else %}—{% endif %}</td>
         </tr>
         {% endif %}
       {% endfor %}
-      <tr class="is-margin"><td>Sof rentabellik</td>{% for v in r.margins %}<td class="r">{% if v is not None %}{{ v }}%{% else %}—{% endif %}</td>{% endfor %}<td class="r"><b>{% if total_margin is not None %}{{ total_margin }}%{% else %}—{% endif %}</b></td></tr>
-      <tr class="is-margin"><td>Yalpi marja</td>{% for v in r.gross_margins %}<td class="r">{% if v is not None %}{{ v }}%{% else %}—{% endif %}</td>{% endfor %}<td></td></tr>
+      <tr class="is-margin"><td>Sof rentabellik</td>{% for v in r.margins %}<td class="r">{% if v is not None %}{{ v }}%{% else %}—{% endif %}</td>{% endfor %}<td class="r"><b>{% if total_margin is not None %}{{ total_margin }}%{% else %}—{% endif %}</b></td><td></td></tr>
+      <tr class="is-margin"><td>Yalpi marja</td>{% for v in r.gross_margins %}<td class="r">{% if v is not None %}{{ v }}%{% else %}—{% endif %}</td>{% endfor %}<td></td><td></td></tr>
     </tbody>
   </table>
 </section>
