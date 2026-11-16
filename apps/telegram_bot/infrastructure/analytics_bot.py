@@ -34,15 +34,16 @@ SCHEDULED = ("today", "week", "month")  # 23:59 daily, Monday weekly, 1st-of-mon
 DEDUPE_TTL = 60 * 60 * 24 * 40
 COMMANDS = [
     ("bugun", "📈 Bugungi puls"), ("kecha", "📅 Kechagi hisobot"), ("hafta", "🗓 O'tgan hafta"), ("oy", "🗓 O'tgan oy"),
-    ("moliya", "💵 Moliya va to'lovlar (30 kun)"), ("filiallar", "🏪 Filiallar reytingi (bugun)"), ("mahsulotlar", "🔥 Top mahsulotlar (7 kun)"),
+    ("moliya", "💵 Moliya va to'lovlar (30 kun)"), ("filiallar", "🏪 Filiallar reytingi (bugun)"), ("mahsulotlar", "🔥 Top mahsulotlar (7 kun)"), ("hududlar", "🗺 Hududlar bo'yicha savdo (30 kun)"),
     ("ombor", "📦 Ombor nazorati"), ("nazorat", "🛡 Nazorat markazi (jonli)"), ("reja", "🎯 Sotuv rejasi (oy)"), ("chatlar", "💬 Javobsiz chatlar"), ("filial", "🏪 Filialni tanlash"), ("menu", "☰ Menyu"), ("id", "🆔 Chat ID"),
 ]
 ALIASES = {"today": "bugun", "yesterday": "kecha", "week": "hafta", "month": "oy", "start": "menu", "help": "menu", "stores": "filiallar",
-           "products": "mahsulotlar", "stock": "ombor", "chats": "chatlar", "finance": "moliya", "filial": "store", "branch": "store", "control": "nazorat", "live": "nazorat", "plan": "reja"}
+           "products": "mahsulotlar", "stock": "ombor", "chats": "chatlar", "finance": "moliya", "filial": "store", "branch": "store", "control": "nazorat", "live": "nazorat", "plan": "reja",
+           "regions": "hududlar", "hudud": "hududlar"}
 # command → (period key, layout)
 REPORTS = {
     "bugun": ("today", None), "kecha": ("yesterday", None), "hafta": ("week", None), "oy": ("month", None),
-    "moliya": ("30d", "finance"), "filiallar": ("today", "stores"), "mahsulotlar": ("7d", "products"), "ombor": ("today", "inventory"),
+    "moliya": ("30d", "finance"), "filiallar": ("today", "stores"), "mahsulotlar": ("7d", "products"), "ombor": ("today", "inventory"), "hududlar": ("30d", "regions"),
     "7kun": ("7d", None), "30kun": ("30d", None), "shuoy": ("this_month", None),
 }
 
@@ -183,7 +184,9 @@ def report_doc(command: str, store_ids=None, scheduled: bool = False):
     from apps.platform.infrastructure import business_analytics as ba
     from apps.telegram_bot.infrastructure import analytics_rich
 
-    key, _layout = REPORTS[command]
+    key, layout = REPORTS[command]
+    if layout == "regions":
+        return analytics_rich.build_regions_doc(ba.build(ba.period(key), sections=("overview",), store_ids=store_ids), dashboard_url=dashboard_url())
     return analytics_rich.build_doc(ba.build(ba.period(key), store_ids=store_ids), scheduled=scheduled, dashboard_url=dashboard_url())
 
 
@@ -317,7 +320,7 @@ def menu_keyboard(all_access: bool = True, store_label: str = "") -> list:
     rows += [
         [b("📈 Bugun", "bugun"), b("📅 Kecha", "kecha"), b("🗓 Hafta", "hafta")],
         [b("🗓 Oy", "oy"), b("📆 30 kun", "30kun"), b("💬 Chatlar", "chatlar")],
-        [b("🛡 Nazorat", "nazorat"), b("🎯 Reja", "reja")],
+        [b("🛡 Nazorat", "nazorat"), b("🎯 Reja", "reja")] + ([b("🗺 Hududlar", "hududlar")] if all_access else []),
         [b(f"🏪 Filial: {store_label or 'tanlash'}", "store")],
     ]
     return rows

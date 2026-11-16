@@ -256,6 +256,52 @@ def products(r: dict, limit: int = 5) -> str | None:
     return "\n".join(out)
 
 
+def regions(r: dict, limit: int = 5) -> str | None:
+    """Hududlar: where the period's money came from (whole business only -- a branch owner's report skips it)."""
+    if r.get("store_ids"):
+        return None
+    try:
+        from apps.platform.infrastructure.regions_report import report as regions_report
+
+        data = r.get("regions") or regions_report(lang="uz", p=r["period"])
+    except Exception:  # the report must still go out without this section
+        return None
+    rows = [x for x in data["regions"] if x["revenue"] > 0]
+    if not rows:
+        return None
+    sm = data["summary"]
+    out = ["🗺 <b>HUDUDLAR</b>"]
+    head = f"📍 Faol hududlar: <b>{sm['regions_active']} / {sm['regions_total']}</b>"
+    if sm["revenue"]:
+        head += f"  ·  Toshkent sh. {pct(sm['tashkent_share'])} / viloyatlar {pct(100 - sm['tashkent_share'])}"
+    out.append(head)
+    items = []
+    for i, x in enumerate(rows[:limit], 1):
+        t = arrow(ba_change(x["revenue"], x["previous_revenue"]))
+        mark = MEDALS[i - 1] if i <= 3 else f"{i}."
+        line = f"{mark} <b>{e(x['name'])}</b> — {money(x['revenue'])} · {pct(x['share'])}" + (f"  {t}" if t else "")
+        detail = f"{num(x['orders'])} ta xarid"
+        if x["online_revenue"] and x["pos_revenue"]:
+            detail += f" · 🌐 {money(x['online_revenue'])} · 🏬 {money(x['pos_revenue'])}"
+        if x["cities"] and x["code"] not in ("central", "unknown"):
+            detail += " · " + ", ".join(e(c["city"]) for c in x["cities"][:3])
+        items.append(line + f"\n      {detail}")
+    out += items[:3]
+    if len(items) > 3:
+        out.append(expandable(items[3:]))
+    if len(rows) > limit:
+        out.append(f"<i>… yana {len(rows) - limit} ta hudud</i>")
+    if sm["pipeline_orders"]:
+        out.append(f"🚚 Yo'lda: {num(sm['pipeline_orders'])} ta · {money(sm['pipeline_value'])}")
+    return "\n".join(out)
+
+
+def ba_change(cur, prev) -> dict:
+    from apps.platform.infrastructure.business_analytics import change
+
+    return change(cur, prev)
+
+
 def inventory(r: dict, detailed: bool = False) -> str | None:
     inv = r.get("inventory")
     if not inv:
@@ -358,7 +404,8 @@ LAYOUTS = {
     # the evening pulse: the essentials only
     "today": (overview, trend, stores, products, inventory, orders, payments, alerts, summary),
     "yesterday": (overview, trend, stores, products, sellers, inventory, orders, payments, alerts, summary),
-    "full": (overview, trend, finance, payments, stores, sellers, products, mix, orders, customers, inventory, alerts, summary),
+    "full": (overview, trend, finance, payments, stores, regions, sellers, products, mix, orders, customers, inventory, alerts, summary),
+    "regions": (regions,),
     "stores": (stores, sellers),
     "products": (products, lambda r: inventory(r, detailed=True)),
     "inventory": (lambda r: inventory(r, detailed=True), alerts),

@@ -61,6 +61,55 @@ def _top_visuals(doc: R.RichDoc, top: list[dict]) -> str:
         return ""
 
 
+def _regions(doc: R.RichDoc, r: dict, open_: bool = False) -> None:
+    """🗺 Hududlar -- where the money came from (company-wide reports only; the same numbers as the dashboard map)."""
+    if r.get("store_ids"):
+        return
+    try:
+        from apps.platform.infrastructure.regions_report import report as regions_report
+
+        data = r.get("regions") or regions_report(lang="uz", p=r["period"])
+    except Exception:  # noqa: BLE001 -- the report still goes out without this section
+        return
+    rows = [x for x in data["regions"] if x["revenue"] > 0]
+    if not rows:
+        return
+    from apps.platform.infrastructure.business_analytics import change
+
+    sm = data["summary"]
+    body = ""
+    if len(rows) > 1 and doc.image("regions", charts.hbar("Hududlar bo'yicha savdo", "Tushum bo'yicha", [
+            (x["name"], float(x["revenue"]), charts.PALETTE[k % len(charts.PALETTE)], f"{charts.compact(float(x['revenue']))} · {pct(x['share'])}")
+            for k, x in enumerate(rows[:8])])):
+        body += R.figure("regions")
+    table = [[f"{k}. " + R.b(x["name"]) + R.e(f" · {x['orders']} xarid" + (f" · {', '.join(c['city'] for c in x['cities'][:2])}" if x["cities"] and x["code"] not in ("central", "unknown") else "")),
+              num(x["revenue"]), pct(x["share"]), _trend_cell(change(x["revenue"], x["previous_revenue"]))] for k, x in enumerate(rows, 1)]
+    body += R.table(["Hudud", "Tushum", "Ulush", "O'zg."], table, align=["left", "right", "center", "center"])
+    note = f"📍 Faol hududlar: <b>{sm['regions_active']} / {sm['regions_total']}</b> · Toshkent sh. <b>{pct(sm['tashkent_share'])}</b> / viloyatlar <b>{pct(100 - sm['tashkent_share'])}</b>"
+    if sm["pipeline_orders"]:
+        note += f" · 🚚 yo'lda {sm['pipeline_orders']} ta · {som(sm['pipeline_value'])}"
+    body += R.p(note)
+    doc.add(R.details(f"🗺 Hududlar — {sm['regions_active']} ta faol", body, open_=open_))
+
+
+def build_regions_doc(r: dict, *, dashboard_url: str | None = None) -> R.RichDoc:
+    """/hududlar -- the regions section on its own."""
+    p = r["period"]
+    doc = R.RichDoc()
+    doc.add(R.h(1, "🗺 Hududlar bo'yicha savdo"), R.p(f"📅 {R.e(p.range_text())} · {R.e(p.compare_label)}"))
+    before = len(doc.parts)
+    _regions(doc, r, open_=True)
+    if len(doc.parts) == before:
+        doc.add(R.p(R.i("Bu davrda savdo qayd etilmagan")))
+    if dashboard_url:
+        doc.add(R.buttons(R.button("🗺 Xaritani dashboard'da ochish", url=dashboard_url + "#nz-regions", style="primary")))
+    doc.add(R.footer(f"NutriZoneAnalyticsBot · So‘rov bo‘yicha hisobot · {R.e(r['generated_at'].strftime('%d.%m.%Y %H:%M'))}"))
+    from apps.telegram_bot.infrastructure import analytics_report
+
+    doc.fallback = analytics_report.render(r, layout="regions", on_demand=True)[0]
+    return doc
+
+
 def build_doc(r: dict, *, scheduled: bool = False, dashboard_url: str | None = None) -> R.RichDoc:
     p = r["period"]
     ov, fin, st = r.get("overview"), r.get("finance"), r.get("stores") or []
@@ -121,6 +170,10 @@ def build_doc(r: dict, *, scheduled: bool = False, dashboard_url: str | None = N
                                                        + (f' · o\'rt. {charts.compact(float(x["average"]))}' if x["average"] else "")),
                  num(x["revenue"]), pct(x["share"]), _trend_cell(x["change"])] for x in st]
         doc.add(R.h(2, "🏪 Filiallar"), R.table(["Filial", "Tushum", "Ulush", "O'zg."], rows, align=["left", "right", "center", "center"]))
+
+    # ---- regions (weekly / monthly / longer windows -- the evening pulse stays short)
+    if p.key not in ("today", "yesterday"):
+        _regions(doc, r, open_=p.key in ("week", "month"))
 
     # ---- products
     pr = r.get("products")

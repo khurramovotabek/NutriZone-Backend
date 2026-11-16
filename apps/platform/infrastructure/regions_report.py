@@ -140,10 +140,11 @@ def _collect(start, end, lookup, store_region, branch_ids=frozenset()) -> dict[s
     return out
 
 
-def report(key: str = "30d", date_from=None, date_to=None, lang: str = "uz") -> dict:
+def report(key: str = "30d", date_from=None, date_to=None, lang: str = "uz", p=None) -> dict:
+    """`p` (a business_analytics Period) wins over key/date_from/date_to -- the analytics bot passes its own period."""
     from apps.stores.infrastructure.models import Store
 
-    p = ba.period(key, date_from=date_from, date_to=date_to)
+    p = p or ba.period(key, date_from=date_from, date_to=date_to)
     lookup, regions = region_index(lang)
     stores = list(Store.objects.exclude(status="inactive").values("id", "name", "city"))
     store_region = {s["id"]: _resolve(lookup, s["city"]) for s in stores if s["city"]}
