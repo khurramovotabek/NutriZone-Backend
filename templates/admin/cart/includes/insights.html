@@ -1,0 +1,62 @@
+{% load i18n nza %}
+{# Savatlar → Tahlil (apps/cart/infrastructure/cart_analytics.py): funnel, daily chart, abandoned by age, reminders, sources, top abandoned products. #}
+<div class="nzci">
+  <div class="nzci-head">
+    <div><h3><i class="fas fa-chart-pie" aria-hidden="true"></i> {% translate "Savat tahlili" %}</h3><p>{% blocktranslate with d=ins.days %}So'nggi {{ d }} kun · savatga qo'shilgan mahsulotdan yetkazilgan buyurtmagacha{% endblocktranslate %}</p></div>
+    <nav class="nzci-periods">{% for p in ins_periods %}<a href="?view=insights&days={{ p.key }}" class="{% if p.on %}on{% endif %}">{{ p.label }}</a>{% endfor %}</nav>
+  </div>
+
+  <div class="nzci-kpis">
+    <div class="nzci-kpi" style="--c:#6366f1"><small>{% translate "Konversiya" %}</small><b>{{ ins.kpi.conversion|pct }}</b><span>{% blocktranslate with n=ins.kpi.started %}{{ n }} ta savatdan buyurtmaga{% endblocktranslate %}</span></div>
+    <div class="nzci-kpi" style="--c:#e11d48"><small>{% translate "Tashlab ketish darajasi" %}</small><b>{{ ins.kpi.abandon_rate|pct }}</b><span>{% translate "buyurtmagacha yetmagan savatlar" %}</span></div>
+    <div class="nzci-kpi" style="--c:#16a34a"><small>{% translate "Savatlardan tushum" %}</small><b>{{ ins.kpi.revenue|som }}</b><span>{% blocktranslate with v=ins.kpi.pipeline|som %}yetkazilgan · yo'lda {{ v }}{% endblocktranslate %}</span></div>
+    <div class="nzci-kpi" style="--c:#0ea5e9"><small>{% translate "Qaror vaqti (mediana)" %}</small><b>{% if ins.kpi.median_wait is not None %}{% if ins.kpi.median_wait < 60 %}{{ ins.kpi.median_wait }} {% translate "daq" %}{% elif ins.kpi.median_wait < 1440 %}{% widthratio ins.kpi.median_wait 60 1 %} {% translate "soat" %}{% else %}{% widthratio ins.kpi.median_wait 1440 1 %} {% translate "kun" %}{% endif %}{% else %}—{% endif %}</b><span>{% translate "birinchi mahsulotdan buyurtmagacha" %}</span></div>
+    <div class="nzci-kpi" style="--c:#f59e0b"><small>{% translate "Akkaunt bilan / mehmon" %}</small><b>{{ ins.kpi.signed_conversion|pct }} <em>/ {{ ins.kpi.guest_conversion|pct }}</em></b><span>{% translate "konversiya: kirgan mijoz va mehmon" %}</span></div>
+  </div>
+
+  <div class="nzci-grid">
+    <section class="nzp-card nzci-card">
+      <h4>{% translate "Savat voronkasi" %}</h4>
+      <ol class="nzci-funnel">
+        {% for f in ins.funnel %}<li style="--c:{{ f.color }};--w:{% if f.pct %}{{ f.pct|floatformat:0 }}{% else %}0{% endif %}%;--i:{{ forloop.counter0 }}"><span class="nzci-f-ico"><i class="fas {{ f.icon }}" aria-hidden="true"></i></span><span class="nzci-f-l">{{ f.label }}</span><span class="nzci-f-bar"><i></i></span><b>{{ f.n }}</b><small>{{ f.pct|pct }}</small></li>{% endfor %}
+      </ol>
+      {% if ins.kpi.started %}<p class="nzci-note"><i class="fas fa-lightbulb" aria-hidden="true"></i> {% if ins.kpi.signed_conversion > ins.kpi.guest_conversion %}{% translate "Akkaunt bilan kirgan mijozlar ko'proq buyurtma beradi — checkout'da Telegram orqali bir bosishda kirishni ko'rsatish konversiyani oshiradi." %}{% else %}{% translate "Mehmonlar ham yaxshi buyurtma beryapti — ro'yxatdan o'tishni majburlamang, kupon bilan rag'batlantiring." %}{% endif %}</p>{% endif %}
+    </section>
+
+    <section class="nzp-card nzci-card">
+      <h4>{% translate "Kunlik dinamika" %} <span class="nzci-legend"><i style="--c:#6366f1"></i>{% translate "savat ochildi" %} <i style="--c:#16a34a"></i>{% translate "buyurtma" %}</span></h4>
+      <div class="nzci-chart" role="img" aria-label="{% translate 'Kunlik dinamika' %}">
+        {% for b in ins.series.bars %}<div class="nzci-col" title="{{ b.label }}: {{ b.a }} / {{ b.b }}" style="--i:{{ forloop.counter0 }}"><span class="a" style="height:{{ b.ha }}%"></span><span class="b" style="height:{{ b.hb }}%"></span><small>{% if forloop.counter0|divisibleby:5 or forloop.last %}{{ b.label }}{% endif %}</small></div>{% endfor %}
+      </div>
+    </section>
+
+    <section class="nzp-card nzci-card">
+      <h4>{% translate "Tashlab ketilgan savatlar — yoshi bo'yicha" %}</h4>
+      <p class="nzci-sub">{% blocktranslate with c=ins.abandoned.carts v=ins.abandoned.total|som %}{{ c }} ta savat · {{ v }} (bugungi narxda){% endblocktranslate %}</p>
+      {% for a in ins.abandoned.age %}<div class="nzci-age{% if forloop.last %} old{% endif %}" style="--i:{{ forloop.counter0 }}"><span>{{ a.label }}</span><div class="nzci-bar"><i style="width:{{ a.pct }}%"></i></div><b>{{ a.value|som }}</b><small>{% blocktranslate with c=a.carts r=a.reachable %}{{ c }} savat · {{ r }} eslatsa bo'ladi{% endblocktranslate %}</small></div>{% endfor %}
+      {% if can_remind_all and ins.abandoned.remindable %}
+      <details class="nzci-remind"><summary class="nzp-btn"><i class="fas fa-bell" aria-hidden="true"></i> {% blocktranslate with n=ins.abandoned.remindable %}{{ n }} mijozga eslatma yuborish{% endblocktranslate %}</summary>
+        <form method="post" action="{% url 'admin:cart_cartmodel_remind_all' %}">{% csrf_token %}<p>{% translate "1–30 kun oldin tashlab ketilgan savatlar egalariga sayt bildirishnomasi va Telegram xabari boradi. Har bir savatga 24 soatda bir martadan ko'p yuborilmaydi." %}</p><button type="submit" class="nzp-btn nzp-btn-primary"><i class="fas fa-paper-plane" aria-hidden="true"></i> {% translate "Tasdiqlash va yuborish" %}</button></form>
+      </details>
+      {% elif not ins.abandoned.remindable %}<p class="nzci-note"><i class="fas fa-circle-check" aria-hidden="true"></i> {% translate "Hozir eslatma yuboriladigan savat yo'q (mehmon savatlari yoki so'nggi 24 soatda eslatilgan)." %}</p>{% endif %}
+    </section>
+
+    <section class="nzp-card nzci-card">
+      <h4>{% translate "Eslatmalar samaradorligi" %}</h4>
+      <div class="nzci-rem">
+        <div><b>{{ ins.reminders.sent }}</b><small>{% translate "eslatma yuborildi" %}</small></div>
+        <div><b>{{ ins.reminders.won }}</b><small>{% blocktranslate %}savat qaytdi (7 kun ichida){% endblocktranslate %}</small></div>
+        <div><b>{{ ins.reminders.rate|pct }}</b><small>{% translate "qaytish darajasi" %}</small></div>
+        <div><b>{{ ins.reminders.value|som }}</b><small>{% translate "qaytgan buyurtmalar" %}</small></div>
+      </div>
+      <h4 class="nzci-h-sm">{% translate "Manba bo'yicha" %}</h4>
+      {% for s in ins.sources %}<div class="nzci-src"><span>{{ s.label }}</span><div class="nzci-bar"><i style="width:{{ s.share }}%"></i></div><b>{{ s.carts }}</b><small>{% blocktranslate with r=s.rate|pct %}konversiya {{ r }}{% endblocktranslate %}</small></div>{% empty %}<p class="nzci-sub">{% translate "Bu davrda savat ochilmagan" %}</p>{% endfor %}
+    </section>
+
+    <section class="nzp-card nzci-card nzci-wide">
+      <h4>{% translate "Eng ko'p tashlab ketilgan mahsulotlar" %} <a href="?view=products">{% translate "Hammasi" %} →</a></h4>
+      {% for p in ins.top_products %}<div class="nzci-prod" style="--i:{{ forloop.counter0 }}">{% if p.thumb %}<img src="{{ p.thumb }}" alt="">{% else %}<span class="ph"><i class="fas fa-box" aria-hidden="true"></i></span>{% endif %}<span class="nzci-prod-n"><b>{{ p.name }}</b><small>{% blocktranslate with u=p.units c=p.carts %}{{ u }} dona · {{ c }} savatda{% endblocktranslate %}</small></span><div class="nzci-bar"><i style="width:{{ p.pct }}%"></i></div><b>{{ p.value|som }}</b></div>{% empty %}<p class="nzci-sub">{% translate "Tashlab ketilgan savat yo'q" %}</p>{% endfor %}
+      {% if ins.top_products %}<p class="nzci-note"><i class="fas fa-lightbulb" aria-hidden="true"></i> {% translate "Ko'p savatda turib, kam sotib olinadigan mahsulotda odatda narx yoki yetkazish savoli bo'ladi — kupon yoki Telegram post yaxshi ishlaydi." %}</p>{% endif %}
+    </section>
+  </div>
+</div>

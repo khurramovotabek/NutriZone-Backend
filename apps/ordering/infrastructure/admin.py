@@ -7,6 +7,7 @@ from __future__ import annotations
 
 from decimal import Decimal
 
+from django import forms
 from django.contrib import admin
 from django.db.models import OuterRef, Q, Subquery
 from django.utils import timezone
@@ -441,7 +442,11 @@ class OrderAdmin(ExcelExportMixin, admin.ModelAdmin):
             row = admin_delivery.assign(order, body, request.user.get_full_name() or request.user.get_username())
         except ValueError as exc:
             return JsonResponse({"ok": False, "error": str(exc)}, status=422)
-        return JsonResponse({"ok": True, "message": str(_("Saved.")), "courier": row.courier.name if row.courier else "", "courier_id": str(row.courier_id or "")})
+        msg = str(_("Saved."))
+        if getattr(row, "courier_notified", False):
+            msg = "Saqlandi — kuryerga Telegram va bildirishnoma orqali xabar yuborildi."
+        return JsonResponse({"ok": True, "message": msg, "courier": row.courier.name if row.courier else "", "courier_id": str(row.courier_id or ""),
+                             "notified": getattr(row, "courier_notified", False)})
 
     def delivery_waybill_view(self, request, pk):
         from django.core.exceptions import PermissionDenied
@@ -1235,46 +1240,214 @@ def _order_payments(order) -> list[dict]:
     return rows
 
 
+class CourierForm(forms.ModelForm):
+    class Meta:
+        model = orm.Courier
+        fields = ("user", "name", "phone", "kind", "vehicle", "telegram_username", "default_fee", "note", "is_active")
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields["name"].required = False  # filled from the linked account when left empty
+        self.fields["name"].help_text = "Bo'sh qolsa, bog'langan akkauntdagi ism olinadi."
+
+    def clean(self):
+        data = super().clean()
+        user = data.get("user")
+        if user is not None:
+            other = orm.Courier.objects.filter(user=user).exclude(pk=self.instance.pk).first()
+            if other:
+                self.add_error("user", f"Bu akkaunt allaqachon {other.name} ({other.code}) kuryeriga bog'langan.")
+        if not (data.get("name") or "").strip():
+            if user is not None and user.full_name:
+                data["name"] = user.full_name
+            else:
+                self.add_error("name", "Kuryer ismini kiriting yoki akkaunt tanlang.")
+        return data
+
+
 @admin.register(orm.Courier)
 class CourierAdmin(ExcelExportMixin, PremiumListMixin, PremiumFormMixin, admin.ModelAdmin):
-    """Couriers picked on the delivery desk (Yetkazib berish markazi)."""
+    """Kuryerlar: linked to a customer account (Telegram + inbox alerts), performance and the cash each one holds."""
 
+    form = CourierForm
     excel_title = "Kuryerlar"
-    excel_columns = [Col("Kuryer", "name", 24), Col("Telefon", "phone", 16), Col("Transport", "vehicle", 20), Col("Telegram", "telegram_username", 16),
-                     Col("Faol", "is_active", 8), Col("Qo'shilgan", lambda c: timezone.localtime(c.created_at).replace(tzinfo=None), 17)]
+    excel_columns = [Col("ID", "code", 9), Col("Kuryer", "name", 24), Col("Telefon", "phone", 16), Col("Turi", lambda c: c.get_kind_display(), 16),
+                     Col("Transport", "vehicle", 20), Col("Akkaunt", lambda c: (c.user.phone_number or c.user.full_name) if c.user_id else "", 18),
+                     Col("Faol buyurtmalar", lambda c: c.x["active"], 10, number=True), Col("Yetkazildi (30 kun)", lambda c: c.x["delivered"], 10, number=True),
+                     Col("O'rtacha vaqt (daq)", lambda c: c.x["avg_minutes"] or "", 10), Col("Kuryer haqi (30 kun)", lambda c: c.x["fees"], 15, money=True),
+                     Col("Qo'lidagi naqd", lambda c: c.x["cash"], 15, money=True), Col("Faol", "is_active", 8)]
+
+    def excel_prepare(self, objs):
+        from apps.ordering.infrastructure import couriers
+
+        st = couriers.stats(objs)
+        for c in objs:
+            c.x = st[c.id]
 
     list_display = ("name", "phone", "vehicle", "is_active", "created_at")
-    search_fields = ("name", "phone", "vehicle")
+    list_filter = ("is_active", "kind")
+    search_fields = ("name", "phone", "vehicle", "code", "telegram_username", "user__phone_number", "user__full_name")
+    list_select_related = ("user",)
+    autocomplete_fields = ("user",)
     ordering = ("-is_active", "name")
     actions = None
-    fieldsets = ((None, {"fields": ("name", "phone", "vehicle", "telegram_username", "is_active")}),)
+    fieldsets = (
+        ("Akkaunt", {"fields": ("user",), "description": "Kuryerning sayt yoki Telegram botdagi akkauntini telefon, ism yoki @username bo'yicha toping. "
+                                                       "Bog'langach unga biriktirilgan har bir buyurtma Telegram'ga keladi."}),
+        ("Kuryer", {"fields": ("name", "phone", "kind", "vehicle", "telegram_username")}),
+        ("Hisob-kitob", {"fields": ("default_fee", "note", "is_active")}),
+        ("Kuryer kartasi", {"classes": ("nzi-panel",), "fields": ("card_panel",)}),
+    )
+    readonly_fields = ("card_panel",)
 
     nz_icon, nz_tone, nz_title = "fa-motorcycle", "#0ea5e9", "Kuryerlar"
-    nz_subtitle = "Buyurtmalarni mijozga olib boradigan xodimlar. Yetkazib berish markazida buyurtmaga biriktiriladi."
-    nz_columns = (("Kuryer", ""), ("Telefon", ""), ("Transport", ""), ("Holat", ""), ("Yo'lda", "r"))
-    nz_grid = "minmax(200px,2fr) 160px minmax(140px,1fr) 110px 90px"
-    nz_search = "Ism, telefon yoki transport…"
-    nz_empty = ("Kuryer yo'q", "«Qo'shish» bilan birinchi kuryerni kiriting.")
+    nz_subtitle = "Buyurtmalarni olib boradigan xodimlar: ish natijasi, yetkazish tezligi va qo'lidagi naqd pul. Akkauntga bog'langan kuryer buyurtmani Telegram'da oladi."
+    nz_columns = (("Kuryer", ""), ("Aloqa", ""), ("Turi", ""), ("Faol", "r"), ("30 kun", "r"), ("O'rtacha vaqt", "r"), ("Qo'lidagi naqd", "r"))
+    nz_grid = "minmax(220px,2fr) minmax(150px,1fr) minmax(130px,1fr) 70px 80px 110px 130px"
+    nz_search = "Ism, telefon, KR-ID yoki transport…"
+    nz_empty = ("Kuryer yo'q", "«Kuryer qo'shish» bilan birinchi kuryerni kiriting — akkauntini bog'lasangiz buyurtmalar unga Telegram'da boradi.")
+    nz_sorts = (("Ism", "1"), ("Yangi", "-5"))
+
+    def get_queryset(self, request):
+        return super().get_queryset(request).select_related("user")
+
+    def nz_stats(self, request):
+        from apps.ordering.infrastructure import couriers
+        from apps.ordering.infrastructure.admin_desk import money
+        from apps.platform.infrastructure.premium_admin import stat_card
+
+        all_c = list(orm.Courier.objects.all())
+        st = couriers.stats(all_c)
+        active = [c for c in all_c if c.is_active]
+        cash = sum((v["cash"] for v in st.values()), Decimal(0))
+        delivered = sum(v["delivered"] for v in st.values())
+        mins = [v["avg_minutes"] for v in st.values() if v["avg_minutes"] is not None]
+        unassigned = orm.OrderModel.objects.filter(is_archived=False, fulfilment_method="delivery", status__in=couriers.ACTIVE).filter(
+            Q(delivery__isnull=True) | Q(delivery__courier__isnull=True)).count()
+        return [
+            stat_card("Faol kuryerlar", len(active), "#0ea5e9", "fa-motorcycle", f"{sum(1 for c in active if c.user_id)} tasi akkauntga bog'langan"),
+            stat_card("Yo'lda", sum(v["road"] for v in st.values()), "#6366f1", "fa-truck-fast", f"{sum(v['active'] for v in st.values())} ta faol buyurtma"),
+            stat_card("Yetkazildi (30 kun)", delivered, "#16a34a", "fa-circle-check", f"bugun {sum(v['today'] for v in st.values())} ta"),
+            stat_card("O'rtacha yetkazish", couriers.duration_text(round(sum(mins) / len(mins))) if mins else "—", "#8b5cf6", "fa-stopwatch", "biriktirishdan yetkazishgacha"),
+            stat_card("Kuryerlardagi naqd", money(cash), "#f59e0b", "fa-money-bill-wave", "hali kassaga topshirilmagan"),
+            stat_card("Kuryersiz buyurtmalar", unassigned, "#e11d48", "fa-user-clock", "Yetkazib berish markazida biriktiring", href="/django-admin/ordering/ordermodel/delivery/?courier=none"),
+        ]
+
+    def nz_tabs(self, request):
+        from apps.platform.infrastructure.premium_admin import tabs_for
+
+        return tabs_for(request, "is_active__exact", [("", "Hammasi", orm.Courier.objects.count()), ("1", "Faol", orm.Courier.objects.filter(is_active=True).count()),
+                                                      ("0", "Nofaol", orm.Courier.objects.filter(is_active=False).count())],
+                        {"1": "#16a34a", "0": "#64748b"})
+
+    def nz_hero_actions(self, request):
+        out = [{"label": "Yetkazib berish markazi", "icon": "fa-truck-fast", "url": "/django-admin/ordering/ordermodel/delivery/"}]
+        if self.has_add_permission(request):
+            out.append({"label": "Kuryer qo'shish", "icon": "fa-plus", "url": "/django-admin/ordering/courier/add/", "primary": True})
+        return out
 
     def nz_prepare(self, request, objs):
-        from django.db.models import Count
+        from apps.ordering.infrastructure import couriers
 
-        loads = dict(orm.DeliveryAssignment.objects.filter(courier__in=objs, order__status="shipped").values_list("courier_id").annotate(n=Count("id")))
+        st = couriers.stats(objs)
         for c in objs:
-            c.nz_load = loads.get(c.id, 0)
+            c.nz_st = st[c.id]
 
     def nz_row(self, c):
+        from apps.ordering.infrastructure import couriers
+        from apps.ordering.infrastructure.admin_desk import money
         from apps.platform.infrastructure.premium_admin import chip, muted
 
-        name = format_html('<b>{}</b>{}', c.name, format_html('<br><small>@{}</small>', c.telegram_username) if c.telegram_username else "")
-        phone = format_html('<a href="tel:{}">{}</a>', c.phone, c.phone) if c.phone else muted()
-        state = chip("Faol", "#16a34a", "fa-circle-check") if c.is_active else chip("Nofaol", "#64748b", "fa-circle-pause")
-        return [name, phone, c.vehicle or muted(), state, format_html("<b>{}</b>", getattr(c, "nz_load", 0))]
+        st = c.nz_st
+        account = chip("Akkaunt bog'langan", "#16a34a", "fa-link") if c.user_id else chip("Akkaunt yo'q", "#94a3b8", "fa-link-slash")
+        state = "" if c.is_active else format_html(" {}", chip("Nofaol", "#64748b", "fa-circle-pause"))
+        name = format_html('<span class="nzk-cr"><span class="nzk-cr-id">{}</span><span><b>{}</b>{}<br>{}</span></span>', c.code or "—", c.name, state, account)
+        contact = format_html('{}{}', format_html('<a href="tel:{}">{}</a>', c.phone, c.phone) if c.phone else muted(),
+                              format_html('<br><small>@{}</small>', c.telegram_username) if c.telegram_username else "")
+        kind = format_html("{}<br><small>{}</small>", c.get_kind_display(), c.vehicle or "—")
+        active = format_html("<b>{}</b>{}", st["active"], format_html('<br><small>{} yo\'lda</small>', st["road"]) if st["road"] else "")
+        done = format_html("<b>{}</b><br><small>bugun {}</small>", st["delivered"], st["today"])
+        cash = format_html('<b style="color:#d97706">{}</b><br><small>{} ta buyurtma</small>', money(st["cash"]), st["cash_orders"]) if st["cash"] else muted("0")
+        return [name, contact, kind, active, done, couriers.duration_text(st["avg_minutes"]), cash]
+
+    def save_model(self, request, obj, form, change):
+        from apps.ordering.infrastructure import couriers
+
+        if "user" in form.changed_data and obj.user_id:
+            filled = couriers.link_user(obj, obj.user)
+            from django.contrib import messages
+
+            note = " Akkauntdan to'ldirildi: " + ", ".join({"name": "ism", "phone": "telefon", "telegram_username": "Telegram"}[f] for f in filled) + "." if filled else ""
+            tg = "" if obj.user.telegram_user_id else " Diqqat: akkaunt Telegram'ga ulanmagan — xabarlar faqat sayt bildirishnomalariga boradi."
+            messages.info(request, f"Akkaunt bog'landi — endi biriktirilgan buyurtmalar kuryerga keladi.{note}{tg}")
+        super().save_model(request, obj, form, change)
+
+    def get_urls(self):
+        from django.urls import path
+
+        return [path("<uuid:pk>/settle/", self.admin_site.admin_view(self.settle_view), name="ordering_courier_settle"), *super().get_urls()]
+
+    def settle_view(self, request, pk):
+        from django.contrib import messages
+        from django.core.exceptions import PermissionDenied
+        from django.http import HttpResponseRedirect
+        from django.shortcuts import get_object_or_404
+        from django.urls import reverse
+
+        from apps.ordering.infrastructure import couriers
+        from apps.ordering.infrastructure.admin_desk import money
+
+        if request.method != "POST" or not self.has_change_permission(request):
+            raise PermissionDenied
+        c = get_object_or_404(orm.Courier, pk=pk)
+        n, amount = couriers.settle_cash(c, request.user.get_full_name() or request.user.get_username())
+        if n:
+            messages.success(request, f"{c.name}: {n} ta buyurtma bo'yicha {money(amount)} so'm naqd qabul qilindi.")
+        else:
+            messages.info(request, "Topshiriladigan naqd pul yo'q.")
+        return HttpResponseRedirect(reverse("admin:ordering_courier_change", args=[c.pk]))
 
     def form_hero(self, request, obj):
         if obj is None:
-            return {"subtitle": "Ism va telefon — yetkazib berish markazida ko'rinadi"}
-        return {"title": obj.name, "subtitle": " · ".join(p for p in (obj.phone, obj.vehicle) if p)}
+            return {"subtitle": "Akkauntni tanlang — ism, telefon va Telegram o'zi to'ldiriladi"}
+        return {"title": f"{obj.name} · {obj.code}" if obj.code else obj.name, "subtitle": " · ".join(p for p in (obj.phone, obj.get_kind_display(), obj.vehicle) if p)}
+
+    @admin.display(description="Kuryer kartasi")
+    def card_panel(self, obj):
+        from django.urls import reverse
+        from django.utils.html import format_html_join
+
+        from apps.ordering.infrastructure import couriers
+        from apps.ordering.infrastructure.admin_desk import money
+
+        if obj is None or not obj.pk:
+            return mark_safe("<div class='nzi-panel-body'><p style='opacity:.75'>Saqlangandan keyin bu yerda kuryerning ish natijasi va qo'lidagi naqd pul chiqadi.</p></div>")
+        st = couriers.stats([obj])[obj.id]
+        tiles = format_html_join("", "<div class='nzk-tile'><small>{}</small><b>{}</b><span>{}</span></div>", (
+            ("Faol buyurtmalar", st["active"], f"{st['road']} tasi yo'lda"),
+            ("Yetkazildi (30 kun)", st["delivered"], f"bugun {st['today']} · jami {st['lifetime']}"),
+            ("O'rtacha yetkazish", couriers.duration_text(st["avg_minutes"]), "biriktirishdan yetkazishgacha"),
+            ("Kuryer haqi (30 kun)", f"{money(st['fees'])} so'm", "biriktirishda yozilgan"),
+            ("Qo'lidagi naqd", f"{money(st['cash'])} so'm", f"{st['cash_orders']} ta yetkazilgan buyurtma"),
+        ))
+        settle = format_html("<button type='submit' class='nzk-settle' formaction='{}' formmethod='post' formnovalidate>"
+                             "<i class='fas fa-hand-holding-dollar'></i> {} so'm naqdni qabul qildim</button>",
+                             reverse("admin:ordering_courier_settle", args=[obj.pk]), money(st["cash"])) if st["cash"] else mark_safe("")
+        if obj.user_id:
+            u = obj.user
+            acc = format_html("<div class='nzk-acc ok'><i class='fas fa-link'></i> <span><b>{}</b> · {}<br><small>{}</small></span><a href='{}'>Akkauntni ochish</a></div>",
+                              u.full_name or "—", u.phone_number or "", "Telegram ulangan — buyurtmalar Telegram'ga keladi" if u.telegram_user_id else "Telegram ulanmagan — faqat sayt bildirishnomalari",
+                              reverse("admin:identity_user_change", args=[u.pk]))
+        else:
+            acc = mark_safe("<div class='nzk-acc'><i class='fas fa-link-slash'></i> <span><b>Akkaunt bog'lanmagan</b><br><small>Yuqoridan akkauntni tanlang — kuryer buyurtmalarni Telegram'da oladi.</small></span></div>")
+        rows = couriers.recent(obj)
+        table = format_html_join("", "<tr><td><a href='{}'><b>{}</b></a><br><small>{}</small></td><td>{}</td><td>{}</td><td>{}</td><td class='r'>{}</td><td class='r'>{}</td><td>{}</td></tr>", (
+            (r["url"], r["number"], r["address"], format_html("<span class='nzk-st' style='--t:{}'>{}</span>", r["status"]["color"], r["status"]["label"]),
+             r["assigned"] or "—", r["delivered"] or "—", r["minutes"], r["collect"],
+             mark_safe("<span class='nzk-ok'><i class='fas fa-check'></i> topshirilgan</span>") if r["settled"] else (mark_safe("<span class='nzk-due'>qo'lida</span>") if r["done"] else "")) for r in rows))
+        history = format_html("<table class='nzk-table'><thead><tr><th>Buyurtma</th><th>Holat</th><th>Biriktirildi</th><th>Yetkazildi</th><th class='r'>Vaqt</th>"
+                              "<th class='r'>Naqd</th><th>Pul</th></tr></thead><tbody>{}</tbody></table>", table) if rows else mark_safe("<p style='opacity:.7'>Hali yetkazish yo'q.</p>")
+        return format_html("<div class='nzi-panel-body nzk-card'>{}<div class='nzk-tiles'>{}</div>{}<h4>So'nggi yetkazishlar</h4>{}</div>", acc, tiles, settle, history)
 
 
 class RegionDeliveryRateInline(admin.TabularInline):
@@ -1306,6 +1479,8 @@ class DeliverySettingsAdmin(PremiumFormMixin, admin.ModelAdmin):
     always free). Checkout freezes the price onto each new order, so a change never alters orders already placed."""
 
     fieldsets = (
+        ("Yetkazish tahlili (90 kun)", {"classes": ("nzi-panel",), "fields": ("insights_panel",)}),
+        ("Sozlamalar tekshiruvi", {"classes": ("nzi-panel",), "fields": ("health_panel",)}),
         ("Toshkent shahri — masofa bo'yicha, maksimal narxgacha", {"fields": ("tashkent_carrier", "tashkent_min_fee", "tashkent_per_km", "tashkent_fee",
                                                                        "tashkent_eta_days", ("tashkent_eta_uz", "tashkent_eta_ru", "tashkent_eta_en"))}),
         ("Viloyatlar (Toshkent viloyati ham) — BTS", {"fields": ("regions_carrier", "regions_pricing", "bts_door_delivery", "bts_fuel_surcharge_percent",
@@ -1313,8 +1488,106 @@ class DeliverySettingsAdmin(PremiumFormMixin, admin.ModelAdmin):
         ("Viloyatlar — oddiy qoida (faqat «Oddiy qoida» tanlansa)", {"fields": ("regions_fee", "regions_base_kg", "regions_extra_per_kg")}),
         ("Bepul yetkazish", {"fields": ("free_from",)}),
         ("Mijoz uchun qanday ko'rinadi", {"classes": ("nzi-panel",), "fields": ("preview_panel",)}),
+        ("Narx kalkulyatori", {"classes": ("nzi-panel",), "fields": ("calculator_panel",)}),
     )
-    readonly_fields = ("preview_panel",)
+    readonly_fields = ("preview_panel", "insights_panel", "health_panel", "calculator_panel")
+
+    def get_urls(self):
+        from django.urls import path
+
+        return [path("calc/", self.admin_site.admin_view(self.calc_view), name="ordering_deliverysettings_calc"), *super().get_urls()]
+
+    def calc_view(self, request):
+        """GET region=&city=&kg=&km=&total= -> the price a shopper would see, with its parts."""
+        from django.http import JsonResponse
+
+        from apps.ordering.infrastructure import delivery_insights
+
+        if not self.has_view_permission(request):
+            return JsonResponse({"ok": False}, status=403)
+
+        def num(key):
+            raw = (request.GET.get(key) or "").replace(",", ".").replace(" ", "").strip()
+            try:
+                return float(raw) if raw else None
+            except ValueError:
+                return None
+
+        region = (request.GET.get("region") or "").strip()
+        if not region:
+            return JsonResponse({"ok": False, "error": "Hududni tanlang"}, status=400)
+        try:
+            data = delivery_insights.calculate(region, request.GET.get("city") or "", weight_kg=num("kg"), distance_km=num("km"), goods_total=num("total") or 0)
+        except Exception as exc:  # noqa: BLE001 - a bad combination must not 500 the settings page
+            return JsonResponse({"ok": False, "error": str(exc)}, status=422)
+        return JsonResponse({"ok": True, **data})
+
+    @admin.display(description="Tahlil")
+    def insights_panel(self, obj):
+        from django.utils.html import format_html_join
+
+        from apps.ordering.infrastructure import delivery_insights
+        from apps.ordering.infrastructure.admin_desk import money
+
+        d = delivery_insights.summary(90)
+        z = d["zones"]
+        labels = {"tashkent": ("Toshkent shahri", "fa-city", "#6366f1"), "regions": ("Viloyatlar", "fa-truck", "#0ea5e9"), "pickup": ("Olib ketish", "fa-store", "#16a34a")}
+
+        def margin(zone):
+            m = zone["margin"]
+            if m is None:
+                return mark_safe("<small>kuryer haqi kiritilmagan</small>")
+            color = "#16a34a" if m >= 0 else "#e11d48"
+            return format_html("<small>kuryerlarga {} · <b style='color:{}'>{}{} so'm</b> ({}% buyurtmada)</small>", money(zone["cost"]), color, "+" if m >= 0 else "−", money(abs(m)), zone["coverage"])
+
+        tiles = format_html_join("", "<div class='nzdp-zone' style='--t:{}'><div class='nzdp-zone-h'><i class='fas {}'></i> {} <span>{}%</span></div>"
+                                     "<b>{}</b><small>{} ta buyurtma · {} ta yetkazilgan</small><div class='nzdp-bar'><i style='width:{}%'></i></div>"
+                                     "<div class='nzdp-zone-f'>{}</div></div>", (
+            (labels[k][2], labels[k][1], labels[k][0], z[k]["share"],
+             f"{money(z[k]['income'])} so'm" if k != "pickup" else "Bepul", z[k]["orders"], z[k]["earned"], z[k]["share"],
+             format_html("o'rtacha {} so'm · bepul {} ta<br>{}", money(z[k]["avg"]), z[k]["free"], margin(z[k])) if k != "pickup" else mark_safe("<small>filialdan olib ketish — yetkazish xarajati yo'q</small>"))
+            for k in ("tashkent", "regions", "pickup")))
+        lead = max((r["orders"] for r in d["regions"]), default=1)
+        rows = format_html_join("", "<div class='nzdp-row'><span>{}</span><div class='nzdp-bar'><i style='width:{}%'></i></div><b>{}</b><small>{} so'm</small></div>",
+                                ((r["name"], max(4, round(r["orders"] * 100 / lead)), r["orders"], money(r["income"])) for r in d["regions"]))
+        regions = format_html("<h4>Yetkazilgan buyurtmalar — hududlar bo'yicha</h4>{}", rows) if d["regions"] else mark_safe("")
+        return format_html("<div class='nzi-panel-body nzdp'><p class='nzdp-lead'>So'nggi {} kunda {} ta buyurtma. Yetkazish daromadi — buyurtmada qayd etilgan yetkazish puli (yetkazilganlar).</p>"
+                           "<div class='nzdp-zones'>{}</div>{}</div>", d["days"], d["total"], tiles, regions)
+
+    @admin.display(description="Tekshiruv")
+    def health_panel(self, obj):
+        from django.utils.html import format_html_join
+
+        from apps.ordering.infrastructure import delivery_insights
+
+        icons = {"danger": "fa-circle-exclamation", "warning": "fa-triangle-exclamation", "info": "fa-circle-info", "ok": "fa-circle-check"}
+        items = format_html_join("", "<li class='nzdp-h {}'><i class='fas {}'></i><span>{}{}</span>{}</li>", (
+            (h["level"], icons[h["level"]], h["text"], format_html("<br><b>{}</b>", h["names"]) if h.get("names") else "",
+             format_html("<a href='{}'>{} →</a>", h["url"], h["fix"]) if h["url"] else "")
+            for h in delivery_insights.health(obj)))
+        return format_html("<div class='nzi-panel-body'><ul class='nzdp-health'>{}</ul></div>", items)
+
+    @admin.display(description="Kalkulyator")
+    def calculator_panel(self, obj):
+        import json
+
+        from django.urls import reverse
+
+        from apps.ordering.infrastructure import delivery_insights
+
+        opts = json.dumps(delivery_insights.calc_options(), ensure_ascii=False).replace("</", "<\\/")
+        return format_html(
+            "<div class='nzi-panel-body nzdp-calc' data-endpoint='{}'>"
+            "<p class='nzdp-lead'>Mijoz checkout'da ko'radigan narxni tekshiring — sozlamani o'zgartirib «Saqlash»dan keyin natija yangilanadi.</p>"
+            "<div class='nzdp-calc-grid'>"
+            "<label>Hudud<select data-c='region'><option value=''>— tanlang —</option></select></label>"
+            "<label>Shahar / tuman<select data-c='city'><option value=''>—</option></select></label>"
+            "<label data-only='regions'>Posilka og'irligi, kg<input data-c='kg' type='number' step='0.1' min='0' value='1'></label>"
+            "<label data-only='tashkent'>Filialdan masofa, km<input data-c='km' type='number' step='0.1' min='0' placeholder='noma&#39;lum'></label>"
+            "<label>Buyurtma summasi, so'm<input data-c='total' type='number' step='1000' min='0' value='300000'></label>"
+            "</div><div class='nzdp-result' data-c='out'><span class='nzdp-muted'>Hududni tanlang</span></div>"
+            "<script type='application/json' data-c='opts'>{}</script></div>",
+            reverse("admin:ordering_deliverysettings_calc"), mark_safe(opts))
     inlines = (RegionDeliveryRateInline,)
     hero_icon, hero_tone, hero_noun = "fa-truck-fast", "#0ea5e9", "sozlama"
 

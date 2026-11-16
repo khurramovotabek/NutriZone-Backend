@@ -26,11 +26,12 @@
     <nav class="nzp-tabs" aria-label="{% translate 'Cart' %}">
       {% for key, label, icon, color, n in tabs %}<a class="nzp-tab{% if view == key %} on{% endif %}" href="?view={{ key }}" style="--t:{{ color }}"><i class="fas {{ icon }}" aria-hidden="true"></i> {{ label }}{% if n is not None %} <b>{{ n }}</b>{% endif %}</a>{% endfor %}
     </nav>
-    {% if view != "products" %}<form class="nzd-filters" method="get"><input type="hidden" name="view" value="{{ view }}"><label class="nzp-search"><i class="fas fa-magnifying-glass" aria-hidden="true"></i><input type="search" name="q" value="{{ q }}" placeholder="{% translate 'Cart code, customer name or phone…' %}" aria-label="{% translate 'Cart code, customer name or phone…' %}"></label></form>{% endif %}
+    {% if view != "products" and view != "insights" %}<form class="nzd-filters" method="get"><input type="hidden" name="view" value="{{ view }}"><label class="nzp-search"><i class="fas fa-magnifying-glass" aria-hidden="true"></i><input type="search" name="q" value="{{ q }}" placeholder="{% translate 'Cart code, customer name or phone…' %}" aria-label="{% translate 'Cart code, customer name or phone…' %}"></label></form>{% endif %}
   </div>
 
   {% if view == "empty" %}<div class="nzp-note nzp-note-info"><i class="fas fa-broom" aria-hidden="true"></i> {% blocktranslate with n=purge_soon %}Empty guest carts idle for 30+ days are deleted automatically every Sunday night (signed-in customers' carts are kept). Next cleanup: {{ n }} cart(s).{% endblocktranslate %}</div>{% endif %}
-  {% if view == "products" %}
+  {% if view == "insights" %}{% include "admin/cart/includes/insights.html" %}
+  {% elif view == "products" %}
   <section class="nzp-card nzp-inbox">
     {% if products %}
     <div class="nzd-table wx-demand-table" role="table">

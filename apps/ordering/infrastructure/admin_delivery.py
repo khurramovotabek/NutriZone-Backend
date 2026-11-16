@@ -141,8 +141,8 @@ def desk_payload(stage: str = "prepare", q: str = "", city: str = "", courier: s
         "late": sum(1 for c in cards if c["sla"] == "late"),
     }
     loads = {r["courier_id"]: r["n"] for r in orm.DeliveryAssignment.objects.filter(order__in=active, courier__isnull=False).values("courier_id").annotate(n=Count("id"))}
-    couriers = [{"id": str(c.id), "name": c.name, "phone": c.phone, "vehicle": c.vehicle, "load": loads.get(c.id, 0)}
-                for c in orm.Courier.objects.filter(is_active=True)]
+    couriers = [{"id": str(c.id), "name": c.name, "code": c.code or "", "phone": c.phone, "vehicle": c.vehicle, "load": loads.get(c.id, 0),
+                 "linked": bool(c.user_id)} for c in orm.Courier.objects.filter(is_active=True)]
     return {
         "stage": stage, "stages": [{"key": k, "label": _stage_label(k), "count": stats[k]} for k in STAGES],
         "cards": cards, "stats": stats, "couriers": couriers,
@@ -185,10 +185,22 @@ def assign(order: orm.OrderModel, data: dict, by: str) -> orm.DeliveryAssignment
             raise ValueError(_("Invalid amount.")) from exc
         if fee < 0:
             raise ValueError(_("Invalid amount."))
-    row, _c = orm.DeliveryAssignment.objects.update_or_create(order=order, defaults={
-        "courier": courier, "planned_date": planned, "time_slot": (data.get("time_slot") or "").strip()[:40],
-        "fee": fee, "note": (data.get("note") or "").strip()[:300], "assigned_by": by[:150],
-    })
+    if fee is None and courier is not None and courier.default_fee is not None:
+        fee = courier.default_fee
+    before = orm.DeliveryAssignment.objects.filter(order=order).values_list("courier_id", flat=True).first()
+    changed = courier is not None and courier.id != before
+    defaults = {"courier": courier, "planned_date": planned, "time_slot": (data.get("time_slot") or "").strip()[:40],
+                "fee": fee, "note": (data.get("note") or "").strip()[:300], "assigned_by": by[:150]}
+    if changed:
+        defaults["assigned_at"] = timezone.now()
+    elif courier is None:
+        defaults["assigned_at"] = None
+    row, _c = orm.DeliveryAssignment.objects.update_or_create(order=order, defaults=defaults)
+    row.courier_notified = False
+    if changed:
+        from apps.ordering.infrastructure.couriers import notify_assignment
+
+        row.courier_notified = notify_assignment(row)
     return row
 
 

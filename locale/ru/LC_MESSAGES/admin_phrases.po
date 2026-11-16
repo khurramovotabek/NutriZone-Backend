@@ -6610,3 +6610,525 @@ msgstr "Показ до"
 
 msgid "Tugash vaqti boshlanishdan keyin bo'lishi kerak."
 msgstr "Окончание должно быть позже начала."
+
+msgid "Kuryerlar"
+msgstr "Курьеры"
+
+msgid "Kuryer qo'shish"
+msgstr "Добавить курьера"
+
+msgid "Buyurtmalarni olib boradigan xodimlar: ish natijasi, yetkazish tezligi va qo'lidagi naqd pul. Akkauntga bog'langan kuryer buyurtmani Telegram'da oladi."
+msgstr "Сотрудники, доставляющие заказы: результаты, скорость доставки и наличные на руках. Курьер с привязанным аккаунтом получает заказы в Telegram."
+
+msgid "Aloqa"
+msgstr "Контакт"
+
+msgid "Turi"
+msgstr "Тип"
+
+msgid "O'rtacha vaqt"
+msgstr "Среднее время"
+
+msgid "Qo'lidagi naqd"
+msgstr "Наличные на руках"
+
+msgid "Ism, telefon, KR-ID yoki transport…"
+msgstr "Имя, телефон, KR-ID или транспорт…"
+
+msgid "«Kuryer qo'shish» bilan birinchi kuryerni kiriting — akkauntini bog'lasangiz buyurtmalar unga Telegram'da boradi."
+msgstr "Добавьте первого курьера кнопкой «Добавить курьера» — привяжите аккаунт, и заказы будут приходить ему в Telegram."
+
+msgid "Faol kuryerlar"
+msgstr "Активные курьеры"
+
+msgid "{0} tasi akkauntga bog'langan"
+msgstr "{0} привязаны к аккаунту"
+
+msgid "{0} ta faol buyurtma"
+msgstr "{0} активных заказов"
+
+msgid "Yetkazildi (30 kun)"
+msgstr "Доставлено (30 дней)"
+
+msgid "bugun {0} ta"
+msgstr "сегодня {0}"
+
+msgid "O'rtacha yetkazish"
+msgstr "Средняя доставка"
+
+msgid "biriktirishdan yetkazishgacha"
+msgstr "от назначения до доставки"
+
+msgid "hali kassaga topshirilmagan"
+msgstr "ещё не сдано в кассу"
+
+msgid "Kuryersiz buyurtmalar"
+msgstr "Заказы без курьера"
+
+msgid "Yetkazib berish markazida biriktiring"
+msgstr "Назначьте в центре доставки"
+
+msgid "Yetkazib berish markazi"
+msgstr "Центр доставки"
+
+msgid "Akkaunt bog'langan"
+msgstr "Аккаунт привязан"
+
+msgid "Akkaunt yo'q"
+msgstr "Нет аккаунта"
+
+msgid "{0} yo'lda"
+msgstr "{0} в пути"
+
+msgid "bugun {0}"
+msgstr "сегодня {0}"
+
+msgid "daq"
+msgstr "мин"
+
+msgid "soat"
+msgstr "ч"
+
+msgid "kun"
+msgstr "дн"
+
+msgid "O'z xodimimiz"
+msgstr "Наш сотрудник"
+
+msgid "Yollanma kuryer"
+msgstr "Наёмный курьер"
+
+msgid "Hamkor xizmat"
+msgstr "Партнёрская служба"
+
+msgid "Kuryer ID"
+msgstr "ID курьера"
+
+msgid "Foydalanuvchi akkaunti"
+msgstr "Аккаунт пользователя"
+
+msgid "Kuryerning saytdagi / Telegram botdagi akkaunti. Bog'langach, unga biriktirilgan buyurtmalar Telegram va bildirishnomalarga keladi."
+msgstr "Аккаунт курьера на сайте / в Telegram-боте. После привязки назначенные заказы приходят в Telegram и в уведомления."
+
+msgid "Odatiy kuryer haqi (so'm)"
+msgstr "Обычная оплата курьеру (сум)"
+
+msgid "Biriktirishda «Kuryer haqi» bo'sh qolsa shu summa yoziladi."
+msgstr "Подставляется, если при назначении «Оплата курьеру» пуста."
+
+msgid "Izoh"
+msgstr "Заметка"
+
+msgid "Akkaunt"
+msgstr "Аккаунт"
+
+msgid "Hisob-kitob"
+msgstr "Расчёты"
+
+msgid "Kuryer kartasi"
+msgstr "Карточка курьера"
+
+msgid "Kuryerning sayt yoki Telegram botdagi akkauntini telefon, ism yoki @username bo'yicha toping. Bog'langach unga biriktirilgan har bir buyurtma Telegram'ga keladi."
+msgstr "Найдите аккаунт курьера на сайте или в Telegram-боте по телефону, имени или @username. После привязки каждый назначенный заказ придёт в Telegram."
+
+msgid "Bo'sh qolsa, bog'langan akkauntdagi ism olinadi."
+msgstr "Если пусто, берётся имя из привязанного аккаунта."
+
+msgid "Akkauntni tanlang — ism, telefon va Telegram o'zi to'ldiriladi"
+msgstr "Выберите аккаунт — имя, телефон и Telegram заполнятся сами"
+
+msgid "Faol buyurtmalar"
+msgstr "Активные заказы"
+
+msgid "bugun {0} · jami {1}"
+msgstr "сегодня {0} · всего {1}"
+
+msgid "Kuryer haqi (30 kun)"
+msgstr "Оплата курьеру (30 дней)"
+
+msgid "biriktirishda yozilgan"
+msgstr "указано при назначении"
+
+msgid "{0} ta yetkazilgan buyurtma"
+msgstr "{0} доставленных заказов"
+
+msgid "{0} so'm naqdni qabul qildim"
+msgstr "Принял {0} сум наличными"
+
+msgid "Telegram ulangan — buyurtmalar Telegram'ga keladi"
+msgstr "Telegram подключён — заказы приходят в Telegram"
+
+msgid "Telegram ulanmagan — faqat sayt bildirishnomalari"
+msgstr "Telegram не подключён — только уведомления на сайте"
+
+msgid "Akkauntni ochish"
+msgstr "Открыть аккаунт"
+
+msgid "Akkaunt bog'lanmagan"
+msgstr "Аккаунт не привязан"
+
+msgid "Yuqoridan akkauntni tanlang — kuryer buyurtmalarni Telegram'da oladi."
+msgstr "Выберите аккаунт выше — курьер будет получать заказы в Telegram."
+
+msgid "So'nggi yetkazishlar"
+msgstr "Последние доставки"
+
+msgid "Buyurtma"
+msgstr "Заказ"
+
+msgid "Biriktirildi"
+msgstr "Назначен"
+
+msgid "Vaqt"
+msgstr "Время"
+
+msgid "Naqd"
+msgstr "Наличные"
+
+msgid "Pul"
+msgstr "Деньги"
+
+msgid "topshirilgan"
+msgstr "сдано"
+
+msgid "qo'lida"
+msgstr "на руках"
+
+msgid "Hali yetkazish yo'q."
+msgstr "Доставок пока нет."
+
+msgid "Saqlangandan keyin bu yerda kuryerning ish natijasi va qo'lidagi naqd pul chiqadi."
+msgstr "После сохранения здесь появятся результаты курьера и наличные на руках."
+
+msgid "Topshiriladigan naqd pul yo'q."
+msgstr "Наличных к сдаче нет."
+
+msgid "Saqlandi — kuryerga Telegram va bildirishnoma orqali xabar yuborildi."
+msgstr "Сохранено — курьер уведомлён в Telegram и в уведомлениях."
+
+msgid "Akkaunt bog'landi — endi biriktirilgan buyurtmalar kuryerga keladi."
+msgstr "Аккаунт привязан — назначенные заказы теперь приходят курьеру."
+
+msgid "Kuryer ismini kiriting yoki akkaunt tanlang."
+msgstr "Введите имя курьера или выберите аккаунт."
+
+msgid "Biriktirilgan vaqt"
+msgstr "Время назначения"
+
+msgid "Naqd pul topshirilgan"
+msgstr "Наличные сданы"
+
+msgid "Kuryer yig'ilgan naqd pulni kassaga topshirgan vaqt."
+msgstr "Когда курьер сдал собранные наличные в кассу."
+
+msgid "Yetkazish tahlili (90 kun)"
+msgstr "Анализ доставки (90 дней)"
+
+msgid "Sozlamalar tekshiruvi"
+msgstr "Проверка настроек"
+
+msgid "Narx kalkulyatori"
+msgstr "Калькулятор цены"
+
+msgid "Tahlil"
+msgstr "Анализ"
+
+msgid "Tekshiruv"
+msgstr "Проверка"
+
+msgid "Kalkulyator"
+msgstr "Калькулятор"
+
+msgid "So'nggi {0} kunda {1} ta buyurtma. Yetkazish daromadi — buyurtmada qayd etilgan yetkazish puli (yetkazilganlar)."
+msgstr "{1} заказов за последние {0} дней. Доход от доставки — стоимость доставки, зафиксированная в доставленных заказах."
+
+msgid "Olib ketish"
+msgstr "Самовывоз"
+
+msgid "{0} ta buyurtma · {1} ta yetkazilgan"
+msgstr "{0} заказов · {1} доставлено"
+
+msgid "o'rtacha {0} so'm · bepul {1} ta"
+msgstr "в среднем {0} сум · бесплатно {1}"
+
+msgid "kuryer haqi kiritilmagan"
+msgstr "оплата курьерам не указана"
+
+msgid "filialdan olib ketish — yetkazish xarajati yo'q"
+msgstr "самовывоз из филиала — без затрат на доставку"
+
+msgid "Yetkazilgan buyurtmalar — hududlar bo'yicha"
+msgstr "Доставленные заказы по регионам"
+
+msgid "Hech bir filialda xarita nuqtasi yo'q — Toshkent ichida masofa hisoblanmaydi, hamma maksimal narxni to'laydi."
+msgstr "Ни у одного филиала нет точки на карте — расстояние по Ташкенту не считается, все платят максимальную цену."
+
+msgid "{0} ta faol filialda xarita nuqtasi yo'q. Masofa faqat nuqtasi bor filiallardan hisoblanadi."
+msgstr "У {0} активных филиалов нет точки на карте. Расстояние считается только от филиалов с точкой."
+
+msgid "Koordinatalarni kiriting"
+msgstr "Укажите координаты"
+
+msgid "Do'konlar → filial → koordinatalar"
+msgstr "Магазины → филиал → координаты"
+
+msgid "Mahsulotlar → variant → og'irlik"
+msgstr "Товары → вариант → вес"
+
+msgid "Bepul yetkazish chegarasi o'rnatilmagan. Ko'p do'konlar katta xaridda yetkazishni bepul qiladi — o'rtacha chekni oshiradi."
+msgstr "Порог бесплатной доставки не задан. Многие магазины делают доставку бесплатной для крупных заказов — это повышает средний чек."
+
+msgid "«Bepul yetkazish» bo'limi"
+msgstr "Раздел «Бесплатная доставка»"
+
+msgid "Viloyatlar bo'limi"
+msgstr "Раздел «Регионы»"
+
+msgid "Sozlamalar to'liq: filiallar xaritada, mahsulotlarda og'irlik bor."
+msgstr "Настройки полные: филиалы на карте, у товаров есть вес."
+
+msgid "Mijoz checkout'da ko'radigan narxni tekshiring — sozlamani o'zgartirib «Saqlash»dan keyin natija yangilanadi."
+msgstr "Проверьте цену, которую покупатель видит при оформлении — измените настройку, нажмите «Сохранить», и результат обновится."
+
+msgid "— tanlang —"
+msgstr "— выберите —"
+
+msgid "Shahar / tuman"
+msgstr "Город / район"
+
+msgid "Posilka og'irligi, kg"
+msgstr "Вес посылки, кг"
+
+msgid "Filialdan masofa, km"
+msgstr "Расстояние от филиала, км"
+
+msgid "Buyurtma summasi, so'm"
+msgstr "Сумма заказа, сум"
+
+msgid "Hududni tanlang"
+msgstr "Выберите регион"
+
+msgid "noma'lum"
+msgstr "неизвестно"
+
+msgid "BTS dekabr–mart oylarida 30% gacha ustama qo'llashi mumkin. BTS e'lon qilsa, shu yerga yozing."
+msgstr "BTS может добавлять до 30% в декабре–марте. Укажите здесь, когда BTS объявит."
+
+msgid "«BTS rasmiy tarifi» — bts.uz tarif kartasi (01.09.2026): manzil zonasi, posilka og'irligi va hajmi bo'yicha. Viloyat uchun alohida tarif kiritilgan bo'lsa, o'sha ishlatiladi."
+msgstr "«Официальный тариф BTS» — тарифная карта bts.uz (01.09.2026): по зоне адреса, весу и объёму посылки. Если для региона задан отдельный тариф, используется он."
+
+msgid "Hajmiy og'irlik = hajm / 6000. Sport ozuqa bankasi o'rtacha 4 500 sm³/kg (qadoq bilan)."
+msgstr "Объёмный вес = объём / 6000. Банка спортпита в среднем 4 500 см³/кг (с упаковкой)."
+
+msgid "Yoqilsa, narxga BTS kuryerining manzilgacha yetkazish haqi qo'shiladi. O'chiq bo'lsa — mijoz BTS ofisidan oladi."
+msgstr "Если включено, к цене добавляется доставка курьером BTS до двери. Если выключено — клиент забирает в офисе BTS."
+
+msgid "Viloyatlar (Toshkent viloyati ham) — BTS"
+msgstr "Регионы (и Ташкентская обл.) — BTS"
+
+msgid "Savat tahlili"
+msgstr "Анализ корзин"
+
+msgid "So'nggi {0} kun · savatga qo'shilgan mahsulotdan yetkazilgan buyurtmagacha"
+msgstr "Последние {0} дней · от товара в корзине до доставленного заказа"
+
+msgid "Konversiya"
+msgstr "Конверсия"
+
+msgid "{0} ta savatdan buyurtmaga"
+msgstr "из {0} корзин стали заказами"
+
+msgid "Tashlab ketish darajasi"
+msgstr "Доля брошенных"
+
+msgid "buyurtmagacha yetmagan savatlar"
+msgstr "корзины, не ставшие заказом"
+
+msgid "Savatlardan tushum"
+msgstr "Выручка из корзин"
+
+msgid "yetkazilgan · yo'lda {0}"
+msgstr "доставлено · в пути {0}"
+
+msgid "Qaror vaqti (mediana)"
+msgstr "Время решения (медиана)"
+
+msgid "birinchi mahsulotdan buyurtmagacha"
+msgstr "от первого товара до заказа"
+
+msgid "Akkaunt bilan / mehmon"
+msgstr "С аккаунтом / гость"
+
+msgid "konversiya: kirgan mijoz va mehmon"
+msgstr "конверсия: вошедший клиент и гость"
+
+msgid "Savat voronkasi"
+msgstr "Воронка корзины"
+
+msgid "Savatga qo'shildi"
+msgstr "Добавлено в корзину"
+
+msgid "Akkaunt bilan"
+msgstr "С аккаунтом"
+
+msgid "Buyurtma berildi"
+msgstr "Заказ оформлен"
+
+msgid "Akkaunt bilan kirgan mijozlar ko'proq buyurtma beradi — checkout'da Telegram orqali bir bosishda kirishni ko'rsatish konversiyani oshiradi."
+msgstr "Вошедшие клиенты заказывают чаще — вход в один клик через Telegram при оформлении повышает конверсию."
+
+msgid "Mehmonlar ham yaxshi buyurtma beryapti — ro'yxatdan o'tishni majburlamang, kupon bilan rag'batlantiring."
+msgstr "Гости тоже хорошо заказывают — не заставляйте регистрироваться, поощряйте купоном."
+
+msgid "savat ochildi"
+msgstr "корзина открыта"
+
+msgid "Tashlab ketilgan savatlar — yoshi bo'yicha"
+msgstr "Брошенные корзины по возрасту"
+
+msgid "{0} ta savat · {1} (bugungi narxda)"
+msgstr "{0} корзин · {1} (по сегодняшним ценам)"
+
+msgid "1–3 kun"
+msgstr "1–3 дня"
+
+msgid "3–7 kun"
+msgstr "3–7 дней"
+
+msgid "7–30 kun"
+msgstr "7–30 дней"
+
+msgid "30+ kun"
+msgstr "30+ дней"
+
+msgid "{0} savat · {1} eslatsa bo'ladi"
+msgstr "{0} корзин · {1} можно напомнить"
+
+msgid "{0} mijozga eslatma yuborish"
+msgstr "Напомнить {0} клиентам"
+
+msgid "1–30 kun oldin tashlab ketilgan savatlar egalariga sayt bildirishnomasi va Telegram xabari boradi. Har bir savatga 24 soatda bir martadan ko'p yuborilmaydi."
+msgstr "Владельцы корзин, брошенных 1–30 дней назад, получат уведомление на сайте и сообщение в Telegram. Не чаще раза в 24 часа на корзину."
+
+msgid "Tasdiqlash va yuborish"
+msgstr "Подтвердить и отправить"
+
+msgid "Hozir eslatma yuboriladigan savat yo'q (mehmon savatlari yoki so'nggi 24 soatda eslatilgan)."
+msgstr "Сейчас нет корзин для напоминания (гостевые или уже напомнили за 24 часа)."
+
+msgid "Eslatmalar samaradorligi"
+msgstr "Эффективность напоминаний"
+
+msgid "eslatma yuborildi"
+msgstr "напоминаний отправлено"
+
+msgid "savat qaytdi (7 kun ichida)"
+msgstr "корзин вернулось (за 7 дней)"
+
+msgid "qaytish darajasi"
+msgstr "доля возврата"
+
+msgid "qaytgan buyurtmalar"
+msgstr "возвращённые заказы"
+
+msgid "Manba bo'yicha"
+msgstr "По источнику"
+
+msgid "konversiya {0}"
+msgstr "конверсия {0}"
+
+msgid "Bu davrda savat ochilmagan"
+msgstr "За этот период корзин не было"
+
+msgid "Sayt"
+msgstr "Сайт"
+
+msgid "Mobil"
+msgstr "Мобильное"
+
+msgid "Telegram bot / API"
+msgstr "Telegram-бот / API"
+
+msgid "Eng ko'p tashlab ketilgan mahsulotlar"
+msgstr "Чаще всего брошенные товары"
+
+msgid "{0} dona · {1} savatda"
+msgstr "{0} шт. · в {1} корзинах"
+
+msgid "Tashlab ketilgan savat yo'q"
+msgstr "Брошенных корзин нет"
+
+msgid "Ko'p savatda turib, kam sotib olinadigan mahsulotda odatda narx yoki yetkazish savoli bo'ladi — kupon yoki Telegram post yaxshi ishlaydi."
+msgstr "Если товар лежит во многих корзинах, но редко покупается, обычно есть вопрос цены или доставки — хорошо работает купон или пост в Telegram."
+
+msgid "Reminder sent to %(n)s customer(s) -- they see it in their notifications and on Telegram."
+msgstr "Напоминание отправлено %(n)s клиентам — они увидят его в уведомлениях и в Telegram."
+
+msgid "Faollik — 14 kun"
+msgstr "Активность — 14 дней"
+
+msgid "qo'shildi"
+msgstr "добавлено"
+
+msgid "o'chirildi"
+msgstr "удалено"
+
+msgid "7 kunda {0} ta savatga mahsulot qo'shildi"
+msgstr "За 7 дней товары добавлены в {0} корзин"
+
+msgid "eng faol vaqt {0}:00–{1}:00"
+msgstr "самое активное время {0}:00–{1}:00"
+
+msgid "Eng ko'p qo'shilgan (7 kun)"
+msgstr "Чаще всего добавляли (7 дней)"
+
+msgid "Bu hafta qo'shilmagan"
+msgstr "На этой неделе не добавляли"
+
+msgid "Ko'p o'chirilgan"
+msgstr "Часто удаляли"
+
+msgid "Savatdan tez-tez o'chiriladigan mahsulotda narx, yetkazish narxi yoki ta'm/hajm tanlovi savoli bo'lishi mumkin."
+msgstr "У товара, который часто удаляют из корзины, может быть вопрос цены, стоимости доставки или выбора вкуса/объёма."
+
+msgid "Sizga yangi yetkazish biriktirildi"
+msgstr "Вам назначена новая доставка"
+
+msgid "{0} kunda {1} ta savatga mahsulot qo'shildi"
+msgstr "За {0} дней товары добавлены в {1} корзин"
+
+msgid "eng faol vaqt {0}:{1}–{2}:{3}"
+msgstr "самое активное время {0}:{1}–{2}:{3}"
+
+msgid "{0} ta savat · {1} so'm (bugungi narxda)"
+msgstr "{0} корзин · {1} сум (по сегодняшним ценам)"
+
+msgid "yetkazilgan · yo'lda {0} so'm"
+msgstr "доставлено · в пути {0} сум"
+
+msgid "yetkazilgan · yo'lda —"
+msgstr "доставлено · в пути —"
+
+msgid "kuryerlarga {0} so'm · {1}{2} so'm ({3}% buyurtmada)"
+msgstr "курьерам {0} сум · {1}{2} сум ({3}% заказов)"
+
+msgid "{0} so'm · {1}%"
+msgstr "{0} сум · {1}%"
+
+msgid "eng faol vaqt"
+msgstr "самое активное время"
+
+msgid "«Bepul yetkazish» bo'limi →"
+msgstr "Раздел «Бесплатная доставка» →"
+
+msgid "Koordinatalarni kiriting →"
+msgstr "Укажите координаты →"
+
+msgid "Mahsulotlar → variant → og'irlik →"
+msgstr "Товары → вариант → вес →"
+
+msgid "Viloyatlar bo'limi →"
+msgstr "Раздел «Регионы» →"
+
+msgid "Xodimlar (Orders bot)"
+msgstr "Сотрудники (Orders bot)"

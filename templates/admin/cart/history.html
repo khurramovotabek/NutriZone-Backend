@@ -20,6 +20,23 @@
     <div class="nzp-stat" style="--c:#6366f1"><i class="fas fa-user-check" aria-hidden="true"></i><div><b>{{ kpi.signins }}</b><span>{% blocktranslate with n=kpi.coupons %}Sign-ins · {{ n }} coupons (7 days){% endblocktranslate %}</span></div></div>
   </div>
 
+  {% if not request.GET.action__exact and not q and cl.page_num <= 1 %}
+  <div class="nzci-grid nzch">
+    <section class="nzp-card nzci-card">
+      <h4>{% translate "Faollik — 14 kun" %} <span class="nzci-legend"><i style="--c:#6366f1"></i>{% translate "qo'shildi" %} <i style="--c:#e11d48"></i>{% translate "o'chirildi" %}</span></h4>
+      <div class="nzci-chart nzch-chart" role="img" aria-label="{% translate 'Faollik — 14 kun' %}">{% for b in act.bars %}<div class="nzci-col" title="{{ b.label }}: +{{ b.a }} / −{{ b.b }}" style="--i:{{ forloop.counter0 }}"><span class="a" style="height:{{ b.ha }}%"></span><span class="b nzch-rm" style="height:{{ b.hb }}%"></span><small>{% if forloop.counter0|divisibleby:3 or forloop.last %}{{ b.label }}{% endif %}</small></div>{% endfor %}</div>
+      <p class="nzci-sub" style="margin:12px 0 0"><span>{% blocktranslate with n=act.active_carts %}7 kunda {{ n }} ta savatga mahsulot qo'shildi{% endblocktranslate %}</span>{% if act.busy_hour %} · <span>{% translate "eng faol vaqt" %}</span> <b>{{ act.busy_hour }}</b>{% endif %}</p>
+    </section>
+    <section class="nzp-card nzci-card">
+      <h4>{% translate "Eng ko'p qo'shilgan (7 kun)" %}</h4>
+      {% for p in act.top_added %}<div class="nzci-prod nzch-prod" style="--i:{{ forloop.counter0 }}">{% if p.thumb %}<img src="{{ p.thumb }}" alt="">{% else %}<span class="ph"><i class="fas fa-box" aria-hidden="true"></i></span>{% endif %}<span class="nzci-prod-n"><b>{{ p.name }}</b></span><div class="nzci-bar"><i style="width:{{ p.pct }}%"></i></div><b>{{ p.n }}</b></div>{% empty %}<p class="nzci-sub">{% translate "Bu hafta qo'shilmagan" %}</p>{% endfor %}
+      {% if act.top_removed %}<h4 class="nzci-h-sm">{% translate "Ko'p o'chirilgan" %}</h4>
+      {% for p in act.top_removed %}<div class="nzci-prod nzch-prod rm" style="--i:{{ forloop.counter0 }}">{% if p.thumb %}<img src="{{ p.thumb }}" alt="">{% else %}<span class="ph"><i class="fas fa-box" aria-hidden="true"></i></span>{% endif %}<span class="nzci-prod-n"><b>{{ p.name }}</b></span><div class="nzci-bar"><i style="width:{{ p.pct }}%"></i></div><b>{{ p.n }}</b></div>{% endfor %}
+      <p class="nzci-note"><i class="fas fa-lightbulb" aria-hidden="true"></i> {% translate "Savatdan tez-tez o'chiriladigan mahsulotda narx, yetkazish narxi yoki ta'm/hajm tanlovi savoli bo'lishi mumkin." %}</p>{% endif %}
+    </section>
+  </div>
+  {% endif %}
+
   <div class="nzp-toolbar">
     <nav class="wx-type-chips" aria-label="{% translate 'Type' %}">
       {% for ch in chips %}<a href="?{% if ch.key %}action__exact={{ ch.key }}{% endif %}{% if q %}&q={{ q|urlencode }}{% endif %}" class="{% if ch.on %}on{% endif %}" style="--t:{{ ch.color }}"><i></i>{{ ch.label }} · {{ ch.n }}</a>{% endfor %}
@@ -32,6 +49,7 @@
     <div class="nzd-table wx-history-table" role="table">
       <div class="nzd-tr nzd-th" role="row"><span>{% translate "When" %}</span><span>{% translate "Event" %}</span><span>{% translate "Cart" %}</span><span>{% translate "Customer" %}</span></div>
       {% for e in cl.result_list %}
+      {% ifchanged e.nz.day %}<div class="nzch-day" role="row"><span>{{ e.nz.day }}</span></div>{% endifchanged %}
       <a class="nzd-tr" role="row" href="{% url 'admin:cart_cartmodel_change' e.cart_id %}" style="--i:{{ forloop.counter0 }}">
         <span><b>{{ e.nz.ago }}</b><small>{{ e.nz.when }}</small></span>
         <span class="wx-prod"><span class="ph wx-ev" style="--c:{{ e.nz.color }}"><i class="fas {{ e.nz.icon }}" aria-hidden="true"></i></span>{% if e.nz.thumb %}<img src="{{ e.nz.thumb }}" alt="">{% endif %}<span><b>{{ e.nz.text }}</b></span></span>

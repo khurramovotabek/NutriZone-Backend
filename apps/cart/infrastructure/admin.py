@@ -188,6 +188,19 @@ def _entry_cards(entries) -> tuple[dict, dict]:
     return _variant_cards(vids - {None}), items_by_id
 
 
+def _send_reminder(c, items, staff) -> None:
+    """One cart reminder: inbox + Telegram (notify kind cart_reminder) and a `reminder_sent` event in the cart history."""
+    from apps.notifications.infrastructure.notify import notify
+
+    cards = _variant_cards([i.product_variant_id for i in items])
+    names = [cards[i.product_variant_id]["name"] for i in items if i.product_variant_id in cards]
+    products = ", ".join(names[:2]) + (f" +{len(names) - 2}" if len(names) > 2 else "")
+    now = timezone.now()
+    notify(c.customer_id, "cart_reminder", {"products": products}, link="/cart", dedupe_key=f"cart_reminder:{c.id}:{now:%Y%m%d}")
+    orm.CartAuditEntryModel.objects.create(cart=c, action="reminder_sent", actor_id=None, occurred_at=now,
+                                           details={"by": staff.get_full_name() or staff.get_username()})
+
+
 # ====================================================================== carts
 
 
@@ -196,11 +209,11 @@ class CartViewFilter(admin.SimpleListFilter):
     parameter_name = "view"
 
     def lookups(self, request, model_admin):
-        return [("items", _("With products")), ("abandoned", _("Abandoned")), ("ordered", _("Ordered")), ("empty", _("Empty")), ("all", _("All")), ("products", _("Products in carts"))]
+        return [("insights", _("Tahlil")), ("items", _("With products")), ("abandoned", _("Abandoned")), ("ordered", _("Ordered")), ("empty", _("Empty")), ("all", _("All")), ("products", _("Products in carts"))]
 
     def queryset(self, request, qs):
-        v = self.value() or "items"
-        if v in ("items", "products"):
+        v = self.value() or "insights"
+        if v in ("items", "products", "insights"):
             return qs.filter(_has_items())
         if v == "abandoned":
             return qs.filter(_has_items(), status="active", updated_at__lt=timezone.now() - timedelta(hours=ABANDONED_AFTER_HOURS))
@@ -294,6 +307,10 @@ class CartAdmin(ExcelExportMixin, admin.ModelAdmin):
         return cl
 
     def changelist_view(self, request, extra_context=None):
+        days_param = request.GET.get("days", "")
+        if "days" in request.GET:  # the insights period is ours, not a ChangeList lookup (it would redirect with ?e=1)
+            request.GET = request.GET.copy()
+            request.GET.pop("days")
         now = timezone.now()
         live = orm.CartModel.objects.filter(_has_items(), status="active")
         items = list(orm.CartItemModel.objects.filter(cart__in=live, status="active").values("cart_id", "product_variant_id", "quantity", "cart__updated_at", "cart__customer_id"))
@@ -313,13 +330,13 @@ class CartAdmin(ExcelExportMixin, admin.ModelAdmin):
         # conversion: carts that got products in the last 30 days and those of them that became an order
         month_ids = set(orm.CartAuditEntryModel.objects.filter(action="item_added", occurred_at__gte=now - timedelta(days=30)).values_list("cart_id", flat=True))
         converted = sum(1 for cid in month_ids if cid in ordered)
-        view = request.GET.get("view") or "items"
+        view = request.GET.get("view") or "insights"
         counts = {
             "items": len(carts), "abandoned": len(abandoned_ids), "ordered": len(ordered),
             "empty": orm.CartModel.objects.exclude(_has_items()).count(), "all": orm.CartModel.objects.count(),
         }
         tabs = [(k, label, icon, color, counts.get(k)) for k, label, icon, color in (
-            ("items", _t("With products"), "fa-cart-shopping", "#2563eb"), ("abandoned", _t("Abandoned"), "fa-person-walking-arrow-right", "#e11d48"),
+            ("insights", _t("Tahlil"), "fa-chart-pie", "#6366f1"), ("items", _t("With products"), "fa-cart-shopping", "#2563eb"), ("abandoned", _t("Abandoned"), "fa-person-walking-arrow-right", "#e11d48"),
             ("ordered", _t("Ordered"), "fa-bag-shopping", "#0ea5e9"), ("products", _t("Products in carts"), "fa-boxes-stacked", "#8b5cf6"),
             ("empty", _t("Empty"), "fa-circle", "#94a3b8"), ("all", _t("All"), "fa-layer-group", "#64748b"))]
         extra = {
@@ -332,6 +349,13 @@ class CartAdmin(ExcelExportMixin, admin.ModelAdmin):
                 "converted": converted, "month": len(month_ids),
             },
         }
+        if view == "insights":
+            from apps.cart.infrastructure import cart_analytics
+
+            days = cart_analytics.PERIODS.get(days_param, 30)
+            extra["ins"] = cart_analytics.build(days)
+            extra["ins_periods"] = [{"key": k, "label": f"{v} kun", "on": v == days} for k, v in cart_analytics.PERIODS.items()]
+            extra["can_remind_all"] = request.user.has_perm("cart.change_cartmodel")
         if view == "products":
             demand: dict = {}
             for i in items:
@@ -355,6 +379,7 @@ class CartAdmin(ExcelExportMixin, admin.ModelAdmin):
         v = self.admin_site.admin_view
         return [
             path("<uuid:pk>/remind/", v(self.remind_view), name="cart_cartmodel_remind"),
+            path("remind-all/", v(self.remind_all_view), name="cart_cartmodel_remind_all"),
             path("<uuid:pk>/archive/", v(self.archive_view), name="cart_cartmodel_archive"),
             path("<uuid:pk>/restore/", v(self.restore_view), name="cart_cartmodel_restore"),
             *super().get_urls(),
@@ -363,6 +388,10 @@ class CartAdmin(ExcelExportMixin, admin.ModelAdmin):
     def change_view(self, request, object_id, form_url="", extra_context=None):
         if not self.has_view_permission(request):
             raise PermissionDenied
+        if _uuid(object_id) is None:  # /cart/cartmodel/<anything>/change/ -> 404, not a 500
+            from django.http import Http404
+
+            raise Http404
         c = get_object_or_404(orm.CartModel.objects.prefetch_related("items"), pk=object_id)
         items = [i for i in c.items.all() if i.status == "active"]
         removed = [i for i in c.items.all() if i.status != "active"]
@@ -427,17 +456,27 @@ class CartAdmin(ExcelExportMixin, admin.ModelAdmin):
         if recent:
             messages.error(request, _t("A reminder was already sent in the last 24 hours."))
             return back
-        cards = _variant_cards([i.product_variant_id for i in items])
-        names = [cards[i.product_variant_id]["name"] for i in items if i.product_variant_id in cards]
-        products = ", ".join(names[:2]) + (f" +{len(names) - 2}" if len(names) > 2 else "")
-        from apps.notifications.infrastructure.notify import notify
-
-        now = timezone.now()
-        notify(c.customer_id, "cart_reminder", {"products": products}, link="/cart", dedupe_key=f"cart_reminder:{c.id}:{now:%Y%m%d}")
-        orm.CartAuditEntryModel.objects.create(cart=c, action="reminder_sent", actor_id=getattr(request.user, "id", None), occurred_at=now,
-                                               details={"by": request.user.get_full_name() or request.user.get_username()})
+        _send_reminder(c, items, request.user)
         messages.success(request, _t("Reminder sent -- the customer sees it in their notifications and on Telegram."))
         return back
+
+    def remind_all_view(self, request):
+        """Savatlar → Tahlil: remind every signed-in customer whose cart was abandoned 1–30 days ago (24 h guard per cart)."""
+        if request.method != "POST" or not request.user.has_perm("cart.change_cartmodel"):
+            raise PermissionDenied
+        from apps.cart.infrastructure import cart_analytics
+
+        sent = 0
+        for c in cart_analytics.remindable_carts():
+            items = list(c.items.filter(status="active"))
+            if items:
+                _send_reminder(c, items, request.user)
+                sent += 1
+        if sent:
+            messages.success(request, _t("Reminder sent to %(n)s customer(s) -- they see it in their notifications and on Telegram.") % {"n": sent})
+        else:
+            messages.info(request, _t("No abandoned carts to remind right now."))
+        return HttpResponseRedirect(reverse("admin:cart_cartmodel_changelist") + "?view=insights")
 
     def _lifecycle(self, request, pk, service_cls, ok_text):
         if request.method != "POST" or not request.user.has_perm("cart.change_cartmodel"):
@@ -458,6 +497,55 @@ class CartAdmin(ExcelExportMixin, admin.ModelAdmin):
 
 
 # ====================================================================== history
+
+
+def _history_activity(days: int = 14) -> dict:
+    """Savat tarixi header: daily added vs removed (14 Tashkent days), the most added / removed products and the busiest hour (7 days)."""
+    from collections import Counter, defaultdict
+
+    now = timezone.now()
+    since = now - timedelta(days=days)
+    rows = list(orm.CartAuditEntryModel.objects.filter(occurred_at__gte=since, action__in=("item_added", "item_quantity_increased", "item_removed", "cart_cleared"))
+                .values_list("action", "occurred_at", "details", "cart_id"))
+    added, removed = defaultdict(int), defaultdict(int)
+    hours = Counter()
+    add_v, rem_items = Counter(), Counter()
+    week = now - timedelta(days=7)
+    carts = set()
+    for action, at, d, cid in rows:
+        day = timezone.localtime(at).date()
+        d = d or {}
+        if action in ("item_added", "item_quantity_increased"):
+            added[day] += 1
+            if at >= week:
+                hours[timezone.localtime(at).hour] += 1
+                carts.add(cid)
+                if d.get("product_variant_id"):
+                    add_v[_uuid(d["product_variant_id"])] += int(d.get("quantity") or d.get("added") or 1)
+        else:
+            removed[day] += 1
+            if at >= week and action == "item_removed" and d.get("item_id"):
+                rem_items[_uuid(d["item_id"])] += 1
+    item_map = dict(orm.CartItemModel.objects.filter(id__in=[i for i in rem_items if i]).values_list("id", "product_variant_id"))
+    rem_v = Counter()
+    for item, n in rem_items.items():
+        if item in item_map:
+            rem_v[item_map[item]] += n
+    cards = _variant_cards(set(add_v) | set(rem_v) - {None})
+    today = timezone.localdate()
+    series = [(today - timedelta(days=k)) for k in range(days - 1, -1, -1)]
+    peak = max([added.get(d, 0) for d in series] + [removed.get(d, 0) for d in series] + [1])
+
+    def top(counter):
+        items = [(v, n) for v, n in counter.most_common(8) if v in cards][:5]
+        lead = items[0][1] if items else 1
+        return [{"name": cards[v]["name"], "thumb": cards[v]["thumb"], "n": n, "pct": max(6, round(n * 100 / lead))} for v, n in items]
+
+    busy = hours.most_common(1)
+    return {"bars": [{"label": d.strftime("%d.%m"), "a": added.get(d, 0), "b": removed.get(d, 0), "ha": round(added.get(d, 0) * 100 / peak),
+                      "hb": round(removed.get(d, 0) * 100 / peak)} for d in series],
+            "top_added": top(add_v), "top_removed": top(rem_v), "busy_hour": f"{busy[0][0]:02d}:00–{(busy[0][0] + 1) % 24:02d}:00" if busy else "",
+            "active_carts": len(carts)}
 
 
 @admin.register(orm.CartAuditEntryModel)
@@ -510,8 +598,11 @@ class CartAuditEntryAdmin(ExcelExportMixin, admin.ModelAdmin):
             d = e.details or {}
             vid = _uuid(d.get("product_variant_id")) or (items_by_id.get(d.get("item_id")) if d.get("item_id") else None)
             card = cards.get(vid) if vid else None
+            day = timezone.localtime(e.occurred_at).date()
+            today = timezone.localdate()
             e.nz = {"text": describe(e, cards, items_by_id), "color": color, "icon": icon, "when": _local(e.occurred_at), "ago": _ago(e.occurred_at),
-                    "thumb": card["thumb"] if card else None, "user": users.get(e.cart.customer_id)}
+                    "thumb": card["thumb"] if card else None, "user": users.get(e.cart.customer_id),
+                    "day": _t("Bugun") if day == today else _t("Kecha") if day == today - timedelta(days=1) else day.strftime("%d.%m.%Y")}
         return cl
 
     def changelist_view(self, request, extra_context=None):
@@ -531,7 +622,7 @@ class CartAuditEntryAdmin(ExcelExportMixin, admin.ModelAdmin):
         added = counts.get("item_added", 0) + counts.get("item_quantity_increased", 0)
         removed = counts.get("item_removed", 0) + counts.get("cart_cleared", 0)
         extra = {
-            "title": _t("Savat tarixi"), "chips": chips, "q": request.GET.get("q", ""),
+            "title": _t("Savat tarixi"), "chips": chips, "q": request.GET.get("q", ""), "act": _history_activity(),
             "kpi": {"today": orm.CartAuditEntryModel.objects.filter(occurred_at__gte=today).count(), "added": added, "removed": removed,
                     "coupons": counts.get("coupon_applied", 0), "signins": counts.get("customer_assigned", 0)},
         }

@@ -6571,3 +6571,525 @@ msgstr "Show until"
 
 msgid "Tugash vaqti boshlanishdan keyin bo'lishi kerak."
 msgstr "The end must be after the start."
+
+msgid "Kuryerlar"
+msgstr "Couriers"
+
+msgid "Kuryer qo'shish"
+msgstr "Add courier"
+
+msgid "Buyurtmalarni olib boradigan xodimlar: ish natijasi, yetkazish tezligi va qo'lidagi naqd pul. Akkauntga bog'langan kuryer buyurtmani Telegram'da oladi."
+msgstr "The people who deliver orders: results, delivery speed and the cash they hold. A courier linked to an account gets orders on Telegram."
+
+msgid "Aloqa"
+msgstr "Contact"
+
+msgid "Turi"
+msgstr "Type"
+
+msgid "O'rtacha vaqt"
+msgstr "Average time"
+
+msgid "Qo'lidagi naqd"
+msgstr "Cash in hand"
+
+msgid "Ism, telefon, KR-ID yoki transport…"
+msgstr "Name, phone, KR-ID or vehicle…"
+
+msgid "«Kuryer qo'shish» bilan birinchi kuryerni kiriting — akkauntini bog'lasangiz buyurtmalar unga Telegram'da boradi."
+msgstr "Add your first courier with «Add courier» — link their account and orders reach them on Telegram."
+
+msgid "Faol kuryerlar"
+msgstr "Active couriers"
+
+msgid "{0} tasi akkauntga bog'langan"
+msgstr "{0} linked to an account"
+
+msgid "{0} ta faol buyurtma"
+msgstr "{0} active orders"
+
+msgid "Yetkazildi (30 kun)"
+msgstr "Delivered (30 days)"
+
+msgid "bugun {0} ta"
+msgstr "{0} today"
+
+msgid "O'rtacha yetkazish"
+msgstr "Average delivery"
+
+msgid "biriktirishdan yetkazishgacha"
+msgstr "from assignment to delivery"
+
+msgid "hali kassaga topshirilmagan"
+msgstr "not handed in yet"
+
+msgid "Kuryersiz buyurtmalar"
+msgstr "Orders without a courier"
+
+msgid "Yetkazib berish markazida biriktiring"
+msgstr "Assign them on the delivery desk"
+
+msgid "Yetkazib berish markazi"
+msgstr "Delivery desk"
+
+msgid "Akkaunt bog'langan"
+msgstr "Account linked"
+
+msgid "Akkaunt yo'q"
+msgstr "No account"
+
+msgid "{0} yo'lda"
+msgstr "{0} on the road"
+
+msgid "bugun {0}"
+msgstr "today {0}"
+
+msgid "daq"
+msgstr "min"
+
+msgid "soat"
+msgstr "h"
+
+msgid "kun"
+msgstr "d"
+
+msgid "O'z xodimimiz"
+msgstr "Our staff"
+
+msgid "Yollanma kuryer"
+msgstr "Freelance courier"
+
+msgid "Hamkor xizmat"
+msgstr "Partner service"
+
+msgid "Kuryer ID"
+msgstr "Courier ID"
+
+msgid "Foydalanuvchi akkaunti"
+msgstr "User account"
+
+msgid "Kuryerning saytdagi / Telegram botdagi akkaunti. Bog'langach, unga biriktirilgan buyurtmalar Telegram va bildirishnomalarga keladi."
+msgstr "The courier's account on the site / Telegram bot. Once linked, orders assigned to them arrive on Telegram and in notifications."
+
+msgid "Odatiy kuryer haqi (so'm)"
+msgstr "Default courier fee (so'm)"
+
+msgid "Biriktirishda «Kuryer haqi» bo'sh qolsa shu summa yoziladi."
+msgstr "Used when «Courier fee» is left empty on assignment."
+
+msgid "Izoh"
+msgstr "Note"
+
+msgid "Akkaunt"
+msgstr "Account"
+
+msgid "Hisob-kitob"
+msgstr "Settlement"
+
+msgid "Kuryer kartasi"
+msgstr "Courier card"
+
+msgid "Kuryerning sayt yoki Telegram botdagi akkauntini telefon, ism yoki @username bo'yicha toping. Bog'langach unga biriktirilgan har bir buyurtma Telegram'ga keladi."
+msgstr "Find the courier's site or Telegram bot account by phone, name or @username. Once linked, every order assigned to them arrives on Telegram."
+
+msgid "Bo'sh qolsa, bog'langan akkauntdagi ism olinadi."
+msgstr "If left empty, the name from the linked account is used."
+
+msgid "Akkauntni tanlang — ism, telefon va Telegram o'zi to'ldiriladi"
+msgstr "Pick the account — name, phone and Telegram fill in by themselves"
+
+msgid "Faol buyurtmalar"
+msgstr "Active orders"
+
+msgid "bugun {0} · jami {1}"
+msgstr "today {0} · total {1}"
+
+msgid "Kuryer haqi (30 kun)"
+msgstr "Courier fees (30 days)"
+
+msgid "biriktirishda yozilgan"
+msgstr "written on assignment"
+
+msgid "{0} ta yetkazilgan buyurtma"
+msgstr "{0} delivered orders"
+
+msgid "{0} so'm naqdni qabul qildim"
+msgstr "I received {0} so'm in cash"
+
+msgid "Telegram ulangan — buyurtmalar Telegram'ga keladi"
+msgstr "Telegram connected — orders arrive on Telegram"
+
+msgid "Telegram ulanmagan — faqat sayt bildirishnomalari"
+msgstr "Telegram not connected — site notifications only"
+
+msgid "Akkauntni ochish"
+msgstr "Open account"
+
+msgid "Akkaunt bog'lanmagan"
+msgstr "No account linked"
+
+msgid "Yuqoridan akkauntni tanlang — kuryer buyurtmalarni Telegram'da oladi."
+msgstr "Pick the account above — the courier will get orders on Telegram."
+
+msgid "So'nggi yetkazishlar"
+msgstr "Recent deliveries"
+
+msgid "Buyurtma"
+msgstr "Order"
+
+msgid "Biriktirildi"
+msgstr "Assigned"
+
+msgid "Vaqt"
+msgstr "Time"
+
+msgid "Naqd"
+msgstr "Cash"
+
+msgid "Pul"
+msgstr "Money"
+
+msgid "topshirilgan"
+msgstr "handed in"
+
+msgid "qo'lida"
+msgstr "in hand"
+
+msgid "Hali yetkazish yo'q."
+msgstr "No deliveries yet."
+
+msgid "Saqlangandan keyin bu yerda kuryerning ish natijasi va qo'lidagi naqd pul chiqadi."
+msgstr "After saving, the courier's results and cash in hand appear here."
+
+msgid "Topshiriladigan naqd pul yo'q."
+msgstr "No cash to hand in."
+
+msgid "Saqlandi — kuryerga Telegram va bildirishnoma orqali xabar yuborildi."
+msgstr "Saved — the courier was notified on Telegram and in notifications."
+
+msgid "Akkaunt bog'landi — endi biriktirilgan buyurtmalar kuryerga keladi."
+msgstr "Account linked — assigned orders now reach the courier."
+
+msgid "Kuryer ismini kiriting yoki akkaunt tanlang."
+msgstr "Enter the courier's name or pick an account."
+
+msgid "Biriktirilgan vaqt"
+msgstr "Assigned at"
+
+msgid "Naqd pul topshirilgan"
+msgstr "Cash handed in"
+
+msgid "Kuryer yig'ilgan naqd pulni kassaga topshirgan vaqt."
+msgstr "When the courier handed the collected cash to the till."
+
+msgid "Yetkazish tahlili (90 kun)"
+msgstr "Delivery analysis (90 days)"
+
+msgid "Sozlamalar tekshiruvi"
+msgstr "Settings check"
+
+msgid "Narx kalkulyatori"
+msgstr "Price calculator"
+
+msgid "Tahlil"
+msgstr "Analysis"
+
+msgid "Tekshiruv"
+msgstr "Check"
+
+msgid "Kalkulyator"
+msgstr "Calculator"
+
+msgid "So'nggi {0} kunda {1} ta buyurtma. Yetkazish daromadi — buyurtmada qayd etilgan yetkazish puli (yetkazilganlar)."
+msgstr "{1} orders in the last {0} days. Delivery income = the delivery fee frozen on delivered orders."
+
+msgid "Olib ketish"
+msgstr "Pickup"
+
+msgid "{0} ta buyurtma · {1} ta yetkazilgan"
+msgstr "{0} orders · {1} delivered"
+
+msgid "o'rtacha {0} so'm · bepul {1} ta"
+msgstr "average {0} so'm · {1} free"
+
+msgid "kuryer haqi kiritilmagan"
+msgstr "courier fees not entered"
+
+msgid "filialdan olib ketish — yetkazish xarajati yo'q"
+msgstr "branch pickup — no delivery cost"
+
+msgid "Yetkazilgan buyurtmalar — hududlar bo'yicha"
+msgstr "Delivered orders by region"
+
+msgid "Hech bir filialda xarita nuqtasi yo'q — Toshkent ichida masofa hisoblanmaydi, hamma maksimal narxni to'laydi."
+msgstr "No branch has a map point — distance in Tashkent can't be measured, everyone pays the maximum price."
+
+msgid "{0} ta faol filialda xarita nuqtasi yo'q. Masofa faqat nuqtasi bor filiallardan hisoblanadi."
+msgstr "{0} active branches have no map point. Distance is measured only from branches that have one."
+
+msgid "Koordinatalarni kiriting"
+msgstr "Enter coordinates"
+
+msgid "Do'konlar → filial → koordinatalar"
+msgstr "Stores → branch → coordinates"
+
+msgid "Mahsulotlar → variant → og'irlik"
+msgstr "Products → variant → weight"
+
+msgid "Bepul yetkazish chegarasi o'rnatilmagan. Ko'p do'konlar katta xaridda yetkazishni bepul qiladi — o'rtacha chekni oshiradi."
+msgstr "No free-delivery threshold is set. Many shops make delivery free on big orders — it raises the average receipt."
+
+msgid "«Bepul yetkazish» bo'limi"
+msgstr "«Free delivery» section"
+
+msgid "Viloyatlar bo'limi"
+msgstr "Regions section"
+
+msgid "Sozlamalar to'liq: filiallar xaritada, mahsulotlarda og'irlik bor."
+msgstr "Settings are complete: branches are on the map, products have weights."
+
+msgid "Mijoz checkout'da ko'radigan narxni tekshiring — sozlamani o'zgartirib «Saqlash»dan keyin natija yangilanadi."
+msgstr "Check the price a shopper sees at checkout — change a setting, press «Save» and the result updates."
+
+msgid "— tanlang —"
+msgstr "— choose —"
+
+msgid "Shahar / tuman"
+msgstr "City / district"
+
+msgid "Posilka og'irligi, kg"
+msgstr "Parcel weight, kg"
+
+msgid "Filialdan masofa, km"
+msgstr "Distance from branch, km"
+
+msgid "Buyurtma summasi, so'm"
+msgstr "Order total, so'm"
+
+msgid "Hududni tanlang"
+msgstr "Choose a region"
+
+msgid "noma'lum"
+msgstr "unknown"
+
+msgid "BTS dekabr–mart oylarida 30% gacha ustama qo'llashi mumkin. BTS e'lon qilsa, shu yerga yozing."
+msgstr "BTS may add up to 30% in December–March. Enter it here when BTS announces it."
+
+msgid "«BTS rasmiy tarifi» — bts.uz tarif kartasi (01.09.2026): manzil zonasi, posilka og'irligi va hajmi bo'yicha. Viloyat uchun alohida tarif kiritilgan bo'lsa, o'sha ishlatiladi."
+msgstr "«Official BTS tariff» — the bts.uz tariff card (01.09.2026): by address zone, parcel weight and volume. A region's own rate wins if set."
+
+msgid "Hajmiy og'irlik = hajm / 6000. Sport ozuqa bankasi o'rtacha 4 500 sm³/kg (qadoq bilan)."
+msgstr "Volumetric weight = volume / 6000. A sports-nutrition tub averages 4 500 cm³/kg (with packaging)."
+
+msgid "Yoqilsa, narxga BTS kuryerining manzilgacha yetkazish haqi qo'shiladi. O'chiq bo'lsa — mijoz BTS ofisidan oladi."
+msgstr "When on, the BTS courier's door delivery fee is added. When off, the customer collects at a BTS office."
+
+msgid "Viloyatlar (Toshkent viloyati ham) — BTS"
+msgstr "Regions (incl. Tashkent region) — BTS"
+
+msgid "Savat tahlili"
+msgstr "Cart analysis"
+
+msgid "So'nggi {0} kun · savatga qo'shilgan mahsulotdan yetkazilgan buyurtmagacha"
+msgstr "Last {0} days · from a product added to a cart to a delivered order"
+
+msgid "Konversiya"
+msgstr "Conversion"
+
+msgid "{0} ta savatdan buyurtmaga"
+msgstr "of {0} carts became orders"
+
+msgid "Tashlab ketish darajasi"
+msgstr "Abandonment rate"
+
+msgid "buyurtmagacha yetmagan savatlar"
+msgstr "carts that never became an order"
+
+msgid "Savatlardan tushum"
+msgstr "Revenue from carts"
+
+msgid "yetkazilgan · yo'lda {0}"
+msgstr "delivered · {0} on the way"
+
+msgid "Qaror vaqti (mediana)"
+msgstr "Decision time (median)"
+
+msgid "birinchi mahsulotdan buyurtmagacha"
+msgstr "from the first product to the order"
+
+msgid "Akkaunt bilan / mehmon"
+msgstr "Signed in / guest"
+
+msgid "konversiya: kirgan mijoz va mehmon"
+msgstr "conversion: signed-in customer vs guest"
+
+msgid "Savat voronkasi"
+msgstr "Cart funnel"
+
+msgid "Savatga qo'shildi"
+msgstr "Added to cart"
+
+msgid "Akkaunt bilan"
+msgstr "Signed in"
+
+msgid "Buyurtma berildi"
+msgstr "Ordered"
+
+msgid "Akkaunt bilan kirgan mijozlar ko'proq buyurtma beradi — checkout'da Telegram orqali bir bosishda kirishni ko'rsatish konversiyani oshiradi."
+msgstr "Signed-in customers order more — offering one-tap Telegram sign-in at checkout raises conversion."
+
+msgid "Mehmonlar ham yaxshi buyurtma beryapti — ro'yxatdan o'tishni majburlamang, kupon bilan rag'batlantiring."
+msgstr "Guests order well too — don't force sign-up, reward it with a coupon."
+
+msgid "savat ochildi"
+msgstr "cart started"
+
+msgid "Tashlab ketilgan savatlar — yoshi bo'yicha"
+msgstr "Abandoned carts by age"
+
+msgid "{0} ta savat · {1} (bugungi narxda)"
+msgstr "{0} carts · {1} (at today's prices)"
+
+msgid "1–3 kun"
+msgstr "1–3 days"
+
+msgid "3–7 kun"
+msgstr "3–7 days"
+
+msgid "7–30 kun"
+msgstr "7–30 days"
+
+msgid "30+ kun"
+msgstr "30+ days"
+
+msgid "{0} savat · {1} eslatsa bo'ladi"
+msgstr "{0} carts · {1} can be reminded"
+
+msgid "{0} mijozga eslatma yuborish"
+msgstr "Remind {0} customers"
+
+msgid "1–30 kun oldin tashlab ketilgan savatlar egalariga sayt bildirishnomasi va Telegram xabari boradi. Har bir savatga 24 soatda bir martadan ko'p yuborilmaydi."
+msgstr "Owners of carts abandoned 1–30 days ago get a site notification and a Telegram message. No cart is reminded more than once in 24 hours."
+
+msgid "Tasdiqlash va yuborish"
+msgstr "Confirm and send"
+
+msgid "Hozir eslatma yuboriladigan savat yo'q (mehmon savatlari yoki so'nggi 24 soatda eslatilgan)."
+msgstr "No carts to remind right now (guest carts or reminded in the last 24 hours)."
+
+msgid "Eslatmalar samaradorligi"
+msgstr "Reminder effectiveness"
+
+msgid "eslatma yuborildi"
+msgstr "reminders sent"
+
+msgid "savat qaytdi (7 kun ichida)"
+msgstr "carts came back (within 7 days)"
+
+msgid "qaytish darajasi"
+msgstr "win-back rate"
+
+msgid "qaytgan buyurtmalar"
+msgstr "won-back orders"
+
+msgid "Manba bo'yicha"
+msgstr "By source"
+
+msgid "konversiya {0}"
+msgstr "conversion {0}"
+
+msgid "Bu davrda savat ochilmagan"
+msgstr "No carts started in this period"
+
+msgid "Sayt"
+msgstr "Site"
+
+msgid "Mobil"
+msgstr "Mobile"
+
+msgid "Telegram bot / API"
+msgstr "Telegram bot / API"
+
+msgid "Eng ko'p tashlab ketilgan mahsulotlar"
+msgstr "Most abandoned products"
+
+msgid "{0} dona · {1} savatda"
+msgstr "{0} pcs · in {1} carts"
+
+msgid "Tashlab ketilgan savat yo'q"
+msgstr "No abandoned carts"
+
+msgid "Ko'p savatda turib, kam sotib olinadigan mahsulotda odatda narx yoki yetkazish savoli bo'ladi — kupon yoki Telegram post yaxshi ishlaydi."
+msgstr "A product sitting in many carts but rarely bought usually has a price or delivery question — a coupon or a Telegram post works well."
+
+msgid "Reminder sent to %(n)s customer(s) -- they see it in their notifications and on Telegram."
+msgstr "Reminder sent to %(n)s customer(s) -- they see it in their notifications and on Telegram."
+
+msgid "Faollik — 14 kun"
+msgstr "Activity — 14 days"
+
+msgid "qo'shildi"
+msgstr "added"
+
+msgid "o'chirildi"
+msgstr "removed"
+
+msgid "7 kunda {0} ta savatga mahsulot qo'shildi"
+msgstr "Products were added to {0} carts in 7 days"
+
+msgid "eng faol vaqt {0}:00–{1}:00"
+msgstr "busiest time {0}:00–{1}:00"
+
+msgid "Eng ko'p qo'shilgan (7 kun)"
+msgstr "Most added (7 days)"
+
+msgid "Bu hafta qo'shilmagan"
+msgstr "Nothing added this week"
+
+msgid "Ko'p o'chirilgan"
+msgstr "Often removed"
+
+msgid "Savatdan tez-tez o'chiriladigan mahsulotda narx, yetkazish narxi yoki ta'm/hajm tanlovi savoli bo'lishi mumkin."
+msgstr "A product often removed from carts may have a price, delivery-fee or flavour/size question."
+
+msgid "Sizga yangi yetkazish biriktirildi"
+msgstr "New delivery assigned to you"
+
+msgid "{0} kunda {1} ta savatga mahsulot qo'shildi"
+msgstr "Products were added to {1} carts in {0} days"
+
+msgid "eng faol vaqt {0}:{1}–{2}:{3}"
+msgstr "busiest time {0}:{1}–{2}:{3}"
+
+msgid "{0} ta savat · {1} so'm (bugungi narxda)"
+msgstr "{0} carts · {1} so'm (at today's prices)"
+
+msgid "yetkazilgan · yo'lda {0} so'm"
+msgstr "delivered · {0} so'm on the way"
+
+msgid "yetkazilgan · yo'lda —"
+msgstr "delivered · nothing on the way"
+
+msgid "kuryerlarga {0} so'm · {1}{2} so'm ({3}% buyurtmada)"
+msgstr "couriers {0} so'm · {1}{2} so'm ({3}% of orders)"
+
+msgid "{0} so'm · {1}%"
+msgstr "{0} so'm · {1}%"
+
+msgid "eng faol vaqt"
+msgstr "busiest time"
+
+msgid "«Bepul yetkazish» bo'limi →"
+msgstr "«Free delivery» section →"
+
+msgid "Koordinatalarni kiriting →"
+msgstr "Enter coordinates →"
+
+msgid "Mahsulotlar → variant → og'irlik →"
+msgstr "Products → variant → weight →"
+
+msgid "Viloyatlar bo'limi →"
+msgstr "Regions section →"
+
+msgid "Xodimlar (Orders bot)"
+msgstr "Staff (Orders bot)"

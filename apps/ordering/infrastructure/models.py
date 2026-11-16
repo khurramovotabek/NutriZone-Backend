@@ -315,10 +315,20 @@ class PaymentWebhookDelivery(BaseModel):
 class Courier(BaseModel):
     """A person who takes delivery orders to customers (own staff or a hired courier); picked on the delivery desk."""
 
+    KIND_CHOICES = (("staff", _("O'z xodimimiz")), ("freelance", _("Yollanma kuryer")), ("partner", _("Hamkor xizmat")))
+
+    code = models.CharField(_("Kuryer ID"), max_length=12, unique=True, null=True, blank=True, editable=False)
+    user = models.OneToOneField("identity.User", on_delete=models.SET_NULL, null=True, blank=True, related_name="courier_profile",
+                                verbose_name=_("Foydalanuvchi akkaunti"),
+                                help_text=_("Kuryerning saytdagi / Telegram botdagi akkaunti. Bog'langach, unga biriktirilgan buyurtmalar Telegram va bildirishnomalarga keladi."))
     name = models.CharField(_("Name"), max_length=120)
     phone = models.CharField(_("Phone"), max_length=32, blank=True, default="")
+    kind = models.CharField(_("Turi"), max_length=12, choices=KIND_CHOICES, default="staff")
     vehicle = models.CharField(_("Transport"), max_length=60, blank=True, default="", help_text=_("e.g. Damas 01 A 123 BC, scooter, on foot"))
     telegram_username = models.CharField(_("Telegram"), max_length=64, blank=True, default="")
+    default_fee = models.DecimalField(_("Odatiy kuryer haqi (so'm)"), max_digits=12, decimal_places=2, null=True, blank=True,
+                                      help_text=_("Biriktirishda «Kuryer haqi» bo'sh qolsa shu summa yoziladi."))
+    note = models.CharField(_("Izoh"), max_length=300, blank=True, default="")
     is_active = models.BooleanField(_("Active"), default=True)
 
     class Meta:
@@ -328,7 +338,23 @@ class Courier(BaseModel):
         verbose_name_plural = _("Couriers")
 
     def __str__(self) -> str:
-        return self.name
+        return f"{self.name} ({self.code})" if self.code else self.name
+
+    def save(self, *args, **kwargs):
+        if not self.code:  # KR-001, KR-002 … -- the courier's short id on the desk, waybills and Telegram
+            from django.db import IntegrityError, transaction
+
+            for _attempt in range(5):
+                last = Courier.objects.exclude(code=None).order_by("-code").values_list("code", flat=True).first()
+                n = int(last.split("-")[1]) + 1 if last and last.split("-")[-1].isdigit() else Courier.objects.count() + 1
+                self.code = f"KR-{n:03d}"
+                try:
+                    with transaction.atomic():
+                        return super().save(*args, **kwargs)
+                except IntegrityError:
+                    self.code = None
+                    continue
+        return super().save(*args, **kwargs)
 
 
 class DeliveryAssignment(BaseModel):
@@ -342,6 +368,10 @@ class DeliveryAssignment(BaseModel):
     fee = models.DecimalField(_("Courier fee"), max_digits=12, decimal_places=2, null=True, blank=True)
     note = models.CharField(_("Note for the courier"), max_length=300, blank=True, default="")
     assigned_by = models.CharField(max_length=150, blank=True, default="")
+    assigned_at = models.DateTimeField(_("Biriktirilgan vaqt"), null=True, blank=True)
+    cash_settled_at = models.DateTimeField(_("Naqd pul topshirilgan"), null=True, blank=True,
+                                           help_text=_("Kuryer yig'ilgan naqd pulni kassaga topshirgan vaqt."))
+    cash_settled_by = models.CharField(max_length=150, blank=True, default="")
 
     class Meta:
         db_table = "ordering_delivery_assignments"

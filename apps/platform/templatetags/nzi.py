@@ -56,7 +56,7 @@ def nz_pager(cl, page_range) -> dict:
 
 
 GLASS_PAGES = ("analytics/", "reports/", "sales-plan/", "segments/", "stores/branch-report/", "wms/reports/", "search/searchterm/",
-               "chat/operators/", "control/", "platform/", "settings-overview/")
+               "chat/operators/", "control/", "platform/", "settings-overview/", "ordering/", "cart/")
 
 
 @register.filter
@@ -67,4 +67,6 @@ def nz_glass(path: str) -> bool:
     if not path or not path.startswith(ADMIN_PREFIX):
         return False
     rest = path[len(ADMIN_PREFIX):]
+    if "waybill" in rest:  # the printed delivery sheet stays plain paper
+        return False
     return rest == "" or rest.startswith(GLASS_PAGES)
