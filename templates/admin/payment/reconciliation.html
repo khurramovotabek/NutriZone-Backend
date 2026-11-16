@@ -20,6 +20,11 @@
     <div class="nzp-stat" style="--c:#2563eb"><i class="fas fa-clock-rotate-left" aria-hidden="true"></i><div><b>{% if cfg.last_reconciled_at %}{{ cfg.last_reconciled_at|date:"d.m H:i" }}{% else %}—{% endif %}</b><span>{% if summary.checked is not None %}{% blocktranslate with n=summary.checked e=summary.external %}Oxirgi tekshiruv · {{ n }} to'lov · Click API: {{ e }}{% endblocktranslate %}{% else %}{% translate "Hali tekshirilmagan" %}{% endif %}{% if not cfg.reconcile_enabled %} · {% translate "kunlik o'chirilgan" %}{% endif %}</span></div></div>
   </div>
 
+  <section class="nzp-card pay-an">
+    <header class="pay-an-head"><h3><i class="fas fa-list-check" aria-hidden="true"></i> {% translate "Nima tekshiriladi" %}</h3><small class="pay-help"><b>{{ checks|length }}</b> <span>{% translate "ta algoritm · har kuni ertalab va «Hozir tekshirish» bosilganda" %}</span></small></header>
+    <div class="pay-checks">{% for c in checks %}<div class="pay-check-card{% if c.open %} has{% endif %}" style="--t:{{ c.color }}"><i class="fas {{ c.icon }}" aria-hidden="true"></i><span><b>{{ c.title }}</b><small>{{ c.advice }}</small></span><em>{% if c.open %}{{ c.open }}{% else %}<i class="fas fa-check" aria-hidden="true"></i>{% endif %}</em></div>{% endfor %}</div>
+  </section>
+
   <div class="nzp-toolbar">{% with section="recon" %}{% include "admin/payment/_nav.html" %}{% endwith %}</div>
   <div class="nzp-toolbar"><nav class="nzp-tabs"><a class="nzp-tab{% if not show_all %} on{% endif %}" href="?" style="--t:#e11d48">{% translate "Ochiq" %}</a><a class="nzp-tab{% if show_all %} on{% endif %}" href="?all=1" style="--t:#64748b">{% translate "Barchasi" %}</a></nav></div>
 

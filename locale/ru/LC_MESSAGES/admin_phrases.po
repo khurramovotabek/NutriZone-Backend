@@ -7462,3 +7462,543 @@ msgstr "Кошельки"
 
 msgid "Eng katta xarajatlar"
 msgstr "Крупнейшие расходы"
+
+msgid "Kalitlar kiritilgan"
+msgstr "Ключи введены"
+
+msgid "Merchant kabinetidan ID va kalitlarni nusxalab, saqlang."
+msgstr "Скопируйте ID и ключи из кабинета мерчанта и сохраните."
+
+msgid "Kalitlar formati to'g'ri"
+msgstr "Формат ключей верный"
+
+msgid "Qizil belgilangan maydonlarni tuzating."
+msgstr "Исправьте поля, отмеченные красным."
+
+msgid "Sayt HTTPS orqali ochiladi"
+msgstr "Сайт открывается по HTTPS"
+
+msgid "Provayderlar faqat HTTPS callback'larni qabul qiladi."
+msgstr "Провайдеры принимают только HTTPS-колбэки."
+
+msgid "Self-test o'tgan"
+msgstr "Самотест пройден"
+
+msgid "«Ulanishni tekshirish» tugmasini bosing (kalit o'zgargandan keyin qayta)."
+msgstr "Нажмите «Проверить подключение» (повторно после смены ключа)."
+
+msgid "Kabinetga callback URL yozilgan"
+msgstr "Callback URL прописан в кабинете"
+
+msgid "Callback manzillarini kabinetga qo'ying — provayderning birinchi so'rovi kelganda belgilanadi."
+msgstr "Укажите адреса колбэков в кабинете — отметится при первом запросе провайдера."
+
+msgid "Usul yoqilgan"
+msgstr "Способ включён"
+
+msgid "«Yoqilgan» ni belgilang — checkout'da paydo bo'ladi."
+msgstr "Отметьте «Включено» — способ появится в checkout."
+
+msgid "Production rejimi"
+msgstr "Боевой режим"
+
+msgid "Test to'lovlar o'tgach test rejimini o'chiring."
+msgstr "После тестовых оплат отключите тестовый режим."
+
+msgid "Birinchi muvaffaqiyatli to'lov"
+msgstr "Первая успешная оплата"
+
+msgid "Kichik summali buyurtmani o'zingiz to'lab ko'ring."
+msgstr "Оплатите сами небольшой заказ."
+
+msgid "Kassa ID 24 belgili hex bo'lishi kerak (masalan 5e730e8e0b852a417aa49ceb)."
+msgstr "ID кассы — 24 hex-символа (например 5e730e8e0b852a417aa49ceb)."
+
+msgid "Hisob maydoni lotin harf/raqam/pastki chiziqdan iborat bo'lishi kerak."
+msgstr "Поле счёта — только латинские буквы, цифры и подчёркивание."
+
+msgid "Kalit juda qisqa — kabinetdan to'liq nusxalanganini tekshiring."
+msgstr "Ключ слишком короткий — проверьте, что скопирован полностью."
+
+msgid "Kalit boshida/oxirida bo'sh joy bor."
+msgstr "В начале/конце ключа есть пробел."
+
+msgid "Test kaliti production kaliti bilan bir xil."
+msgstr "Тестовый ключ совпадает с боевым."
+
+msgid "Test rejimi yoqilgan, lekin test kaliti yo'q."
+msgstr "Тестовый режим включён, но тестового ключа нет."
+
+msgid "Faqat raqam bo'lishi kerak."
+msgstr "Только цифры."
+
+msgid "Secret key juda qisqa."
+msgstr "Secret key слишком короткий."
+
+msgid "Merchant User ID bo'lmasa, Click bilan avtomatik solishtirish ishlamaydi."
+msgstr "Без Merchant User ID автосверка с Click не работает."
+
+msgid "Service ID faqat raqam."
+msgstr "Service ID — только цифры."
+
+msgid "Loginda bo'sh joy bo'lmasligi kerak."
+msgstr "В логине не должно быть пробелов."
+
+msgid "Parol juda qisqa."
+msgstr "Пароль слишком короткий."
+
+msgid "Parametr kaliti lotin harf/raqamdan iborat bo'lishi kerak."
+msgstr "Ключ параметра — латинские буквы и цифры."
+
+msgid "To'lov havolasi https:// bilan boshlanishi kerak."
+msgstr "Ссылка оплаты должна начинаться с https://."
+
+msgid "To'lov havolasi shabloni yo'q — mijoz Uzum ilovasida servisni o'zi topadi."
+msgstr "Шаблона ссылки нет — клиент сам найдёт сервис в приложении Uzum."
+
+msgid "Uzum servisda sozlagan maydon nomi (params ichida). Odatda order_id yoki account."
+msgstr "Имя поля, настроенное Uzum в сервисе (внутри params). Обычно order_id или account."
+
+msgid "Buyurtma parametri kaliti"
+msgstr "Ключ параметра заказа"
+
+msgid "Har bir qadam avtomatik tekshiriladi. Hammasi yashil bo'lsa — to'lov qabul qilishga tayyor."
+msgstr "Каждый шаг проверяется автоматически. Всё зелёное — можно принимать оплату."
+
+msgid "5 daqiqada ulash"
+msgstr "Подключение за 5 минут"
+
+msgid "Keyingi qadam:"
+msgstr "Следующий шаг:"
+
+msgid "Integratsiya tayyor"
+msgstr "Интеграция готова"
+
+msgid "Barcha tekshiruvlar o'tdi."
+msgstr "Все проверки пройдены."
+
+msgid "30 kun: {0} tranzaksiya · {1}% muvaffaqiyatli"
+msgstr "30 дней: {0} транзакций · {1}% успешно"
+
+msgid "Oxirgi self-test: muvaffaqiyatli"
+msgstr "Последний самотест: успешно"
+
+msgid "Oxirgi self-test: xato"
+msgstr "Последний самотест: ошибка"
+
+msgid "To'lov sahifasi havolasi (namuna, 1 000 so'm)"
+msgstr "Ссылка на страницу оплаты (пример, 1 000 сум)"
+
+msgid "Provayder sahifasi ochilib, «buyurtma topilmadi» desa — merchant ID to'g'ri va callback ishlayapti."
+msgstr "Если страница провайдера пишет «заказ не найден» — merchant ID верный и колбэк работает."
+
+msgid "Ulanish tayyorligi"
+msgstr "Готовность подключения"
+
+msgid "Tayyorlik {0}/{1}"
+msgstr "Готовность {0}/{1}"
+
+msgid "Hammasi tayyor"
+msgstr "Всё готово"
+
+msgid "muvaffaqiyat"
+msgstr "успех"
+
+msgid "To'lovlar tahlili"
+msgstr "Аналитика платежей"
+
+msgid "Tahlil (Excel)"
+msgstr "Аналитика (Excel)"
+
+msgid "To'langan"
+msgstr "Оплачено"
+
+msgid "o'rtacha {0} so'm"
+msgstr "в среднем {0} сум"
+
+msgid "{0} urinishdan"
+msgstr "из {0} попыток"
+
+msgid "Provayderda muvaffaqiyat"
+msgstr "Успех у провайдера"
+
+msgid "{0} boshlangandan"
+msgstr "из {0} начатых"
+
+msgid "To'lash vaqti"
+msgstr "Время оплаты"
+
+msgid "mediana, checkout → to'lov"
+msgstr "медиана, checkout → оплата"
+
+msgid "Kunlik tushum, provayder bo'yicha"
+msgstr "Выручка по дням и провайдерам"
+
+msgid "Kunlik tushum"
+msgstr "Выручка по дням"
+
+msgid "Voronka"
+msgstr "Воронка"
+
+msgid "Checkout ochildi"
+msgstr "Checkout открыт"
+
+msgid "Provayderda boshlandi"
+msgstr "Начато у провайдера"
+
+msgid "To'landi"
+msgstr "Оплачено"
+
+msgid "Qaytarildi"
+msgstr "Возвращено"
+
+msgid "Bekor/xato sabablari"
+msgstr "Причины отмен/ошибок"
+
+msgid "Vaqt tugadi"
+msgstr "Истекло время"
+
+msgid "Operator bekor qildi"
+msgstr "Отменил оператор"
+
+msgid "Avtomatik bekor (to'lanmadi)"
+msgstr "Автоотмена (не оплачен)"
+
+msgid "Buyurtma bekor qilingan"
+msgstr "Заказ отменён"
+
+msgid "Provayder qaytardi"
+msgstr "Возврат провайдером"
+
+msgid "Noma'lum"
+msgstr "Неизвестно"
+
+msgid "Provayder"
+msgstr "Провайдер"
+
+msgid "Muvaffaqiyat"
+msgstr "Успех"
+
+msgid "{0} urinish · {1} boshlangan"
+msgstr "{0} попыток · {1} начато"
+
+msgid "To'lovlar soatlar bo'yicha"
+msgstr "Платежи по часам"
+
+msgid "eng faol: {0}:00"
+msgstr "пик: {0}:00"
+
+msgid "Usullar ulushi"
+msgstr "Доля способов"
+
+msgid "Integratsiya sog'lig'i (7 kun)"
+msgstr "Состояние интеграции (7 дней)"
+
+msgid "so'rov kelmagan"
+msgstr "запросов не было"
+
+msgid "So'rovlar"
+msgstr "Запросы"
+
+msgid "Xato javoblar"
+msgstr "Ответы с ошибкой"
+
+msgid "O'rtacha javob"
+msgstr "Средний ответ"
+
+msgid "sekin — Payme 5 s, Uzum 10 s kutadi"
+msgstr "медленно — Payme ждёт 5 с, Uzum 10 с"
+
+msgid "me'yorda"
+msgstr "в норме"
+
+msgid "Metod"
+msgstr "Метод"
+
+msgid "Eng ko'p xato kodlari"
+msgstr "Частые коды ошибок"
+
+msgid "Xatolar yo'q."
+msgstr "Ошибок нет."
+
+msgid "Nima tekshiriladi"
+msgstr "Что проверяется"
+
+msgid "{0} ta algoritm · har kuni 06:00 va «Hozir tekshirish» bosilganda"
+msgstr "{0} алгоритмов · ежедневно в 06:00 и по кнопке «Проверить сейчас»"
+
+msgid "To'langan, lekin buyurtma tasdiqlanmagan"
+msgstr "Оплачено, но заказ не подтверждён"
+
+msgid "Buyurtmani tasdiqlang yoki holatini tekshiring."
+msgstr "Подтвердите заказ или проверьте его статус."
+
+msgid "To'langan buyurtma bekor qilingan"
+msgstr "Оплаченный заказ отменён"
+
+msgid "Mijozga pulni qaytaring (provayder kabineti orqali)."
+msgstr "Верните деньги клиенту (через кабинет провайдера)."
+
+msgid "Buyurtma ikki marta to'langan"
+msgstr "Заказ оплачен дважды"
+
+msgid "Ortiqcha to'lovni mijozga qaytaring."
+msgstr "Верните клиенту лишнюю оплату."
+
+msgid "To'lov summasi buyurtmadan farq qiladi"
+msgstr "Сумма оплаты отличается от заказа"
+
+msgid "Buyurtma o'zgargan bo'lsa, farqni qaytaring."
+msgstr "Если заказ изменился, верните разницу."
+
+msgid "To'lov buyurtmaga yozilmagan"
+msgstr "Оплата не записана в заказ"
+
+msgid "Buyurtma kartasini tekshiring."
+msgstr "Проверьте карточку заказа."
+
+msgid "Tranzaksiya provayderda yarim yo'lda qolgan"
+msgstr "Транзакция зависла у провайдера"
+
+msgid "Provayder kabinetida holatini tekshiring."
+msgstr "Проверьте статус в кабинете провайдера."
+
+msgid "Bekor buyurtmada ochiq tranzaksiya"
+msgstr "Открытая транзакция на отменённом заказе"
+
+msgid "Provayder kabinetida tranzaksiyani bekor qiling — aks holda pul yechilishi mumkin."
+msgstr "Отмените транзакцию в кабинете провайдера — иначе деньги могут списаться."
+
+msgid "Ko'p imzo/kalit xatolari"
+msgstr "Много ошибок подписи/ключа"
+
+msgid "Kabinetdagi kalit bilan dashboard'dagi kalit mosligini tekshiring."
+msgstr "Проверьте, что ключ в кабинете совпадает с ключом в дашборде."
+
+msgid "Provayderda to'langan, bizda yo'q"
+msgstr "Оплачено у провайдера, у нас нет"
+
+msgid "Callback yetib kelmagan — buyurtmani qo'lda tasdiqlang yoki provayder bilan bog'laning."
+msgstr "Колбэк не дошёл — подтвердите заказ вручную или свяжитесь с провайдером."
+
+msgid "Bizda to'langan, provayderda yo'q"
+msgstr "Оплачено у нас, у провайдера нет"
+
+msgid "Provayder kabinetida to'lovni tekshiring."
+msgstr "Проверьте оплату в кабинете провайдера."
+
+msgid "Provayder API javob bermadi"
+msgstr "API провайдера не ответил"
+
+msgid "Keyingi tekshiruvda qayta urinib ko'riladi."
+msgstr "Повторим при следующей проверке."
+
+msgid "Avtorizatsiya xatosi"
+msgstr "Ошибка авторизации"
+
+msgid "Kassa kaliti dashboard'dagi bilan mos emas yoki test/production rejimi aralashgan."
+msgstr "Ключ кассы не совпадает с дашбордом или перепутан тестовый/боевой режим."
+
+msgid "POST emas"
+msgstr "Не POST"
+
+msgid "So'rov POST usulida kelmagan."
+msgstr "Запрос пришёл не методом POST."
+
+msgid "JSON xato"
+msgstr "Ошибка JSON"
+
+msgid "So'rov tanasini o'qib bo'lmadi."
+msgstr "Не удалось прочитать тело запроса."
+
+msgid "Noto'g'ri so'rov"
+msgstr "Неверный запрос"
+
+msgid "JSON-RPC tuzilmasi buzilgan."
+msgstr "Нарушена структура JSON-RPC."
+
+msgid "Metod topilmadi"
+msgstr "Метод не найден"
+
+msgid "Payme yangi metod yubordi — jurnalni tekshiring."
+msgstr "Payme прислал новый метод — проверьте журнал."
+
+msgid "Parametr xato"
+msgstr "Ошибка параметра"
+
+msgid "Majburiy parametr yo'q."
+msgstr "Нет обязательного параметра."
+
+msgid "Ichki xato"
+msgstr "Внутренняя ошибка"
+
+msgid "Server xatosi — loglarni tekshiring."
+msgstr "Ошибка сервера — проверьте логи."
+
+msgid "Summa noto'g'ri"
+msgstr "Неверная сумма"
+
+msgid "To'lov summasi buyurtma summasiga teng emas (tiyinda)."
+msgstr "Сумма оплаты не равна сумме заказа (в тийинах)."
+
+msgid "Tranzaksiya topilmadi"
+msgstr "Транзакция не найдена"
+
+msgid "Payme bizda yo'q tranzaksiyani so'radi."
+msgstr "Payme запросил транзакцию, которой у нас нет."
+
+msgid "Bekor qilib bo'lmaydi"
+msgstr "Нельзя отменить"
+
+msgid "Buyurtma jo'natilgan — pul qaytarilmaydi."
+msgstr "Заказ отправлен — деньги не возвращаются."
+
+msgid "Bajarib bo'lmaydi"
+msgstr "Нельзя провести"
+
+msgid "Tranzaksiya muddati o'tgan (12 soat) yoki bekor qilingan."
+msgstr "Транзакция истекла (12 часов) или отменена."
+
+msgid "Buyurtma topilmadi"
+msgstr "Заказ не найден"
+
+msgid "Hisob maydoni (account) kaliti yoki buyurtma raqami noto'g'ri. Self-test shu kodni kutadi."
+msgstr "Неверный ключ поля счёта (account) или номер заказа. Самотест ожидает этот код."
+
+msgid "Buyurtma to'langan"
+msgstr "Заказ оплачен"
+
+msgid "Buyurtma allaqachon to'langan."
+msgstr "Заказ уже оплачен."
+
+msgid "Buyurtma band"
+msgstr "Заказ занят"
+
+msgid "Bu buyurtma uchun boshqa tranzaksiya ochiq."
+msgstr "По заказу открыта другая транзакция."
+
+msgid "Chek topilmadi"
+msgstr "Чек не найден"
+
+msgid "SetFiscalData: tranzaksiya yo'q."
+msgstr "SetFiscalData: транзакции нет."
+
+msgid "Imzo xato"
+msgstr "Неверная подпись"
+
+msgid "SECRET_KEY kabinetdagi bilan mos emas."
+msgstr "SECRET_KEY не совпадает с кабинетом."
+
+msgid "Summa buyurtma summasiga teng emas."
+msgstr "Сумма не равна сумме заказа."
+
+msgid "Amal topilmadi"
+msgstr "Действие не найдено"
+
+msgid "action 0 yoki 1 bo'lishi kerak."
+msgstr "action должен быть 0 или 1."
+
+msgid "Allaqachon to'langan"
+msgstr "Уже оплачено"
+
+msgid "Buyurtma oldin to'langan."
+msgstr "Заказ оплачен ранее."
+
+msgid "merchant_trans_id bo'yicha buyurtma yo'q. Self-test shu kodni kutadi."
+msgstr "Заказа по merchant_trans_id нет. Самотест ожидает этот код."
+
+msgid "Complete'dagi merchant_prepare_id bizda yo'q."
+msgstr "merchant_prepare_id из Complete у нас нет."
+
+msgid "Yangilash xatosi"
+msgstr "Ошибка обновления"
+
+msgid "Bazaga yozib bo'lmadi — qayta urinish."
+msgstr "Не удалось записать в базу — повтор."
+
+msgid "So'rov xato"
+msgstr "Ошибка запроса"
+
+msgid "Majburiy parametr yo'q yoki service_id noto'g'ri."
+msgstr "Нет обязательного параметра или неверный service_id."
+
+msgid "To'lov Click'da muvaffaqiyatsiz bo'ldi yoki buyurtma bekor qilingan."
+msgstr "Оплата в Click не прошла или заказ отменён."
+
+msgid "Basic Auth login/parol mos emas."
+msgstr "Логин/пароль Basic Auth не совпадают."
+
+msgid "Noto'g'ri amal"
+msgstr "Неверная операция"
+
+msgid "Noma'lum endpoint yoki usul."
+msgstr "Неизвестный endpoint или метод."
+
+msgid "Parametr yo'q"
+msgstr "Нет параметра"
+
+msgid "serviceId, timestamp yoki transId yo'q."
+msgstr "Нет serviceId, timestamp или transId."
+
+msgid "serviceId xato"
+msgstr "Неверный serviceId"
+
+msgid "Dashboard'dagi Service ID boshqa."
+msgstr "В дашборде другой Service ID."
+
+msgid "params ichidagi buyurtma raqami yo'q. Self-test shu kodni kutadi."
+msgstr "Номера заказа из params нет. Самотест ожидает этот код."
+
+msgid "To'lab bo'lmaydi"
+msgstr "Нельзя оплатить"
+
+msgid "Buyurtma bekor qilingan yoki boshqa tranzaksiya ochiq."
+msgstr "Заказ отменён или открыта другая транзакция."
+
+msgid "Takroriy create"
+msgstr "Повторный create"
+
+msgid "Shu transId bilan tranzaksiya bor."
+msgstr "Транзакция с таким transId уже есть."
+
+msgid "Summa buyurtma summasiga teng emas (tiyin)."
+msgstr "Сумма не равна сумме заказа (тийин)."
+
+msgid "Minimaldan kam"
+msgstr "Меньше минимума"
+
+msgid "Dashboard minimal limiti."
+msgstr "Минимальный лимит в дашборде."
+
+msgid "Maksimaldan ko'p"
+msgstr "Больше максимума"
+
+msgid "Dashboard maksimal limiti."
+msgstr "Максимальный лимит в дашборде."
+
+msgid "Bizda bunday transId yo'q."
+msgstr "У нас нет такого transId."
+
+msgid "30 daqiqada tasdiqlanmagan yoki bekor qilingan."
+msgstr "Не подтверждена за 30 минут или отменена."
+
+msgid "Takroriy confirm"
+msgstr "Повторный confirm"
+
+msgid "Allaqachon tasdiqlangan."
+msgstr "Уже подтверждена."
+
+msgid "Buyurtma jo'natilgan."
+msgstr "Заказ отправлен."
+
+msgid "Takroriy reverse"
+msgstr "Повторный reverse"
+
+msgid "Allaqachon bekor qilingan."
+msgstr "Уже отменена."
+
+msgid "Ulanish ishlayapti: endpoint, imzo va kalitlar to'g'ri."
+msgstr "Подключение работает: endpoint, подпись и ключи верные."
+
+msgid "ta algoritm · har kuni ertalab va «Hozir tekshirish» bosilganda"
+msgstr "алгоритмов · каждое утро и по кнопке «Проверить сейчас»"

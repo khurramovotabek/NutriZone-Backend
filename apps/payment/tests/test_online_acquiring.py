@@ -232,7 +232,7 @@ def test_uzum_flow_and_errors(client, providers):
     assert _uzum(client, "check", {"params": {"order_id": o.order_number}}, password="bad").json()["errorCode"] == "10001"
     assert _uzum(client, "check", {"params": {"order_id": "ORD-NONE00"}}).json()["errorCode"] == "10007"
     assert _uzum(client, "check", {"params": {"order_id": o.order_number}}).json()["status"] == "OK"
-    assert _uzum(client, "create", {"transId": "u-1", "params": {"order_id": o.order_number}, "amount": 1}).json()["errorCode"] == "10011"
+    assert _uzum(client, "create", {"transId": "u-1", "params": {"order_id": o.order_number}, "amount": 7000000}).json()["errorCode"] == "10011"
     created = _uzum(client, "create", {"transId": "u-1", "params": {"order_id": o.order_number}, "amount": 5000000}).json()
     assert created["status"] == "CREATED"
     confirmed = _uzum(client, "confirm", {"transId": "u-1"}).json()
@@ -288,3 +288,137 @@ def test_selftest_proves_credentials(boss, providers):
         assert body["ok"], (key, body)
     PaymentProviderConfig.objects.filter(provider="payme").update(secrets_encrypted="")
     assert boss.post("/django-admin/payment/paymentproviderconfig/payme/selftest/").json()["ok"] is False
+
+
+def test_uzum_spec_codes_for_repeats_cancels_and_timeouts(client, providers):
+    """Uzum Merchant API spec: repeated create/confirm/reverse, confirm after cancel, 30-minute confirm timeout, missing params."""
+    o = _order(_customer(), amount="50000")
+    assert _uzum(client, "confirm", {}).json()["errorCode"] == "10005"
+    assert _uzum(client, "confirm", {"transId": "nope"}).json()["errorCode"] == "10014"
+    body = {"transId": "u-9", "params": {"order_id": o.order_number}, "amount": 5000000}
+    assert _uzum(client, "create", body).json()["status"] == "CREATED"
+    r = _uzum(client, "create", body)
+    assert r.status_code == 400 and r.json()["errorCode"] == "10010"
+    assert _uzum(client, "reverse", {"transId": "u-9"}).json()["status"] == "REVERSED"
+    assert _uzum(client, "reverse", {"transId": "u-9"}).json()["errorCode"] == "10018"
+    assert _uzum(client, "confirm", {"transId": "u-9"}).json()["errorCode"] == "10015"
+    # a new transaction confirmed twice
+    assert _uzum(client, "create", {**body, "transId": "u-10"}).json()["status"] == "CREATED"
+    assert _uzum(client, "confirm", {"transId": "u-10"}).json()["status"] == "CONFIRMED"
+    assert _uzum(client, "confirm", {"transId": "u-10"}).json()["errorCode"] == "10016"
+    assert _uzum(client, "status", {"transId": "u-10"}).json()["status"] == "CONFIRMED"
+
+
+def test_uzum_unconfirmed_transaction_fails_after_30_minutes(client, providers):
+    o = _order(_customer(), amount="50000")
+    assert _uzum(client, "create", {"transId": "u-30", "params": {"order_id": o.order_number}, "amount": 5000000}).json()["status"] == "CREATED"
+    PaymentModel.objects.filter(provider_reference="uzum:u-30").update(provider_created_at=1)
+    assert _uzum(client, "confirm", {"transId": "u-30"}).json()["errorCode"] == "10015"
+    assert PaymentModel.objects.get(provider_reference="uzum:u-30").status == "cancelled"
+    # the order is still payable by a fresh transaction
+    assert _uzum(client, "create", {"transId": "u-31", "params": {"order_id": o.order_number}, "amount": 5000000}).json()["status"] == "CREATED"
+
+
+def test_uzum_amount_limits_and_param_key(client, providers):
+    from apps.payment.infrastructure.models import PaymentProviderConfig
+
+    row = PaymentProviderConfig.objects.get(provider="uzum")
+    row.min_amount, row.max_amount = 60000, 70000
+    row.settings_public = {**row.settings_public, "param_key": "account"}
+    row.save()
+    o = _order(_customer(), amount="50000")
+    assert _uzum(client, "create", {"transId": "u-l", "params": {"account": o.order_number}, "amount": 5000000}).json()["errorCode"] == "10012"
+    ok = _uzum(client, "check", {"params": {"account": o.order_number}}).json()
+    assert ok["status"] == "OK" and ok["data"]["account"]["value"] == o.order_number
+
+
+# ---------------------------------------------------------------- analytics / setup / health
+
+
+def test_payment_analytics_numbers(client, providers):
+    from apps.payment.infrastructure import insights
+
+    o1, o2 = _order(_customer(), amount="50000"), _order(_customer(), amount="20000")
+    _uzum(client, "create", {"transId": "a-1", "params": {"order_id": o1.order_number}, "amount": 5000000})
+    _uzum(client, "confirm", {"transId": "a-1"})
+    _uzum(client, "create", {"transId": "a-2", "params": {"order_id": o2.order_number}, "amount": 2000000})
+    _uzum(client, "reverse", {"transId": "a-2"})
+    an = insights.analytics(30)
+    uz = next(p for p in an["providers"] if p["key"] == "uzum")
+    assert uz["paid"] == 1 and uz["started"] == 2 and uz["success"] == 50.0
+    assert an["totals"]["paid"] == 1 and an["totals"]["volume"] == 50000
+    assert sum(an["chart"]["series"][0]["data"] if an["chart"]["series"][0]["key"] == "uzum" else next(s for s in an["chart"]["series"] if s["key"] == "uzum")["data"]) == 50000
+    assert [f["n"] for f in an["funnel"]][:3] == [2, 2, 1]
+    assert sum(h["n"] for h in an["hours"]) == 1
+
+
+def test_callback_stats_and_error_explanations(client, providers):
+    from apps.payment.infrastructure import insights
+
+    o = _order(_customer(), amount="50000")
+    _uzum(client, "check", {"params": {"order_id": "ORD-NONE00"}})
+    _uzum(client, "check", {"params": {"order_id": o.order_number}})
+    st = insights.callback_stats(7)
+    assert st["total"] >= 2 and st["errors"] >= 1
+    top = next(e for e in st["top"] if e["provider"] == "uzum")
+    assert top["code"] == 10007 and top["expected"] and top["title"] == "Buyurtma topilmadi"
+    assert insights.explain("payme", -31001)[0] == "Summa noto'g'ri"
+    assert insights.explain("click", None) == ("OK", "")
+
+
+def test_credential_checks_and_readiness(providers):
+    from apps.payment.infrastructure import insights
+    from apps.payment.infrastructure.models import PaymentProviderConfig
+    from apps.payment.infrastructure.providers import registry
+
+    row = PaymentProviderConfig.objects.get(provider="payme")
+    row.settings_public = {**row.settings_public, "merchant_id": "not-hex"}
+    row.save()
+    state = registry.load("payme")
+    assert any(c["field"] == "merchant_id" and c["level"] == "bad" for c in insights.credential_checks(state))
+    r = insights.readiness(state, row, "https://nutrizone.uz")
+    keys = {i["key"]: i["ok"] for i in r["items"]}
+    assert keys["https"] and not keys["format"] and not keys["selftest"]
+    assert 0 < r["score"] < 100 and r["next"]
+    insights.save_selftest(row, True, -31050)
+    row.refresh_from_db()
+    assert insights.readiness(registry.load("payme"), row, "https://x.uz")["tested_fresh"]
+
+
+def test_selftest_records_result_and_pages_render(boss, providers, client):
+    from apps.payment.infrastructure.models import PaymentProviderConfig
+
+    r = boss.post("/django-admin/payment/paymentproviderconfig/uzum/selftest/").json()
+    assert r["ok"] and "Buyurtma topilmadi" in r["explain"]
+    assert PaymentProviderConfig.objects.get(provider="uzum").settings_public["_selftest"]["ok"] is True
+    row = PaymentProviderConfig.objects.get(provider="uzum")
+    page = boss.get(f"/django-admin/payment/paymentproviderconfig/{row.pk}/change/")
+    assert page.status_code == 200 and b"pay-checklist" in page.content
+    o = _order(_customer(), amount="50000")
+    _uzum(client, "create", {"transId": "p-1", "params": {"order_id": o.order_number}, "amount": 5000000})
+    _uzum(client, "confirm", {"transId": "p-1"})
+    for url in ("/django-admin/payment/paymentproviderconfig/", "/django-admin/payment/paymentmodel/?days=7", "/django-admin/payment/paymentmodel/?days=90&provider__exact=uzum",
+                "/django-admin/payment/paymentcallbacklog/", "/django-admin/payment/paymentreconciliationissue/"):
+        resp = boss.get(url)
+        assert resp.status_code == 200, url
+    assert b"pay-daily" in boss.get("/django-admin/payment/paymentmodel/").content
+    for url in ("/django-admin/payment/paymentmodel/analytics.xlsx?days=30", "/django-admin/payment/paymentcallbacklog/export.xlsx"):
+        resp = boss.get(url)
+        assert resp.status_code == 200 and resp.content[:2] == b"PK", url
+    from io import BytesIO
+
+    from openpyxl import load_workbook
+
+    wb = load_workbook(BytesIO(boss.get("/django-admin/payment/paymentmodel/analytics.xlsx").content))
+    assert wb.sheetnames == ["Xulosa", "Provayderlar", "Kunlik", "Voronka", "Callback"]
+
+
+def test_reconcile_flags_open_transaction_on_cancelled_order(client, providers):
+    from apps.payment.infrastructure import reconcile
+    from apps.payment.infrastructure.models import PaymentReconciliationIssue
+
+    o = _order(_customer(), amount="50000")
+    _uzum(client, "create", {"transId": "r-1", "params": {"order_id": o.order_number}, "amount": 5000000})
+    type(o).objects.filter(pk=o.pk).update(status="cancelled")
+    reconcile.run(external=False)
+    assert PaymentReconciliationIssue.objects.filter(kind="open_txn_order_closed", status="open").exists()

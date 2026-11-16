@@ -52,11 +52,13 @@
                 <span class="pay-secret"><input class="nzd-input" type="password" name="{{ f.key }}" placeholder="{% if f.has_value %}{% translate 'Saqlangan — almashtirish uchun yangisini kiriting' %}{% else %}{% translate 'Kiriting' %}{% endif %}" autocomplete="new-password" spellcheck="false" {% if not can_change %}disabled{% endif %}><button type="button" class="pay-eye" data-pay-eye aria-label="{% translate "Ko'rsatish" %}"><i class="fas fa-eye" aria-hidden="true"></i></button></span>
                 {% if f.has_value %}<span class="pay-stored"><i class="fas fa-lock" aria-hidden="true"></i> {% translate "Shifrlangan holda saqlangan" %} <code>{{ f.hint }}</code>{% if can_change %}<label class="pay-clear"><input type="checkbox" name="clear_{{ f.key }}"> {% translate "o'chirish" %}</label>{% endif %}</span>{% endif %}
                 {% if f.help %}<span class="pay-help">{{ f.help }}</span>{% endif %}{% if f.error %}<span class="pay-err">{{ f.error }}</span>{% endif %}
+                {% if f.check %}<span class="pay-check is-{{ f.check.level }}"><i class="fas {% if f.check.level == 'bad' %}fa-circle-xmark{% else %}fa-triangle-exclamation{% endif %}" aria-hidden="true"></i> {{ f.check.text }}</span>{% endif %}
               </label>
             {% else %}
               <label class="nzd-field-label">{{ f.label }}{% if f.required %} *{% endif %}
                 <input class="nzd-input" name="{{ f.key }}" value="{{ f.value }}" placeholder="{{ f.placeholder }}" spellcheck="false" {% if not can_change %}disabled{% endif %}>
                 {% if f.help %}<span class="pay-help">{{ f.help }}</span>{% endif %}{% if f.error %}<span class="pay-err">{{ f.error }}</span>{% endif %}
+                {% if f.check %}<span class="pay-check is-{{ f.check.level }}"><i class="fas {% if f.check.level == 'bad' %}fa-circle-xmark{% else %}fa-triangle-exclamation{% endif %}" aria-hidden="true"></i> {{ f.check.text }}</span>{% endif %}
               </label>
             {% endif %}
           {% endfor %}
@@ -86,6 +88,18 @@
     </div>
 
     <aside class="pay-side">
+      {% if ready %}
+      <section class="nzp-card pay-ready">
+        <header class="nzp-card-head nzp-card-head-sm"><span class="nzp-card-icon" style="--c:#10b981"><i class="fas fa-rocket" aria-hidden="true"></i></span><div><h3>{% translate "5 daqiqada ulash" %}</h3><p>{% translate "Har bir qadam avtomatik tekshiriladi. Hammasi yashil bo'lsa — to'lov qabul qilishga tayyor." %}</p></div></header>
+        <div class="pay-ready-head">
+          <span class="pay-ring" style="--deg:{{ ready.deg }}deg;--rc:{% if ready.score == 100 %}#10b981{% elif ready.score >= 50 %}#f59e0b{% else %}#e11d48{% endif %}"><b>{{ ready.score }}<small>%</small></b></span>
+          <div>{% if ready.next %}<b>{% translate "Keyingi qadam:" %} <span>{{ ready.next.label }}</span></b><small>{{ ready.next.hint }}</small>{% else %}<b>{% translate "Integratsiya tayyor" %}</b><small>{% translate "Barcha tekshiruvlar o'tdi." %}</small>{% endif %}
+            {% if quick.started %}<small class="pay-ready-q">{% blocktranslate with n=quick.started s=quick.success %}30 kun: {{ n }} tranzaksiya · {{ s }}% muvaffaqiyatli{% endblocktranslate %}</small>{% endif %}</div>
+        </div>
+        <ol class="pay-checklist">{% for i in ready.items %}<li class="{% if i.ok %}ok{% endif %}" data-ready-key="{{ i.key }}"><i class="fas {% if i.ok %}fa-circle-check{% else %}fa-circle{% endif %}" aria-hidden="true"></i><span><b>{{ i.label }}</b>{% if not i.ok %}<small>{{ i.hint }}</small>{% endif %}</span></li>{% endfor %}</ol>
+        {% if ready.test %}<span class="pay-help">{% if ready.test.ok %}{% translate "Oxirgi self-test: muvaffaqiyatli" %}{% else %}{% translate "Oxirgi self-test: xato" %} <code>{{ ready.test.code }}</code>{% endif %}</span>{% endif %}
+      </section>
+      {% endif %}
       {% if callbacks %}
       <section class="nzp-card">
         <header class="nzp-card-head nzp-card-head-sm"><span class="nzp-card-icon" style="--c:#0ea5e9"><i class="fas fa-link" aria-hidden="true"></i></span><div><h3>{% translate "Callback manzillari" %}</h3><p>{% translate "Merchant kabinetiga aynan shu manzillarni kiriting (faqat HTTPS)." %}</p></div></header>
@@ -95,6 +109,9 @@
         <div class="pay-test-result" data-pay-result aria-live="polite"></div>
         <span class="pay-help">{% translate "Saqlangan kalitlar bilan imzolangan so'rovni o'zimizning endpoint'ga yuboradi (mavjud bo'lmagan buyurtma bilan)." %}</span>
         {% endif %}
+        {% if checkout_sample %}<span class="pay-url-label" style="margin-top:14px">{% translate "To'lov sahifasi havolasi (namuna, 1 000 so'm)" %}</span>
+        <div class="pay-url"><code title="{{ checkout_sample }}">{{ checkout_sample }}</code><a class="pay-url-open" href="{{ checkout_sample }}" target="_blank" rel="noopener" aria-label="{% translate 'Ochish' %}"><i class="fas fa-arrow-up-right-from-square" aria-hidden="true"></i></a></div>
+        <span class="pay-help">{% translate "Provayder sahifasi ochilib, «buyurtma topilmadi» desa — merchant ID to'g'ri va callback ishlayapti." %}</span>{% endif %}
       </section>
       {% endif %}
       {% if spec.steps %}
@@ -114,5 +131,5 @@
     </aside>
   </div>
 </form>
-<script src="{% static 'admin/js/nutrizone-payments.js' %}?v=1"></script>
+<script src="{% static 'admin/js/nutrizone-payments.js' %}?v=2"></script>
 {% endblock %}

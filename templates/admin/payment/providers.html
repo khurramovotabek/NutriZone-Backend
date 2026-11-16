@@ -33,6 +33,11 @@
         <span class="nzd-pill" style="--t:{{ c.status.color }}"><i class="fas {{ c.status.icon }}" aria-hidden="true"></i> {{ c.status.label }}</span>
       </div>
       <p>{{ c.tagline }}</p>
+      {% if c.ready %}<div class="pay-ready-mini" title="{% translate 'Ulanish tayyorligi' %}">
+        <span class="pay-ring sm" style="--deg:{{ c.ready.deg }}deg;--rc:{% if c.ready.score == 100 %}#10b981{% elif c.ready.score >= 50 %}#f59e0b{% else %}#e11d48{% endif %}"><b>{{ c.ready.score }}</b></span>
+        <span><b>{% blocktranslate with d=c.ready.done t=c.ready.total %}Tayyorlik {{ d }}/{{ t }}{% endblocktranslate %}</b><small>{% if c.ready.next %}{{ c.ready.next.label }}{% else %}{% translate "Hammasi tayyor" %}{% endif %}</small></span>
+        {% if c.quick.started %}<span class="pay-ready-rate"><b>{{ c.quick.success }}%</b><small>{% translate "muvaffaqiyat" %}</small></span>{% endif %}
+      </div>{% endif %}
       <div class="pay-card-foot">
         {% if c.status.key == "active" %}
           {% if c.online %}<span><b>{{ c.volume }}</b> {% translate "so'm" %} · {{ c.count }} {% translate "ta (30 kun)" %}</span>{% else %}<span class="pay-tag" style="--t:#16a34a"><i class="fas fa-check" aria-hidden="true"></i> {% translate "Checkout'da mavjud" %}</span>{% endif %}

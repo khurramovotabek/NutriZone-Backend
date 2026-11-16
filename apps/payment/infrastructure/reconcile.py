@@ -9,6 +9,7 @@ Internal checks (all providers):
   double_payment         two captured payments for one order                           → refund one
   amount_mismatch        captured amount ≠ what the order costs now (lines removed later)
   missing_order_ref      captured payment not recorded on the order
+  open_txn_order_closed  a provider transaction still open (state 1) on an order already cancelled → may still capture
   stuck_at_provider      a provider transaction left half-way (Payme/Uzum state 1 > 13 h, Click prepared > 2 h)
   auth_errors            many auth/signature failures in 24 h (wrong key in the cabinet, or someone probing)
 
@@ -58,6 +59,7 @@ KINDS = {
     "amount_mismatch": ("warning", "To'lov summasi buyurtmadan farq qiladi", "Buyurtma o'zgargan bo'lsa, farqni qaytaring."),
     "missing_order_ref": ("warning", "To'lov buyurtmaga yozilmagan", "Buyurtma kartasini tekshiring."),
     "stuck_at_provider": ("warning", "Tranzaksiya provayderda yarim yo'lda qolgan", "Provayder kabinetida holatini tekshiring."),
+    "open_txn_order_closed": ("warning", "Bekor buyurtmada ochiq tranzaksiya", "Provayder kabinetida tranzaksiyani bekor qiling — aks holda pul yechilishi mumkin."),
     "auth_errors": ("warning", "Ko'p imzo/kalit xatolari", "Kabinetdagi kalit bilan dashboard'dagi kalit mosligini tekshiring."),
     "provider_paid_only": ("critical", "Provayderda to'langan, bizda yo'q", "Callback yetib kelmagan — buyurtmani qo'lda tasdiqlang yoki provayder bilan bog'laning."),
     "we_paid_only": ("critical", "Bizda to'langan, provayderda yo'q", "Provayder kabinetida to'lovni tekshiring."),
@@ -119,6 +121,12 @@ def run(now=None, external: bool = True) -> dict:
         limit = timedelta(hours=2) if p.provider == "click" else timedelta(hours=13)
         if now - p.updated_at > limit:
             c.add("stuck_at_provider", str(p.pk), payment=p, amount=p.amount, since=p.updated_at.isoformat())
+
+    open_txn = list(PaymentModel.objects.filter(status=PaymentStatusChoices.PENDING, provider_state=1).exclude(provider="cash"))
+    closed_ids = set(o.OrderModel.objects.filter(id__in=[p.order_id for p in open_txn], status__in=service.CLOSED_ORDER_STATUSES).values_list("id", flat=True))
+    for p in open_txn:
+        if p.order_id in closed_ids:
+            c.add("open_txn_order_closed", str(p.pk), payment=p, amount=p.amount)
 
     day = now - timedelta(days=1)
     for provider, code in AUTH_ERROR_CODES.items():

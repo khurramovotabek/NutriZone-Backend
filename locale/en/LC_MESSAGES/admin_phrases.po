@@ -7423,3 +7423,543 @@ msgstr "Wallets"
 
 msgid "Eng katta xarajatlar"
 msgstr "Biggest expenses"
+
+msgid "Kalitlar kiritilgan"
+msgstr "Keys entered"
+
+msgid "Merchant kabinetidan ID va kalitlarni nusxalab, saqlang."
+msgstr "Copy the ID and keys from the merchant cabinet and save."
+
+msgid "Kalitlar formati to'g'ri"
+msgstr "Key format is valid"
+
+msgid "Qizil belgilangan maydonlarni tuzating."
+msgstr "Fix the fields marked in red."
+
+msgid "Sayt HTTPS orqali ochiladi"
+msgstr "Site is served over HTTPS"
+
+msgid "Provayderlar faqat HTTPS callback'larni qabul qiladi."
+msgstr "Providers accept HTTPS callbacks only."
+
+msgid "Self-test o'tgan"
+msgstr "Self-test passed"
+
+msgid "«Ulanishni tekshirish» tugmasini bosing (kalit o'zgargandan keyin qayta)."
+msgstr "Click “Test connection” (again after changing a key)."
+
+msgid "Kabinetga callback URL yozilgan"
+msgstr "Callback URL set in the cabinet"
+
+msgid "Callback manzillarini kabinetga qo'ying — provayderning birinchi so'rovi kelganda belgilanadi."
+msgstr "Put the callback URLs into the cabinet — ticked on the provider's first request."
+
+msgid "Usul yoqilgan"
+msgstr "Method enabled"
+
+msgid "«Yoqilgan» ni belgilang — checkout'da paydo bo'ladi."
+msgstr "Tick “Enabled” — it appears at checkout."
+
+msgid "Production rejimi"
+msgstr "Production mode"
+
+msgid "Test to'lovlar o'tgach test rejimini o'chiring."
+msgstr "Turn test mode off after the test payments."
+
+msgid "Birinchi muvaffaqiyatli to'lov"
+msgstr "First successful payment"
+
+msgid "Kichik summali buyurtmani o'zingiz to'lab ko'ring."
+msgstr "Pay a small order yourself."
+
+msgid "Kassa ID 24 belgili hex bo'lishi kerak (masalan 5e730e8e0b852a417aa49ceb)."
+msgstr "Cashbox ID must be 24 hex characters (e.g. 5e730e8e0b852a417aa49ceb)."
+
+msgid "Hisob maydoni lotin harf/raqam/pastki chiziqdan iborat bo'lishi kerak."
+msgstr "Account field must be Latin letters, digits or underscores."
+
+msgid "Kalit juda qisqa — kabinetdan to'liq nusxalanganini tekshiring."
+msgstr "Key is too short — check it was copied in full."
+
+msgid "Kalit boshida/oxirida bo'sh joy bor."
+msgstr "The key has leading/trailing spaces."
+
+msgid "Test kaliti production kaliti bilan bir xil."
+msgstr "Test key equals the production key."
+
+msgid "Test rejimi yoqilgan, lekin test kaliti yo'q."
+msgstr "Test mode is on but there is no test key."
+
+msgid "Faqat raqam bo'lishi kerak."
+msgstr "Digits only."
+
+msgid "Secret key juda qisqa."
+msgstr "Secret key is too short."
+
+msgid "Merchant User ID bo'lmasa, Click bilan avtomatik solishtirish ishlamaydi."
+msgstr "Without Merchant User ID automatic Click reconciliation won't run."
+
+msgid "Service ID faqat raqam."
+msgstr "Service ID is digits only."
+
+msgid "Loginda bo'sh joy bo'lmasligi kerak."
+msgstr "Login must not contain spaces."
+
+msgid "Parol juda qisqa."
+msgstr "Password is too short."
+
+msgid "Parametr kaliti lotin harf/raqamdan iborat bo'lishi kerak."
+msgstr "Parameter key must be Latin letters and digits."
+
+msgid "To'lov havolasi https:// bilan boshlanishi kerak."
+msgstr "Payment link must start with https://."
+
+msgid "To'lov havolasi shabloni yo'q — mijoz Uzum ilovasida servisni o'zi topadi."
+msgstr "No link template — the customer finds the service in the Uzum app."
+
+msgid "Uzum servisda sozlagan maydon nomi (params ichida). Odatda order_id yoki account."
+msgstr "Field name Uzum configured for the service (inside params). Usually order_id or account."
+
+msgid "Buyurtma parametri kaliti"
+msgstr "Order parameter key"
+
+msgid "Har bir qadam avtomatik tekshiriladi. Hammasi yashil bo'lsa — to'lov qabul qilishga tayyor."
+msgstr "Every step is checked automatically. All green — ready to take payments."
+
+msgid "5 daqiqada ulash"
+msgstr "5-minute setup"
+
+msgid "Keyingi qadam:"
+msgstr "Next step:"
+
+msgid "Integratsiya tayyor"
+msgstr "Integration ready"
+
+msgid "Barcha tekshiruvlar o'tdi."
+msgstr "All checks passed."
+
+msgid "30 kun: {0} tranzaksiya · {1}% muvaffaqiyatli"
+msgstr "30 days: {0} transactions · {1}% successful"
+
+msgid "Oxirgi self-test: muvaffaqiyatli"
+msgstr "Last self-test: passed"
+
+msgid "Oxirgi self-test: xato"
+msgstr "Last self-test: failed"
+
+msgid "To'lov sahifasi havolasi (namuna, 1 000 so'm)"
+msgstr "Payment page link (sample, 1 000 UZS)"
+
+msgid "Provayder sahifasi ochilib, «buyurtma topilmadi» desa — merchant ID to'g'ri va callback ishlayapti."
+msgstr "If the provider page says “order not found”, the merchant ID is right and the callback works."
+
+msgid "Ulanish tayyorligi"
+msgstr "Setup readiness"
+
+msgid "Tayyorlik {0}/{1}"
+msgstr "Readiness {0}/{1}"
+
+msgid "Hammasi tayyor"
+msgstr "All set"
+
+msgid "muvaffaqiyat"
+msgstr "success"
+
+msgid "To'lovlar tahlili"
+msgstr "Payment analytics"
+
+msgid "Tahlil (Excel)"
+msgstr "Analytics (Excel)"
+
+msgid "To'langan"
+msgstr "Paid"
+
+msgid "o'rtacha {0} so'm"
+msgstr "avg {0} UZS"
+
+msgid "{0} urinishdan"
+msgstr "of {0} attempts"
+
+msgid "Provayderda muvaffaqiyat"
+msgstr "Success at provider"
+
+msgid "{0} boshlangandan"
+msgstr "of {0} started"
+
+msgid "To'lash vaqti"
+msgstr "Time to pay"
+
+msgid "mediana, checkout → to'lov"
+msgstr "median, checkout → payment"
+
+msgid "Kunlik tushum, provayder bo'yicha"
+msgstr "Daily revenue by provider"
+
+msgid "Kunlik tushum"
+msgstr "Daily revenue"
+
+msgid "Voronka"
+msgstr "Funnel"
+
+msgid "Checkout ochildi"
+msgstr "Checkout opened"
+
+msgid "Provayderda boshlandi"
+msgstr "Started at provider"
+
+msgid "To'landi"
+msgstr "Paid"
+
+msgid "Qaytarildi"
+msgstr "Refunded"
+
+msgid "Bekor/xato sabablari"
+msgstr "Cancel/failure reasons"
+
+msgid "Vaqt tugadi"
+msgstr "Timed out"
+
+msgid "Operator bekor qildi"
+msgstr "Cancelled by operator"
+
+msgid "Avtomatik bekor (to'lanmadi)"
+msgstr "Auto-cancelled (unpaid)"
+
+msgid "Buyurtma bekor qilingan"
+msgstr "Order cancelled"
+
+msgid "Provayder qaytardi"
+msgstr "Reversed by provider"
+
+msgid "Noma'lum"
+msgstr "Unknown"
+
+msgid "Provayder"
+msgstr "Provider"
+
+msgid "Muvaffaqiyat"
+msgstr "Success"
+
+msgid "{0} urinish · {1} boshlangan"
+msgstr "{0} attempts · {1} started"
+
+msgid "To'lovlar soatlar bo'yicha"
+msgstr "Payments by hour"
+
+msgid "eng faol: {0}:00"
+msgstr "peak: {0}:00"
+
+msgid "Usullar ulushi"
+msgstr "Method share"
+
+msgid "Integratsiya sog'lig'i (7 kun)"
+msgstr "Integration health (7 days)"
+
+msgid "so'rov kelmagan"
+msgstr "no requests yet"
+
+msgid "So'rovlar"
+msgstr "Requests"
+
+msgid "Xato javoblar"
+msgstr "Error responses"
+
+msgid "O'rtacha javob"
+msgstr "Average response"
+
+msgid "sekin — Payme 5 s, Uzum 10 s kutadi"
+msgstr "slow — Payme waits 5 s, Uzum 10 s"
+
+msgid "me'yorda"
+msgstr "normal"
+
+msgid "Metod"
+msgstr "Method"
+
+msgid "Eng ko'p xato kodlari"
+msgstr "Top error codes"
+
+msgid "Xatolar yo'q."
+msgstr "No errors."
+
+msgid "Nima tekshiriladi"
+msgstr "What is checked"
+
+msgid "{0} ta algoritm · har kuni 06:00 va «Hozir tekshirish» bosilganda"
+msgstr "{0} algorithms · daily at 06:00 and on “Check now”"
+
+msgid "To'langan, lekin buyurtma tasdiqlanmagan"
+msgstr "Paid but order not confirmed"
+
+msgid "Buyurtmani tasdiqlang yoki holatini tekshiring."
+msgstr "Confirm the order or check its status."
+
+msgid "To'langan buyurtma bekor qilingan"
+msgstr "Paid order was cancelled"
+
+msgid "Mijozga pulni qaytaring (provayder kabineti orqali)."
+msgstr "Refund the customer (via the provider cabinet)."
+
+msgid "Buyurtma ikki marta to'langan"
+msgstr "Order paid twice"
+
+msgid "Ortiqcha to'lovni mijozga qaytaring."
+msgstr "Refund the extra payment."
+
+msgid "To'lov summasi buyurtmadan farq qiladi"
+msgstr "Payment amount differs from the order"
+
+msgid "Buyurtma o'zgargan bo'lsa, farqni qaytaring."
+msgstr "If the order changed, refund the difference."
+
+msgid "To'lov buyurtmaga yozilmagan"
+msgstr "Payment not recorded on the order"
+
+msgid "Buyurtma kartasini tekshiring."
+msgstr "Check the order card."
+
+msgid "Tranzaksiya provayderda yarim yo'lda qolgan"
+msgstr "Transaction stuck at the provider"
+
+msgid "Provayder kabinetida holatini tekshiring."
+msgstr "Check its status in the provider cabinet."
+
+msgid "Bekor buyurtmada ochiq tranzaksiya"
+msgstr "Open transaction on a cancelled order"
+
+msgid "Provayder kabinetida tranzaksiyani bekor qiling — aks holda pul yechilishi mumkin."
+msgstr "Cancel the transaction in the provider cabinet — otherwise money may be captured."
+
+msgid "Ko'p imzo/kalit xatolari"
+msgstr "Many signature/key errors"
+
+msgid "Kabinetdagi kalit bilan dashboard'dagi kalit mosligini tekshiring."
+msgstr "Check the cabinet key matches the dashboard key."
+
+msgid "Provayderda to'langan, bizda yo'q"
+msgstr "Paid at provider, not here"
+
+msgid "Callback yetib kelmagan — buyurtmani qo'lda tasdiqlang yoki provayder bilan bog'laning."
+msgstr "Callback never arrived — confirm the order manually or contact the provider."
+
+msgid "Bizda to'langan, provayderda yo'q"
+msgstr "Paid here, not at provider"
+
+msgid "Provayder kabinetida to'lovni tekshiring."
+msgstr "Check the payment in the provider cabinet."
+
+msgid "Provayder API javob bermadi"
+msgstr "Provider API did not respond"
+
+msgid "Keyingi tekshiruvda qayta urinib ko'riladi."
+msgstr "Will retry on the next check."
+
+msgid "Avtorizatsiya xatosi"
+msgstr "Authorization error"
+
+msgid "Kassa kaliti dashboard'dagi bilan mos emas yoki test/production rejimi aralashgan."
+msgstr "Cashbox key doesn't match the dashboard, or test/production mode is mixed up."
+
+msgid "POST emas"
+msgstr "Not POST"
+
+msgid "So'rov POST usulida kelmagan."
+msgstr "The request was not a POST."
+
+msgid "JSON xato"
+msgstr "JSON error"
+
+msgid "So'rov tanasini o'qib bo'lmadi."
+msgstr "Could not parse the request body."
+
+msgid "Noto'g'ri so'rov"
+msgstr "Invalid request"
+
+msgid "JSON-RPC tuzilmasi buzilgan."
+msgstr "Broken JSON-RPC structure."
+
+msgid "Metod topilmadi"
+msgstr "Method not found"
+
+msgid "Payme yangi metod yubordi — jurnalni tekshiring."
+msgstr "Payme sent a new method — check the journal."
+
+msgid "Parametr xato"
+msgstr "Parameter error"
+
+msgid "Majburiy parametr yo'q."
+msgstr "A required parameter is missing."
+
+msgid "Ichki xato"
+msgstr "Internal error"
+
+msgid "Server xatosi — loglarni tekshiring."
+msgstr "Server error — check the logs."
+
+msgid "Summa noto'g'ri"
+msgstr "Wrong amount"
+
+msgid "To'lov summasi buyurtma summasiga teng emas (tiyinda)."
+msgstr "Payment amount doesn't equal the order amount (in tiyin)."
+
+msgid "Tranzaksiya topilmadi"
+msgstr "Transaction not found"
+
+msgid "Payme bizda yo'q tranzaksiyani so'radi."
+msgstr "Payme asked for a transaction we don't have."
+
+msgid "Bekor qilib bo'lmaydi"
+msgstr "Cannot cancel"
+
+msgid "Buyurtma jo'natilgan — pul qaytarilmaydi."
+msgstr "Order already shipped — no refund."
+
+msgid "Bajarib bo'lmaydi"
+msgstr "Cannot perform"
+
+msgid "Tranzaksiya muddati o'tgan (12 soat) yoki bekor qilingan."
+msgstr "Transaction expired (12 h) or was cancelled."
+
+msgid "Buyurtma topilmadi"
+msgstr "Order not found"
+
+msgid "Hisob maydoni (account) kaliti yoki buyurtma raqami noto'g'ri. Self-test shu kodni kutadi."
+msgstr "Wrong account field key or order number. The self-test expects this code."
+
+msgid "Buyurtma to'langan"
+msgstr "Order already paid"
+
+msgid "Buyurtma allaqachon to'langan."
+msgstr "The order is already paid."
+
+msgid "Buyurtma band"
+msgstr "Order busy"
+
+msgid "Bu buyurtma uchun boshqa tranzaksiya ochiq."
+msgstr "Another transaction is open for this order."
+
+msgid "Chek topilmadi"
+msgstr "Receipt not found"
+
+msgid "SetFiscalData: tranzaksiya yo'q."
+msgstr "SetFiscalData: no such transaction."
+
+msgid "Imzo xato"
+msgstr "Bad signature"
+
+msgid "SECRET_KEY kabinetdagi bilan mos emas."
+msgstr "SECRET_KEY doesn't match the cabinet."
+
+msgid "Summa buyurtma summasiga teng emas."
+msgstr "Amount doesn't equal the order amount."
+
+msgid "Amal topilmadi"
+msgstr "Action not found"
+
+msgid "action 0 yoki 1 bo'lishi kerak."
+msgstr "action must be 0 or 1."
+
+msgid "Allaqachon to'langan"
+msgstr "Already paid"
+
+msgid "Buyurtma oldin to'langan."
+msgstr "The order was paid before."
+
+msgid "merchant_trans_id bo'yicha buyurtma yo'q. Self-test shu kodni kutadi."
+msgstr "No order for merchant_trans_id. The self-test expects this code."
+
+msgid "Complete'dagi merchant_prepare_id bizda yo'q."
+msgstr "The merchant_prepare_id from Complete is unknown."
+
+msgid "Yangilash xatosi"
+msgstr "Update error"
+
+msgid "Bazaga yozib bo'lmadi — qayta urinish."
+msgstr "Could not write to the database — retry."
+
+msgid "So'rov xato"
+msgstr "Request error"
+
+msgid "Majburiy parametr yo'q yoki service_id noto'g'ri."
+msgstr "Missing parameter or wrong service_id."
+
+msgid "To'lov Click'da muvaffaqiyatsiz bo'ldi yoki buyurtma bekor qilingan."
+msgstr "Payment failed at Click or the order was cancelled."
+
+msgid "Basic Auth login/parol mos emas."
+msgstr "Basic Auth login/password mismatch."
+
+msgid "Noto'g'ri amal"
+msgstr "Invalid operation"
+
+msgid "Noma'lum endpoint yoki usul."
+msgstr "Unknown endpoint or method."
+
+msgid "Parametr yo'q"
+msgstr "Missing parameter"
+
+msgid "serviceId, timestamp yoki transId yo'q."
+msgstr "serviceId, timestamp or transId missing."
+
+msgid "serviceId xato"
+msgstr "Wrong serviceId"
+
+msgid "Dashboard'dagi Service ID boshqa."
+msgstr "The dashboard has a different Service ID."
+
+msgid "params ichidagi buyurtma raqami yo'q. Self-test shu kodni kutadi."
+msgstr "The order number in params doesn't exist. The self-test expects this code."
+
+msgid "To'lab bo'lmaydi"
+msgstr "Cannot be paid"
+
+msgid "Buyurtma bekor qilingan yoki boshqa tranzaksiya ochiq."
+msgstr "Order cancelled or another transaction is open."
+
+msgid "Takroriy create"
+msgstr "Repeated create"
+
+msgid "Shu transId bilan tranzaksiya bor."
+msgstr "A transaction with this transId exists."
+
+msgid "Summa buyurtma summasiga teng emas (tiyin)."
+msgstr "Amount doesn't equal the order amount (tiyin)."
+
+msgid "Minimaldan kam"
+msgstr "Below minimum"
+
+msgid "Dashboard minimal limiti."
+msgstr "Dashboard minimum limit."
+
+msgid "Maksimaldan ko'p"
+msgstr "Above maximum"
+
+msgid "Dashboard maksimal limiti."
+msgstr "Dashboard maximum limit."
+
+msgid "Bizda bunday transId yo'q."
+msgstr "No such transId here."
+
+msgid "30 daqiqada tasdiqlanmagan yoki bekor qilingan."
+msgstr "Not confirmed within 30 minutes, or cancelled."
+
+msgid "Takroriy confirm"
+msgstr "Repeated confirm"
+
+msgid "Allaqachon tasdiqlangan."
+msgstr "Already confirmed."
+
+msgid "Buyurtma jo'natilgan."
+msgstr "Order shipped."
+
+msgid "Takroriy reverse"
+msgstr "Repeated reverse"
+
+msgid "Allaqachon bekor qilingan."
+msgstr "Already cancelled."
+
+msgid "Ulanish ishlayapti: endpoint, imzo va kalitlar to'g'ri."
+msgstr "Connection works: endpoint, signature and keys are correct."
+
+msgid "ta algoritm · har kuni ertalab va «Hozir tekshirish» bosilganda"
+msgstr "algorithms · every morning and on “Check now”"

@@ -94,6 +94,8 @@ SPECS: dict[str, ProviderSpec] = {
             Field("service_id", _("Service ID"), _("Uzum Bank tomonidan beriladigan servis raqami.")),
             Field("login", _("Login (Basic Auth)"), _("Uzum so'rovlarini tasdiqlash uchun login.")),
             Field("password", _("Parol (Basic Auth)"), secret=True),
+            Field("param_key", _("Buyurtma parametri kaliti"), _("Uzum servisda sozlagan maydon nomi (params ichida). Odatda order_id yoki account."),
+                  required=False, default="order_id", placeholder="order_id"),
             Field("checkout_url", _("To'lov havolasi shabloni"), _("{service_id}, {order}, {amount} (tiyin) almashtiriladi."), required=False,
                   default="https://www.uzumbank.uz/open-service?serviceId={service_id}&order_id={order}&amount={amount}"),
         ),

@@ -21,13 +21,14 @@ from django.conf import settings
 from django.contrib import admin, messages
 from django.core.exceptions import PermissionDenied
 from django.db.models import Count, Q, Sum
-from django.http import HttpResponseRedirect, JsonResponse
+from django.http import HttpResponse, HttpResponseRedirect, JsonResponse
 from django.shortcuts import get_object_or_404, render
 from django.urls import path, reverse
 from django.utils import timezone
 from django.utils.translation import gettext as _t
 from django.utils.translation import gettext_lazy as _
 
+from apps.payment.infrastructure import insights
 from apps.payment.infrastructure.crypto import decrypt_secrets, encrypt_secrets, mask
 from apps.payment.infrastructure.models import (
     PaymentCallbackLog,
@@ -91,6 +92,7 @@ class ProviderForm:
     def __init__(self, state: registry.ProviderState, row: PaymentProviderConfig, data=None) -> None:
         self.state, self.row, self.data = state, row, data
         self.errors: dict[str, str] = {}
+        self.checks: dict[str, dict] = {c["field"]: c for c in insights.credential_checks(state)} if data is None else {}
 
     def fields(self) -> list[dict]:
         stored = decrypt_secrets(self.row.secrets_encrypted)
@@ -101,7 +103,7 @@ class ProviderForm:
                 "key": f.key, "label": f.label, "help": f.help, "secret": f.secret, "required": f.required, "placeholder": f.placeholder or f.default,
                 "value": value if not f.secret else "", "hint": mask(stored.get(f.key, "")) if f.secret else "", "has_value": bool(stored.get(f.key)),
                 "choices": [(c, registry.provider_label(c)) for c in f.choices], "error": self.errors.get(f.key, ""),
-                "default": f.default,
+                "default": f.default, "check": self.checks.get(f.key),
             })
         return out
 
@@ -211,6 +213,7 @@ class PaymentProviderAdmin(admin.ModelAdmin):
         paid = PaymentModel.objects.filter(status=PaymentStatusChoices.SUCCEEDED).exclude(provider="cash")
         attempts = PaymentModel.objects.filter(created_at__gte=month).exclude(provider="cash").exclude(provider_reference__isnull=True)
         month_paid = attempts.filter(status=PaymentStatusChoices.SUCCEEDED).count()
+        base = _public_base(request)
         cards = []
         for state in registry.all_states():
             row = PaymentProviderConfig.objects.filter(provider=state.key).first()
@@ -224,6 +227,8 @@ class PaymentProviderAdmin(admin.ModelAdmin):
                 "missing": len(state.missing) if state.key not in registry.CARD_BRANDS else 0, "route": registry.provider_label(state.route) if state.route else "",
                 "volume": _money(vol["sum"]), "count": vol["count"], "last_callback": row.last_callback_at if row else None,
                 "url": reverse("admin:payment_paymentproviderconfig_change", args=[row.pk]) if row else "",
+                "ready": insights.readiness(state, row, base) if state.key in registry.ACQUIRERS else None,
+                "quick": insights.provider_quick(state.key) if state.key in registry.ACQUIRERS else None,
             })
         active = [c for c in cards if c["status"]["key"] == "active"]
         from apps.payment.infrastructure import automation
@@ -278,6 +283,9 @@ class PaymentProviderAdmin(admin.ModelAdmin):
             "post": request.POST if request.method == "POST" else None,
             "selftest_url": reverse("admin:payment_paymentproviderconfig_selftest", args=[row.provider]) if row.provider in registry.ACQUIRERS else "",
             "updated_by": row.updated_by, "updated_at": row.updated_at,
+            "ready": insights.readiness(state, row, base) if row.provider in registry.ACQUIRERS else None,
+            "checkout_sample": _checkout_sample(state, base) if row.provider in registry.ACQUIRERS and not state.missing else "",
+            "quick": insights.provider_quick(row.provider) if row.provider in registry.ACQUIRERS else None,
         }
         return render(request, "admin/payment/provider_form.html", ctx)
 
@@ -317,14 +325,29 @@ class PaymentProviderAdmin(admin.ModelAdmin):
             from apps.payment.infrastructure.providers import uzum
 
             auth = "Basic " + base64.b64encode(f"{state.value('login')}:{state.value('password')}".encode()).decode()
-            answer, _p, _o, _s = uzum.handle("check", {"serviceId": state.value("service_id"), "timestamp": 0, "params": {uzum.ORDER_PARAM: probe}}, auth)
+            answer, _p, _o, _s = uzum.handle("check", {"serviceId": state.value("service_id"), "timestamp": 0, "params": {uzum.param_key(state): probe}}, auth)
             code = answer.get("errorCode")
             ok = code == uzum.ERR_ORDER
+        row = PaymentProviderConfig.objects.filter(provider=key).first()
+        if row is not None:
+            insights.save_selftest(row, ok, code)
+        title, hint = insights.explain(key, code)
         return JsonResponse({
-            "ok": ok, "code": code,
+            "ok": ok, "code": code, "explain": f"{title}. {hint}".strip(),
             "message": _t("Ulanish ishlayapti: endpoint, imzo va kalitlar to'g'ri.") if ok else _t("Kutilmagan javob — kalitlarni tekshiring (kod %s).") % code,
             "answer": json.dumps(answer, ensure_ascii=False, indent=2)[:1500],
         })
+
+
+def _checkout_sample(state: registry.ProviderState, base: str) -> str:
+    """The payment page link a customer would get for a 1 000 so'm order -- to eyeball the merchant id / format."""
+    from importlib import import_module
+
+    try:
+        mod = import_module(f"apps.payment.infrastructure.providers.{state.key}")
+        return mod.checkout_url(state, "NZ-TEST-0001", Decimal("1000"), f"{base}/checkout/result")
+    except Exception:  # noqa: BLE001 - a preview only; a template typo must not break the settings page
+        return ""
 
 
 # ====================================================================== transactions
@@ -372,10 +395,34 @@ class PaymentTransactionAdmin(ExcelExportMixin, admin.ModelAdmin):
 
     def get_urls(self):
         v = self.admin_site.admin_view
-        return [path("<uuid:pk>/cancel/", v(self.cancel_view), name="payment_paymentmodel_cancel"), *super().get_urls()]
+        return [path("<uuid:pk>/cancel/", v(self.cancel_view), name="payment_paymentmodel_cancel"),
+                path("analytics.xlsx", v(self.analytics_export_view), name="payment_paymentmodel_analytics_xlsx"), *super().get_urls()]
+
+    @staticmethod
+    def _days(request) -> int:
+        try:
+            return int(request.GET.get("days")) if int(request.GET.get("days")) in (7, 30, 90) else 30
+        except (TypeError, ValueError):
+            return 30
+
+    def analytics_export_view(self, request):
+        if not self.has_view_permission(request):
+            raise PermissionDenied
+        from apps.payment.infrastructure.payment_excel import analytics_book
+
+        days, prov = self._days(request), request.GET.get("provider__exact", "")
+        data = insights.analytics(days, prov if prov in registry.ACQUIRERS else "")
+        resp = HttpResponse(analytics_book(data, insights.callback_stats(min(days, 30), prov if prov in registry.ACQUIRERS else "")),
+                            content_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
+        resp["Content-Disposition"] = f'attachment; filename="tolovlar-tahlil-{days}kun-{timezone.localdate():%Y%m%d}.xlsx"'
+        return resp
 
     def get_changelist_instance(self, request):
+        request.GET = request.GET.copy()
+        days = request.GET.pop("days", None)
         cl = super().get_changelist_instance(request)
+        if days:
+            request.GET["days"] = days[0]
         rows = list(cl.result_list)
         users = _customers({r.customer_id for r in rows})
         for p in rows:
@@ -397,7 +444,20 @@ class PaymentTransactionAdmin(ExcelExportMixin, admin.ModelAdmin):
         current = request.GET.get("status", "")
         tabs = [("", _t("Barchasi"), "#64748b", "fa-layer-group", sum(counts.values()))] + [(k, str(v[0]), v[1], v[2], counts.get(k, 0)) for k, v in STATUS_STYLE.items()]
         providers = [(k, registry.provider_label(k)) for k in registry.ACQUIRERS]
+        days = self._days(request)
+        prov = request.GET.get("provider__exact", "")
+        an = insights.analytics(days, prov if prov in registry.ACQUIRERS else "")
+        for row in an["providers"]:
+            row["logo"] = _logo(row["key"]) if row["key"] in registry.SPECS else _logo("cash")
+            row["volume_fmt"], row["avg_fmt"], row["refunded_fmt"] = _money(row["volume"]), _money(row["avg"]), _money(row["refunded"])
+        an["totals"]["volume_fmt"], an["totals"]["avg_fmt"] = _money(an["totals"]["volume"]), _money(an["totals"]["avg"])
+        an["methods"] = [(n, _money(v), f"{s:.1f}") for n, v, s in an["methods"]]
+        keep = request.GET.copy()
+        keep.pop("days", None)
+        keep.pop("p", None)
         extra = {
+            "an": an, "days": days, "day_opts": (7, 30, 90), "keep_qs": keep.urlencode(),
+            "analytics_url": reverse("admin:payment_paymentmodel_analytics_xlsx") + f"?days={days}" + (f"&provider__exact={prov}" if prov else ""),
             "title": _t("Tranzaksiyalar"), "recon": reconciliation_banner(), "tabs": tabs, "current": current, "q": request.GET.get("q", ""), "provider": request.GET.get("provider__exact", ""), "providers": providers,
             "kpi": {
                 "today": _money(_volume(paid.filter(paid_at__gte=today))["sum"]), "today_count": paid.filter(paid_at__gte=today).count(),
@@ -481,7 +541,13 @@ def _customers(ids) -> dict:
 
 
 @admin.register(PaymentCallbackLog)
-class PaymentCallbackLogAdmin(admin.ModelAdmin):
+class PaymentCallbackLogAdmin(ExcelExportMixin, admin.ModelAdmin):
+    excel_title = "Callback jurnali"
+    excel_columns = [
+        Col("Vaqt", "created_at", 19), Col("Provayder", "provider", 12), Col("Metod", "method", 26), Col("Buyurtma", "order_number", 18),
+        Col("Xato kodi", "error_code", 10), Col("Izoh", lambda lg: insights.explain(lg.provider, lg.error_code)[0], 26), Col("HTTP", "http_status", 8),
+        Col("Davomiyligi (ms)", "duration_ms", 14), Col("IP", "ip", 16),
+    ]
     list_display = ("created_at", "provider", "method", "error_code")
     list_filter = ("provider",)
     search_fields = ("order_number", "method")
@@ -510,14 +576,23 @@ class PaymentCallbackLogAdmin(admin.ModelAdmin):
         if errors_only:
             request.GET["errors"] = errors_only[0]
         for lg in cl.result_list:
-            lg.nz = {"ok": not lg.error_code, "logo": _logo(lg.provider), "name": registry.provider_label(lg.provider),
+            title, hint = insights.explain(lg.provider, lg.error_code)
+            lg.nz = {"ok": not lg.error_code, "logo": _logo(lg.provider), "name": registry.provider_label(lg.provider), "err_title": title, "err_hint": hint,
+                     "slow": lg.duration_ms > 3000,
                      "when": timezone.localtime(lg.created_at).strftime("%d.%m.%Y %H:%M:%S"),
                      "req": json.dumps(lg.request, ensure_ascii=False, indent=2)[:4000], "res": json.dumps(lg.response, ensure_ascii=False, indent=2)[:4000]}
         return cl
 
     def changelist_view(self, request, extra_context=None):
         day = timezone.now() - timedelta(days=1)
+        prov = request.GET.get("provider__exact", "")
+        stats = insights.callback_stats(7, prov if prov in registry.ACQUIRERS else "")
+        for r in stats["rows"]:
+            r["logo"] = _logo(r["provider"]) if r["provider"] in registry.SPECS else ""
+            r["err_w"] = f"{r['err_rate']:.1f}"
+        stats["last"] = [(registry.provider_label(k), _logo(k), timezone.localtime(v).strftime("%d.%m %H:%M") if v else "") for k, v in stats["last"].items()]
         extra = {
+            "stats": stats,
             "title": _t("Callback jurnali"), "recon": reconciliation_banner(), "errors_only": request.GET.get("errors") == "1", "provider": request.GET.get("provider__exact", ""),
             "providers": [(k, registry.provider_label(k)) for k in registry.ACQUIRERS], "q": request.GET.get("q", ""),
             "kpi": {"day": PaymentCallbackLog.objects.filter(created_at__gte=day).count(),
@@ -536,6 +611,18 @@ ISSUE_STYLE = {"critical": ("#e11d48", "fa-circle-exclamation"), "warning": ("#f
 def reconciliation_banner() -> dict:
     open_qs = PaymentReconciliationIssue.objects.filter(status=ReconciliationStatus.OPEN)
     return {"critical": open_qs.filter(severity="critical").count(), "total": open_qs.count(), "last": PaymentSettings.load().last_reconciled_at}
+
+
+def _recon_checks(open_qs) -> list[dict]:
+    from apps.payment.infrastructure.reconcile import KINDS
+
+    counts = dict(open_qs.values_list("kind").annotate(n=Count("id")))
+    order = {"critical": 0, "warning": 1, "info": 2}
+    out = []
+    for kind, (sev, title, advice) in sorted(KINDS.items(), key=lambda kv: order.get(kv[1][0], 3)):
+        color, icon = ISSUE_STYLE.get(sev, ("#64748b", "fa-circle"))
+        out.append({"kind": kind, "title": title, "advice": advice, "color": color, "icon": icon, "open": counts.get(kind, 0)})
+    return out
 
 
 @admin.register(PaymentReconciliationIssue)
@@ -595,6 +682,7 @@ class ReconciliationAdmin(ExcelExportMixin, admin.ModelAdmin):
                     "resolved": PaymentReconciliationIssue.objects.exclude(status=ReconciliationStatus.OPEN).count(),
                     "amount": _money(open_qs.filter(severity="critical").aggregate(s=Sum("amount"))["s"])},
             "can_change": request.user.has_perm("payment.change_paymentreconciliationissue"),
+            "checks": _recon_checks(open_qs),
         }
         return super().changelist_view(request, {**extra, **(extra_context or {})})
 
