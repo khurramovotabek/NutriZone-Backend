@@ -57,7 +57,7 @@ def nz_pager(cl, page_range) -> dict:
 
 GLASS_PAGES = ("analytics/", "reports/", "sales-plan/", "segments/", "stores/branch-report/", "wms/reports/", "search/searchterm/",
                "chat/operators/", "control/", "platform/", "settings-overview/", "ordering/", "cart/", "finance/", "payment/",
-               "pricing/", "pos/", "products/", "stores/storecashier/", "stores/pospricechange/", "receipts/")
+               "pricing/", "pos/", "products/", "stores/storecashier/", "stores/pospricechange/", "receipts/", "loyalty/", "reviews/")
 
 
 @register.filter

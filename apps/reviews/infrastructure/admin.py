@@ -181,7 +181,7 @@ class ReviewAdmin(ExcelExportMixin, PremiumListMixin, PremiumFormMixin, admin.Mo
     nz_icon, nz_tone, nz_title = "fa-star", "#eab308", "Sharhlar"
     nz_subtitle = "Mijozlar sharhlari: tekshiring, saytga chiqaring yoki sabab ko'rsatib rad eting. Faqat «Saytda» holatidagi sharhlar mahsulot sahifasida va bosh sahifada ko'rinadi."
     nz_columns = (("Mahsulot", ""), ("Mijoz", ""), ("Baho", ""), ("Sharh", ""), ("Media", ""), ("Sana", ""), ("Holat", "r"))
-    nz_grid = "minmax(190px,1.4fr) minmax(170px,1.2fr) 100px minmax(240px,2.4fr) 120px 100px 170px"
+    nz_grid = "minmax(170px,1.3fr) minmax(150px,1.1fr) 88px minmax(200px,2.2fr) 96px 92px 160px"  # fits the 1100px content column (was clipping Holat)
     nz_search = "Sharh matni yoki sarlavha…"
     nz_empty = ("Hali sharh yo'q", "Mijoz xarid qilgan mahsulotiga sharh qoldirganda shu yerda paydo bo'ladi.")
     nz_sorts = (("Yangilari", ""), ("Eskilari", "2"), ("Past baho", "1"), ("Yuqori baho", "-1"))

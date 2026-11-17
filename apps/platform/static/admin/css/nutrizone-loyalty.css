@@ -71,3 +71,20 @@ main.app-main:has(.nzl) { overflow-x: clip !important; overflow-y: visible !impo
   .nzl-ladder { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .nzl-step { min-height: 0; }
 }
+
+/* Coin harakati (one ledger row) */
+.nzl-facts { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0 28px; margin: 0; }
+.nzl-facts > div { display: grid; grid-template-columns: 140px minmax(0, 1fr); gap: 10px; align-items: center; padding: 10px 0; border-bottom: 1px solid var(--nz-border); }
+.nzl-facts dt { font-size: .72rem; font-weight: 800; letter-spacing: .04em; text-transform: uppercase; color: var(--nz-text-muted); }
+.nzl-facts dd { margin: 0; font-weight: 600; color: var(--nz-text-primary); overflow-wrap: anywhere; }
+.nzl-lots { width: 100%; border-collapse: collapse; font-size: .86rem; }
+.nzl-lots th { text-align: left; font-size: .68rem; font-weight: 800; letter-spacing: .05em; text-transform: uppercase; color: var(--nz-text-muted); padding: 6px 8px; border-bottom: 1px solid var(--nz-border); }
+.nzl-lots td { padding: 9px 8px; border-bottom: 1px solid color-mix(in srgb, var(--nz-border) 70%, transparent); vertical-align: middle; }
+.nzl-lots .r { text-align: right; }
+@media (max-width: 760px) {
+  .nzl-facts { grid-template-columns: 1fr; }
+  .nzl-facts > div { grid-template-columns: 110px minmax(0, 1fr); }
+  .nzl-lots thead { display: none; }
+  .nzl-lots tr { display: grid; grid-template-columns: 1fr auto; gap: 4px 10px; padding: 10px 0; border-bottom: 1px solid var(--nz-border); }
+  .nzl-lots td { padding: 0; border: 0; }
+}

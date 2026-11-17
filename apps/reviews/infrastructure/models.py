@@ -63,7 +63,9 @@ class ReviewModel(SoftDeleteModel):
 
     def __str__(self) -> str:  # pragma: no cover
         """Uses this row's own id, never `product_id` -- the Dashboard admin no longer shows the cross-module product UUID anywhere (see apps/reviews/infrastructure/admin.py's own module docstring), including here, since Django renders this string into the changelist's per-row accessibility label."""
-        return f"Review({self.id}, {self.rating}★)"
+        # breadcrumbs / history / delete pages: the customer's own headline, never an id
+        title = (self.title or self.body or "").strip().splitlines()[0][:60] if (self.title or self.body or "").strip() else "Sharh"
+        return f"{title} · {self.rating}★"
 
 
 class ReviewMediaModel(models.Model):

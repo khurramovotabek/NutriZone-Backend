@@ -491,7 +491,7 @@ class OpenLotFilter(admin.SimpleListFilter):
 
 
 @admin.register(WalletTransaction)
-class WalletTransactionAdmin(ExcelExportMixin, PremiumListMixin, admin.ModelAdmin):
+class WalletTransactionAdmin(ExcelExportMixin, PremiumListMixin, PremiumFormMixin, admin.ModelAdmin):
     """Coin harakatlari: the append-only ledger (view-only) with an Excel export of exactly what is filtered."""
     excel_title = "Coin harakatlari"
     excel_select_related = ("wallet__user",)
@@ -522,6 +522,81 @@ class WalletTransactionAdmin(ExcelExportMixin, PremiumListMixin, admin.ModelAdmi
     def get_list_filter(self, request):
         return (("kind", _titled(admin.ChoicesFieldListFilter, "Turi")), *self.list_filter)
 
+    # one ledger row, read-only: what happened, why, and how the coins travelled (FIFO lots, both directions)
+    fieldsets = (("Harakat", {"classes": ("nzi-panel",), "fields": ("detail_panel",)}),
+                 ("Partiyalar", {"classes": ("nzi-panel",), "fields": ("lots_panel",)}))
+    readonly_fields = ("detail_panel", "lots_panel")
+
+    def form_hero(self, request, obj):
+        if obj is None:
+            return {}
+        label, icon, color = lx.KIND.get(obj.kind, (obj.kind, "fa-circle", "#64748b"))
+        user = obj.wallet.user if obj.wallet_id else None
+        sign = "+" if obj.amount > 0 else "−"
+        stats = [hero_stat("Miqdor", f"{sign}{_som(abs(obj.amount))}", color, "coin = so'm", "fa-coins"),
+                 hero_stat("Balans keyin", _som(obj.balance_after), "#d4a017", "shu harakatdan so'ng", "fa-wallet")]
+        if obj.amount > 0:
+            stats.append(hero_stat("Partiyada qoldi", _som(obj.remaining), "#16a34a" if obj.remaining else "#64748b",
+                                   f"muddati {ui.local(obj.expires_at, '%d.%m.%Y')}" if obj.expires_at else "muddatsiz", "fa-layer-group"))
+        if obj.order_amount is not None:
+            stats.append(hero_stat("Buyurtma summasi", f"{_som(obj.order_amount)} so'm", "#2563eb", obj.order_number or "", "fa-receipt"))
+        links = [{"label": "Mijoz hamyoni", "url": reverse("admin:loyalty_wallet_change", args=[obj.wallet_id]), "icon": "fa-wallet"}]
+        order_url = self._order_url(obj)
+        if order_url:
+            links.append({"label": "Buyurtma", "url": order_url, "icon": "fa-receipt"})
+        who = (user.full_name or user.phone_number) if user else "O'chirilgan foydalanuvchi"
+        return {"title": f"{sign}{_som(abs(obj.amount))} coin · {label}", "subtitle": f"{who} · {ui.local(obj.created_at, '%d.%m.%Y %H:%M')}",
+                "icon": icon, "tone": color, "chips": [lx.kind_chip(obj.kind)], "stats": stats, "links": links}
+
+    @staticmethod
+    def _order_url(obj) -> str:
+        if not obj.order_id:
+            return ""
+        from apps.ordering.infrastructure.models import OrderModel
+
+        return reverse("admin:ordering_ordermodel_change", args=[obj.order_id]) if OrderModel.objects.filter(pk=obj.order_id).exists() else ""
+
+    @admin.display(description="")
+    def detail_panel(self, obj):
+        user = obj.wallet.user if obj.wallet_id else None
+        order_url = self._order_url(obj)
+        order = format_html('<a href="{}">{}</a>', order_url, obj.order_number or "buyurtma") if order_url else (obj.order_number or "—")
+        tier = f"{obj.tier_name} · {obj.tier_percent.normalize():f}%" if obj.tier_name and obj.tier_percent is not None else (obj.tier_name or "—")
+        rows = [("Mijoz", ui.user_cell(user)), ("Turi", lx.kind_chip(obj.kind)), ("Miqdor", lx.coins(obj.amount, signed=True)),
+                ("Balans keyin", lx.coins(obj.balance_after)), ("Buyurtma", order),
+                ("Buyurtma summasi", f"{_som(obj.order_amount)} so'm" if obj.order_amount is not None else "—"), ("Daraja", tier),
+                ("Referal", format_html('<a href="{}">taklif</a>', reverse("admin:loyalty_referral_change", args=[obj.referral_id])) if obj.referral_id else "—"),
+                ("Izoh", obj.note or "—"), ("Kim", obj.actor or "tizim (avtomatik)"), ("Vaqt", ui.local(obj.created_at, "%d.%m.%Y %H:%M"))]
+        if obj.amount > 0:
+            rows.insert(5, ("Muddati", ui.local(obj.expires_at, "%d.%m.%Y") if obj.expires_at else "muddatsiz"))
+        return format_html('<div class="nzi-panel-body"><dl class="nzl-facts">{}</dl></div>', format_html_join("", "<div><dt>{}</dt><dd>{}</dd></div>", rows))
+
+    @admin.display(description="")
+    def lots_panel(self, obj):
+        """Debits list the lots they drew from; credits list the debits that drew from them (FIFO, see services.py)."""
+        if obj.amount < 0:
+            ids = [a.get("lot") for a in obj.allocations or [] if a.get("lot")]
+            lots = {str(t.id): t for t in WalletTransaction.objects.filter(id__in=ids)}
+            rows = [(lots.get(a.get("lot")), int(a.get("amount") or 0)) for a in obj.allocations or []]
+            title, empty = "Qaysi partiyalardan olindi (avval muddati yaqini)", "Partiya ma'lumoti yozilmagan."
+        else:
+            used = WalletTransaction.objects.filter(allocations__contains=[{"lot": str(obj.id)}]).order_by("created_at")
+            rows = [(t, next((int(a.get("amount") or 0) for a in t.allocations if a.get("lot") == str(obj.id)), 0)) for t in used]
+            title, empty = "Bu partiyadan qayerga sarflandi", "Bu partiyadan hali hech narsa sarflanmagan."
+        if not rows:
+            return format_html('<div class="nzi-panel-body"><p class="nzi-muted">{}</p></div>', empty)
+        body = format_html_join("", '<tr><td>{}</td><td>{}</td><td>{}</td><td class="r">{}</td></tr>', (
+            (format_html('<a href="{}">{}</a>', reverse("admin:loyalty_wallettransaction_change", args=[t.pk]), ui.local(t.created_at, "%d.%m.%Y %H:%M")) if t else "—",
+             lx.kind_chip(t.kind) if t else "—", (t.order_number or t.note or "—") if t else "—", lx.coins(n)) for t, n in rows))
+        return format_html('<div class="nzi-panel-body"><p><b>{}</b></p><table class="nzl-lots"><thead><tr><th>Vaqt</th><th>Turi</th><th>Asos</th><th class="r">Coin</th></tr></thead><tbody>{}</tbody></table></div>', title, body)
+
+    def get_queryset(self, request):  # user_cell reads the newest avatar of every row's owner
+        from django.db.models import Prefetch
+
+        from apps.identity.infrastructure.models import UserAvatarAsset
+
+        return super().get_queryset(request).prefetch_related(Prefetch("wallet__user__avatar_assets", queryset=UserAvatarAsset.objects.order_by("-created_at")))
+
     def has_add_permission(self, request) -> bool:
         return False
 
@@ -550,14 +625,11 @@ class WalletTransactionAdmin(ExcelExportMixin, PremiumListMixin, admin.ModelAdmi
         return ui.tabs_for(request, "kind__exact", [("", "Hammasi", sum(counts.values()))] + [(k, lx.KIND[k][0].split(" (")[0], counts[k]) for k in lx.KIND if counts.get(k)],
                            {k: v[2] for k, v in lx.KIND.items()})
 
-    def nz_hero_actions(self, request):
-        q = request.GET.copy()
-        q.pop("p", None)
-        return [{"label": "Excel'ga yuklash", "url": reverse("admin:loyalty_wallettransaction_export") + (f"?{q.urlencode()}" if q else ""), "icon": "fa-file-excel"},
-                {"label": "Mijozlar va coinlar", "url": reverse("admin:loyalty_wallet_changelist"), "icon": "fa-wallet"}]
+    def nz_hero_actions(self, request):  # "Excel'ga yuklash" comes from ExcelExportMixin (same export.xlsx URL, filters kept)
+        return [{"label": "Mijozlar va coinlar", "url": reverse("admin:loyalty_wallet_changelist"), "icon": "fa-wallet"}]
 
-    def nz_href(self, obj):
-        return reverse("admin:loyalty_wallet_change", args=[obj.wallet_id])
+    def nz_href(self, obj):  # the movement itself (its page links on to the wallet and the order)
+        return reverse("admin:loyalty_wallettransaction_change", args=[obj.pk])
 
     def nz_row(self, t):
         if t.amount > 0:
