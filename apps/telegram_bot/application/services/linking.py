@@ -92,6 +92,9 @@ class LinkTelegramCustomer:
                 user.telegram_user_id = telegram_user_id
                 user.telegram_linked_at = django_timezone.now()
                 user.save(update_fields=["telegram_user_id", "telegram_linked_at"])
+                from apps.identity.infrastructure.guests import claim
+
+                claim(user.id)  # a guest-checkout account claimed by the number's owner
 
         return LinkResult(user_id=user.id, full_name=user.full_name, is_new_customer=is_new, already_linked_to_this_telegram_account=False)
 

@@ -50,6 +50,9 @@ class User(SoftDeleteModel):
 
     language = models.CharField(default=LanguagePreference.UZ.value, **enum_field_kwargs(LanguagePreference))  # the shop speaks Uzbek first
     status = models.CharField(default=UserStatus.PENDING_VERIFICATION.value, **enum_field_kwargs(UserStatus))
+    # Made by a guest checkout from a typed name + phone (nobody proved they own the number). Earns no coins; cleared
+    # -- and its sessions revoked -- the moment the number's owner signs in by Telegram / OTP (identity/guests.py).
+    is_guest = models.BooleanField(default=False, db_index=True)
 
     class Meta:
         db_table = "identity_users"

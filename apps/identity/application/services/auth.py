@@ -292,6 +292,9 @@ class VerifyOTP:
                 self._default_role_assigner(user.id)
         else:
             user.assert_can_authenticate()
+            from apps.identity.infrastructure.guests import claim
+
+            claim(user.id)  # a guest-checkout account: its owner just proved the number (old guest sessions end)
 
         tokens_result = IssueAuthenticationForUser(self._session_repo, self._token_issuer, self._stage_events).execute(
             user, device_context, provider_type=AuthProviderType.PHONE_OTP.value, is_new_user=is_new_user

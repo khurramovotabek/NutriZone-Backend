@@ -212,3 +212,33 @@ class TestPartiallyRegisteredUserResumesOnboarding:
         state = onboarding_state.get_state(chat_id)
         assert state is not None
         assert state["step"] == "awaiting_full_name"
+
+
+class TestTypedPhoneDuringOnboarding:
+    """A customer who doesn't see the share-contact button types the number ("942052040", "94 205-20-40", "+998...")."""
+
+    def _typed(self, text, existing_phone=None):
+        client = Client()
+        chat_id = uuid.uuid4().int % 1_000_000_000
+        tg_user_id = uuid.uuid4().int % 1_000_000_000
+        onboarding_state.set_awaiting_phone(chat_id, "uz", "Aziz Karimov")
+        response = _post_update(client, {"message": {"chat": {"id": chat_id}, "from": {"id": tg_user_id, "first_name": "Test"}, "text": text}})
+        assert response.status_code == 200
+        return chat_id, tg_user_id, onboarding_state.get_state(chat_id)
+
+    @pytest.mark.parametrize("text", ["942052040", "94 205-20-40", "+998 94 205 20 40", "8 94 205 20 40"])
+    def test_a_typed_number_in_any_shape_moves_to_confirmation(self, text):
+        chat_id, tg_user_id, state = self._typed(text)
+        assert state["step"] == "awaiting_confirmation"
+        assert state["phone_number"] == "+998942052040"
+        assert state.get("typed") is True
+        assert identity_orm.User.objects.filter(telegram_user_id=tg_user_id).first() is None
+
+    def test_garbage_stays_on_the_phone_step(self):
+        _chat_id, _tg, state = self._typed("salom")
+        assert state["step"] == "awaiting_phone"
+
+    def test_a_number_owned_by_another_account_needs_the_contact_button(self):
+        identity_orm.User.objects.create(id=uuid.uuid4(), phone_number="+998942052040", full_name="Egasi", status="active")
+        _chat_id, _tg, state = self._typed("94 205 20 40")
+        assert state["step"] == "awaiting_phone"

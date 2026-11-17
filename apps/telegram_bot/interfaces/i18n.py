@@ -72,9 +72,19 @@ _TRANSLATIONS: dict[str, dict[str, str]] = {
         "en": "\U0001F44B Welcome to NutriZone!\n\nPlease enter your full name.",
     },
     "ask_phone_after_name": {
-        "uz": "Rahmat, {full_name}! Endi telefon raqamingizni ulashing.",
-        "ru": "Спасибо, {full_name}! Теперь поделитесь своим номером телефона.",
-        "en": "Thank you, {full_name}! Now please share your phone number.",
+        "uz": "Rahmat, {full_name}! Endi pastdagi tugma bilan telefon raqamingizni ulashing yoki shunchaki yozib yuboring (masalan: 94 205 20 40).",
+        "ru": "Спасибо, {full_name}! Теперь поделитесь номером кнопкой ниже или просто напишите его (например: 94 205 20 40).",
+        "en": "Thank you, {full_name}! Now share your number with the button below or simply type it (e.g. 94 205 20 40).",
+    },
+    "phone_typed_invalid": {
+        "uz": "Raqamni tushunmadim. Pastdagi «📱 Telefon raqamini ulashish» tugmasini bosing yoki raqamni yozing, masalan: 94 205 20 40",
+        "ru": "Не удалось распознать номер. Нажмите кнопку «📱 Поделиться номером» ниже или напишите номер, например: 94 205 20 40",
+        "en": "I couldn't read that number. Tap «📱 Share phone number» below or type it, e.g. 94 205 20 40",
+    },
+    "phone_typed_taken": {
+        "uz": "Bu raqam bilan hisob allaqachon bor. Hisob sizniki ekanini tasdiqlash uchun pastdagi «📱 Telefon raqamini ulashish» tugmasini bosing.",
+        "ru": "Аккаунт с этим номером уже существует. Чтобы подтвердить, что он ваш, нажмите кнопку «📱 Поделиться номером» ниже.",
+        "en": "An account with this number already exists. To confirm it is yours, tap «📱 Share phone number» below.",
     },
     "share_contact_button": {
         "uz": "\U0001F4F1 Telefon raqamini ulashish",

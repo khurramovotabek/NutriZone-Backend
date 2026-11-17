@@ -39,11 +39,13 @@ def set_awaiting_phone(chat_id: int, language: str, full_name: str) -> None:
     client.set(cache_key(chat_id, namespace="telegram_bot:onboarding"), json.dumps({"step": "awaiting_phone", "language": language, "full_name": full_name}), ex=_TTL_SECONDS)
 
 
-def set_awaiting_confirmation(chat_id: int, language: str, full_name: str, phone_number: str) -> None:
+def set_awaiting_confirmation(chat_id: int, language: str, full_name: str, phone_number: str, typed: bool = False) -> None:
+    """`typed`: the number was written as text, not shared with Telegram's contact button -- unproven, so it may only
+    open a brand-new account (re-checked at confirm)."""
     client = get_redis_client()
     client.set(
         cache_key(chat_id, namespace="telegram_bot:onboarding"),
-        json.dumps({"step": "awaiting_confirmation", "language": language, "full_name": full_name, "phone_number": phone_number}),
+        json.dumps({"step": "awaiting_confirmation", "language": language, "full_name": full_name, "phone_number": phone_number, "typed": typed}),
         ex=_TTL_SECONDS,
     )
 

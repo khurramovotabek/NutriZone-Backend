@@ -165,6 +165,23 @@ def quote_for_address(address_id: uuid.UUID | str, goods_total: Decimal | int | 
                  region_code=row.get("region__code") or row.get("city__region__code"), city_code=row.get("city__code"))
 
 
+def quote_for_point(city_id, latitude, longitude, goods_total: Decimal | int | str, lang: str = "uz", items=(), region_id=None) -> DeliveryQuote | None:
+    """The same quote for a place that isn't a saved address yet (guest checkout): its city (or region) and map point."""
+    from apps.geo.infrastructure.models import City, Region
+
+    row = City.objects.filter(pk=city_id).values("code", "region_id", "region__code").first() if city_id else None
+    if row is None and region_id:
+        reg = Region.objects.filter(pk=region_id).values("id", "code").first()
+        row = {"code": None, "region_id": reg["id"], "region__code": reg["code"]} if reg else None
+    if row is None:
+        return None
+    zone = zone_for_region_code(row["region__code"])
+    if zone == TASHKENT:
+        return quote(zone, goods_total, lang, distance_km=distance_to_nearest_branch_km(latitude, longitude))
+    return quote(zone, goods_total, lang, weight_kg=parcel_weight_kg(items) if items else None, region_id=row["region_id"],
+                 region_code=row["region__code"], city_code=row["code"])
+
+
 def _regions_from(cfg) -> Decimal:
     """The cheapest regions price a shopper can meet ("... so'mdan"): a 1 kg parcel to the cheapest zone, or a contract rate."""
     contract = list(cfg.region_rates.values_list("base_fee", flat=True))

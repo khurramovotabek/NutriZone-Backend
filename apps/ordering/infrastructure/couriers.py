@@ -167,14 +167,9 @@ def find_users(term: str, limit: int = 8) -> list[dict]:
 
 def normalize_phone(raw: str) -> str:
     """'90 123 45 67', '8 90…', '998901234567', '+998 (90) 123-45-67' → '+998901234567'; '' when it isn't an Uzbek mobile number."""
-    import re
+    from apps.identity.domain.phone import parse_uz_phone
 
-    digits = re.sub(r"\D", "", raw or "")
-    if len(digits) == 9:
-        digits = "998" + digits
-    elif len(digits) == 10 and digits.startswith("8"):
-        digits = "998" + digits[1:]
-    return "+" + digits if re.fullmatch(r"998\d{9}", digits) else ""
+    return parse_uz_phone(raw)
 
 
 def account_for_phone(phone: str):

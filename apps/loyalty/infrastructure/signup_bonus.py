@@ -80,6 +80,10 @@ def grant(user_id: uuid.UUID, source: str = "first_order", notify_customer: bool
 
 
 def safe_grant(user_id: uuid.UUID, source: str = "first_order") -> None:
+    from apps.identity.infrastructure.guests import is_guest
+
+    if is_guest(user_id):
+        return  # guest checkout: the gift is for signed-up customers
     try:
         grant(user_id, source=source)
     except Exception:  # noqa: BLE001 - a gift must never break an order

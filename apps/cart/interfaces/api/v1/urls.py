@@ -9,7 +9,7 @@ from __future__ import annotations
 
 from django.urls import path
 
-from apps.cart.interfaces.api.v1 import views
+from apps.cart.interfaces.api.v1 import guest_checkout, views
 
 app_name = "cart"
 
@@ -40,6 +40,8 @@ urlpatterns = [
     path("<str:code>/validate", views.ValidateCartView.as_view(), name="cart-validate"),
     path("<str:code>/checkout-preview", views.CheckoutPreviewView.as_view(), name="cart-checkout-preview"),
     path("<str:code>/checkout", views.CheckoutCartView.as_view(), name="cart-checkout"),
+    path("<str:code>/guest-preview", guest_checkout.GuestCheckoutPreviewView.as_view(), name="cart-guest-preview"),
+    path("<str:code>/guest-checkout", guest_checkout.GuestCheckoutView.as_view(), name="cart-guest-checkout"),
     # --- Audit ---
     path("<str:code>/audit", views.CartAuditView.as_view(), name="cart-audit"),
     # --- Snapshot History ---

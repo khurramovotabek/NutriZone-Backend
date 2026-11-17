@@ -450,6 +450,44 @@ def _handle_location(message: dict) -> None:
     _send_checkout_summary(chat["id"], lang, summary, user)
 
 
+def phone_owned_by_someone_else(phone_number: str, telegram_user_id: int) -> bool:
+    """A typed (unproven) number may not reach an account that already exists, unless it is this Telegram user's own."""
+    from apps.identity.infrastructure import models as identity_orm
+
+    owner = identity_orm.User.all_objects.filter(phone_number=phone_number).only("id", "telegram_user_id").first()
+    return owner is not None and owner.telegram_user_id != telegram_user_id
+
+
+def _handle_typed_phone(message: dict, state: dict) -> None:
+    """The phone step answered with text ("942052040", "94-205-20-40", "+998 94 ...") instead of the contact button."""
+    from apps.identity.domain.phone import parse_uz_phone
+    from apps.telegram_bot.interfaces import onboarding_state
+    from apps.telegram_bot.interfaces.i18n import t
+
+    chat_id = message["chat"]["id"]
+    language = state.get("language", "uz")
+    phone_number = parse_uz_phone(message.get("text"))
+    if not phone_number:
+        _resend_contact_request(chat_id, t("phone_typed_invalid", language), language)
+        return
+    if phone_owned_by_someone_else(phone_number, message["from"]["id"]):
+        _resend_contact_request(chat_id, t("phone_typed_taken", language), language)
+        return
+    onboarding_state.set_awaiting_confirmation(chat_id, language, state.get("full_name", ""), phone_number, typed=True)
+    _send_onboarding_confirmation(chat_id, language, state.get("full_name", ""), phone_number)
+
+
+def _resend_contact_request(chat_id: int, text: str, language: str) -> None:
+    from apps.telegram_bot.interfaces.i18n import t
+
+    try:
+        from apps.notifications.infrastructure import composition as notifications_composition
+
+        notifications_composition.build_telegram_gateway().send_contact_request(str(chat_id), text, t("share_contact_button", language))
+    except Exception:  # noqa: BLE001
+        logger.warning("Telegram bot: failed to re-send contact request to chat %s", chat_id)
+
+
 def _handle_contact(message: dict) -> None:
     from apps.telegram_bot.application.services.linking import LinkTelegramCustomer, TelegramIdentityAlreadyLinkedToAnotherUser
     from apps.telegram_bot.interfaces.i18n import t
@@ -636,6 +674,8 @@ def telegram_webhook_view(request):
                 step = state.get("step") if state else None
                 if step == "awaiting_full_name":
                     _handle_full_name_reply(message)
+                elif step == "awaiting_phone":
+                    _handle_typed_phone(message, state)
                 elif step == "awaiting_language":
                     # Must be answered via the language-selection buttons, not typed text.
                     _send_language_selection(message["chat"]["id"])

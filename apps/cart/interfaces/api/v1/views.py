@@ -613,179 +613,184 @@ class CheckoutCartView(APIView):
 
     @extend_schema(tags=["Cart"], summary="Create a real Order from this cart (no client-supplied financial value accepted)", request=CheckoutCartSerializer, responses={201: OpenApiResponse(description="Order created"), **_responses(401, 403, 404, 409, 422)})
     def post(self, request, code: str):
-        from apps.geo.infrastructure import composition as geo_composition
-        from apps.geo.infrastructure.repositories import DjangoCityRepository, DjangoCountryRepository
-        from apps.identity.infrastructure.repositories import DjangoUserRepository
-        from apps.ordering.infrastructure import composition as ordering_composition
-
         _attach_identity(request)
         cart = _load_cart_by_code(code, request)
         serializer = CheckoutCartSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
-        method = serializer.validated_data.get("fulfilment_method") or "delivery"
-        pickup_store_id = serializer.validated_data.get("pickup_store_id")
-        shipping_address_id = serializer.validated_data.get("shipping_address_id")
-        billing_address_id = serializer.validated_data.get("billing_address_id", shipping_address_id)
+        return place_order(request, cart, _actor_id(request), serializer.validated_data)
 
-        readiness = composition.build_calculate_checkout_readiness().execute(cart.id, all_reservations_valid=True)
-        if readiness != "ready":
-            raise CartNotReadyForCheckout("This cart is not ready for checkout.")
 
-        actor_id = _actor_id(request)
-        address_repo = geo_composition.build_address_repository()
+def place_order(request, cart, actor_id, data: dict):
+    """Cart -> Order for `actor_id` (the signed-in customer, or the account a guest checkout resolved by phone).
+    data: fulfilment_method, pickup_store_id, shipping_address_id, billing_address_id, coins_to_redeem."""
+    from apps.geo.infrastructure import composition as geo_composition
+    from apps.geo.infrastructure.repositories import DjangoCityRepository, DjangoCountryRepository
+    from apps.identity.infrastructure.repositories import DjangoUserRepository
+    from apps.ordering.infrastructure import composition as ordering_composition
 
-        def _load_owned_address(address_id):
-            address = address_repo.get_by_id(address_id)
-            if address is None or address.owner_type != "user" or address.owner_id != actor_id:
-                raise ResourceNotFound("Address not found.")
-            return address
+    method = data.get("fulfilment_method") or "delivery"
+    pickup_store_id = data.get("pickup_store_id")
+    shipping_address_id = data.get("shipping_address_id")
+    billing_address_id = data.get("billing_address_id") or shipping_address_id
 
-        def _address_snapshot(address):
-            from apps.geo.application.services.address import delivery_details_line
+    readiness = composition.build_calculate_checkout_readiness().execute(cart.id, all_reservations_valid=True)
+    if readiness != "ready":
+        raise CartNotReadyForCheckout("This cart is not ready for checkout.")
 
-            country = DjangoCountryRepository().get_by_id(address.country_id)
-            city = DjangoCityRepository().get_by_id(address.city_id)
-            user = DjangoUserRepository().get_by_id(actor_id)
-            # Real, product-required precedence: the address's own
-            # recipient_name/recipient_phone (collected at checkout,
-            # who the delivery is actually for -- may differ from the
-            # ordering customer, e.g. a gift) take priority. Falls
-            # back to the customer's own profile name/phone only for
-            # an older address saved before this capability existed.
-            recipient_name = address.recipient_name or ((user.full_name or user.phone_number.value) if user else "")
-            recipient_phone = address.recipient_phone or (user.phone_number.value if user else None)
-            return {
-                "recipient_name": recipient_name,
-                "phone": recipient_phone,
-                "line1": address.line1,
-                # the courier's line: the customer's own line2, then podyezd / floor / flat / door code / landmark
-                "line2": " · ".join(p for p in (address.line2, delivery_details_line(address.metadata)) if p)[:255] or None,
-                "city": city.name if city else str(address.city_id),
-                "country_code": country.code.value if country else "",
-                "postal_code": address.postal_code.value if address.postal_code else None,
-                "latitude": address.coordinate.point.coordinate.latitude.value if address.coordinate else None,
-                "longitude": address.coordinate.point.coordinate.longitude.value if address.coordinate else None,
-            }
+    address_repo = geo_composition.build_address_repository()
 
-        active_items = [i for i in cart.items.values() if i.status.value != "removed"]
-        if any(i.price_reference is None for i in active_items):
-            raise CartNotReadyForCheckout("Every item must have a confirmed price before checkout.")
+    def _load_owned_address(address_id):
+        address = address_repo.get_by_id(address_id)
+        if address is None or address.owner_type != "user" or address.owner_id != actor_id:
+            raise ResourceNotFound("Address not found.")
+        return address
 
-        pickup = None
-        if method != "pickup":  # pickup checks the chosen branch's own shelf below
-            short = _stock_shortages([(i.product_variant_id, i.quantity.value) for i in active_items])
-            if short:
-                err = ConflictError(_CART_OUT_OF_STOCK_TEXT[_lang(request)], details={"shortages": short})
-                err.code = "CART_OUT_OF_STOCK"
-                raise err
-        if method == "pickup":
-            from apps.stores.infrastructure import store_orders
+    def _address_snapshot(address):
+        from apps.geo.application.services.address import delivery_details_line
 
-            try:
-                pickup = store_orders.pickup_store(pickup_store_id, [(i.product_variant_id, i.quantity.value) for i in active_items])
-            except store_orders.StoreOrderError as exc:
-                err = ConflictError(exc.message)
-                err.code = exc.code  # PICKUP_STORE_UNAVAILABLE / PICKUP_STORE_OUT_OF_STOCK -- the storefront shows a clear message
-                raise err from exc
-            user = DjangoUserRepository().get_by_id(actor_id)
-            name = (user.full_name or user.phone_number.value) if user else ""
-            phone = user.phone_number.value if user else None
-            pickup_snapshot = store_orders.pickup_snapshot(pickup, name, phone)
-            # a saved address is optional for pickup (used as billing when given)
-            billing = _address_snapshot(_load_owned_address(billing_address_id)) if billing_address_id else pickup_snapshot
-            shipping_snapshot, billing_snapshot = pickup_snapshot, billing
-        else:
-            shipping_snapshot = _address_snapshot(_load_owned_address(shipping_address_id))
-            billing_snapshot = _address_snapshot(_load_owned_address(billing_address_id))
+        country = DjangoCountryRepository().get_by_id(address.country_id)
+        city = DjangoCityRepository().get_by_id(address.city_id)
+        user = DjangoUserRepository().get_by_id(actor_id)
+        # Real, product-required precedence: the address's own
+        # recipient_name/recipient_phone (collected at checkout,
+        # who the delivery is actually for -- may differ from the
+        # ordering customer, e.g. a gift) take priority. Falls
+        # back to the customer's own profile name/phone only for
+        # an older address saved before this capability existed.
+        recipient_name = address.recipient_name or ((user.full_name or user.phone_number.value) if user else "")
+        recipient_phone = address.recipient_phone or (user.phone_number.value if user else None)
+        return {
+            "recipient_name": recipient_name,
+            "phone": recipient_phone,
+            "line1": address.line1,
+            # the courier's line: the customer's own line2, then podyezd / floor / flat / door code / landmark
+            "line2": " · ".join(p for p in (address.line2, delivery_details_line(address.metadata)) if p)[:255] or None,
+            "city": city.name if city else str(address.city_id),
+            "country_code": country.code.value if country else "",
+            "postal_code": address.postal_code.value if address.postal_code else None,
+            "latitude": address.coordinate.point.coordinate.latitude.value if address.coordinate else None,
+            "longitude": address.coordinate.point.coordinate.longitude.value if address.coordinate else None,
+        }
 
-        line_discounts, coins_to_redeem, payable_before_coins, applied_coupon_ids, gross = _checkout_discounts(cart, active_items, actor_id, serializer.validated_data.get("coins_to_redeem") or 0)
+    active_items = [i for i in cart.items.values() if i.status.value != "removed"]
+    if any(i.price_reference is None for i in active_items):
+        raise CartNotReadyForCheckout("Every item must have a confirmed price before checkout.")
 
-        # Delivery fee (pickup is free): Tashkent city by Yandex Delivery, the regions by BTS -- priced on the
-        # dashboard (DeliverySettings) and frozen onto the order; the free threshold looks at the goods after discounts.
-        from apps.ordering.infrastructure import delivery_pricing
+    pickup = None
+    if method != "pickup":  # pickup checks the chosen branch's own shelf below
+        short = _stock_shortages([(i.product_variant_id, i.quantity.value) for i in active_items])
+        if short:
+            err = ConflictError(_CART_OUT_OF_STOCK_TEXT[_lang(request)], details={"shortages": short})
+            err.code = "CART_OUT_OF_STOCK"
+            raise err
+    if method == "pickup":
+        from apps.stores.infrastructure import store_orders
 
-        delivery_quote = None if pickup is not None else delivery_pricing.quote_for_address(
-            shipping_address_id, payable_before_coins, getattr(request, "LANGUAGE_CODE", "uz"), items=[(i.product_variant_id, i.quantity.value) for i in active_items])
+        try:
+            pickup = store_orders.pickup_store(pickup_store_id, [(i.product_variant_id, i.quantity.value) for i in active_items])
+        except store_orders.StoreOrderError as exc:
+            err = ConflictError(exc.message)
+            err.code = exc.code  # PICKUP_STORE_UNAVAILABLE / PICKUP_STORE_OUT_OF_STOCK -- the storefront shows a clear message
+            raise err from exc
+        user = DjangoUserRepository().get_by_id(actor_id)
+        name = (user.full_name or user.phone_number.value) if user else ""
+        phone = user.phone_number.value if user else None
+        pickup_snapshot = store_orders.pickup_snapshot(pickup, name, phone)
+        # a saved address is optional for pickup (used as billing when given)
+        billing = _address_snapshot(_load_owned_address(billing_address_id)) if billing_address_id else pickup_snapshot
+        shipping_snapshot, billing_snapshot = pickup_snapshot, billing
+    else:
+        shipping_snapshot = _address_snapshot(_load_owned_address(shipping_address_id))
+        billing_snapshot = _address_snapshot(_load_owned_address(billing_address_id))
 
-        line_items = [
-            {
-                "product_variant_id": str(item.product_variant_id),
-                "quantity": item.quantity.value,
-                "unit_price": str(item.price_reference.unit_amount.amount),
-                "price_snapshot_id": str(item.price_reference.price_snapshot_id),
-                "discount_amount": str(discount),
-            }
-            for item, discount in zip(active_items, line_discounts, strict=True)
-        ]
+    line_discounts, coins_to_redeem, payable_before_coins, applied_coupon_ids, gross = _checkout_discounts(cart, active_items, actor_id, data.get("coins_to_redeem") or 0)
 
-        def _create_order():
-            from apps.pricing.infrastructure import composition as pricing_composition
+    # Delivery fee (pickup is free): Tashkent city by Yandex Delivery, the regions by BTS -- priced on the
+    # dashboard (DeliverySettings) and frozen onto the order; the free threshold looks at the goods after discounts.
+    from apps.ordering.infrastructure import delivery_pricing
 
-            with transaction.atomic():
-                order = ordering_composition.build_create_order_from_cart(actor_id).execute(
-                    cart_id=cart.id, customer_id=actor_id, currency=cart.currency.value,
-                    shipping_address=shipping_snapshot, billing_address=billing_snapshot,
-                    # Real, closed bug: `cart.coupon_ids` (apps.cart.domain.aggregates.Cart)
-                    # is a set of real uuid.UUID objects -- apply_coupon_reference()'s own
-                    # signature takes `coupon_id: uuid.UUID`, never a string (confirmed
-                    # directly against the aggregate). Re-wrapping an already-UUID value in
-                    # uuid.UUID(c) crashed with AttributeError ('UUID' object has no
-                    # attribute 'replace') the moment any cart actually had a coupon applied
-                    # -- checkout only "worked" in every prior test because none of them
-                    # exercised the coupon path. list() only re-shapes the set into an
-                    # ordered sequence for the call below; every element is already the
-                    # correct type.
-                    line_items=line_items, coupon_ids=list(cart.coupon_ids),
-                    customer_comment=cart.note.text if cart.note else None,
-                    shipping_amount=delivery_quote.fee if delivery_quote else 0,
-                )
-                if delivery_quote is not None:
-                    from apps.ordering.infrastructure.models import OrderModel
+    delivery_quote = None if pickup is not None else delivery_pricing.quote_for_address(
+        shipping_address_id, payable_before_coins, getattr(request, "LANGUAGE_CODE", "uz"), items=[(i.product_variant_id, i.quantity.value) for i in active_items])
 
-                    OrderModel.objects.filter(pk=order.id).update(delivery_zone=delivery_quote.zone, delivery_carrier=delivery_quote.carrier[:60])
-                # Phase 09.7: closes a real, confirmed gap -- CreateOrderFromCart
-                # never transitions PriceSnapshot LOCKED -> CONSUMED on its own
-                # (confirmed directly: no ConsumePriceSnapshot reference anywhere
-                # in that service). Consuming only after a successful order
-                # creation, inside this same idempotency-protected operation.
-                #
-                # Phase 09.7c fix: both calls must share this one explicit
-                # transaction.atomic() block. Each inner service has its own
-                # @transaction.atomic, but without a shared outer block each
-                # commits independently rather than nesting as a savepoint --
-                # confirmed by a real failing test where a ConsumePriceSnapshot
-                # failure still left a committed Order behind.
-                consume_snapshot = pricing_composition.build_consume_price_snapshot(actor_id)
-                for item in active_items:
-                    consume_snapshot.execute(item.price_reference.price_snapshot_id)
-                # Coins leave the wallet in the SAME transaction as the order: either both
-                # happen or neither does (a race that empties the wallet rolls the order back).
-                _redeem_coins(actor_id, coins_to_redeem, order, payable_before_coins)
-                # every coupon that gave a discount records one use (limits count these) -- same transaction as the order
-                from apps.pricing.infrastructure import coupon_rules
+    line_items = [
+        {
+            "product_variant_id": str(item.product_variant_id),
+            "quantity": item.quantity.value,
+            "unit_price": str(item.price_reference.unit_amount.amount),
+            "price_snapshot_id": str(item.price_reference.price_snapshot_id),
+            "discount_amount": str(discount),
+        }
+        for item, discount in zip(active_items, line_discounts, strict=True)
+    ]
 
-                coupon_rules.redeem(applied_coupon_ids, actor_id, order.order_number.value, gross)
-                if pickup is not None:  # the branch owner sees the order (and is told about it) right away
-                    from apps.ordering.infrastructure.models import OrderModel
-                    from apps.stores.infrastructure import store_orders
+    def _create_order():
+        from apps.pricing.infrastructure import composition as pricing_composition
 
-                    store_orders.assign(OrderModel.objects.get(pk=order.id), pickup, by="checkout", method="pickup")
-                return order
+        with transaction.atomic():
+            order = ordering_composition.build_create_order_from_cart(actor_id).execute(
+                cart_id=cart.id, customer_id=actor_id, currency=cart.currency.value,
+                shipping_address=shipping_snapshot, billing_address=billing_snapshot,
+                # Real, closed bug: `cart.coupon_ids` (apps.cart.domain.aggregates.Cart)
+                # is a set of real uuid.UUID objects -- apply_coupon_reference()'s own
+                # signature takes `coupon_id: uuid.UUID`, never a string (confirmed
+                # directly against the aggregate). Re-wrapping an already-UUID value in
+                # uuid.UUID(c) crashed with AttributeError ('UUID' object has no
+                # attribute 'replace') the moment any cart actually had a coupon applied
+                # -- checkout only "worked" in every prior test because none of them
+                # exercised the coupon path. list() only re-shapes the set into an
+                # ordered sequence for the call below; every element is already the
+                # correct type.
+                line_items=line_items, coupon_ids=list(cart.coupon_ids),
+                customer_comment=cart.note.text if cart.note else None,
+                shipping_amount=delivery_quote.fee if delivery_quote else 0,
+            )
+            if delivery_quote is not None:
+                from apps.ordering.infrastructure.models import OrderModel
 
-        def _order_payload(order):
-            return {
-                "id": str(order.id), "order_number": order.order_number.value, "status": order.status.value,
-                "currency": order.currency, "line_count": len(line_items),
-                "shipping_amount": str(order.shipping_amount), "total": str(order.compute_total().grand_total.amount),
-            }
+                OrderModel.objects.filter(pk=order.id).update(delivery_zone=delivery_quote.zone, delivery_carrier=delivery_quote.carrier[:60])
+            # Phase 09.7: closes a real, confirmed gap -- CreateOrderFromCart
+            # never transitions PriceSnapshot LOCKED -> CONSUMED on its own
+            # (confirmed directly: no ConsumePriceSnapshot reference anywhere
+            # in that service). Consuming only after a successful order
+            # creation, inside this same idempotency-protected operation.
+            #
+            # Phase 09.7c fix: both calls must share this one explicit
+            # transaction.atomic() block. Each inner service has its own
+            # @transaction.atomic, but without a shared outer block each
+            # commits independently rather than nesting as a savepoint --
+            # confirmed by a real failing test where a ConsumePriceSnapshot
+            # failure still left a committed Order behind.
+            consume_snapshot = pricing_composition.build_consume_price_snapshot(actor_id)
+            for item in active_items:
+                consume_snapshot.execute(item.price_reference.price_snapshot_id)
+            # Coins leave the wallet in the SAME transaction as the order: either both
+            # happen or neither does (a race that empties the wallet rolls the order back).
+            _redeem_coins(actor_id, coins_to_redeem, order, payable_before_coins)
+            # every coupon that gave a discount records one use (limits count these) -- same transaction as the order
+            from apps.pricing.infrastructure import coupon_rules
 
-        return protect_with_idempotency(
-            request, actor_id, "cart.checkout", {"cart_id": str(cart.id), "method": method, "pickup_store_id": str(pickup_store_id or ""), "shipping_address_id": str(shipping_address_id or ""),
-             "billing_address_id": str(billing_address_id or ""), "coins_to_redeem": coins_to_redeem},
-            operation=_create_order,
-            result_to_payload=_order_payload,
-            success_status_code=201,
-        )
+            coupon_rules.redeem(applied_coupon_ids, actor_id, order.order_number.value, gross)
+            if pickup is not None:  # the branch owner sees the order (and is told about it) right away
+                from apps.ordering.infrastructure.models import OrderModel
+                from apps.stores.infrastructure import store_orders
+
+                store_orders.assign(OrderModel.objects.get(pk=order.id), pickup, by="checkout", method="pickup")
+            return order
+
+    def _order_payload(order):
+        return {
+            "id": str(order.id), "order_number": order.order_number.value, "status": order.status.value,
+            "currency": order.currency, "line_count": len(line_items),
+            "shipping_amount": str(order.shipping_amount), "total": str(order.compute_total().grand_total.amount),
+        }
+
+    return protect_with_idempotency(
+        request, actor_id, "cart.checkout", {"cart_id": str(cart.id), "method": method, "pickup_store_id": str(pickup_store_id or ""), "shipping_address_id": str(shipping_address_id or ""),
+         "billing_address_id": str(billing_address_id or ""), "coins_to_redeem": coins_to_redeem},
+        operation=_create_order,
+        result_to_payload=_order_payload,
+        success_status_code=201,
+    )
 
 
 class PriceSnapshotReferenceView(APIView):
@@ -991,51 +996,60 @@ class CheckoutPreviewView(APIView):
     def get(self, request, code: str):
         _attach_identity(request)
         cart = _load_cart_by_code(code, request)
+        return success_response(data=preview_payload(cart, _actor_id(request), lambda total, items: _delivery_preview(request, total, items)))
 
-        issues = composition.build_validate_cart().execute(cart.id)
-        # Phase 09.5: no stock-reservation system is wired to Cart today
-        # (reservation_reference is always null, confirmed in Phase
-        # 09.2/09.4) -- all_reservations_valid=True is a disclosed
-        # simplification, not a fabricated "stock confirmed" claim; the
-        # readiness value below already reflects real price/status
-        # checks independent of this flag.
-        readiness = composition.build_calculate_checkout_readiness().execute(cart.id, all_reservations_valid=True)
 
-        active_items = [i for i in cart.items.values() if i.status.value != "removed"]
-        from apps.stores.infrastructure.availability import sellable
+def preview_payload(cart, actor_id, delivery) -> dict:
+    """The checkout summary of a cart; delivery(goods_total, items) -> the delivery line (or None)."""
+    issues = composition.build_validate_cart().execute(cart.id)
+    # Phase 09.5: no stock-reservation system is wired to Cart today
+    # (reservation_reference is always null, confirmed in Phase
+    # 09.2/09.4) -- all_reservations_valid=True is a disclosed
+    # simplification, not a fabricated "stock confirmed" claim; the
+    # readiness value below already reflects real price/status
+    # checks independent of this flag.
+    readiness = composition.build_calculate_checkout_readiness().execute(cart.id, all_reservations_valid=True)
 
-        stock = sellable([i.product_variant_id for i in active_items])
-        shortages = _stock_shortages([(i.product_variant_id, i.quantity.value) for i in active_items])
-        priced_items = [i for i in active_items if i.price_reference is not None]
-        subtotal = None
-        if priced_items:
-            currencies = {i.price_reference.unit_amount.currency for i in priced_items}
-            if len(currencies) == 1:
-                total = sum((i.price_reference.unit_amount.amount * i.quantity.value for i in priced_items), Decimal("0"))
-                subtotal = {"amount": str(total), "currency": currencies.pop()}
+    active_items = [i for i in cart.items.values() if i.status.value != "removed"]
+    from apps.stores.infrastructure.availability import sellable
 
-        applied_coupons, discount = _compute_cart_discount(cart.coupon_ids, subtotal, _actor_id(request))
+    stock = sellable([i.product_variant_id for i in active_items])
+    shortages = _stock_shortages([(i.product_variant_id, i.quantity.value) for i in active_items])
+    priced_items = [i for i in active_items if i.price_reference is not None]
+    subtotal = None
+    if priced_items:
+        currencies = {i.price_reference.unit_amount.currency for i in priced_items}
+        if len(currencies) == 1:
+            total = sum((i.price_reference.unit_amount.amount * i.quantity.value for i in priced_items), Decimal("0"))
+            subtotal = {"amount": str(total), "currency": currencies.pop()}
 
-        total_after_discount = None
-        if subtotal and discount:
-            total_after_discount = {"amount": str(Decimal(subtotal["amount"]) - Decimal(discount["amount"])), "currency": subtotal["currency"]}
+    applied_coupons, discount = _compute_cart_discount(cart.coupon_ids, subtotal, actor_id)
 
-        return success_response(data={
-            "readiness": readiness,
-            "issues": [{"severity": i.severity.value, "code": i.code.value, "message": i.message, "item_id": str(i.item_id) if i.item_id else None} for i in issues],
-            "items": [{**_item_payload(i), "available_quantity": stock.get(i.product_variant_id, 0)} for i in active_items],
-            "stock_shortages": [x for x in shortages],
-            "priced_item_count": len(priced_items),
-            "total_item_count": len(active_items),
-            "subtotal": subtotal,
-            "applied_coupons": [{"code": a["code"], "amount": a["amount"]} for a in applied_coupons],
-            "discount": discount,
-            "total": total_after_discount or subtotal,
-            "currency": cart.currency.value,
-            "expires_at": cart.expires_at.isoformat() if cart.expires_at else None,
-            "loyalty": _loyalty_preview(_actor_id(request), total_after_discount or subtotal),
-            "delivery": _delivery_preview(request, total_after_discount or subtotal, [(i.product_variant_id, i.quantity.value) for i in active_items]),
-        })
+    total_after_discount = None
+    if subtotal and discount:
+        total_after_discount = {"amount": str(Decimal(subtotal["amount"]) - Decimal(discount["amount"])), "currency": subtotal["currency"]}
+
+    from apps.identity.infrastructure.guests import is_guest
+
+    guest_account = is_guest(actor_id)
+    return {
+        "readiness": readiness,
+        "issues": [{"severity": i.severity.value, "code": i.code.value, "message": i.message, "item_id": str(i.item_id) if i.item_id else None} for i in issues],
+        "items": [{**_item_payload(i), "available_quantity": stock.get(i.product_variant_id, 0)} for i in active_items],
+        "stock_shortages": [x for x in shortages],
+        "priced_item_count": len(priced_items),
+        "total_item_count": len(active_items),
+        "subtotal": subtotal,
+        "applied_coupons": [{"code": a["code"], "amount": a["amount"]} for a in applied_coupons],
+        "discount": discount,
+        "total": total_after_discount or subtotal,
+        "currency": cart.currency.value,
+        "expires_at": cart.expires_at.isoformat() if cart.expires_at else None,
+        "loyalty": None if guest_account else _loyalty_preview(actor_id, total_after_discount or subtotal),
+        # an account made by a guest order (name + phone, never verified): no coins until the owner signs in properly
+        "guest_account": guest_account,
+        "delivery": delivery(total_after_discount or subtotal, [(i.product_variant_id, i.quantity.value) for i in active_items]),
+    }
 
 
 def _delivery_preview(request, goods_total: dict | None, items) -> dict | None:

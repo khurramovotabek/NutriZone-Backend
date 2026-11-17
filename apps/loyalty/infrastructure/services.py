@@ -406,6 +406,10 @@ def award_order_detailed(order_id: uuid.UUID) -> AwardResult:
     order = o.OrderModel.objects.filter(id=order_id).only("id", "customer_id", "status", "order_number", "currency", "placed_at", "created_at").first()
     if order is None or order.customer_id is None or order.status not in FULFILLED_STATUSES:
         return AwardResult(None)
+    from apps.identity.infrastructure.guests import is_guest
+
+    if is_guest(order.customer_id):
+        return AwardResult(None)  # guest checkout: cashback is for signed-up customers
     result = AwardResult(None)
     result.referral_payouts = _qualify_referral(order)
     from apps.notifications.infrastructure.subscriptions import safe_on_purchase

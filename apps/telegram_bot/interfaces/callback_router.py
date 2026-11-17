@@ -638,6 +638,13 @@ def _handle_onboarding_action(telegram_user_id: int, chat_id: int, action: str, 
             TelegramIdentityAlreadyLinkedToAnotherUser,
         )
 
+        if state.get("typed"):
+            from apps.telegram_bot.interfaces.api.v1.views import _resend_contact_request, phone_owned_by_someone_else
+
+            if phone_owned_by_someone_else(phone_number, telegram_user_id):  # taken meanwhile: only the contact button proves ownership
+                onboarding_state.set_awaiting_phone(chat_id, language, full_name)
+                _resend_contact_request(chat_id, t("phone_typed_taken", language), language)
+                return
         onboarding_state.clear(chat_id)
         try:
             result = LinkTelegramCustomer().execute(telegram_user_id=telegram_user_id, phone_number_raw=phone_number, full_name=full_name, language=language)
