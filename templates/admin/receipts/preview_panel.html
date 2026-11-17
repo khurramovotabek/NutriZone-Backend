@@ -1,0 +1,53 @@
+{# Chek sozlamalari: an 80 mm receipt drawn from the requisite fields of this form -- it follows what is typed (JS below), before saving. #}
+<div class="nzi-panel-body nzr-preview-wrap">
+  <div class="nzr-preview-note">
+    <p><b>Mijoz chekda aynan shuni ko'radi.</b> Pastdagi rekvizitlarni yozganingiz sari namuna o'zgaradi — saqlashdan oldin tekshirib oling.</p>
+    <ul>
+      <li><i class="fas fa-circle-check" aria-hidden="true"></i> Yuridik nom va STIR — soliq talabi</li>
+      <li><i class="fas fa-circle-check" aria-hidden="true"></i> Manzil va telefon — mijoz bog'lanishi uchun</li>
+      <li><i class="fas fa-circle-check" aria-hidden="true"></i> QQS stavkasi narx ichidan hisoblanadi</li>
+    </ul>
+  </div>
+  <div class="nzr-paper" data-nzr-preview aria-label="Chek namunasi">
+    <div class="nzr-paper-head">
+      <b data-bind="legal_name" data-empty="{{ brand }}">{{ s.legal_name|default:brand }}</b>
+      <span data-bind="tin" data-prefix="STIR: " data-empty="STIR: —">{% if s.tin %}STIR: {{ s.tin }}{% else %}STIR: —{% endif %}</span>
+      <span data-bind="address" data-empty="Manzil kiritilmagan">{{ s.address|default:"Manzil kiritilmagan" }}</span>
+      <span data-bind="phone" data-prefix="Tel: " data-empty="">{% if s.phone %}Tel: {{ s.phone }}{% endif %}</span>
+    </div>
+    <div class="nzr-paper-meta"><span>Chek NZ-000123</span><span>{{ now|date:"d.m.Y H:i" }}</span></div>
+    <div class="nzr-paper-line"><span>Optimum Nutrition Gold Standard<small>2.27 kg · Chocolate · 2 × 650 000</small></span><b>1 300 000</b></div>
+    <div class="nzr-paper-line"><span>Kreatin monohidrat<small>300 g · 1 × 180 000</small></span><b>180 000</b></div>
+    <div class="nzr-paper-total"><span>JAMI</span><b>1 480 000 so'm</b></div>
+    <div class="nzr-paper-sub"><span>To'lov (Naqd)</span><span>1 480 000</span></div>
+    <div class="nzr-paper-sub" data-nzr-vat{% if not s.vat_payer %} hidden{% endif %}><span>shu jumladan QQS <span data-nzr-vat-rate>{{ s.vat_rate|floatformat:"-2" }}</span>%</span><span data-nzr-vat-sum>—</span></div>
+    <div class="nzr-paper-qr" aria-hidden="true"><i class="fas fa-qrcode"></i><small>Elektron chek</small></div>
+    <p class="nzr-paper-foot" data-bind="footer" data-empty="">{{ s.footer }}</p>
+  </div>
+</div>
+<script>
+(function () {
+  var box = document.querySelector("[data-nzr-preview]"); if (!box) return;
+  var TOTAL = 1480000;
+  function fmt(n) { return Math.round(n).toLocaleString("ru-RU").replace(/\s/g, " "); }
+  function field(name) { return document.getElementById("id_" + name); }
+  function sync() {
+    box.querySelectorAll("[data-bind]").forEach(function (el) {
+      var f = field(el.dataset.bind); if (!f) return;
+      var v = (f.value || "").trim();
+      el.textContent = v ? (el.dataset.prefix || "") + v : el.dataset.empty;
+      el.hidden = !el.textContent;
+    });
+    var payer = field("vat_payer"), rate = parseFloat((field("vat_rate") || {}).value) || 0, row = box.querySelector("[data-nzr-vat]");
+    if (row) {
+      row.hidden = !(payer && payer.checked && rate > 0);
+      box.querySelector("[data-nzr-vat-rate]").textContent = rate;
+      box.querySelector("[data-nzr-vat-sum]").textContent = fmt(TOTAL * rate / (100 + rate));
+    }
+  }
+  ["legal_name", "tin", "address", "phone", "footer", "vat_payer", "vat_rate"].forEach(function (n) {
+    var f = field(n); if (f) { f.addEventListener("input", sync); f.addEventListener("change", sync); }
+  });
+  sync();
+})();
+</script>

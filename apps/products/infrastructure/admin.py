@@ -9,6 +9,7 @@ directly (MIC §9's bulk-action rule) -- matching
 """
 from __future__ import annotations
 
+import contextvars
 from decimal import Decimal
 
 from django import forms
@@ -307,13 +308,29 @@ def _get_or_create_default_price_list():
     return PriceListModel.objects.get(id=activated.id)
 
 
-def _default_price_entry_for(variant_id):
-    price_list = _default_price_list()
-    if price_list is None:
-        return None
-    from apps.pricing.infrastructure.models import PriceListEntryModel
+# One product page builds a form per variant in two inlines; inside ProductAdmin.changeform_view the default price list
+# and each variant's entry are looked up once (read-only, for the forms' initial values) instead of once per form.
+_PRICE_LOOKUP = contextvars.ContextVar("nz_price_lookup", default=None)
 
-    return PriceListEntryModel.objects.filter(price_list=price_list, product_variant_id=variant_id).first()
+
+def _default_price_entry_for(variant_id):
+    memo = _PRICE_LOOKUP.get()
+    if memo is not None and variant_id in memo:
+        return memo[variant_id]
+    if memo is not None and "_list" in memo:
+        price_list = memo["_list"]
+    else:
+        price_list = _default_price_list()
+        if memo is not None:
+            memo["_list"] = price_list
+    entry = None
+    if price_list is not None:
+        from apps.pricing.infrastructure.models import PriceListEntryModel
+
+        entry = PriceListEntryModel.objects.filter(price_list=price_list, product_variant_id=variant_id).first()
+    if memo is not None:
+        memo[variant_id] = entry
+    return entry
 
 
 PACKAGE_ICONS = {
@@ -352,7 +369,7 @@ class PackagePickerSelect(forms.Select):
 
 
 def _package_formfield(db_field, request, **kwargs):
-    kwargs["queryset"] = orm.Package.objects.filter(is_active=True).order_by("sort_order", "slug")
+    kwargs["queryset"] = orm.Package.objects.filter(is_active=True).prefetch_related("translations").order_by("sort_order", "slug")  # __str__ reads translations: one query per option otherwise
     kwargs["widget"] = PackagePickerSelect()
     kwargs["empty_label"] = "Qadoqsiz"
     return db_field.formfield(**kwargs)
@@ -740,6 +757,13 @@ class ProductVariantPhotoFilter(admin.SimpleListFilter):
 
 @admin.register(orm.Product)
 class ProductAdmin(ExcelExportMixin, CatalogFormMixin, CatalogAnalyticsMixin, admin.ModelAdmin):
+    def changeform_view(self, request, object_id=None, form_url="", extra_context=None):
+        token = _PRICE_LOOKUP.set({})  # see _default_price_entry_for
+        try:
+            return super().changeform_view(request, object_id, form_url, extra_context)
+        finally:
+            _PRICE_LOOKUP.reset(token)
+
     excel_title = "Mahsulotlar"
     excel_select_related = ("brand", "category")
     excel_columns = [
@@ -752,6 +776,8 @@ class ProductAdmin(ExcelExportMixin, CatalogFormMixin, CatalogAnalyticsMixin, ad
 
 
     def formfield_for_foreignkey(self, db_field, request, **kwargs):
+        if db_field.name == "brand" and "queryset" not in kwargs:
+            kwargs["queryset"] = orm.Brand.objects.prefetch_related("translations")  # Brand.__str__ reads translations
         field = super().formfield_for_foreignkey(db_field, request, **kwargs)
         return _category_formfield(field) if db_field.name == "category" and field is not None else field
     def excel_prepare(self, objs):
@@ -1716,6 +1742,39 @@ class CategoryAdminForm(forms.ModelForm):
             "sort_order": "Kichik raqam ro'yxatda oldinroq chiqadi.",
             "is_active": "O'chirilsa kategoriya saytda ko'rinmaydi.",
         }
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        field = self.fields.get("parent")
+        if field is None:
+            return
+        # the tree path ("Sport ozuqalari › Proteinlar") instead of a bare name, one query instead of one per option,
+        # and never itself or one of its own descendants (that would cut the branch out of the tree)
+        labels = category_path_labels()
+        banned = _category_subtree_ids(self.instance.pk) if self.instance.pk else set()
+        field.queryset = orm.Category.objects.filter(id__in=set(labels) - banned)
+        field.label_from_instance = lambda c: labels.get(c.id, str(c))
+        field.choices = [("", "— Asosiy kategoriya —")] + sorted(((i, l) for i, l in labels.items() if i not in banned), key=lambda x: x[1].lower())
+
+    def clean_parent(self):
+        parent = self.cleaned_data.get("parent")
+        if parent is not None and self.instance.pk and parent.pk in _category_subtree_ids(self.instance.pk):
+            raise forms.ValidationError("Kategoriyani o'zining yoki o'z ichidagi kategoriyaning ostiga qo'yib bo'lmaydi.")
+        return parent
+
+
+def _category_subtree_ids(root_id) -> set:
+    """root_id and every category below it (breadth-first over parent links; one query, cycle-safe)."""
+    children = {}
+    for cid, pid in orm.Category.objects.filter(is_deleted=False).values_list("id", "parent_id"):
+        children.setdefault(pid, []).append(cid)
+    seen, queue = {root_id}, [root_id]
+    while queue:
+        for cid in children.get(queue.pop(), ()):
+            if cid not in seen:
+                seen.add(cid)
+                queue.append(cid)
+    return seen
 
 
 @admin.register(orm.Category)

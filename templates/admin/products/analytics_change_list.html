@@ -1,9 +1,9 @@
 {% extends "admin/change_list.html" %}
-{% load i18n static %}
-{% block extrastyle %}{{ block.super }}<link rel="stylesheet" href="{% static 'admin/css/nutrizone-catalog.css' %}?v=1">{% if opts.model_name == "product" %}<link rel="stylesheet" href="{% static 'admin/css/nutrizone-price-quick.css' %}?v=2">{% endif %}{% endblock %}
+{% load i18n static nzi %}
+{% block extrastyle %}{{ block.super }}<link rel="stylesheet" href="{% static 'admin/css/nutrizone-catalog.css' %}?v=5">{% if opts.model_name == "product" %}<link rel="stylesheet" href="{% static 'admin/css/nutrizone-price-quick.css' %}?v=2">{% endif %}{% endblock %}
 {% block extrajs %}{{ block.super }}{% if opts.model_name == "product" %}
 <script id="nzq-config" type="application/json">{"product": "{% url 'admin:nz_price_list_product' '__' %}", "save": "{% url 'admin:nz_price_list_save' '__' %}", "history": "{% url 'admin:nz_price_list_history' '__' %}", "edit": "{% url 'admin:products_product_change' '00000000-0000-0000-0000-000000000000' %}"}</script>
-<script src="{% static 'admin/js/nutrizone-price-quick.js' %}?v=2"></script>{% endif %}{% endblock %}
+<script src="{% static 'admin/js/nutrizone-price-quick.js' %}?v=2"></script>{% endif %}<script src="{% static 'admin/js/nutrizone-catalog-list.js' %}?v=1" defer></script>{% endblock %}
 {% block date_hierarchy %}
 {{ nzg_css|default:'' }}
 {% if nzc %}
@@ -56,4 +56,31 @@
 </section>
 {% endif %}
 {{ block.super }}
+{% endblock %}
+
+{% block search %}
+{# one premium toolbar for every catalog list: search, filters (apply on change), result count + reset, then add / Excel #}
+<div class="nzc-toolbar" id="change-list-filters">
+  <form id="changelist-search" class="nzc-filterbar" method="get" role="search">
+    {% if cl.search_fields %}
+    <label class="nzc-search">
+      <i class="fas fa-magnifying-glass" aria-hidden="true"></i>
+      <input type="search" name="q" value="{{ cl.query }}" id="searchbar" autocomplete="off" placeholder="{% if cl.search_help_text %}{{ cl.search_help_text }}{% else %}{% translate 'Nomi, SKU yoki shtrix-kod…' %}{% endif %}" aria-label="{% translate 'Qidirish' %}">
+      <kbd aria-hidden="true">/</kbd>
+    </label>
+    {% endif %}
+    {% for k, v in cl.params.items %}{% if k != "q" and k != "p" %}<input type="hidden" name="{{ k }}" value="{{ v }}">{% endif %}{% endfor %}
+    {% if cl.has_filters %}{% for spec in cl.filter_specs %}{% with choices=spec|nzi_choices:cl %}{% if choices %}
+    <label class="nzc-filter{% for c in choices %}{% if c.selected and not forloop.first %} on{% endif %}{% endfor %}">
+      <span>{{ spec.title|capfirst }}</span>
+      <select onchange="window.location=this.value" aria-label="{{ spec.title }}">{% for c in choices %}<option value="{{ c.query_string|iriencode }}"{% if c.selected %} selected{% endif %}>{{ c.display }}</option>{% endfor %}</select>
+    </label>
+    {% endif %}{% endwith %}{% endfor %}{% endif %}
+    <span class="nzc-count" aria-live="polite">
+      <b>{{ cl.result_count }}</b> {% translate "ta" %}{% if cl.result_count != cl.full_result_count %} <small>/ {{ cl.full_result_count }}</small>{% endif %}
+      {% if cl.query or cl.result_count != cl.full_result_count %}<a href="?" class="nzc-reset"><i class="fas fa-xmark" aria-hidden="true"></i> {% translate "Tozalash" %}</a>{% endif %}
+    </span>
+  </form>
+  <div class="nzc-object-tools">{% block object-tools %}{{ block.super }}{% endblock %}</div>
+</div>
 {% endblock %}

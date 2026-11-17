@@ -76,3 +76,59 @@
   .nzc-rank li { grid-template-columns: 22px minmax(0, 1fr) auto; }
   .nzc-rank .track { display: none; }
 }
+
+/* ------------------------------------------------------------------ premium toolbar (analytics_change_list.html) */
+.nzc-toolbar { display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: 12px; margin: 0 0 14px; padding: 12px;
+  border-radius: 18px; border: 1px solid var(--nz-glass-border, var(--nz-border)); background: color-mix(in srgb, var(--nz-surface) 80%, transparent);
+  backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px); }
+.nzc-filterbar { display: flex; flex-wrap: wrap; align-items: flex-end; gap: 10px; flex: 1 1 520px; min-width: 0; margin: 0; }
+.nzc-search { position: relative; display: flex; align-items: center; flex: 1 1 260px; max-width: 360px; margin: 0; }
+.nzc-search > i { position: absolute; left: 13px; color: var(--nz-text-muted); font-size: .85rem; pointer-events: none; }
+.nzc-search input { width: 100%; height: 42px; padding: 0 36px 0 38px; border-radius: 12px; border: 1px solid var(--nz-border); background: var(--nz-surface);
+  color: var(--nz-text-primary); font-size: .88rem; }
+.nzc-search input:focus { outline: none; border-color: var(--nz-primary); box-shadow: 0 0 0 3px color-mix(in srgb, var(--nz-primary) 22%, transparent); }
+.nzc-search kbd { position: absolute; right: 10px; padding: 1px 7px; border-radius: 6px; font-size: .68rem; color: var(--nz-text-muted); border: 1px solid var(--nz-border); background: var(--nz-surface-secondary); }
+.nzc-search input:focus + kbd, .nzc-search input:not(:placeholder-shown) + kbd { display: none; }
+.nzc-filter { display: inline-grid; gap: 3px; margin: 0; }
+.nzc-filter span { padding-left: 4px; font-size: .6rem; font-weight: 800; letter-spacing: .05em; text-transform: uppercase; color: var(--nz-text-muted); }
+.nzc-filter select { height: 42px; min-width: 130px; max-width: 210px; padding: 0 30px 0 12px; border-radius: 12px; border: 1px solid var(--nz-border);
+  background-color: var(--nz-surface); color: var(--nz-text-primary); font-size: .84rem; font-weight: 600; cursor: pointer; }
+.nzc-filter.on select { border-color: color-mix(in srgb, var(--nz-primary) 60%, var(--nz-border)); background-color: color-mix(in srgb, var(--nz-primary) 9%, var(--nz-surface)); color: var(--nz-primary); }
+.nzc-filter select:focus { outline: none; border-color: var(--nz-primary); box-shadow: 0 0 0 3px color-mix(in srgb, var(--nz-primary) 22%, transparent); }
+.nzc-count { display: inline-flex; align-items: center; gap: 8px; height: 42px; padding: 0 4px; font-size: .8rem; color: var(--nz-text-muted); white-space: nowrap; }
+.nzc-count b { font-size: .95rem; color: var(--nz-text-primary); }
+.nzc-reset { display: inline-flex; align-items: center; gap: 5px; padding: 5px 10px; border-radius: 999px; font-weight: 700; font-size: .74rem;
+  color: #e11d48 !important; background: color-mix(in srgb, #e11d48 10%, transparent); text-decoration: none !important; }
+.nzc-object-tools { display: flex; align-items: flex-end; }
+.nzc-object-tools .object-tools, .nzc-object-tools ul { display: flex; flex-wrap: wrap; gap: 8px; margin: 0 !important; padding: 0; list-style: none; }
+.nzc-object-tools .btn, .nzc-object-tools a { display: inline-flex !important; align-items: center; gap: 7px; height: 42px; padding: 0 16px !important; border-radius: 12px !important;
+  font-size: .84rem !important; font-weight: 700 !important; white-space: nowrap; }
+
+/* bulk actions: only while something is selected */
+body:has(.nzc-toolbar) #changelist-form .actions { display: none !important; }
+body.nzc-has-selection:has(.nzc-toolbar) #changelist-form .actions { position: sticky; top: 64px; z-index: 20; display: flex !important; flex-wrap: wrap; align-items: center; gap: 10px;
+  margin-bottom: 10px; padding: 10px 14px; border-radius: 14px; border: 1px solid color-mix(in srgb, var(--nz-primary) 40%, var(--nz-border));
+  background: color-mix(in srgb, var(--nz-primary) 10%, var(--nz-surface)); box-shadow: 0 14px 30px -22px var(--nz-primary); }
+body:has(.nzc-toolbar) #changelist-form .actions select { height: 38px; min-width: 260px; border-radius: 10px; }
+body:has(.nzc-toolbar) #changelist-form .actions .btn, body:has(.nzc-toolbar) #changelist-form .actions button { height: 38px; border-radius: 10px; font-weight: 700; }
+body:has(.nzc-toolbar) .change-list-actions { padding-bottom: 0 !important; }
+
+/* table: calm rows (no zebra), hover */
+body:has(.nzc-toolbar) #result_list { border-collapse: separate; border-spacing: 0; --bs-table-striped-bg: transparent; --bs-table-bg-type: transparent; }
+body:has(.nzc-toolbar) #result_list > :not(caption) > * > * { --bs-table-bg-type: transparent !important; --bs-table-accent-bg: transparent !important; }
+body:has(.nzc-toolbar) #result_list thead th { background: transparent !important; font-size: .68rem; font-weight: 800; letter-spacing: .05em; text-transform: uppercase; color: var(--nz-text-muted);
+  border-bottom: 1px solid var(--nz-border) !important; }
+body:has(.nzc-toolbar) #result_list tbody tr, body:has(.nzc-toolbar) #result_list tbody tr:nth-of-type(odd) > * { --bs-table-accent-bg: transparent !important; background: transparent !important; }
+body:has(.nzc-toolbar) #result_list tbody td, body:has(.nzc-toolbar) #result_list tbody th { border-bottom: 1px solid color-mix(in srgb, var(--nz-border) 75%, transparent) !important; vertical-align: middle; }
+body:has(.nzc-toolbar) #result_list tbody tr:hover > * { background: color-mix(in srgb, var(--nz-primary) 6%, transparent) !important; }
+body:has(.nzc-toolbar) #result_list tbody tr.selected > * { background: color-mix(in srgb, var(--nz-primary) 11%, transparent) !important; }
+
+@media (max-width: 760px) {
+  body:has(.nzc-toolbar) #result_list :is(th, td) { white-space: nowrap; }
+  body:has(.nzc-toolbar) #result_list :is(.field-product_col, .field-variant_col, .field-brand_col, .field-category_col, .field-tag_col, .field-flavour_col, .field-package_col, .field-names_col) { white-space: normal; min-width: 200px; }
+  .nzc-toolbar { padding: 10px; }
+  .nzc-search { flex-basis: 100%; max-width: none; }
+  .nzc-filter { flex: 1 1 calc(50% - 6px); } .nzc-filter select { max-width: none; width: 100%; min-width: 0; }
+  .nzc-object-tools { width: 100%; } .nzc-object-tools .object-tools, .nzc-object-tools ul { width: 100%; }
+  .nzc-object-tools li { flex: 1 1 auto; } .nzc-object-tools .btn, .nzc-object-tools a { width: 100%; justify-content: center; }
+}

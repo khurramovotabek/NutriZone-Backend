@@ -1,0 +1,32 @@
+{% load receipt_tags %}{# Cheklar → one receipt: the receipt exactly as printed (80 mm), beside who / how / what was fiscalized. #}
+<div class="nzi-panel-body nzr-detail">
+  <div class="nzr-paper" aria-label="Chek {{ r.number }}">
+    <div class="nzr-paper-head">
+      <b>{{ d.requisites.legal_name|default:d.seller.name }}</b>
+      {% if d.requisites.tin %}<span>STIR: {{ d.requisites.tin }}</span>{% endif %}
+      {% if d.requisites.address or d.seller.address %}<span>{{ d.requisites.address|default:d.seller.address }}</span>{% endif %}
+      {% if d.requisites.phone or d.seller.phone %}<span>Tel: {{ d.requisites.phone|default:d.seller.phone }}</span>{% endif %}
+    </div>
+    <div class="nzr-paper-meta"><span{% if r.kind == "refund" %} style="color:#dc2626;font-weight:700"{% endif %}>{% if r.kind == "refund" %}Qaytarish{% else %}Savdo{% endif %} № {{ r.number }}</span><span>{{ r.issued_at|date:"d.m.Y H:i" }}</span></div>
+    {% for i in d.items %}<div class="nzr-paper-line"><span>{{ i.name }}<small>{% if i.variant_label %}{{ i.variant_label }} · {% endif %}{{ i.quantity }} × {{ i.unit_price|som }}{% if i.mxik %} · MXIK {{ i.mxik }}{% endif %}</small></span><b>{{ i.line_total|som }}</b></div>{% endfor %}
+    {% if d.discount and d.discount != "0" and d.discount != "0.00" %}<div class="nzr-paper-sub"><span>Chegirma</span><span>−{{ d.discount|som }}</span></div>{% endif %}
+    {% if d.coins and d.coins != "0" and d.coins != "0.00" %}<div class="nzr-paper-sub"><span>Coin bilan</span><span>−{{ d.coins|som }}</span></div>{% endif %}
+    {% if d.delivery and d.delivery != "0" and d.delivery != "0.00" %}<div class="nzr-paper-sub"><span>Yetkazib berish</span><span>{{ d.delivery|som }}</span></div>{% endif %}
+    <div class="nzr-paper-total"><span>JAMI</span><b>{{ d.total|som }} so'm</b></div>
+    {% if d.vat.payer %}<div class="nzr-paper-sub"><span>shu jumladan QQS {{ d.vat.rate|floatformat:"0" }}%</span><span>{{ d.vat.amount|som }}</span></div>{% endif %}
+    {% for p in d.payments %}<div class="nzr-paper-sub"><span>{% with m=p.method %}{% for k, v in pay_label.items %}{% if k == m %}{{ v }}{% endif %}{% endfor %}{% endwith %}</span><span>{{ p.amount|som }}</span></div>{% endfor %}
+    {% if d.change %}<div class="nzr-paper-sub"><span>Qaytim</span><span>{{ d.change|som }}</span></div>{% endif %}
+    {% if d.cashier %}<div class="nzr-paper-sub"><span>Kassir</span><span>{{ d.cashier }}</span></div>{% endif %}
+    {% if r.status == "fiscalized" %}<div class="nzr-paper-sub"><span>Fiskal raqam</span><span>{{ r.fiscal_number }}</span></div>{% endif %}
+    <div class="nzr-paper-qr" aria-hidden="true"><i class="fas fa-qrcode"></i><small>{% if r.status == "fiscalized" %}Soliq tizimida tekshirish{% else %}Elektron chek{% endif %}</small></div>
+    {% if d.footer %}<p class="nzr-paper-foot">{{ d.footer }}</p>{% endif %}
+  </div>
+  <dl class="nzr-facts">
+    <div><dt>Manba</dt><dd>{{ r.get_source_display }}{% if r.order_number %} · <a href="{{ order_url }}">{{ r.order_number }}</a>{% endif %}</dd></div>
+    <div><dt>Mijoz</dt><dd>{% if r.customer_name or r.customer_phone %}{{ r.customer_name|default:"—" }}{% if r.customer_phone %} · <a href="tel:{{ r.customer_phone }}">{{ r.customer_phone }}</a>{% endif %}{% else %}—{% endif %}</dd></div>
+    <div><dt>To'lov</dt><dd>{{ pay }}</dd></div>
+    <div><dt>Mahsulotlar</dt><dd>{% if d.item_count %}{{ d.item_count }}{% else %}{{ d.items|length }}{% endif %} dona · {{ d.items|length }} qator</dd></div>
+    {% if d.note %}<div><dt>Izoh</dt><dd>{{ d.note }}</dd></div>{% endif %}
+    {% if r.created_by %}<div><dt>Yaratgan</dt><dd>{{ r.created_by }}</dd></div>{% endif %}
+  </dl>
+</div>

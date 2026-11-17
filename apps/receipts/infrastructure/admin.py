@@ -11,10 +11,12 @@ from django.contrib import admin, messages
 from django.db.models import Count, Q, Sum
 from django.http import HttpResponseRedirect
 from django.shortcuts import get_object_or_404, render
+from django.template.loader import render_to_string
 from django.urls import path, reverse
 from django.utils import timezone
 from django.utils.html import format_html, format_html_join
 
+from apps.identity.domain.phone import parse_uz_phone
 from apps.platform.infrastructure import premium_admin as ui
 from apps.platform.infrastructure.excel_export import Col, ExcelExportMixin
 from apps.platform.infrastructure.premium_admin import PremiumFormMixin, PremiumListMixin, hero_stat
@@ -50,6 +52,7 @@ class ReceiptAdmin(ExcelExportMixin, PremiumListMixin, PremiumFormMixin, admin.M
                      Col("Fiskal raqam", "fiscal_number", 16), Col("Fiskal belgi", "fiscal_sign", 20)]
 
     nz_icon, nz_tone, nz_title = "fa-receipt", "#0d9488", "Cheklar"
+    nz_css = ("admin/css/nutrizone-receipts.css",)
     nz_subtitle = "POS, onlayn buyurtma va qo'lda yaratilgan barcha cheklar: chop etish, elektron chek (QR) va fiskallashtirish."
     nz_columns = (("Chek", ""), ("Mijoz", ""), ("To'lov", ""), ("Summa", "r"), ("Holat", "r"))
     nz_grid = "minmax(240px,2fr) minmax(170px,1.3fr) 120px 140px 150px"
@@ -124,14 +127,15 @@ class ReceiptAdmin(ExcelExportMixin, PremiumListMixin, PremiumFormMixin, admin.M
 
     @admin.display(description="")
     def receipt_panel(self, obj):
-        d = obj.data
-        rows = format_html_join("", "<tr><td>{}<small style='display:block;opacity:.6'>{}</small></td><td style='text-align:right'>{} × {}</td><td style='text-align:right'><b>{}</b></td></tr>",
-                                ((i["name"], " · ".join(x for x in (i.get("variant_label"), i.get("sku"), f"MXIK {i['mxik']}" if i.get("mxik") else "") if x),
-                                  i["quantity"], money(i["unit_price"]), money(i["line_total"])) for i in d.get("items", [])))
-        totals = format_html_join("", "<tr><td colspan='2'>{}</td><td style='text-align:right'>{}</td></tr>", (
-            (label, money(d.get(k))) for k, label in (("subtotal", "Jami narx"), ("discount", "Chegirma"), ("coins", "Coin bilan"), ("delivery", "Yetkazish")) if float(d.get(k) or 0)))
-        return format_html('<div class="nzi-panel-body"><table style="width:100%;border-collapse:collapse">{}{}<tr><td colspan="2"><b>To\'lov ({})</b></td><td style="text-align:right"><b>{} so\'m</b></td></tr></table></div>',
-                           rows, totals, PAY_LABEL.get(obj.payment_method, obj.payment_method), money(obj.total))
+        """The receipt as printed (80 mm paper) + who / how / where it came from."""
+        order_url = ""
+        if obj.order_number:
+            from apps.ordering.infrastructure.models import OrderModel
+
+            pk = OrderModel.objects.filter(order_number=obj.order_number).values_list("pk", flat=True).first()
+            order_url = reverse("admin:ordering_ordermodel_change", args=[pk]) if pk else ""
+        return render_to_string("admin/receipts/paper.html", {"r": obj, "d": obj.data or {}, "pay_label": PAY_LABEL, "order_url": order_url,
+                                                              "pay": PAY_LABEL.get(obj.payment_method, obj.payment_method or "—")})
 
     @admin.display(description="")
     def fiscal_panel(self, obj):
@@ -140,14 +144,11 @@ class ReceiptAdmin(ExcelExportMixin, PremiumListMixin, PremiumFormMixin, admin.M
                                obj.fiscal_number, obj.fiscal_sign, obj.fiscal_terminal_id, ui.local(obj.fiscalized_at), obj.fiscal_url or "#")
         err = format_html('<p style="color:#f87171">{}</p>', obj.fiscal_error) if obj.fiscal_error else ""
         url = reverse("admin:receipts_receipt_fiscalize", args=[obj.pk])
-        return format_html('<div class="nzi-panel-body"><p>Chek hali fiskallashtirilmagan.</p>{}<form method="post" action="{}"><input type="hidden" name="csrfmiddlewaretoken" value="{}">'
-                           '<button class="nzp-btn nzp-btn-primary" type="submit"><i class="fas fa-stamp"></i> Fiskallashtirish</button></form></div>', err, url, self._csrf)
-
-    def render_change_form(self, request, context, *args, **kwargs):
-        from django.middleware.csrf import get_token
-
-        self._csrf = get_token(request)
-        return super().render_change_form(request, context, *args, **kwargs)
+        # the change page is already one <form> (a nested form is dropped by the browser and the button would post the
+        # read-only change view): the button carries its own target, the outer form brings the CSRF token
+        return format_html('<div class="nzi-panel-body"><p>Chek hali fiskallashtirilmagan.</p>{}'
+                           '<button class="nzp-btn nzp-btn-primary" type="submit" formaction="{}" formmethod="post" formnovalidate>'
+                           '<i class="fas fa-stamp" aria-hidden="true"></i> Fiskallashtirish</button></div>', err, url)
 
     # ---------------------------------------------------------------- views
     def print_view(self, request, pk):
@@ -190,15 +191,27 @@ class ReceiptAdmin(ExcelExportMixin, PremiumListMixin, PremiumFormMixin, admin.M
         if request.method == "POST":
             try:
                 lines = json.loads(request.POST.get("lines") or "[]")
-                r = builders.manual(lines=lines, customer_name=request.POST.get("customer_name", "").strip(), customer_phone=request.POST.get("customer_phone", "").strip(),
+                phone = request.POST.get("customer_phone", "").strip()
+                if phone and phone not in ("+998", "998"):
+                    phone = parse_uz_phone(phone)
+                    if not phone:
+                        raise ValueError("Telefon raqami noto'g'ri — masalan: 94 205 20 40.")
+                else:
+                    phone = ""
+                r = builders.manual(lines=lines, customer_name=request.POST.get("customer_name", "").strip()[:120], customer_phone=phone,
                                     payment_method=request.POST.get("payment_method") or "cash", note=request.POST.get("note", "").strip(),
                                     kind=request.POST.get("kind") or "sale", staff=request.user.get_full_name() or request.user.get_username())
                 messages.success(request, f"{r.number} chek yaratildi.")
                 return HttpResponseRedirect(reverse("admin:receipts_receipt_change", args=[r.pk]))
             except (ValueError, KeyError, TypeError) as exc:
                 error = str(exc) or "Ma'lumotlar noto'g'ri."
-        return render(request, "admin/receipts/manual.html", {**self.admin_site.each_context(request), "title": "Yangi chek", "error": error,
-                                                              "search_url": reverse("admin:receipts_receipt_search"), "pay_label": PAY_LABEL})
+        from apps.platform.infrastructure.branding import brand_name
+
+        return render(request, "admin/receipts/manual.html", {
+            **self.admin_site.each_context(request), "title": "Yangi chek", "error": error, "posted": request.POST if error else {},
+            "search_url": reverse("admin:receipts_receipt_search"), "pay_label": PAY_LABEL, "settings": ReceiptSettings.get(), "brand": brand_name(),
+            "list_url": reverse("admin:receipts_receipt_changelist"), "settings_url": reverse("admin:receipts_receiptsettings_changelist"),
+            "staff": request.user.get_full_name() or request.user.get_username(), "now": timezone.localtime()})
 
     def search_view(self, request):
         """Variants by barcode (incl. DataMatrix) / SKU / name with their current price -- for the manual receipt form."""
@@ -273,9 +286,11 @@ class ReceiptSettingsForm(forms.ModelForm):
 @admin.register(ReceiptSettings)
 class ReceiptSettingsAdmin(PremiumFormMixin, admin.ModelAdmin):
     form = ReceiptSettingsForm
-    readonly_fields = ("fiscal_readiness",)
+    readonly_fields = ("fiscal_readiness", "receipt_preview")
+    nz_css = ("admin/css/nutrizone-receipts.css",)
     fieldsets = (
         ("Fiskal tayyorlik", {"classes": ("nzi-panel",), "fields": ("fiscal_readiness",)}),
+        ("Chek namunasi", {"classes": ("nzi-panel",), "fields": ("receipt_preview",)}),
         ("Sotuvchi rekvizitlari (chekda ko'rinadi)", {"fields": ("legal_name", "tin", "address", "phone", "footer")}),
         ("QQS", {"fields": ("vat_payer", "vat_rate")}),
         ("Payme virtual kassasi", {"fields": ("payme_fiscal",)}),
@@ -298,6 +313,13 @@ class ReceiptSettingsAdmin(PremiumFormMixin, admin.ModelAdmin):
     def form_hero(self, request, obj):
         return {"title": "Chek sozlamalari", "subtitle": "Rekvizitlar, QQS va fiskal provayder", "icon": "fa-gear", "tone": "#0d9488"}
 
+    @admin.display(description="")
+    def receipt_preview(self, obj):
+        """An 80 mm receipt drawn from the fields below -- it follows what is typed before saving."""
+        from apps.platform.infrastructure.branding import brand_name
+
+        return render_to_string("admin/receipts/preview_panel.html", {"s": obj, "brand": brand_name(), "now": timezone.localtime()})
+
     @admin.display(description="Holat")
     def fiscal_readiness(self, obj):
         checks = fiscal.readiness(obj)
@@ -310,8 +332,8 @@ class ReceiptSettingsAdmin(PremiumFormMixin, admin.ModelAdmin):
         return format_html('<div class="nzi-panel-body"><p style="opacity:.8">Ikki yo\'l: <b>Payme virtual kassasi</b> — Payme bilan to\'langan buyurtmalarga soliq cheki va QR kodni '
                            'Payme o\'zi chiqaradi (Payme Business\'da fiskalizatsiyani yoqing, kalitlar To\'lov tizimlari sahifasida); '
                            '<b>E-POS yoki boshqa OFD</b> — kassa va qolgan cheklar uchun. Kalitlar shifrlangan holda saqlanadi.</p><p><b>{}/{}</b> tayyor{}</p><ul style="list-style:none;margin:8px 0 0;padding:0">{}</ul>{}'
-                           '<p style="margin-top:12px"><button type="submit" name="_fiscal_check" value="1" class="button" '
-                           'style="padding:8px 14px;border-radius:10px"><i class="fas fa-plug" aria-hidden="true"></i> Saqlash va ulanishni tekshirish</button> '
+                           '<p style="margin-top:12px;display:flex;flex-wrap:wrap;align-items:center;gap:10px"><button type="submit" name="_fiscal_check" value="1" class="nzp-btn nzp-btn-primary">'
+                           '<i class="fas fa-plug" aria-hidden="true"></i> Saqlash va ulanishni tekshirish</button> '
                            '<small style="opacity:.7">Chek yuborilmaydi — faqat server va kalit tekshiriladi.</small></p></div>',
                            done, len(checks), " — fiskallashtirish mumkin" if done == len(checks) else "", rows, last)
 

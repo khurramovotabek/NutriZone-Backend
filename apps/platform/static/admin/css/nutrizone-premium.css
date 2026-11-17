@@ -204,3 +204,11 @@ a.nzi-stat:hover { transform: translateY(-2px); border-color: color-mix(in srgb,
 .nzi-card-cb { position: absolute; z-index: 2; top: 8px; left: 8px; margin: 0; padding: 4px; border-radius: 8px; background: rgba(15, 23, 42, .55); }
 .nzi-card-cb input { width: 16px; height: 16px; accent-color: var(--nz-primary); }
 @media (max-width: 600px) { .nzi-gallery { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; padding: 10px; } }
+
+/* buttons inside read-only panels of premium FORMS (fiscalize, connection check, ...): the list pages get .nzp-btn from
+   nutrizone-platform.css, which the forms don't load (its .nzp-* rules clash with the catalog form chrome) */
+.nzi-panel-body .nzp-btn { display: inline-flex; align-items: center; justify-content: center; gap: 8px; height: 40px; padding: 0 16px; border-radius: 11px;
+  border: 1px solid transparent; font-size: .85rem; font-weight: 650; line-height: 1; white-space: nowrap; cursor: pointer; text-decoration: none !important;
+  width: auto !important; justify-self: start; align-self: flex-start; transition: transform .15s, box-shadow .15s; }
+.nzi-panel-body .nzp-btn-primary { color: #fff !important; background: linear-gradient(135deg, var(--nz-primary), color-mix(in srgb, var(--nz-primary) 75%, #000)); box-shadow: 0 8px 20px -10px var(--nz-primary); }
+.nzi-panel-body .nzp-btn-primary:hover { transform: translateY(-1px); box-shadow: 0 12px 26px -12px var(--nz-primary); }

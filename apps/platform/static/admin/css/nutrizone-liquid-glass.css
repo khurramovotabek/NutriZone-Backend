@@ -216,7 +216,7 @@ body.nz-glass-page :is(.nza-card, .nzp-card, .nzr-card, .nz-card, .card) { borde
 body.nz-glass-page :is(.nza-kpi, .nzp-card) { transition: transform .2s ease, box-shadow .2s ease; }
 body.nz-glass-page :is(a.nza-kpi, .nza-kpi:hover) { transform: translateY(-2px); box-shadow: var(--lg-edge), var(--lg-shadow-hover) !important; }
 /* the hero banners keep their gradient, gain the glass edge */
-body.nz-glass-page .nzp-hero { background-image: linear-gradient(120deg, color-mix(in srgb, var(--nz-primary) 30%, transparent), color-mix(in srgb, #10b981 18%, transparent)) !important; }
+body.nz-glass-page .nzp-hero { padding: 18px 22px; border-radius: 22px; background-image: linear-gradient(120deg, color-mix(in srgb, var(--nz-primary) 30%, transparent), color-mix(in srgb, #10b981 18%, transparent)) !important; }
 /* change lists (Bannerlar, Murojaatlar, Qidiruv tahlili) */
 body.nz-glass-page #changelist .results, body.nz-glass-page #changelist-filter, body.nz-glass-page .nzi-toolbar, body.nz-glass-page #toolbar {
   background: var(--lg-surface) !important; border: 1px solid var(--lg-border) !important; border-radius: 16px !important;

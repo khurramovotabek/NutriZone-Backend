@@ -1,73 +1,95 @@
 {% extends "admin/base_site.html" %}
 {% load static %}
-{% block extrastyle %}{{ block.super }}<link rel="stylesheet" href="{% static 'admin/css/nutrizone-support.css' %}?v=3">
-<style>
-  .rcp { max-width: 980px; } .rcp h1 { font-size: 1.4rem; margin: 0 0 4px; } .rcp p.sub { color: rgba(148,163,184,.95); margin: 0 0 16px; }
-  .rcp-card { border: 1px solid rgba(148,163,184,.2); border-radius: 16px; padding: 16px; margin-bottom: 14px; background: rgba(148,163,184,.04); }
-  .rcp-search { position: relative; } .rcp-search input { width: 100%; }
-  .rcp-results { position: absolute; z-index: 20; left: 0; right: 0; top: 42px; background: #1f2937; border: 1px solid rgba(148,163,184,.25); border-radius: 12px; max-height: 280px; overflow: auto; }
-  html[data-bs-theme="light"] .rcp-results { background: #fff; }
-  .rcp-results button { display: flex; justify-content: space-between; width: 100%; padding: 9px 12px; border: 0; background: none; color: inherit; text-align: left; cursor: pointer; }
-  .rcp-results button:hover { background: rgba(37,99,235,.12); }
-  .rcp table { width: 100%; border-collapse: collapse; margin-top: 10px; } .rcp th { text-align: left; font-size: .78rem; color: rgba(148,163,184,.9); padding: 6px; }
-  .rcp td { padding: 6px; border-top: 1px solid rgba(148,163,184,.15); } .rcp td input { width: 100%; height: 34px; }
-  .rcp-total { text-align: right; font-size: 1.3rem; font-weight: 700; margin-top: 10px; }
-  .rcp input, .rcp select, .rcp textarea { height: 38px; border-radius: 10px; border: 1px solid rgb(44,53,64); background: rgba(32,39,47,.55); color: inherit; padding: 0 10px; }
-  .rcp-err { color: #f87171; margin-bottom: 10px; }
-</style>{% endblock %}
+{# Dashboard → Cheklar → Yangi chek: scan / search → lines → who and how paid → a live 80 mm preview → create (Ctrl+Enter). #}
+{% block extrastyle %}{{ block.super }}<link rel="stylesheet" href="{% static 'admin/css/nutrizone-platform.css' %}?v=6"><link rel="stylesheet" href="{% static 'admin/css/nutrizone-premium.css' %}?v=9"><link rel="stylesheet" href="{% static 'admin/css/nutrizone-receipts.css' %}?v=3">{% endblock %}
+{% block content_title %}{% endblock %}
 {% block content %}
-<form method="post" class="rcp" id="rcp">{% csrf_token %}
-  <h1><i class="fas fa-receipt" style="color:#0d9488"></i> Yangi chek</h1>
-  <p class="sub">Mahsulotni shtrix-kod (skaner yoki 2D DataMatrix), SKU yoki nomi bo'yicha qo'shing. Chek raqami va QR kod avtomatik beriladi.</p>
-  {% if error %}<div class="rcp-err">{{ error }}</div>{% endif %}
-  <div class="rcp-card">
-    <div class="rcp-search"><input id="q" placeholder="Shtrix-kod, SKU yoki mahsulot nomi… (Enter)" autocomplete="off" autofocus><div class="rcp-results" id="res" hidden></div></div>
-    <table><thead><tr><th>Mahsulot</th><th style="width:90px">Soni</th><th style="width:150px">Narxi (so'm)</th><th style="width:130px" class="r">Summa</th><th style="width:40px"></th></tr></thead><tbody id="lines"></tbody></table>
-    <div class="rcp-total">Jami: <span id="total">0</span> so'm</div>
+<form method="post" class="nzp nzi nzr" id="nzr-form" novalidate autocomplete="off">{% csrf_token %}
+  <header class="nzp-hero">
+    <div class="nzp-hero-main">
+      <span class="nzp-hero-icon" style="--c:#0d9488"><i class="fas fa-file-invoice" aria-hidden="true"></i></span>
+      <div><h2>Yangi chek</h2><p>Shtrix-kodni skanerlang yoki mahsulot nomini yozing — chek raqami va QR kod avtomatik beriladi.</p></div>
+    </div>
+    <div class="nzp-hero-actions">
+      <a class="nzp-btn nzp-btn-ghost" href="{{ list_url }}"><i class="fas fa-list" aria-hidden="true"></i> Cheklar</a>
+      <a class="nzp-btn nzp-btn-ghost" href="{{ settings_url }}"><i class="fas fa-gear" aria-hidden="true"></i> Rekvizitlar</a>
+    </div>
+  </header>
+
+  {% if error %}<div class="nzr-alert" role="alert"><i class="fas fa-circle-exclamation" aria-hidden="true"></i> {{ error }}</div>{% endif %}
+
+  <div class="nzr-grid">
+    <div class="nzr-main">
+      <section class="nzp-card nzr-card">
+        <div class="nzr-step"><span>1</span><b>Mahsulotlar</b><small>Skaner o'qigan kod darhol qo'shiladi · ↑ ↓ bilan tanlang, Enter — qo'shish</small></div>
+        <div class="nzr-search">
+          <i class="fas fa-barcode" aria-hidden="true"></i>
+          <input id="nzr-q" type="search" placeholder="Shtrix-kod, SKU yoki mahsulot nomi…" aria-label="Mahsulot qidirish" aria-autocomplete="list" aria-controls="nzr-res" autofocus>
+          <kbd>Enter</kbd>
+          <div class="nzr-results" id="nzr-res" role="listbox" hidden></div>
+        </div>
+        <div class="nzr-lines-wrap">
+          <table class="nzr-lines">
+            <thead><tr><th>Mahsulot</th><th class="c">Soni</th><th class="r">Narxi</th><th class="r">Summa</th><th aria-label="O'chirish"></th></tr></thead>
+            <tbody id="nzr-lines"></tbody>
+          </table>
+          <div class="nzr-empty" id="nzr-empty">
+            <i class="fas fa-basket-shopping" aria-hidden="true"></i>
+            <b>Chek hali bo'sh</b>
+            <span>Skaner bilan o'qing yoki yuqoridagi qatorga nomini yozing</span>
+          </div>
+        </div>
+      </section>
+
+      <section class="nzp-card nzr-card">
+        <div class="nzr-step"><span>2</span><b>Mijoz va to'lov</b><small>Mijoz ixtiyoriy — telefon yozilsa chek uning kabinetida ham ko'rinadi</small></div>
+        <div class="nzr-fields">
+          <label><span>Mijoz ismi</span><input name="customer_name" maxlength="120" value="{{ posted.customer_name|default:'' }}" placeholder="Masalan: Alisher"></label>
+          <label><span>Telefon</span><div class="nzr-phone"><em>+998</em><input name="customer_phone" inputmode="tel" maxlength="20" value="{{ posted.customer_phone|default:'' }}" placeholder="94 205 20 40"></div></label>
+        </div>
+        <div class="nzr-fields">
+          <div><span class="nzr-label">To'lov turi</span>
+            <div class="nzr-seg" role="radiogroup" aria-label="To'lov turi">
+              {% for k, v in pay_label.items %}{% if k != "mixed" %}<label><input type="radio" name="payment_method" value="{{ k }}"{% if posted.payment_method == k or not posted.payment_method and forloop.first %} checked{% endif %}><span>{{ v }}</span></label>{% endif %}{% endfor %}
+            </div>
+          </div>
+          <div><span class="nzr-label">Chek turi</span>
+            <div class="nzr-seg nzr-kind" role="radiogroup" aria-label="Chek turi">
+              <label><input type="radio" name="kind" value="sale"{% if posted.kind != "refund" %} checked{% endif %}><span><i class="fas fa-arrow-up-right-dots" aria-hidden="true"></i> Sotuv</span></label>
+              <label class="neg"><input type="radio" name="kind" value="refund"{% if posted.kind == "refund" %} checked{% endif %}><span><i class="fas fa-rotate-left" aria-hidden="true"></i> Qaytarish</span></label>
+            </div>
+          </div>
+        </div>
+        <label class="nzr-wide"><span>Izoh</span><input name="note" maxlength="255" value="{{ posted.note|default:'' }}" placeholder="Masalan: ulgurji xaridor, chegirma kelishilgan"></label>
+      </section>
+    </div>
+
+    <aside class="nzr-side">
+      <div class="nzr-paper" aria-label="Chek ko'rinishi">
+        <div class="nzr-paper-head">
+          <b>{{ settings.legal_name|default:brand }}</b>
+          {% if settings.tin %}<span>STIR: {{ settings.tin }}</span>{% endif %}
+          {% if settings.address %}<span>{{ settings.address }}</span>{% endif %}
+          {% if settings.phone %}<span>Tel: {{ settings.phone }}</span>{% endif %}
+        </div>
+        <div class="nzr-paper-meta"><span data-nzr-kind-label>Sotuv cheki</span><span>{{ now|date:"d.m.Y H:i" }}</span></div>
+        <div id="nzr-paper-lines"><p class="nzr-paper-empty">Mahsulot qo'shilgach shu yerda ko'rinadi</p></div>
+        <div class="nzr-paper-total"><span>JAMI</span><b><span data-nzr-total>0</span> so'm</b></div>
+        <div class="nzr-paper-sub"><span>To'lov (<span data-nzr-pay>Naqd</span>)</span><span data-nzr-total>0</span></div>
+        {% if settings.vat_payer and settings.vat_rate %}<div class="nzr-paper-sub"><span>shu jumladan QQS {{ settings.vat_rate|floatformat:"-2" }}%</span><span data-nzr-vat data-rate="{{ settings.vat_rate|floatformat:'-2' }}">0</span></div>{% endif %}
+        <div class="nzr-paper-sub"><span>Kassir</span><span>{{ staff }}</span></div>
+        <div class="nzr-paper-qr" aria-hidden="true"><i class="fas fa-qrcode"></i><small>QR — yaratilgach</small></div>
+        {% if settings.footer %}<p class="nzr-paper-foot">{{ settings.footer }}</p>{% endif %}
+      </div>
+      <div class="nzr-summary">
+        <div><span><b data-nzr-count>0</b> dona · <b data-nzr-lines>0</b> qator</span><strong><span data-nzr-total>0</span> <small>so'm</small></strong></div>
+        <p class="nzr-hint" id="nzr-hint" role="status" aria-live="polite"></p>
+        <button type="submit" class="nzp-btn nzp-btn-primary nzr-submit" id="nzr-submit" disabled><i class="fas fa-check" aria-hidden="true"></i> <span>Chekni yaratish</span></button>
+        <small class="nzr-kbd"><kbd>Ctrl</kbd> + <kbd>Enter</kbd> — yaratish</small>
+      </div>
+    </aside>
   </div>
-  <div class="rcp-card sup-grid">
-    <label>Mijoz ismi<input name="customer_name"></label>
-    <label>Telefon<input name="customer_phone" inputmode="tel" placeholder="+998"></label>
-    <label>To'lov turi<select name="payment_method">{% for k, v in pay_label.items %}<option value="{{ k }}">{{ v }}</option>{% endfor %}</select></label>
-    <label>Chek turi<select name="kind"><option value="sale">Sotuv</option><option value="refund">Qaytarish</option></select></label>
-    <label class="sup-wide">Izoh<input name="note"></label>
-  </div>
-  <input type="hidden" name="lines" id="lines-json">
-  <button type="submit" class="sup-btn"><i class="fas fa-check"></i> Chekni yaratish</button>
+  <input type="hidden" name="lines" id="nzr-lines-json" value="{{ posted.lines|default:'' }}">
 </form>
-<script>
-(function () {
-  var lines = [], q = document.getElementById("q"), res = document.getElementById("res"), timer;
-  function fmt(n) { return Math.round(n).toLocaleString("ru-RU").replace(/\s/g, " "); }
-  function esc(s) { return String(s).replace(/[&<>"]/g, function (c) { return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]; }); }
-  function render() {
-    document.getElementById("lines").innerHTML = lines.map(function (l, i) {
-      return '<tr><td>' + esc(l.name) + '<small style="display:block;opacity:.6">' + esc(l.sku || "") + '</small></td><td><input type="number" min="1" value="' + l.quantity + '" data-i="' + i + '" data-f="quantity"></td>' +
-        '<td><input type="number" min="0" value="' + l.unit_price + '" data-i="' + i + '" data-f="unit_price"></td><td class="r"><b>' + fmt(l.quantity * l.unit_price) + '</b></td><td><button type="button" data-del="' + i + '" style="background:none;border:0;color:#f87171;cursor:pointer">✕</button></td></tr>';
-    }).join("");
-    document.getElementById("total").textContent = fmt(lines.reduce(function (s, l) { return s + l.quantity * l.unit_price; }, 0));
-    document.getElementById("lines-json").value = JSON.stringify(lines);
-  }
-  function add(p) {
-    var same = lines.filter(function (l) { return l.variant_id === p.variant_id; })[0];
-    if (same) same.quantity += 1; else lines.push({ variant_id: p.variant_id, name: p.name, sku: p.sku, quantity: 1, unit_price: Math.round(parseFloat(p.price) || 0) });
-    res.hidden = true; q.value = ""; render(); q.focus();
-  }
-  function search(enter) {
-    var v = q.value.replace(/[\u0000-\u001f]/g, "").trim(); if (v.length < 2) { res.hidden = true; return; }
-    fetch("{{ search_url }}?q=" + encodeURIComponent(v), { credentials: "same-origin" }).then(function (r) { return r.json(); }).then(function (b) {
-      if (enter && b.results.length === 1) { add(b.results[0]); return; }
-      res.innerHTML = b.results.map(function (p, i) { return '<button type="button" data-k="' + i + '"><span>' + esc(p.name) + ' <small style="opacity:.6">' + esc(p.sku || "") + '</small></span><b>' + fmt(parseFloat(p.price)) + '</b></button>'; }).join("") || '<p style="padding:10px;opacity:.7">Topilmadi</p>';
-      res.hidden = false; res._data = b.results;
-    });
-  }
-  q.addEventListener("input", function () { clearTimeout(timer); timer = setTimeout(function () { search(false); }, 250); });
-  q.addEventListener("keydown", function (e) { if (e.key === "Enter") { e.preventDefault(); search(true); } });
-  res.addEventListener("click", function (e) { var b = e.target.closest("[data-k]"); if (b) add(res._data[+b.dataset.k]); });
-  document.getElementById("lines").addEventListener("input", function (e) { var i = e.target.dataset.i; if (i === undefined) return; lines[i][e.target.dataset.f] = Math.max(0, parseFloat(e.target.value) || 0); render(); });
-  document.getElementById("lines").addEventListener("click", function (e) { var d = e.target.closest("[data-del]"); if (d) { lines.splice(+d.dataset.del, 1); render(); } });
-  document.getElementById("rcp").addEventListener("submit", function (e) { if (!lines.length) { e.preventDefault(); alert("Kamida bitta mahsulot qo'shing"); } });
-  render();
-})();
-</script>
+<script src="{% static 'admin/js/nutrizone-receipts.js' %}?v=2" defer data-search="{{ search_url }}"></script>
 {% endblock %}
