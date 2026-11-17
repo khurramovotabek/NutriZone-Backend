@@ -48,6 +48,12 @@ def _doc_link(m) -> str:
     return ""
 
 
+def _signed(n, sign: str) -> str:
+    """'+12 dona' / '−3 dona', but a plain '0 dona' when nothing moved (never '−0')."""
+    n = abs(n or 0)
+    return f"{sign}{n} dona" if n else "0 dona"
+
+
 @admin.register(StockAdjustment)
 class StockAdjustmentAdmin(ExcelExportMixin, PremiumListMixin, admin.ModelAdmin):
     list_display = ("created_at", "store", "product_variant", "quantity", "balance_after", "actor")
@@ -140,9 +146,9 @@ class StockAdjustmentAdmin(ExcelExportMixin, PremiumListMixin, admin.ModelAdmin)
             return "?" + c.urlencode()
 
         return [
-            ui.stat_card("Bugun qo'shildi", f"+{agg['plus_t'] or 0} dona", "#16a34a", "fa-circle-plus", href=url(dir="plus")),
-            ui.stat_card("Bugun olib tashlandi", f"−{-(agg['minus_t'] or 0)} dona", "#dc2626", "fa-circle-minus", href=url(dir="minus")),
-            ui.stat_card("7 kunda olib tashlandi", f"−{-(agg['minus_w'] or 0)} dona", "#be123c", "fa-arrow-trend-down"),
+            ui.stat_card("Bugun qo'shildi", _signed(agg['plus_t'], "+"), "#16a34a", "fa-circle-plus", href=url(dir="plus")),
+            ui.stat_card("Bugun olib tashlandi", _signed(agg['minus_t'], "−"), "#dc2626", "fa-circle-minus", href=url(dir="minus")),
+            ui.stat_card("7 kunda olib tashlandi", _signed(agg['minus_w'], "−"), "#be123c", "fa-arrow-trend-down"),
             ui.stat_card("7 kunda admin tuzatishlari", agg["admin_w"] or 0, "#7c3aed", "fa-user-shield", href=url(src="admin")),
         ]
 

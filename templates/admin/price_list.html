@@ -1,7 +1,7 @@
 {% extends "admin/base_site.html" %}
 {% load i18n static %}
 {# Price list: pricing health KPIs, filters; one row per product (a single-variant product edits inline, a multi-variant one shows its price range and total stock with its variants in an expandable panel). Clicking a product name opens the variant editor: a variant select, price / old price / cost and the online warehouse count per variant (price_list_api_save, price_list_api_stock). #}
-{% block extrastyle %}{{ block.super }}<link rel="stylesheet" href="{% static 'admin/css/nutrizone-platform.css' %}?v=6"><link rel="stylesheet" href="{% static 'admin/css/nutrizone-orderdesk.css' %}?v=5"><link rel="stylesheet" href="{% static 'admin/css/nutrizone-wmsx.css' %}?v=18"><link rel="stylesheet" href="{% static 'admin/css/nutrizone-pricing-pos.css' %}?v=1">{% endblock %}
+{% block extrastyle %}{{ block.super }}<link rel="stylesheet" href="{% static 'admin/css/nutrizone-platform.css' %}?v=6"><link rel="stylesheet" href="{% static 'admin/css/nutrizone-orderdesk.css' %}?v=5"><link rel="stylesheet" href="{% static 'admin/css/nutrizone-wmsx.css' %}?v=19"><link rel="stylesheet" href="{% static 'admin/css/nutrizone-pricing-pos.css' %}?v=1">{% endblock %}
 {% block breadcrumbs %}<ol class="breadcrumb"><li class="breadcrumb-item"><a href="{% url 'admin:index' %}">{% translate "Home" %}</a></li><li class="breadcrumb-item">{% translate "Narxlash" %}</li><li class="breadcrumb-item active">{% translate "Narxlar ro'yxati" %}</li></ol>{% endblock %}
 {% block content_title %}{% endblock %}
 {% block content %}

@@ -1,7 +1,7 @@
 {% extends "admin/change_list.html" %}
 {% load i18n static admin_list %}
 {# Write-offs (Hisobdan chiqarish): month KPIs, value by reason, status tabs, the documents. Rows annotated in WriteOffAdmin.get_changelist_instance. #}
-{% block extrastyle %}{{ block.super }}<link rel="stylesheet" href="{% static 'admin/css/nutrizone-platform.css' %}?v=6"><link rel="stylesheet" href="{% static 'admin/css/nutrizone-orderdesk.css' %}?v=5"><link rel="stylesheet" href="{% static 'admin/css/nutrizone-wmsx.css' %}?v=13">{% endblock %}
+{% block extrastyle %}{{ block.super }}<link rel="stylesheet" href="{% static 'admin/css/nutrizone-platform.css' %}?v=6"><link rel="stylesheet" href="{% static 'admin/css/nutrizone-orderdesk.css' %}?v=5"><link rel="stylesheet" href="{% static 'admin/css/nutrizone-wmsx.css' %}?v=19">{% endblock %}
 {% block content_title %}{% endblock %}
 {% block content %}
 <div class="nzp nzd wx">
@@ -19,7 +19,7 @@
   <div class="nzp-stats">
     <a class="nzp-stat" href="?status__exact=pending" style="--c:#f59e0b"><i class="fas fa-hourglass-half" aria-hidden="true"></i><div><b>{{ nz_kpis.pending }}</b><span>{% translate "Waiting for approval" %}</span></div></a>
     <div class="nzp-stat" style="--c:#ef4444"><i class="fas fa-file-circle-minus" aria-hidden="true"></i><div><b>{{ nz_kpis.month }}</b><span>{% translate "Approved this month" %}</span></div></div>
-    <div class="nzp-stat" style="--c:#64748b"><i class="fas fa-cubes" aria-hidden="true"></i><div><b>−{{ nz_kpis.units }}</b><span>{% translate "Units written off this month" %}</span></div></div>
+    <div class="nzp-stat" style="--c:#64748b"><i class="fas fa-cubes" aria-hidden="true"></i><div><b>{% if nz_kpis.units %}−{% endif %}{{ nz_kpis.units }}</b><span>{% translate "Units written off this month" %}</span></div></div>
     <div class="nzp-stat" style="--c:#e11d48"><i class="fas fa-coins" aria-hidden="true"></i><div><b>{{ nz_kpis.value }}<small> {% translate "so'm" %}</small></b><span>{% translate "Loss at cost this month" %}</span></div></div>
   </div>
 

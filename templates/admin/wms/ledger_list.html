@@ -1,7 +1,7 @@
 {% extends "admin/change_list.html" %}
 {% load i18n static admin_list %}
 {# Stock ledger (Ombor tarixi): today's in/out, movement-type chips, location + date filters, search, Excel of the current filter. Rows annotated in StockMovementAdmin.get_changelist_instance. #}
-{% block extrastyle %}{{ block.super }}<link rel="stylesheet" href="{% static 'admin/css/nutrizone-platform.css' %}?v=6"><link rel="stylesheet" href="{% static 'admin/css/nutrizone-orderdesk.css' %}?v=5"><link rel="stylesheet" href="{% static 'admin/css/nutrizone-wmsx.css' %}?v=13">{% endblock %}
+{% block extrastyle %}{{ block.super }}<link rel="stylesheet" href="{% static 'admin/css/nutrizone-platform.css' %}?v=6"><link rel="stylesheet" href="{% static 'admin/css/nutrizone-orderdesk.css' %}?v=5"><link rel="stylesheet" href="{% static 'admin/css/nutrizone-wmsx.css' %}?v=19">{% endblock %}
 {% block content_title %}{% endblock %}
 {% block content %}
 <div class="nzp nzd wx">
@@ -15,8 +15,8 @@
 
   <div class="nzp-stats">
     <div class="nzp-stat" style="--c:#64748b"><i class="fas fa-list" aria-hidden="true"></i><div><b>{{ nz_today.n }}</b><span>{% translate "Movements today" %}</span></div></div>
-    <div class="nzp-stat" style="--c:#10b981"><i class="fas fa-arrow-down" aria-hidden="true"></i><div><b>+{{ nz_today.in }}</b><span>{% translate "Units in today" %}</span></div></div>
-    <div class="nzp-stat" style="--c:#e11d48"><i class="fas fa-arrow-up" aria-hidden="true"></i><div><b>−{{ nz_today.out }}</b><span>{% translate "Units out today" %}</span></div></div>
+    <div class="nzp-stat" style="--c:#10b981"><i class="fas fa-arrow-down" aria-hidden="true"></i><div><b>{% if nz_today.in %}+{% endif %}{{ nz_today.in }}</b><span>{% translate "Units in today" %}</span></div></div>
+    <div class="nzp-stat" style="--c:#e11d48"><i class="fas fa-arrow-up" aria-hidden="true"></i><div><b>{% if nz_today.out %}−{% endif %}{{ nz_today.out }}</b><span>{% translate "Units out today" %}</span></div></div>
     <div class="nzp-stat" style="--c:#3b82f6"><i class="fas fa-filter" aria-hidden="true"></i><div><b>{{ cl.result_count }}</b><span>{% translate "Matching the filter" %}</span></div></div>
   </div>
 

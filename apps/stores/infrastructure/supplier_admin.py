@@ -24,6 +24,7 @@ from django.utils.translation import gettext_lazy as _
 
 from apps.platform.infrastructure import excel_export as xl
 from apps.platform.infrastructure.excel_export import Col, ExcelExportMixin
+from apps.platform.infrastructure.premium_admin import PremiumFormMixin, hero_stat
 from apps.stores.infrastructure import stock_service, supplier_service
 from apps.stores.infrastructure.models import PaymentMethod, StockReceipt, Supplier, SupplierPayment
 from apps.stores.infrastructure.warehouse_admin import _actor, _local, _slug, _som, excel_response
@@ -51,7 +52,7 @@ class DebtFilter(admin.SimpleListFilter):
 
 
 @admin.register(Supplier)
-class SupplierAdmin(ExcelExportMixin, admin.ModelAdmin):
+class SupplierAdmin(ExcelExportMixin, PremiumFormMixin, admin.ModelAdmin):
     excel_title = "Yetkazib beruvchilar"
     excel_columns = [
         Col("Nomi", "name", 26), Col("Yuridik nomi", "legal_name", 26), Col("STIR", "tin", 12), Col("Mas'ul shaxs", "contact_person", 20),
@@ -73,6 +74,25 @@ class SupplierAdmin(ExcelExportMixin, admin.ModelAdmin):
 
     def has_delete_permission(self, request, obj=None):
         return False  # receipts point at it; deactivate instead
+
+    hero_icon, hero_tone, hero_noun = "fa-truck-field", "#7c3aed", "yetkazib beruvchi"
+
+    def form_hero(self, request, obj):
+        if obj is None:
+            return {"subtitle": "Nomi majburiy; STIR, bank va to'lov muddati qarz va muddati o'tgan to'lovlarni hisoblash uchun kerak"}
+        b = supplier_service.balance(obj)
+        debt = b.debt or Decimal(0)
+        return {
+            "title": obj.name, "subtitle": " · ".join(x for x in (obj.legal_name, f"STIR {obj.tin}" if obj.tin else "", obj.phone) if x),
+            "stats": [
+                hero_stat("Jami xarid", f"{_som(b.purchased)} so'm", "#2563eb", f"{b.receipts} ta kirim", "fa-cart-flatbed"),
+                hero_stat("To'langan", f"{_som(b.paid)} so'm", "#16a34a", "", "fa-money-bill-wave"),
+                hero_stat("Avans" if debt < 0 else "Qarzimiz", f"{_som(abs(debt))} so'm", "#0891b2" if debt <= 0 else "#dc2626",
+                          f"muddati o'tgan: {_som(b.overdue)}" if b.overdue else "", "fa-scale-unbalanced"),
+                hero_stat("To'lov muddati", f"{obj.payment_terms_days} kun" if obj.payment_terms_days else "darhol", "#d97706", "kirimdan keyin", "fa-calendar-days"),
+            ],
+            "links": [{"label": "Hisob-kitob kartasi", "url": reverse("admin:stores_supplier_card", args=[obj.pk]), "icon": "fa-file-invoice-dollar"}],
+        }
 
     def get_changelist_instance(self, request):
         cl = super().get_changelist_instance(request)

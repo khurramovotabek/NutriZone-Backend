@@ -276,7 +276,9 @@ a.wx-loc { text-decoration: none !important; }
 .wx-exp-bucket b { font-size: 1.25rem; line-height: 1.2; } .wx-exp-bucket b em { font-style: normal; font-size: .75rem; color: var(--nz-text-muted); }
 .wx-exp-bucket small { font-size: .72rem; color: var(--nz-text-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .wx-exp-bucket small:first-child { font-weight: 800; color: var(--c); text-transform: uppercase; letter-spacing: .03em; }
-.wx-expiry-table .nzd-tr { grid-template-columns: minmax(0, 2.3fr) 1.1fr 1fr 1.1fr .7fr .9fr 1fr; }
+.wx-expiry-table .nzd-tr { grid-template-columns: minmax(0, 2.3fr) minmax(0, 1.1fr) minmax(0, 1fr) minmax(0, 1.1fr) minmax(0, .6fr) minmax(0, .9fr) 150px; }
+.wx-expiry-table .nzd-tr > span { min-width: 0; }
+.wx-expiry-table .wx-row-actions a { width: auto; padding: 0 10px; gap: 6px; display: inline-flex; align-items: center; white-space: nowrap; }
 .wx-days { align-self: flex-start; margin-top: 3px; padding: 2px 8px; border-radius: 999px; font-size: .68rem; font-weight: 800; color: var(--c); background: color-mix(in srgb, var(--c) 13%, transparent); }
 .wx-exp-expired { background: color-mix(in srgb, #b91c1c 6%, transparent); }
 .wx-hint { font-size: .72rem; font-weight: 700; color: #ef4444; white-space: nowrap; cursor: help; }
