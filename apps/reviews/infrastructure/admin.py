@@ -118,6 +118,49 @@ def moderate(review_id, action: str, reason: str = "", actor=None) -> None:
         raise ValueError(action)
 
 
+REPLY_MAX = 2000
+
+
+def set_store_reply(review_id, text: str, actor: str = "") -> str:
+    """Writes / edits / clears the store's public answer under a review. Returns "added" | "edited" | "removed" | "same".
+    The customer is told once, on the first answer to a review that is live on the site (never on edits)."""
+    from django.db import transaction
+
+    text = "\n".join(line.rstrip() for line in (text or "").strip().splitlines()).strip()
+    if len(text) > REPLY_MAX:
+        raise ValueError(f"Javob {REPLY_MAX} belgidan oshmasin (hozir {len(text)}).")
+    with transaction.atomic():
+        review = orm.ReviewModel.objects.select_for_update().get(pk=review_id)
+        before = review.store_reply
+        if text == before:
+            return "same"
+        review.store_reply = text
+        review.store_reply_at = timezone.now() if text else None
+        review.store_reply_by = (actor or "")[:150] if text else ""
+        review.save(update_fields=["store_reply", "store_reply_at", "store_reply_by", "updated_at"] if hasattr(review, "updated_at") else ["store_reply", "store_reply_at", "store_reply_by"])
+        if not text:
+            return "removed"
+        if not before and review.status == "published":
+            _notify_reply(review, text)
+        return "edited" if before else "added"
+
+
+def _notify_reply(review, text: str) -> None:
+    from apps.notifications.infrastructure.notify import notify
+    from apps.products.infrastructure.models import ProductTranslation
+
+    names, slug = {}, ""
+    for locale, name, sl in ProductTranslation.objects.filter(product_id=review.product_id).values_list("locale_code", "name", "slug"):
+        names[locale] = name
+        if sl and (locale == "uz" or not slug):
+            slug = sl
+    fallback = names.get("uz") or next(iter(names.values()), "mahsulot")
+    short = text if len(text) <= 160 else text[:157].rstrip() + "…"
+    i18n = {lang: {"product": names.get(lang) or fallback, "reply": short} for lang in ("uz", "ru", "en")}
+    notify(review.customer_id, "review_reply", {"product": fallback, "reply": short, "i18n": i18n},
+           link=f"/products/{slug}#reviews" if slug else "/account/reviews", dedupe_key=f"review_reply:{review.pk}")
+
+
 class MediaFilter(admin.SimpleListFilter):
     title = "Rasm / video"
     parameter_name = "media"
@@ -171,9 +214,10 @@ class ReviewAdmin(ExcelExportMixin, PremiumListMixin, PremiumFormMixin, admin.Mo
     ordering = ("-created_at",)
     list_per_page = 30
     actions = ["approve_selected", "reject_spam", "reject_offensive", "reject_off_topic", "hide_complaint"]
-    readonly_fields = ("review_panel", "media_panel", "moderation_panel")
+    readonly_fields = ("review_panel", "reply_panel", "media_panel", "moderation_panel")
     fieldsets = (
         ("Sharh", {"classes": ("nzi-panel",), "fields": ("review_panel",)}),
+        ("Do'kon javobi", {"classes": ("nzi-panel",), "fields": ("reply_panel",)}),
         ("Rasm va videolar", {"classes": ("nzi-panel",), "fields": ("media_panel",)}),
         ("Moderatsiya", {"classes": ("nzi-panel",), "fields": ("moderation_panel",)}),
     )
@@ -234,7 +278,8 @@ class ReviewAdmin(ExcelExportMixin, PremiumListMixin, PremiumFormMixin, admin.Mo
         verified = format_html('<small class="nzr-verified"><i class="fas fa-circle-check" aria-hidden="true"></i> {}</small>', "tasdiqlangan xarid") if r.verified_purchase else ""
         return [
             product_cell(self._p.get(r.product_id)), ui.user_cell(self._c.get(r.customer_id)), stars(r.rating),
-            format_html('<span class="nzr-text">{}<span>{}</span></span>', title, body),
+            format_html('<span class="nzr-text">{}<span>{}</span>{}</span>', title, body,
+                        format_html('<small class="nzr-answered"><i class="fas fa-reply" aria-hidden="true"></i> {}</small>', "javob berilgan") if r.store_reply else ""),
             format_html('<span class="nzr-thumbs">{}{}</span>', thumbs, format_html("<small>+{}</small>", len(media) - 3) if len(media) > 3 else "") if media else ui.muted(),
             format_html('<span title="{}">{}</span><small>{}</small>', ui.local(r.created_at), ui.local(r.created_at, "%d.%m.%Y"), ui.ago(r.submitted_at or r.created_at)),
             format_html("{}{}", status_pill(r.status), verified),
@@ -314,6 +359,32 @@ class ReviewAdmin(ExcelExportMixin, PremiumListMixin, PremiumFormMixin, admin.Mo
         )
 
     @admin.display(description="")
+    def reply_panel(self, obj):
+        url = reverse("admin:reviews_review_reply", args=[obj.pk])
+        live = obj.status == "published"
+        if obj.store_reply:
+            state = format_html('<p class="nzr-reply-meta"><i class="fas fa-store" aria-hidden="true"></i> {} · {}{}</p>', obj.store_reply_by or "Do'kon",
+                                ui.local(obj.store_reply_at, "%d.%m.%Y %H:%M"), " · saytda ko'rinmoqda" if live else " · sharh saytga chiqqanda ko'rinadi")
+        else:
+            state = format_html('<p class="nzr-reply-meta">{}</p>', "Javob saytda sharh ostida «Do'kon javobi» bo'lib chiqadi. Birinchi javobda mijozga bildirishnoma boradi."
+                                if live else "Javobni hozir yozib qo'yish mumkin — sharh saytga chiqqanda u bilan birga ko'rinadi.")
+        templates = (("Rahmat", "Fikringiz uchun katta rahmat! Sizga yoqqanidan xursandmiz — NutriZone'ni tanlaganingiz uchun minnatdormiz."),
+                     ("Uzr so'rash", "Noqulaylik uchun uzr so'raymiz. Iltimos, biz bilan bog'laning — muammoni albatta hal qilamiz."),
+                     ("Maslahat", "Rahmat! Eng yaxshi natija uchun mahsulotni yo'riqnomadagi miqdorda, muntazam qabul qilishni tavsiya qilamiz."))
+        chips = format_html_join("", '<button type="button" class="nzr-tpl" data-nzr-tpl="{}">{}</button>', ((t, label) for label, t in templates))
+        remove = _btn(url + "?clear=1", "Javobni o'chirish", "fa-trash", "danger", "Do'kon javobi saytdan olib tashlanadi. Davom etilsinmi?") if obj.store_reply else ""
+        return format_html(
+            '<div class="nzi-panel-body nzr-reply">{}'
+            '<textarea name="store_reply" rows="4" maxlength="{}" placeholder="Masalan: Rahmat! Sizga yoqqanidan xursandmiz…" aria-label="Do\'kon javobi" data-nzr-reply>{}</textarea>'
+            '<div class="nzr-reply-bar"><span class="nzr-tpls">{}</span><small data-nzr-count>{}/{}</small></div>'
+            '<div class="nzi-actions">{}{}</div></div>'
+            '<script>(function(){{var b=document.currentScript.previousElementSibling,t=b.querySelector("[data-nzr-reply]"),c=b.querySelector("[data-nzr-count]");'
+            'function n(){{c.textContent=t.value.length+"/{}";}}t.addEventListener("input",n);'
+            'b.querySelectorAll("[data-nzr-tpl]").forEach(function(x){{x.addEventListener("click",function(){{t.value=x.dataset.nzrTpl;n();t.focus();}});}});}})();</script>',
+            state, REPLY_MAX, obj.store_reply, chips, len(obj.store_reply), REPLY_MAX,
+            _btn(url, "Javobni saqlash" if obj.store_reply else "Javob berish", "fa-reply", "primary"), remove, REPLY_MAX)
+
+    @admin.display(description="")
     def media_panel(self, obj):
         media = list(obj.media_items.all())
         if not media:
@@ -346,7 +417,22 @@ class ReviewAdmin(ExcelExportMixin, PremiumListMixin, PremiumFormMixin, admin.Mo
                            format_html('<p class="nzi-help">{}</p>', hint) if hint else "")
 
     def get_urls(self):
-        return [path("<uuid:pk>/nz/<str:action>/", self.admin_site.admin_view(self.moderate_view), name="reviews_review_moderate"), *super().get_urls()]
+        return [path("<uuid:pk>/nz/reply/", self.admin_site.admin_view(self.reply_view), name="reviews_review_reply"),
+                path("<uuid:pk>/nz/<str:action>/", self.admin_site.admin_view(self.moderate_view), name="reviews_review_moderate"), *super().get_urls()]
+
+    def reply_view(self, request, pk):
+        if request.method != "POST" or not self.has_change_permission(request):
+            raise PermissionDenied
+        review = get_object_or_404(orm.ReviewModel, pk=pk)
+        actor = getattr(request.user, "get_full_name", lambda: "")() or request.user.get_username()
+        try:
+            result = set_store_reply(review.pk, "" if request.GET.get("clear") else request.POST.get("store_reply", ""), actor)
+        except ValueError as exc:
+            messages.error(request, str(exc))
+        else:
+            messages.success(request, {"added": "Javob saqlandi" + (" — mijozga bildirishnoma yuborildi." if review.status == "published" else ". Sharh saytga chiqqanda ko'rinadi."),
+                                       "edited": "Javob yangilandi.", "removed": "Javob olib tashlandi.", "same": "O'zgarish yo'q."}[result])
+        return HttpResponseRedirect(reverse("admin:reviews_reviewmodel_change", args=[review.pk]) + "#nz-reply")
 
     def moderate_view(self, request, pk, action):
         if request.method != "POST" or not self.has_change_permission(request) or action not in ("approve", "publish", "reject", "hide"):

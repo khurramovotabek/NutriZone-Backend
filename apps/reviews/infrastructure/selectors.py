@@ -32,7 +32,8 @@ class ReviewSelector:
         return [self._card(r) for r in rows], total
 
     def _card(self, row: orm.ReviewModel) -> dict:
-        return {"id": str(row.id), "product_id": str(row.product_id), "customer_id": str(row.customer_id), "rating": row.rating, "title": row.title, "body": row.body, "status": row.status, "verified_purchase": row.verified_purchase}
+        return {"id": str(row.id), "product_id": str(row.product_id), "customer_id": str(row.customer_id), "rating": row.rating, "title": row.title, "body": row.body, "status": row.status, "verified_purchase": row.verified_purchase,
+                "store_reply": _reply(row)}
 
     def list_published_for_product(self, product_id: uuid.UUID, page: int, page_size: int) -> tuple[list[dict], int]:
         """
@@ -92,6 +93,7 @@ class ReviewSelector:
                 "author_name": _display_name(full_names_by_id.get(r.customer_id)),
                 "created_at": (r.published_at or r.created_at).isoformat(),
                 "media": media_by_review.get(r.id, []),
+                "store_reply": _reply(r),
             })
         return cards, total
 
@@ -135,7 +137,7 @@ def featured_reviews(limit: int = 6, locale: str = "uz") -> dict:
         "average": round(float(stats["avg"]), 1) if stats["avg"] else None,
         "count": stats["n"],
         "results": [{
-            "id": str(r.id), "rating": r.rating, "title": r.title, "body": r.body, "verified_purchase": r.verified_purchase,
+            "id": str(r.id), "rating": r.rating, "title": r.title, "body": r.body, "verified_purchase": r.verified_purchase, "store_reply": _reply(r),
             "author_name": author(names.get(r.customer_id)), "created_at": (r.published_at or r.created_at).isoformat(),
             "product": products.get(r.product_id),
         } for r in picked],
@@ -207,3 +209,10 @@ class ReviewStatisticsSelector:
             .annotate(average=Avg("rating"), count=Count("id"))
         )
         return {str(r["product_id"]): {"average": round(float(r["average"]), 1), "count": r["count"]} for r in rows}
+
+
+def _reply(row) -> dict | None:
+    """The store's public answer under a review (who wrote it stays internal)."""
+    if not row.store_reply:
+        return None
+    return {"body": row.store_reply, "created_at": row.store_reply_at.isoformat() if row.store_reply_at else None}

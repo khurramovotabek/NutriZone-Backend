@@ -35,3 +35,18 @@
 .nzr-timeline small { font-size: .72rem; color: var(--nz-text-muted); }
 .nzr-reason { display: inline-flex; gap: 6px; align-items: center; }
 .nzr-reason select { height: 34px; padding: 0 10px; border-radius: 10px; border: 1px solid var(--nz-border); background: var(--nz-surface); color: var(--nz-text-primary); font-size: .8rem; }
+
+/* Do'kon javobi (review page) */
+.nzr-reply { display: grid; gap: 10px; }
+.nzr-reply-meta { margin: 0; font-size: .82rem; color: var(--nz-text-muted); }
+.nzr-reply-meta i { color: #16a34a; margin-right: 4px; }
+.nzr-reply textarea { width: 100%; min-height: 110px; padding: 12px 14px; border-radius: 14px; border: 1px solid var(--nz-border); background: var(--nz-surface);
+  color: var(--nz-text-primary); font: inherit; font-size: .92rem; line-height: 1.5; resize: vertical; }
+.nzr-reply textarea:focus { outline: none; border-color: var(--nz-primary); box-shadow: 0 0 0 3px color-mix(in srgb, var(--nz-primary) 22%, transparent); }
+.nzr-reply-bar { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px; }
+.nzr-tpls { display: flex; flex-wrap: wrap; gap: 6px; }
+.nzr-tpl { padding: 5px 11px; border-radius: 999px; border: 1px solid var(--nz-border); background: color-mix(in srgb, var(--nz-primary) 6%, var(--nz-surface));
+  color: var(--nz-text-primary); font-size: .76rem; font-weight: 700; cursor: pointer; }
+.nzr-tpl:hover { border-color: var(--nz-primary); color: var(--nz-primary); }
+.nzr-reply-bar small { color: var(--nz-text-muted); font-variant-numeric: tabular-nums; }
+.nzr-answered { display: inline-flex; align-items: center; gap: 5px; margin-top: 4px; font-size: .72rem; font-weight: 700; color: #16a34a; }

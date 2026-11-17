@@ -46,6 +46,11 @@ class ReviewModel(SoftDeleteModel):
     submitted_at = models.DateTimeField(null=True, blank=True)
     moderated_at = models.DateTimeField(null=True, blank=True)
     published_at = models.DateTimeField(null=True, blank=True)
+    # The store's public answer, shown under the review on the site. Store-side only: the customer's review aggregate
+    # (repositories.ReviewRepository.save) never writes these, so editing a review keeps the answer and vice versa.
+    store_reply = models.TextField("Do'kon javobi", blank=True, default="")
+    store_reply_at = models.DateTimeField(null=True, blank=True)
+    store_reply_by = models.CharField(max_length=150, blank=True, default="")
 
     class Meta:
         db_table = "reviews_reviews"
