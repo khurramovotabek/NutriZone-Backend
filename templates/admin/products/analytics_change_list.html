@@ -1,9 +1,9 @@
 {% extends "admin/change_list.html" %}
 {% load i18n static nzi %}
-{% block extrastyle %}{{ block.super }}<link rel="stylesheet" href="{% static 'admin/css/nutrizone-catalog.css' %}?v=5">{% if opts.model_name == "product" %}<link rel="stylesheet" href="{% static 'admin/css/nutrizone-price-quick.css' %}?v=2">{% endif %}{% endblock %}
+{% block extrastyle %}{{ block.super }}<link rel="stylesheet" href="{% static 'admin/css/nutrizone-catalog.css' %}?v=9">{% if opts.model_name == "product" %}<link rel="stylesheet" href="{% static 'admin/css/nutrizone-price-quick.css' %}?v=2">{% endif %}{% endblock %}
 {% block extrajs %}{{ block.super }}{% if opts.model_name == "product" %}
 <script id="nzq-config" type="application/json">{"product": "{% url 'admin:nz_price_list_product' '__' %}", "save": "{% url 'admin:nz_price_list_save' '__' %}", "history": "{% url 'admin:nz_price_list_history' '__' %}", "edit": "{% url 'admin:products_product_change' '00000000-0000-0000-0000-000000000000' %}"}</script>
-<script src="{% static 'admin/js/nutrizone-price-quick.js' %}?v=2"></script>{% endif %}<script src="{% static 'admin/js/nutrizone-catalog-list.js' %}?v=1" defer></script>{% endblock %}
+<script src="{% static 'admin/js/nutrizone-price-quick.js' %}?v=2"></script>{% endif %}<script src="{% static 'admin/js/nutrizone-catalog-list.js' %}?v=2" defer></script>{% endblock %}
 {% block date_hierarchy %}
 {{ nzg_css|default:'' }}
 {% if nzc %}

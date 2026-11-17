@@ -124,11 +124,32 @@ body:has(.nzc-toolbar) #result_list tbody tr:hover > * { background: color-mix(i
 body:has(.nzc-toolbar) #result_list tbody tr.selected > * { background: color-mix(in srgb, var(--nz-primary) 11%, transparent) !important; }
 
 @media (max-width: 760px) {
-  body:has(.nzc-toolbar) #result_list :is(th, td) { white-space: nowrap; }
-  body:has(.nzc-toolbar) #result_list :is(.field-product_col, .field-variant_col, .field-brand_col, .field-category_col, .field-tag_col, .field-flavour_col, .field-package_col, .field-names_col) { white-space: normal; min-width: 200px; }
   .nzc-toolbar { padding: 10px; }
   .nzc-search { flex-basis: 100%; max-width: none; }
-  .nzc-filter { flex: 1 1 calc(50% - 6px); } .nzc-filter select { max-width: none; width: 100%; min-width: 0; }
+  .nzc-filter { flex: 1 1 calc(50% - 6px); min-width: 0; } .nzc-filter select { max-width: none; width: 100%; min-width: 0; }
   .nzc-object-tools { width: 100%; } .nzc-object-tools .object-tools, .nzc-object-tools ul { width: 100%; }
-  .nzc-object-tools li { flex: 1 1 auto; } .nzc-object-tools .btn, .nzc-object-tools a { width: 100%; justify-content: center; }
+  .nzc-object-tools li { flex: 1 1 100%; min-width: 0; } .nzc-object-tools .btn, .nzc-object-tools a { width: 100%; justify-content: center; }
+
+  /* each row becomes a card: [✓] [photo] name … then the other columns as "LABEL value" pairs, two per line */
+  body:has(.nzc-toolbar) #changelist .results { overflow: visible !important; }
+  body:has(.nzc-toolbar) #result_list, body:has(.nzc-toolbar) #result_list tbody { display: block; width: 100%; }
+  body:has(.nzc-toolbar) #result_list thead tr { display: flex; align-items: center; gap: 10px; padding: 6px 12px; }
+  body:has(.nzc-toolbar) #result_list thead th { display: none; }
+  body:has(.nzc-toolbar) #result_list thead th.action-checkbox-column { display: block; border: 0 !important; padding: 0 !important; }
+  body:has(.nzc-toolbar) #result_list thead tr::after { content: "Barchasini tanlash"; font-size: .74rem; font-weight: 700; color: var(--nz-text-muted); }
+  body:has(.nzc-toolbar) #result_list tbody tr { display: grid; grid-template-columns: 22px 46px minmax(0, 1fr) 22px 46px minmax(0, 1fr); grid-auto-flow: row dense; align-items: center;
+    column-gap: 10px; row-gap: 8px; padding: 12px; border-bottom: 1px solid var(--nz-border); }
+  body:has(.nzc-toolbar) #result_list tbody tr > * { display: block; padding: 0 !important; border: 0 !important; min-width: 0 !important; white-space: normal !important; text-align: left !important; }
+  body:has(.nzc-toolbar) #result_list tbody .nzc-cell-check { grid-column: 1; }
+  body:has(.nzc-toolbar) #result_list tbody .nzc-cell-media { grid-column: 2; } body:has(.nzc-toolbar) #result_list tbody .nzc-cell-media img { max-width: 46px; height: auto; }
+  body:has(.nzc-toolbar) #result_list tbody .nzc-cell-lead { grid-column: 3 / -1; }
+  body:has(.nzc-toolbar) #result_list tbody tr:not(:has(.nzc-cell-media)) .nzc-cell-lead { grid-column: 2 / -1; }
+  body:has(.nzc-toolbar) #result_list tbody [data-label]:last-child:nth-child(odd of [data-label]) { grid-column: 1 / -1; }
+  body:has(.nzc-toolbar) #result_list tbody tr > [data-label] { grid-column: span 3; display: flex !important; flex-direction: column; align-items: flex-start; justify-content: center; gap: 3px;
+    padding: 7px 10px !important; min-height: 50px; border-radius: 10px; background: color-mix(in srgb, var(--nz-surface-secondary, #f1f5f9) 70%, transparent) !important; }
+  body:has(.nzc-toolbar) #result_list tbody [data-label]::before { content: attr(data-label); flex: none; font-size: .64rem; font-weight: 800; letter-spacing: .05em;
+    text-transform: uppercase; color: var(--nz-text-muted); }
+  body:has(.nzc-toolbar) #result_list tbody [data-label] > * { text-align: left; max-width: 100%; }
+  body:has(.nzc-toolbar) #result_list tbody tr:hover > * { background: transparent !important; }
+  body:has(.nzc-toolbar) #result_list tbody tr:hover > [data-label] { background: color-mix(in srgb, var(--nz-surface-secondary, #f1f5f9) 70%, transparent) !important; }
 }

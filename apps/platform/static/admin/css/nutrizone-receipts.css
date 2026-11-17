@@ -147,3 +147,16 @@ html[data-bs-theme="dark"] .nzr-alert { color: #fca5a5; }
 .nzr-facts dt { font-size: .74rem; font-weight: 700; color: var(--nz-text-muted); text-transform: uppercase; letter-spacing: .04em; }
 .nzr-facts dd { margin: 0; color: var(--nz-text-primary); font-weight: 600; overflow-wrap: anywhere; }
 @media (max-width: 900px) { .nzr-detail { grid-template-columns: 1fr; } .nzr-detail .nzr-paper { margin: 0 auto; } }
+
+/* phones: total + "create" always within thumb reach (fixed bar), the 80 mm preview follows the form */
+@media (max-width: 760px) {
+  .nzr { padding-bottom: 150px; }
+  .nzr .nzr-summary { position: fixed; left: 0; right: 0; bottom: 0; z-index: 1035; margin: 0; padding: 10px 14px calc(10px + env(safe-area-inset-bottom));
+    border-radius: 18px 18px 0 0; border: 1px solid var(--nz-border); border-bottom: 0; background: color-mix(in srgb, var(--nz-surface) 92%, transparent);
+    -webkit-backdrop-filter: blur(16px); backdrop-filter: blur(16px); box-shadow: 0 -12px 30px -18px rgba(15, 23, 42, .45); }
+  .nzr .nzr-summary > div { margin-bottom: 8px; }
+  .nzr .nzr-summary .nzr-kbd { display: none; }
+  .nzr .nzr-summary .nzr-hint:empty { display: none; }
+  .nzr .nzr-submit { height: 48px; }
+  .nzr-seg label span { min-height: 40px; }
+}

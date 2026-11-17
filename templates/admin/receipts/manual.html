@@ -1,7 +1,7 @@
 {% extends "admin/base_site.html" %}
 {% load static %}
 {# Dashboard → Cheklar → Yangi chek: scan / search → lines → who and how paid → a live 80 mm preview → create (Ctrl+Enter). #}
-{% block extrastyle %}{{ block.super }}<link rel="stylesheet" href="{% static 'admin/css/nutrizone-platform.css' %}?v=6"><link rel="stylesheet" href="{% static 'admin/css/nutrizone-premium.css' %}?v=9"><link rel="stylesheet" href="{% static 'admin/css/nutrizone-receipts.css' %}?v=3">{% endblock %}
+{% block extrastyle %}{{ block.super }}<link rel="stylesheet" href="{% static 'admin/css/nutrizone-platform.css' %}?v=6"><link rel="stylesheet" href="{% static 'admin/css/nutrizone-premium.css' %}?v=9"><link rel="stylesheet" href="{% static 'admin/css/nutrizone-receipts.css' %}?v=4">{% endblock %}
 {% block content_title %}{% endblock %}
 {% block content %}
 <form method="post" class="nzp nzi nzr" id="nzr-form" novalidate autocomplete="off">{% csrf_token %}

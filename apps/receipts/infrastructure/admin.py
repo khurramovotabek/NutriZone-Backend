@@ -15,6 +15,7 @@ from django.template.loader import render_to_string
 from django.urls import path, reverse
 from django.utils import timezone
 from django.utils.html import format_html, format_html_join
+from django.utils.safestring import mark_safe
 
 from apps.identity.domain.phone import parse_uz_phone
 from apps.platform.infrastructure import premium_admin as ui
@@ -54,8 +55,9 @@ class ReceiptAdmin(ExcelExportMixin, PremiumListMixin, PremiumFormMixin, admin.M
     nz_icon, nz_tone, nz_title = "fa-receipt", "#0d9488", "Cheklar"
     nz_css = ("admin/css/nutrizone-receipts.css",)
     nz_subtitle = "POS, onlayn buyurtma va qo'lda yaratilgan barcha cheklar: chop etish, elektron chek (QR) va fiskallashtirish."
-    nz_columns = (("Chek", ""), ("Mijoz", ""), ("To'lov", ""), ("Summa", "r"), ("Holat", "r"))
-    nz_grid = "minmax(240px,2fr) minmax(170px,1.3fr) 120px 140px 150px"
+    # phones show the first and the last column: the receipt (with its status) and the amount
+    nz_columns = (("Chek", ""), ("Mijoz", ""), ("To'lov", ""), ("Holat", ""), ("Summa", "r"))
+    nz_grid = "minmax(240px,2fr) minmax(170px,1.3fr) 120px 150px 140px"
     nz_search = "Chek / buyurtma raqami, telefon, fiskal raqam…"
     nz_empty = ("Chek yo'q", "POS sotuvi yoki onlayn buyurtma yetkazilganda chek avtomatik paydo bo'ladi.")
     hero_icon, hero_tone, hero_noun = "fa-receipt", "#0d9488", "chek"
@@ -105,8 +107,9 @@ class ReceiptAdmin(ExcelExportMixin, PremiumListMixin, PremiumFormMixin, admin.M
                             SOURCE_ICON.get(r.source, "fa-receipt"), r.number, ui.local(r.issued_at, "%d.%m.%Y %H:%M"), r.order_number or r.get_source_display()),
                 format_html("<b>{}</b><small>{}</small>", r.customer_name or "—", r.customer_phone),
                 format_html("{}", PAY_LABEL.get(r.payment_method, r.payment_method or "—")),
-                format_html("<b>{}</b> <small>so'm</small>", money(r.total)),
-                format_html('<span class="nzi-pill" style="--t:{}">{}</span>', STATUS_TONE.get(r.status, "#64748b"), r.get_status_display())]
+                format_html('<span class="nzi-pill" style="--t:{}">{}</span>', STATUS_TONE.get(r.status, "#64748b"), r.get_status_display()),
+                format_html("<b{}>{}{}</b> <small>so'm</small>", mark_safe(' style="color:#dc2626"') if r.kind == "refund" else "",
+                            "−" if r.kind == "refund" else "", money(r.total))]
 
     # ---------------------------------------------------------------- card
     def form_hero(self, request, obj):
@@ -324,8 +327,8 @@ class ReceiptSettingsAdmin(PremiumFormMixin, admin.ModelAdmin):
     def fiscal_readiness(self, obj):
         checks = fiscal.readiness(obj)
         done = sum(1 for _l, ok, _h in checks if ok)
-        rows = format_html_join("", '<li style="display:flex;gap:8px;align-items:baseline;padding:3px 0"><span style="color:{};font-weight:700">{}</span>'
-                                    '<b>{}</b><small style="opacity:.7">{}</small></li>',
+        rows = format_html_join("", '<li style="display:grid;grid-template-columns:16px minmax(0,1fr);column-gap:8px;padding:5px 0"><span style="color:{};font-weight:700">{}</span>'
+                                    '<span><b>{}</b> <small style="opacity:.7;display:inline-block">{}</small></span></li>',
                                 (("#16a34a" if ok else "#dc2626", "✓" if ok else "✗", label, hint) for label, ok, hint in checks))
         last = format_html('<p style="margin-top:10px"><b>Oxirgi tekshiruv:</b> {} <small style="opacity:.7">{}</small></p>',
                            obj.fiscal_check_result, ui.local(obj.fiscal_checked_at, "%d.%m.%Y %H:%M")) if obj.fiscal_checked_at else ""
