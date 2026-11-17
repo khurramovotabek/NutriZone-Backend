@@ -1,7 +1,7 @@
 {% extends "admin/base_site.html" %}
 {% load i18n static %}
 {# Geo & Location → Manzillar xaritasi (apps/geo/infrastructure/admin_map.py): addresses, stores, warehouses and city centres on one map. #}
-{% block extrastyle %}{{ block.super }}<link rel="stylesheet" href="{% static 'admin/css/nutrizone-platform.css' %}?v=5"><link rel="stylesheet" href="{% static 'admin/css/nutrizone-premium.css' %}?v=6"><link rel="stylesheet" href="{% static 'admin/vendor/leaflet/leaflet.css' %}"><link rel="stylesheet" href="{% static 'admin/css/nutrizone-geo.css' %}?v=3">{% endblock %}
+{% block extrastyle %}{{ block.super }}<link rel="stylesheet" href="{% static 'admin/css/nutrizone-platform.css' %}?v=6"><link rel="stylesheet" href="{% static 'admin/css/nutrizone-premium.css' %}?v=6"><link rel="stylesheet" href="{% static 'admin/vendor/leaflet/leaflet.css' %}"><link rel="stylesheet" href="{% static 'admin/css/nutrizone-geo.css' %}?v=3">{% endblock %}
 {% block breadcrumbs %}<ol class="breadcrumb"><li class="breadcrumb-item"><a href="{% url 'admin:index' %}">{% translate "Home" %}</a></li><li class="breadcrumb-item"><a href="{% url 'admin:geo_address_changelist' %}">Manzillar</a></li><li class="breadcrumb-item active">{{ title }}</li></ol>{% endblock %}
 {% block content_title %}{% endblock %}
 {% block content %}

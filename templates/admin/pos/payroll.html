@@ -1,7 +1,7 @@
 {% extends "admin/base_site.html" %}
 {% load i18n static %}
 {# Cashier payroll (StoreCashierAdmin.payroll_view): base salary + KPI % of the cashier's own net sales, per month. #}
-{% block extrastyle %}{{ block.super }}<link rel="stylesheet" href="{% static 'admin/css/nutrizone-platform.css' %}?v=5"><link rel="stylesheet" href="{% static 'admin/css/nutrizone-orderdesk.css' %}?v=6"><link rel="stylesheet" href="{% static 'admin/css/nutrizone-wmsx.css' %}?v=13"><link rel="stylesheet" href="{% static 'admin/css/nutrizone-pos-terminal.css' %}?v=9">{% endblock %}
+{% block extrastyle %}{{ block.super }}<link rel="stylesheet" href="{% static 'admin/css/nutrizone-platform.css' %}?v=6"><link rel="stylesheet" href="{% static 'admin/css/nutrizone-orderdesk.css' %}?v=6"><link rel="stylesheet" href="{% static 'admin/css/nutrizone-wmsx.css' %}?v=13"><link rel="stylesheet" href="{% static 'admin/css/nutrizone-pos-terminal.css' %}?v=9"><link rel="stylesheet" href="{% static 'admin/css/nutrizone-pricing-pos.css' %}?v=1">{% endblock %}
 {% block breadcrumbs %}<ol class="breadcrumb float-sm-right"><li class="breadcrumb-item"><a href="{% url 'admin:index' %}">{% translate "Home" %}</a></li><li class="breadcrumb-item"><a href="{% url 'admin:stores_storecashier_changelist' %}">{% translate "Kassalar va kassirlar" %}</a></li><li class="breadcrumb-item active">{% translate "Oylik va KPI" %}</li></ol>{% endblock %}
 {% block content_title %}{% endblock %}
 {% block content %}
@@ -27,6 +27,7 @@
     <div class="nzp-stat" style="--c:#d97706"><i class="fas fa-bullseye" aria-hidden="true"></i><div><b>{{ t.kpi }}</b><span>{% blocktranslate with p=t.kpi_share %}KPI · {{ p }} of the fund{% endblocktranslate %}</span></div></div>
     <div class="nzp-stat" style="--c:#7c3aed"><i class="fas fa-building-columns" aria-hidden="true"></i><div><b>{{ t.base }}</b><span>{% translate "Base salaries" %}</span></div></div>
     <div class="nzp-stat" style="--c:{% if t.paid_n == t.n and t.n %}#10b981{% else %}#e11d48{% endif %}"><i class="fas fa-circle-check" aria-hidden="true"></i><div><b>{{ t.paid_n }}/{{ t.n }}</b><span>{% blocktranslate with u=t.unpaid %}Paid · {{ u }} left{% endblocktranslate %}</span></div></div>
+    {% if t.forecast %}<div class="nzp-stat" style="--c:#0891b2"><i class="fas fa-wand-magic-sparkles" aria-hidden="true"></i><div><b>{{ t.forecast }}</b><span>{% translate "Oy oxiriga prognoz fond" %} · <span>{{ t.forecast_revenue }}</span> {% translate "savdo" %}</span></div></div>{% endif %}
   </div>
   {% if t.fund_share %}<p class="py-note"><i class="fas fa-circle-info" aria-hidden="true"></i> {% blocktranslate with p=t.fund_share %}Cashier pay is {{ p }} of what they sold this month.{% endblocktranslate %}{% if current %} {% translate "The month isn't over -- KPI keeps growing with every sale." %}{% endif %}</p>{% endif %}
 
@@ -41,7 +42,7 @@
         <span class="r"><b class="py-kpi">{{ r.kpi }}</b><small>{{ r.percent }}%</small></span>
         <span class="r"><b>{{ r.base }}</b></span>
         <span class="r">{% if r.adjustment %}<b class="{% if r.adjustment > 0 %}wx-plus{% else %}wx-minus{% endif %}">{% if r.adjustment > 0 %}+{% else %}−{% endif %}{{ r.adjustment_s }}</b><small title="{{ r.note }}">{{ r.note|truncatechars:24 }}</small>{% else %}<small class="wx-muted">—</small>{% endif %}</span>
-        <span class="r"><b class="py-total">{{ r.total }}</b><small>so'm</small></span>
+        <span class="r"><b class="py-total">{{ r.total }}</b><small>{% if r.forecast %}<span class="py-fc" title="{% translate "Joriy sur'atda oy oxiriga" %}"><i class="fas fa-arrow-trend-up" aria-hidden="true"></i> {{ r.forecast }}</span>{% else %}so'm{% endif %}</small></span>
         <span class="py-act">
           {% if r.payout_id %}<span class="nzd-pill" style="--t:#10b981" title="{{ r.paid_by }}"><i class="fas fa-check" aria-hidden="true"></i> {% translate "Paid" %} {{ r.paid_at|slice:":10" }}</span>
             {% if is_super %}<form method="post" action="{% url 'admin:stores_storecashier_undo' r.payout_id %}" data-confirm>{% csrf_token %}<input type="hidden" name="month" value="{{ month_key }}"><button class="pk-x" title="{% translate 'Cancel the payment' %}" aria-label="{% translate 'Cancel the payment' %}"><i class="fas fa-rotate-left" aria-hidden="true"></i></button></form>{% endif %}

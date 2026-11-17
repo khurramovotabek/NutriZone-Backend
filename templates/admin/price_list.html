@@ -1,7 +1,7 @@
 {% extends "admin/base_site.html" %}
 {% load i18n static %}
 {# Price list: pricing health KPIs, filters; one row per product (a single-variant product edits inline, a multi-variant one shows its price range and total stock with its variants in an expandable panel). Clicking a product name opens the variant editor: a variant select, price / old price / cost and the online warehouse count per variant (price_list_api_save, price_list_api_stock). #}
-{% block extrastyle %}{{ block.super }}<link rel="stylesheet" href="{% static 'admin/css/nutrizone-platform.css' %}?v=5"><link rel="stylesheet" href="{% static 'admin/css/nutrizone-orderdesk.css' %}?v=5"><link rel="stylesheet" href="{% static 'admin/css/nutrizone-wmsx.css' %}?v=18">{% endblock %}
+{% block extrastyle %}{{ block.super }}<link rel="stylesheet" href="{% static 'admin/css/nutrizone-platform.css' %}?v=6"><link rel="stylesheet" href="{% static 'admin/css/nutrizone-orderdesk.css' %}?v=5"><link rel="stylesheet" href="{% static 'admin/css/nutrizone-wmsx.css' %}?v=18"><link rel="stylesheet" href="{% static 'admin/css/nutrizone-pricing-pos.css' %}?v=1">{% endblock %}
 {% block breadcrumbs %}<ol class="breadcrumb"><li class="breadcrumb-item"><a href="{% url 'admin:index' %}">{% translate "Home" %}</a></li><li class="breadcrumb-item">{% translate "Narxlash" %}</li><li class="breadcrumb-item active">{% translate "Narxlar ro'yxati" %}</li></ol>{% endblock %}
 {% block content_title %}{% endblock %}
 {% block content %}
@@ -22,14 +22,17 @@
     <a class="nzp-stat" href="?missing=1" style="--c:#e11d48"><i class="fas fa-circle-exclamation" aria-hidden="true"></i><div><b>{{ kpi.unpriced }}</b><span>{% translate "Variants without a price -- can't be bought" %}</span></div></a>
     <a class="nzp-stat" href="?discount=discounted" style="--c:#f59e0b"><i class="fas fa-percent" aria-hidden="true"></i><div><b>{{ kpi.discounted }}</b><span>{% translate "With a discount (old price)" %}</span></div></a>
     <div class="nzp-stat" style="--c:#10b981"><i class="fas fa-chart-line" aria-hidden="true"></i><div><b>{% if kpi.margin is not None %}{{ kpi.margin }}%{% else %}—{% endif %}</b><span>{% blocktranslate with n=kpi.no_cost %}Average margin · {{ n }} without cost{% endblocktranslate %}</span></div></div>
+    <a class="nzp-stat" href="?margin=loss" style="--c:{% if kpi.loss %}#dc2626{% else %}#64748b{% endif %}"><i class="fas fa-arrow-trend-down" aria-hidden="true"></i><div><b>{{ kpi.loss }}</b><span>{% translate "Zararda — narx tannarxdan past" %}</span></div></a>
   </div>
 
   <form method="get" class="nzp-toolbar wx-pl-filters">
     <input type="hidden" name="sort" value="{{ sort }}">
     <nav class="nzp-tabs" aria-label="{% translate 'Filter' %}">
-      <a class="nzp-tab{% if not missing and not selected_discount %} on{% endif %}" href="?" style="--t:#64748b"><i class="fas fa-layer-group" aria-hidden="true"></i> {% translate "All" %}</a>
+      <a class="nzp-tab{% if not missing and not selected_discount and not margin_filter %} on{% endif %}" href="?" style="--t:#64748b"><i class="fas fa-layer-group" aria-hidden="true"></i> {% translate "All" %}</a>
       <a class="nzp-tab{% if missing %} on{% endif %}" href="?missing=1" style="--t:#e11d48"><i class="fas fa-circle-exclamation" aria-hidden="true"></i> {% translate "No price" %} <b>{{ kpi.unpriced_products }}</b></a>
       <a class="nzp-tab{% if selected_discount == 'discounted' %} on{% endif %}" href="?discount=discounted" style="--t:#f59e0b"><i class="fas fa-percent" aria-hidden="true"></i> {% translate "Discounted" %}</a>
+      <a class="nzp-tab{% if margin_filter == 'loss' %} on{% endif %}" href="?margin=loss" style="--t:#dc2626"><i class="fas fa-arrow-trend-down" aria-hidden="true"></i> {% translate "Zararda" %} <b>{{ kpi.loss }}</b></a>
+      <a class="nzp-tab{% if margin_filter == 'low' %} on{% endif %}" href="?margin=low" style="--t:#d97706"><i class="fas fa-gauge-simple-low" aria-hidden="true"></i> {% translate "Past marja" %} <b>{{ kpi.loss|add:kpi.low }}</b></a>
     </nav>
     <div class="wx-date-filter">
       {% if missing %}<input type="hidden" name="missing" value="1">{% endif %}

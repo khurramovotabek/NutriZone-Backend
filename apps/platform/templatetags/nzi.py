@@ -56,7 +56,8 @@ def nz_pager(cl, page_range) -> dict:
 
 
 GLASS_PAGES = ("analytics/", "reports/", "sales-plan/", "segments/", "stores/branch-report/", "wms/reports/", "search/searchterm/",
-               "chat/operators/", "control/", "platform/", "settings-overview/", "ordering/", "cart/", "finance/", "payment/")
+               "chat/operators/", "control/", "platform/", "settings-overview/", "ordering/", "cart/", "finance/", "payment/",
+               "pricing/", "pos/", "products/price-list/", "stores/storecashier/", "stores/pospricechange/")
 
 
 @register.filter
@@ -67,6 +68,6 @@ def nz_glass(path: str) -> bool:
     if not path or not path.startswith(ADMIN_PREFIX):
         return False
     rest = path[len(ADMIN_PREFIX):]
-    if "waybill" in rest:  # the printed delivery sheet stays plain paper
+    if "waybill" in rest or rest.startswith("pos/terminal") or "/print" in rest:  # printed sheets stay plain paper; the till stays a fast, opaque work screen
         return False
     return rest == "" or rest.startswith(GLASS_PAGES)

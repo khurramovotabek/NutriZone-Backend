@@ -209,6 +209,7 @@ class StoreCashierAdmin(admin.ModelAdmin):
             "percent_raw": str(r["link"].kpi_percent.normalize()) if r["link"] else "0",
             "payout_id": str(r["payout"].id) if r["payout"] else None, "paid_at": _when(r["payout"].paid_at) if r["payout"] else "", "paid_by": r["payout"].paid_by if r["payout"] else "",
             "kpi_raw": int(r["kpi"]), "base_now": int(r["base"]),
+            "forecast": _fmt(r["forecast_total"]) if r.get("forecast_total") is not None else "",
         } for r in report["rows"]]
         months_uz = ["", "Yanvar", "Fevral", "Mart", "Aprel", "May", "Iyun", "Iyul", "Avgust", "Sentyabr", "Oktyabr", "Noyabr", "Dekabr"]
         ctx = {
@@ -218,7 +219,7 @@ class StoreCashierAdmin(admin.ModelAdmin):
             "current": report["current"], "can_edit": self.has_change_permission(request), "is_super": request.user.is_superuser,
             "t": {"total": _fmt(t["total"]), "kpi": _fmt(t["kpi"]), "base": _fmt(t["base"]), "revenue": _fmt(t["revenue"]), "sales": t["sales"],
                   "paid": _fmt(t["paid"]), "unpaid": _fmt(t["unpaid"]), "paid_n": t["paid_n"], "n": len(rows),
-                  "kpi_share": f"{int(t['kpi'] * 100 / t['total']) if t['total'] else 0}%", "fund_share": f"{round(t['total'] * 100 / t['revenue'], 1)}%" if t["revenue"] else ""},
+                  "kpi_share": f"{int(t['kpi'] * 100 / t['total']) if t['total'] else 0}%", "forecast": _fmt(t["forecast"]) if t.get("forecast") is not None else "", "forecast_revenue": _fmt(t.get("forecast_revenue")), "fund_share": f"{round(t['total'] * 100 / t['revenue'], 1)}%" if t["revenue"] else ""},
         }
         return TemplateResponse(request, "admin/pos/payroll.html", ctx)
 

@@ -223,7 +223,7 @@ html[data-nz-theme="dark"] .pay-check.is-warn { color: #fbbf24; }
 /* liquid glass layer (nzi.GLASS_PAGES has "payment/") */
 body.nz-glass-page .nzp :is(.nzp-stat, .pay-card, .pay-an-kpis > div, .pay-check-card, .pay-ready-mini, .pay-url) {
   background: var(--lg-surface-soft, var(--lg-surface)) !important; border-color: var(--lg-border) !important; box-shadow: var(--lg-edge);
-  -webkit-backdrop-filter: blur(var(--lg-blur)); backdrop-filter: blur(var(--lg-blur));
+  -webkit-backdrop-filter: var(--lg-blur); backdrop-filter: var(--lg-blur);
 }
 body.nz-glass-page .nzp .pay-card:hover { box-shadow: var(--lg-edge), var(--lg-shadow-hover, var(--lg-shadow)) !important; transform: translateY(-2px); }
 body.nz-glass-page .nzp .pay-ring::before { background: var(--nz-surface); }

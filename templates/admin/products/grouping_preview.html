@@ -1,7 +1,7 @@
 {% extends "admin/base_site.html" %}
 {% load i18n static %}
 {# Mahsulotlar → Guruhlash → ko'rib chiqish: family name, main product, each variant's size and flavour, then merge. #}
-{% block extrastyle %}{{ block.super }}<link rel="stylesheet" href="{% static 'admin/css/nutrizone-platform.css' %}?v=5"><link rel="stylesheet" href="{% static 'admin/css/nutrizone-premium.css' %}?v=6"><link rel="stylesheet" href="{% static 'admin/css/nutrizone-chat-desk.css' %}?v=6"><link rel="stylesheet" href="{% static 'admin/css/nutrizone-grouping.css' %}?v=1">{% endblock %}
+{% block extrastyle %}{{ block.super }}<link rel="stylesheet" href="{% static 'admin/css/nutrizone-platform.css' %}?v=6"><link rel="stylesheet" href="{% static 'admin/css/nutrizone-premium.css' %}?v=6"><link rel="stylesheet" href="{% static 'admin/css/nutrizone-chat-desk.css' %}?v=6"><link rel="stylesheet" href="{% static 'admin/css/nutrizone-grouping.css' %}?v=1">{% endblock %}
 {% block breadcrumbs %}<ol class="breadcrumb"><li class="breadcrumb-item"><a href="{% url 'admin:index' %}">{% translate "Home" %}</a></li><li class="breadcrumb-item"><a href="{{ product_list_url }}">Mahsulotlar</a></li><li class="breadcrumb-item"><a href="{% url 'admin:nz_product_grouping' %}">Guruhlash</a></li><li class="breadcrumb-item active">Ko'rib chiqish</li></ol>{% endblock %}
 {% block content_title %}{% endblock %}
 {% block content %}

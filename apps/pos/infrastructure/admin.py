@@ -289,6 +289,34 @@ def export_response(queryset, fmt: str):
     return response
 
 
+def _sales_insight(rep, qs, all_rows) -> dict:
+    """Who sold, what sold and when, for the filtered sales list (completed sales only)."""
+    from django.utils import timezone as tz
+
+    done = [r for r in all_rows if r["status"] == "completed"]
+    if not done:
+        return {}
+    hours = [0] * 24
+    for r in done:
+        if r["when"]:
+            hours[tz.localtime(r["when"]).hour] += 1
+    peak = max(range(24), key=lambda h: hours[h])
+    top = max(hours) or 1
+    sellers = rep.by_seller(done)[:4]
+    best = sellers[0]["revenue"] if sellers else 0
+    for x in sellers:
+        x["w"] = f"{float(x['revenue'] * 100 / best) if best else 0:.1f}"
+    products = rep.top_products(qs, 5)
+    for p in products:
+        p["w"] = f"{p['share']:.0f}"
+    units = sum(r["units"] for r in done)
+    return {
+        "sellers": sellers, "products": products, "peak": peak, "peak_n": hours[peak],
+        "hours": [{"h": h, "n": n, "w": f"{n * 100 / top:.0f}"} for h, n in enumerate(hours)],
+        "basket_units": f"{units / len(done):.1f}", "customers_pct": round(sum(1 for r in done if r["customer_id"]) * 100 / len(done)),
+    }
+
+
 @admin.register(orm.SaleModel)
 class SaleAdmin(admin.ModelAdmin):
     """
@@ -372,7 +400,9 @@ class SaleAdmin(admin.ModelAdmin):
         response = super().changelist_view(request, extra_context)
         cl = getattr(response, "context_data", {}).get("cl") if hasattr(response, "context_data") else None
         if cl is not None:
-            response.context_data["sales_summary"] = rep.summary(rep.rows(cl.queryset))
+            all_rows = rep.rows(cl.queryset)
+            response.context_data["sales_summary"] = rep.summary(all_rows)
+            response.context_data["sales_insight"] = _sales_insight(rep, cl.queryset, all_rows)
             params = request.GET.copy()
             response.context_data["export_query"] = params.urlencode()
             # premium toolbar: every list filter as a select, the date filter as quick chips, status as tabs

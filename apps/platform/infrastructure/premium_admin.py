@@ -111,6 +111,10 @@ class PremiumListMixin:
     def nz_hero_actions(self, request) -> list[dict]:
         return []
 
+    def nz_panel(self, request) -> str:
+        """Optional safe HTML drawn between the KPI tiles and the toolbar (an analysis block); '' for none."""
+        return ""
+
     def nz_prepare(self, request, objs) -> None:
         """Bulk-load whatever the rows need (one pass over the page) before nz_row runs."""
 
@@ -145,7 +149,7 @@ class PremiumListMixin:
         nz = {
             "icon": self.nz_icon, "tone": self.nz_tone, "title": self.nz_title or self.model._meta.verbose_name_plural, "subtitle": self.nz_subtitle,
             "columns": self.nz_columns, "grid": self.nz_grid, "search": self.nz_search, "empty": self.nz_empty,
-            "stats": self.nz_stats(request), "tabs": self.nz_tabs(request), "hero_actions": self.nz_hero_actions(request), "actions": actions,
+            "stats": self.nz_stats(request), "panel": self.nz_panel(request), "tabs": self.nz_tabs(request), "hero_actions": self.nz_hero_actions(request), "actions": actions,
             "sorts": [{"label": label, "url": tab_url(o=o), "on": params.get("o", "") == o} for label, o in self.nz_sorts],
             "tab_url": tab_url, "can_add": self.has_add_permission(request), "css": self.nz_css, "asset_v": ASSET_V, "layout": self.nz_layout,
         }

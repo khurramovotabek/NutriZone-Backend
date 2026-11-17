@@ -518,11 +518,41 @@ def price_list_kpis() -> dict:
     entries = {e.product_variant_id: e for e in PriceListEntryModel.objects.filter(product_variant_id__in=[v for v, _p in variants])}
     unpriced = [v for v, _p in variants if v not in entries]
     margins = [float((e.base_price_amount - e.cost_price_amount) * 100 / e.base_price_amount) for e in entries.values() if e.base_price_amount and e.cost_price_amount is not None]
+    product_of = dict(variants)
+    loss = {product_of[v] for v, e in entries.items() if margin_kind(e) == "loss"}
+    low = {product_of[v] for v, e in entries.items() if margin_kind(e) == "low"} - loss
     return {
+        "loss": len(loss), "low": len(low),
         "products": len({p for _v, p in variants}), "variants": len(variants), "unpriced": len(unpriced), "unpriced_products": len({p for v, p in variants if v in set(unpriced)}),
         "discounted": sum(1 for e in entries.values() if e.compare_at_price_amount and e.compare_at_price_amount > e.base_price_amount),
         "margin": round(sum(margins) / len(margins)) if margins else None, "no_cost": sum(1 for e in entries.values() if e.cost_price_amount is None),
     }
+
+
+LOW_MARGIN_PCT = Decimal("10")
+
+
+def margin_kind(entry) -> str:
+    """'loss' when the selling price is below cost, 'low' when the margin is under LOW_MARGIN_PCT, '' otherwise / unknown."""
+    price, cost = entry.base_price_amount, entry.cost_price_amount
+    if not price or cost is None or cost <= 0:
+        return ""
+    if price < cost:
+        return "loss"
+    return "low" if (price - cost) * 100 / price < LOW_MARGIN_PCT else ""
+
+
+def margin_product_ids(kind: str) -> set:
+    """Products with at least one variant priced at a loss ('loss') or with a thin margin ('low')."""
+    from apps.pricing.infrastructure.models import PriceListEntryModel
+
+    product_of = dict(orm.ProductVariant.objects.values_list("id", "product_id"))
+    out = set()
+    for e in PriceListEntryModel.objects.filter(product_variant_id__in=list(product_of)).only("product_variant_id", "base_price_amount", "cost_price_amount"):
+        k = margin_kind(e)
+        if k == kind or (kind == "low" and k == "loss"):
+            out.add(product_of[e.product_variant_id])
+    return out
 
 
 def missing_price_product_ids() -> set:
@@ -603,7 +633,7 @@ def _build_active_filter_chips(
 def _filter_querystring(params) -> str:
     from urllib.parse import urlencode
 
-    keys = ("q", "brand", "category", "stock", "discount", "price_min", "price_max", "missing")
+    keys = ("q", "brand", "category", "stock", "discount", "price_min", "price_max", "missing", "margin")
     return urlencode({k: params.get(k) for k in keys if params.get(k)})
 
 
@@ -642,6 +672,9 @@ def price_list_view(request):
         ).distinct()
     if request.GET.get("missing") == "1":
         qs = qs.filter(id__in=missing_price_product_ids())
+    margin_filter = request.GET.get("margin") if request.GET.get("margin") in ("loss", "low") else ""
+    if margin_filter:
+        qs = qs.filter(id__in=margin_product_ids(margin_filter))
     qs = _apply_advanced_filters(
         qs,
         stock_status=stock_status,
@@ -728,6 +761,7 @@ def price_list_view(request):
         "active_filters": active_filters,
         "kpi": price_list_kpis(),
         "missing": request.GET.get("missing") == "1",
+        "margin_filter": margin_filter,
         # Every active filter as a querystring (without page/sort) -- paging and column sorting keep the filters.
         "filter_qs": _filter_querystring(request.GET),
         "bulk_url": "/django-admin/products/price-list/api/bulk",

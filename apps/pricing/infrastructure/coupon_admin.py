@@ -67,6 +67,17 @@ def effective_status(c, now=None) -> str:
     return c.status
 
 
+def efficiency(revenue, discount) -> dict:
+    """ROI of a coupon: revenue brought per 1 so'm of discount, and the discount's share of the gross (revenue + discount)."""
+    revenue, discount = Decimal(revenue or 0), Decimal(discount or 0)
+    gross = revenue + discount
+    return {
+        "roi": f"{revenue / discount:.1f}".replace(".0", "") if discount > 0 else "",
+        "share": f"{discount * 100 / gross:.1f}" if gross > 0 else "",
+        "level": "" if discount <= 0 else ("good" if revenue / discount >= 10 else "ok" if revenue / discount >= 4 else "bad"),
+    }
+
+
 def order_stats(coupons) -> dict:
     """coupon id -> {"orders", "customers", "revenue", "discount", "last"} from the orders that carried the coupon."""
     from apps.ordering.infrastructure.models import OrderLineItemModel, OrderModel
@@ -241,6 +252,7 @@ class CouponAdmin(ExcelExportMixin, admin.ModelAdmin):
                 "label": label, "color": color, "icon": icon, "status": status, "revenue": _money(s.get("revenue")) if s.get("revenue") else "",
                 "customers": len(s.get("customers", ())), "ends": timezone.localtime(c.validity_ends_at).strftime("%d.%m.%Y") if c.validity_ends_at else "",
                 "days_left": days_left, "soon": days_left is not None and days_left <= 7,
+                "eff": efficiency(s.get("revenue"), s.get("discount")),
             }
         return cl
 
@@ -264,6 +276,7 @@ class CouponAdmin(ExcelExportMixin, admin.ModelAdmin):
                 "orders": sum(s["orders"] for s in stats.values()), "month_orders": month_orders,
                 "revenue": _money(sum((s["revenue"] for s in stats.values()), Decimal(0))), "discount": _money(sum((s["discount"] for s in stats.values()), Decimal(0))),
                 "customers": len(set().union(*[s["customers"] for s in stats.values()])) if stats else 0,
+                "eff": efficiency(sum((s["revenue"] for s in stats.values()), Decimal(0)), sum((s["discount"] for s in stats.values()), Decimal(0))),
             },
             "can_add": request.user.has_perm("pricing.add_couponmodel"),
         }

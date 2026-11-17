@@ -21,6 +21,7 @@ MODES = {
     "percent": "Foizga o'zgartirish",
     "amount": "Summaga o'zgartirish",
     "markup": "Tannarxga ustama (%)",
+    "margin": "Maqsadli marja (%)",
     "fixed": "Aniq narx",
 }
 ROUNDINGS = {
@@ -170,6 +171,8 @@ def compute(rows: list[dict], mode: str, value: Decimal | None, rounding: str, c
             new = price + value
         elif mode == "markup" and value is not None and cost:
             new = cost * (1 + value / 100)
+        elif mode == "margin" and value is not None and cost and 0 <= value < 95:
+            new = cost / (1 - value / 100)  # margin is on the selling price: 25% → cost / 0.75
         if new is not None:
             new = round_price(new, rounding)
         r["new_price"] = new
@@ -186,7 +189,7 @@ def compute(rows: list[dict], mode: str, value: Decimal | None, rounding: str, c
         r["margin_new"] = round(float((new - cost) / new * 100), 1) if new and cost else None
         warn = []
         if new is None:
-            warn.append("no_cost" if mode == "markup" else "no_price")
+            warn.append("no_cost" if mode in ("markup", "margin") else "no_price")
         elif new <= 0:
             warn.append("zero")
         elif cost and new < cost:

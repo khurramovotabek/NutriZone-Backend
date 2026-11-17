@@ -7987,3 +7987,96 @@ msgstr "Courier fee cannot be negative."
 
 msgid "masalan {0} {1}"
 msgstr "e.g. {0} {1}"
+
+msgid "Zararda — narx tannarxdan past"
+msgstr "At a loss — price below cost"
+
+msgid "Zararda"
+msgstr "At a loss"
+
+msgid "Past marja"
+msgstr "Low margin"
+
+msgid "ROI — har 1 so'm chegirmaga tushum"
+msgstr "ROI — revenue per 1 so'm of discount"
+
+msgid "Kassirlar nazorati"
+msgstr "Cashier control"
+
+msgid "Umumiy chegirma ulushi"
+msgstr "Overall discount share"
+
+msgid "mediana"
+msgstr "median"
+
+msgid "chegara"
+msgstr "threshold"
+
+msgid "ta narx tannarxdan past qo'yilgan"
+msgstr "prices set below cost"
+
+msgid "so'm zarar"
+msgstr "so'm loss"
+
+msgid "ta savdo · {0} ta o'zgarish"
+msgstr "sales · {0} changes"
+
+msgid "chegirma ulushi"
+msgstr "discount share"
+
+msgid "so'm berildi"
+msgstr "so'm given"
+
+msgid "so'm tushum"
+msgstr "so'm revenue"
+
+msgid "Tannarxdan past"
+msgstr "Below cost"
+
+msgid "Me'yordan yuqori"
+msgstr "Above normal"
+
+msgid "Chegirma ulushi = kassir bergan chegirma (narx tushirish + savat chegirmasi) ÷ sotuvlarning ro'yxatdagi qiymati. «Me'yordan yuqori» — boshqa kassirlar medianasidan statistik jihatdan sezilarli yuqori (mediana + {0}·MAD)."
+msgstr "Discount share = the cashier's discount (price cuts + basket discount) ÷ the list value of their sales. \"Above normal\" — statistically well above the other cashiers' median (median + {0}·MAD)."
+
+msgid "Eng yaxshi sotuvchilar"
+msgstr "Top sellers"
+
+msgid "Savdo soatlari"
+msgstr "Sales hours"
+
+msgid "eng qizg'in: {0}:{1}"
+msgstr "peak: {0}:{1}"
+
+msgid "dona / chek"
+msgstr "items / receipt"
+
+msgid "mijoz bilan"
+msgstr "with a customer"
+
+msgid "Oy oxiriga prognoz fond"
+msgstr "Month-end payroll forecast"
+
+msgid "savdo"
+msgstr "sales"
+
+msgid "Joriy sur'atda oy oxiriga"
+msgstr "At the current pace, by month end"
+
+msgid "Maqsadli marja (%)"
+msgstr "Target margin (%)"
+
+msgid "Marja, %"
+msgstr "Margin, %"
+
+msgid "Sotuvlar"
+msgstr "Sales"
+
+msgid "Mahsulot, kassir, kassa yoki sabab…"
+msgstr "Product, cashier, till or reason…"
+
+msgid "Narx o'zgarishi yo'q"
+msgstr "No price changes"
+
+msgid "Kassir savatdagi mahsulot narxini o'zgartirganda shu yerda paydo bo'ladi."
+msgstr "Appears here when a cashier changes a product's price in the basket."

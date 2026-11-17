@@ -6,6 +6,7 @@
     percent: ["Foiz (+ oshirish, − kamaytirish)", "10 → hamma narx 10% qimmat; −15 → 15% arzon."],
     amount: ["Summa, so'm (+ / −)", "20000 → har bir narxga 20 000 so'm qo'shiladi; −10000 → kamayadi."],
     markup: ["Ustama, %", "30 → yangi narx = tannarx × 1,3. Tannarxi kiritilmagan mahsulotlar o'tkazib yuboriladi."],
+    margin: ["Marja, %", "25 → yangi narx = tannarx ÷ 0,75, sotuv narxining 25% foyda. Ustamadan farqi: marja narxdan hisoblanadi."],
     fixed: ["Yangi narx, so'm", "Tanlangan hamma variantga bir xil narx qo'yiladi."],
   };
 

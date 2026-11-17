@@ -1,7 +1,7 @@
 {% extends "admin/change_list.html" %}
 {% load i18n static admin_list %}
 {# Coupons: KPIs from the orders that used them, status tabs, rows with discount / rules / usage bar / results (CouponAdmin.get_changelist_instance). #}
-{% block extrastyle %}{{ block.super }}<link rel="stylesheet" href="{% static 'admin/css/nutrizone-platform.css' %}?v=5"><link rel="stylesheet" href="{% static 'admin/css/nutrizone-orderdesk.css' %}?v=5"><link rel="stylesheet" href="{% static 'admin/css/nutrizone-wmsx.css' %}?v=13">{% endblock %}
+{% block extrastyle %}{{ block.super }}<link rel="stylesheet" href="{% static 'admin/css/nutrizone-platform.css' %}?v=6"><link rel="stylesheet" href="{% static 'admin/css/nutrizone-orderdesk.css' %}?v=5"><link rel="stylesheet" href="{% static 'admin/css/nutrizone-wmsx.css' %}?v=13"><link rel="stylesheet" href="{% static 'admin/css/nutrizone-pricing-pos.css' %}?v=1">{% endblock %}
 {% block content_title %}{% endblock %}
 {% block content %}
 <div class="nzp nzd wx">
@@ -20,7 +20,8 @@
     <a class="nzp-stat" href="?state=active" style="--c:#10b981"><i class="fas fa-ticket" aria-hidden="true"></i><div><b>{{ kpi.active }}</b><span>{% if kpi.expiring %}{% blocktranslate with n=kpi.expiring %}Active · {{ n }} end within 7 days{% endblocktranslate %}{% else %}{% translate "Active coupons" %}{% endif %}</span></div></a>
     <div class="nzp-stat" style="--c:#2563eb"><i class="fas fa-bag-shopping" aria-hidden="true"></i><div><b>{{ kpi.orders }}</b><span>{% blocktranslate with n=kpi.month_orders c=kpi.customers %}Orders with a coupon · {{ n }} in 30 days · {{ c }} customers{% endblocktranslate %}</span></div></div>
     <div class="nzp-stat" style="--c:#8b5cf6"><i class="fas fa-sack-dollar" aria-hidden="true"></i><div><b>{{ kpi.revenue }}<small> {% translate "so'm" %}</small></b><span>{% translate "Revenue from those orders" %}</span></div></div>
-    <div class="nzp-stat" style="--c:#e11d48"><i class="fas fa-percent" aria-hidden="true"></i><div><b>{{ kpi.discount }}<small> {% translate "so'm" %}</small></b><span>{% translate "Discount given" %}</span></div></div>
+    <div class="nzp-stat" style="--c:#e11d48"><i class="fas fa-percent" aria-hidden="true"></i><div><b>{{ kpi.discount }}<small> {% translate "so'm" %}</small></b><span>{% translate "Discount given" %}{% if kpi.eff.share %} · <span>{{ kpi.eff.share }}%</span>{% endif %}</span></div></div>
+    {% if kpi.eff.roi %}<div class="nzp-stat" style="--c:{% if kpi.eff.level == 'good' %}#10b981{% elif kpi.eff.level == 'ok' %}#f59e0b{% else %}#e11d48{% endif %}"><i class="fas fa-scale-balanced" aria-hidden="true"></i><div><b>×{{ kpi.eff.roi }}</b><span>{% translate "ROI — har 1 so'm chegirmaga tushum" %}</span></div></div>{% endif %}
   </div>
 
   <div class="nzp-toolbar">
@@ -40,7 +41,7 @@
         <span><b class="wx-discount">{{ c.nz.discount }}</b></span>
         <span class="wx-tags">{% if c.min_order_amount %}<span class="nzd-tag" style="--t:#0ea5e9">{% translate "from" %} {{ c.min_order_amount|floatformat:0 }}</span>{% endif %}{% if c.max_per_customer %}<span class="nzd-tag" style="--t:#6366f1">{{ c.max_per_customer }}× {% translate "per customer" %}</span>{% endif %}{% if c.nz.ends %}<span class="nzd-tag" style="--t:{% if c.nz.soon %}#e11d48{% else %}#64748b{% endif %}">{% blocktranslate with d=c.nz.ends %}until {{ d }}{% endblocktranslate %}</span>{% endif %}{% if not c.min_order_amount and not c.max_per_customer and not c.nz.ends %}<small class="wx-muted">{% translate "no limits" %}</small>{% endif %}</span>
         <span>{% if c.nz.limit %}<b>{{ c.nz.uses }} / {{ c.nz.limit }}</b><span class="wx-progress"><i style="width:{{ c.nz.pct }}%"></i></span>{% else %}<b>{{ c.nz.uses }}</b><small>{% translate "no limit" %}</small>{% endif %}</span>
-        <span class="r">{% if c.nz.revenue %}<b>{{ c.nz.revenue }}</b><small>{{ c.nz.customers }} {% translate "customers" %}</small>{% else %}<small>—</small>{% endif %}</span>
+        <span class="r">{% if c.nz.revenue %}<b>{{ c.nz.revenue }}</b><small>{{ c.nz.customers }} {% translate "customers" %}{% if c.nz.eff.roi %} · <span class="cp-roi is-{{ c.nz.eff.level }}" title="{% translate "ROI — har 1 so'm chegirmaga tushum" %}">ROI ×{{ c.nz.eff.roi }}</span>{% endif %}</small>{% else %}<small>—</small>{% endif %}</span>
         <span><span class="nzd-pill" style="--t:{{ c.nz.color }}"><i class="fas {{ c.nz.icon }}" aria-hidden="true"></i> {{ c.nz.label }}</span></span>
       </a>
       {% endfor %}

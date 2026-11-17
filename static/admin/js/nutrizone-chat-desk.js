@@ -113,7 +113,9 @@
     var side = m.kind === "customer" ? "in" : "out";
     var ticks = side === "out" ? (m.read_at ? '<i class="fas fa-check-double read" title="O\'qildi" aria-label="O\'qildi"></i>' : '<i class="fas fa-check" title="Yuborildi" aria-label="Yuborildi"></i>') : "";
     return '<div class="nzc-msg ' + side + " " + m.kind + (m.type === "sticker" || m.type === "card" ? " is-sticker" : "") + '" data-mid="' + m.id + '">' +
-      (side === "out" ? '<small class="nzc-who">' + esc(m.who) + "</small>" : "") + '<div class="nzc-bubble">' + body +
+      (side === "out" ? '<small class="nzc-who">' + esc(m.who) + "</small>" : "") +
+      (m.mine && !m.deleted ? '<button type="button" class="nzc-del" data-del="' + esc(m.id) + '" title="Xabarni o\'chirish" aria-label="Xabarni o\'chirish"><i class="fas fa-trash-can" aria-hidden="true"></i></button>' : "") +
+      '<div class="nzc-bubble">' + body +
       '<span class="nzc-time">' + (m.edited ? "tahrirlangan · " : "") + hm(m.at) + " " + ticks + "</span></div></div>";
   }
   function renderMsgs(scroll) {
@@ -129,6 +131,7 @@
     var actions = [];
     if (c.can_reply && c.status === "open" && c.assigned !== "me") actions.push('<button type="button" class="nzc-act primary" data-act="take"><i class="fas fa-hand" aria-hidden="true"></i> O\'zimga olish</button>');
     if (c.status === "open") actions.push('<button type="button" class="nzc-act" data-act="close"><i class="fas fa-circle-check" aria-hidden="true"></i> Yopish</button>');
+    if (c.status === "archived") actions.push('<button type="button" class="nzc-act primary" data-act="unarchive"><i class="fas fa-box-open" aria-hidden="true"></i> Arxivdan chiqarish</button>');
     if (c.status === "closed") actions.push('<button type="button" class="nzc-act" data-act="reopen"><i class="fas fa-rotate-left" aria-hidden="true"></i> Qayta ochish</button>', '<button type="button" class="nzc-act" data-act="archive"><i class="fas fa-box-archive" aria-hidden="true"></i> Arxivlash</button>');
     $("[data-head]").innerHTML = '<button type="button" class="nzc-back" data-back aria-label="Orqaga"><i class="fas fa-arrow-left" aria-hidden="true"></i></button>' + avatar(p || { name: "Mijoz" }, "lg") +
       '<div class="nzc-head-main"><b>' + esc(p ? p.name : "Mijoz") + "</b><small>" + esc(p ? p.phone : "") + (c.store ? " · " + esc(c.store) : "") + "</small>" +
@@ -278,8 +281,19 @@
       var name = act.getAttribute("data-act");
       if ((name === "close" || name === "archive") && !window.confirm((window.nzTranslate || String)(name === "close" ? "Suhbat yopilsinmi? Mijoz yangi xabar yozsa, uni qayta ochish mumkin." : "Suhbat arxivga o'tkazilsinmi?"))) return;
       act.disabled = true;
-      post(url("action", S.active, name)).then(function (d) { S.conv = d.conversation; renderHead(); loadQueue(); toast({ take: "Suhbat sizga biriktirildi", close: "Suhbat yopildi", reopen: "Suhbat qayta ochildi", archive: "Arxivlandi" }[name]); })
+      post(url("action", S.active, name)).then(function (d) { S.conv = d.conversation; renderHead(); loadQueue(); toast({ take: "Suhbat sizga biriktirildi", close: "Suhbat yopildi", reopen: "Suhbat qayta ochildi", archive: "Arxivlandi", unarchive: "Suhbat arxivdan chiqarildi" }[name]); })
         .catch(function (err) { toast(err.message, true); act.disabled = false; });
+      return;
+    }
+    var del = e.target.closest("[data-del]");
+    if (del) {
+      if (!window.confirm((window.nzTranslate || String)("Xabar o'chirilsinmi? Mijoz uni boshqa ko'rmaydi."))) return;
+      var mid = del.getAttribute("data-del");
+      del.disabled = true;
+      post(url("action", S.active, "delete"), { message_id: mid }).then(function () {
+        S.msgs.forEach(function (m) { if (m.id === mid) { m.deleted = true; m.content = ""; m.attachment = null; } });
+        renderMsgs(false); loadQueue(); toast("Xabar o'chirildi");
+      }).catch(function (err) { toast(err.message, true); del.disabled = false; });
       return;
     }
     var tool = e.target.closest("[data-tool]");

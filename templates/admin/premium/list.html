@@ -1,7 +1,7 @@
 {% extends "admin/change_list.html" %}
 {% load i18n static admin_list nzi %}
 {# Shared premium list (Identity, Loyalty, ...) -- rows come from PremiumListMixin (apps/platform/infrastructure/premium_admin.py). #}
-{% block extrastyle %}{{ block.super }}<link rel="stylesheet" href="{% static 'admin/css/nutrizone-platform.css' %}?v=5"><link rel="stylesheet" href="{% static 'admin/css/nutrizone-premium.css' %}?v=6">{% for c in nz.css %}<link rel="stylesheet" href="{% static c %}?v={{ nz.asset_v }}">{% endfor %}{% endblock %}
+{% block extrastyle %}{{ block.super }}<link rel="stylesheet" href="{% static 'admin/css/nutrizone-platform.css' %}?v=6"><link rel="stylesheet" href="{% static 'admin/css/nutrizone-premium.css' %}?v=6">{% for c in nz.css %}<link rel="stylesheet" href="{% static c %}?v={{ nz.asset_v }}">{% endfor %}{% endblock %}
 {% block content_title %}{% endblock %}
 {% block object-tools %}{% endblock %}
 {% block search %}{% endblock %}
@@ -30,6 +30,7 @@
     {% endfor %}
   </div>
   {% endif %}
+  {% if nz.panel %}{{ nz.panel }}{% endif %}
 
   <div class="nzi-toolbar">
     {% if nz.tabs %}<nav class="nzp-tabs" aria-label="{% translate 'Holat' %}">{% for t in nz.tabs %}<a href="{{ t.url }}" class="nzp-tab{% if t.on %} on{% endif %}" style="--t:{{ t.color }}">{{ t.label }} <b>{{ t.n }}</b></a>{% endfor %}</nav>{% endif %}

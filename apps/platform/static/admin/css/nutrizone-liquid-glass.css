@@ -224,6 +224,18 @@ body.nz-glass-page #changelist .results, body.nz-glass-page #changelist-filter, 
 }
 body.nz-glass-page #changelist table thead th { background: transparent !important; }
 body.nz-glass-page .nza-tabs, body.nz-glass-page .nza-periods, body.nz-glass-page .nzsc-ranges { background: var(--lg-surface-soft) !important; border-color: var(--lg-border) !important; box-shadow: var(--lg-edge); }
+/* shared kits (nzp-stat KPI tiles, premium list nzi-stat, tab strips, desk tables) -- Narxlash, POS, To'lovlar, Moliya … */
+body.nz-glass-page :is(.nzp-stat, .nzi-stat, .wx-stat) {
+  background-color: var(--lg-surface) !important; border: 1px solid var(--lg-border) !important;
+  -webkit-backdrop-filter: var(--lg-blur); backdrop-filter: var(--lg-blur); box-shadow: var(--lg-edge), var(--lg-shadow) !important;
+}
+body.nz-glass-page :is(a.nzp-stat, a.nzi-stat):hover { transform: translateY(-2px); box-shadow: var(--lg-edge), var(--lg-shadow-hover) !important; }
+body.nz-glass-page :is(.nzp-tabs, .nzi-tabs) { background: var(--lg-surface-soft) !important; border-color: var(--lg-border) !important; box-shadow: var(--lg-edge); }
+body.nz-glass-page :is(.nzd-th, .nzi-th) { background: transparent !important; }
+body.nz-glass-page :is(.nzd-tr:not(.nzd-th), .nzi-tr:not(.nzi-th)) { background-color: transparent; }
+body.nz-glass-page :is(.nzd-tr:not(.nzd-th), .nzi-tr:not(.nzi-th)):hover { background-color: color-mix(in srgb, var(--nz-primary) 6%, transparent) !important; }
+body.nz-glass-page :is(.nzp-select, .nzp-search input, .nzi-search input, .nzi-filter select) { background-color: var(--lg-surface-soft) !important; border-color: var(--lg-border) !important; }
+
 @media (prefers-reduced-transparency: reduce) {
   body.nz-glass-page :is(.nza-card, .nza-kpi, .nzp-card, .nz-card, .card), .nz-lg .nz-card { -webkit-backdrop-filter: none; backdrop-filter: none; background-color: var(--nz-surface) !important; }
 }

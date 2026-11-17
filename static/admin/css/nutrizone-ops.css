@@ -1,0 +1,210 @@
+/*
+ * Buyurtmalar boshqaruvi + Savat: liquid glass surfaces and motion for the order list, board, returns,
+ * cancellations, delivery desk, couriers, delivery prices, carts and cart history -- plus the new
+ * components (courier card nzk-*, delivery analysis nzdp-*, cart insights nzci-*).
+ * Loaded on every dashboard page (base_site.html); glass rules only apply under body.nz-glass-page.
+ */
+
+/* ---------------------------------------------------------------- glass surfaces */
+body.nz-glass-page :is(.nzp-stat, .nzi-stat, .nzb-col, .nzdl-card, .nzdl-panel, .nzci-kpi, .nzk-tile, .nzdp-zone) {
+  background-color: var(--lg-surface) !important;
+  -webkit-backdrop-filter: var(--lg-blur);
+  backdrop-filter: var(--lg-blur);
+  border: 1px solid var(--lg-border) !important;
+  box-shadow: var(--lg-edge), var(--lg-shadow) !important;
+}
+body.nz-glass-page :is(.nzp-tabs, .nzo-tabs, .nzci-periods, .nzb-toolbar, .nzdl-filters) {
+  background: var(--lg-surface-soft) !important; border-color: var(--lg-border) !important; box-shadow: var(--lg-edge);
+  -webkit-backdrop-filter: var(--lg-blur); backdrop-filter: var(--lg-blur);
+}
+body.nz-glass-page :is(.nzb-card, .nzo-tab) { background-color: var(--lg-surface-strong) !important; }
+body.nz-glass-page .nzd-table .nzd-th { background: transparent !important; }
+body.nz-glass-page .nzd-tr:not(.nzd-th) { transition: background-color .18s ease, transform .18s ease; }
+body.nz-glass-page a.nzd-tr:hover { background: color-mix(in srgb, var(--nz-primary) 7%, transparent) !important; }
+
+/* ---------------------------------------------------------------- motion */
+@keyframes nz-rise { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
+@keyframes nz-grow-x { from { transform: scaleX(0); } to { transform: scaleX(1); } }
+@keyframes nz-grow-y { from { transform: scaleY(0); } to { transform: scaleY(1); } }
+@keyframes nz-pulse-dot { 0%, 100% { box-shadow: 0 0 0 0 color-mix(in srgb, var(--c, #16a34a) 45%, transparent); } 50% { box-shadow: 0 0 0 6px transparent; } }
+
+body.nz-glass-page :is(.nzp-hero, .nzp-stats, .nzci-kpis, .nzci-grid > *, .nzk-tiles, .nzdp-zones, #changelist .results, .nzp-card) {
+  animation: nz-rise .45s cubic-bezier(.2, .7, .2, 1) both;
+}
+body.nz-glass-page .nzp-stats > *, body.nz-glass-page .nzci-kpis > * { animation: nz-rise .45s cubic-bezier(.2, .7, .2, 1) both; }
+body.nz-glass-page .nzp-stats > *:nth-child(2), body.nz-glass-page .nzci-kpis > *:nth-child(2) { animation-delay: .04s; }
+body.nz-glass-page .nzp-stats > *:nth-child(3), body.nz-glass-page .nzci-kpis > *:nth-child(3) { animation-delay: .08s; }
+body.nz-glass-page .nzp-stats > *:nth-child(4), body.nz-glass-page .nzci-kpis > *:nth-child(4) { animation-delay: .12s; }
+body.nz-glass-page .nzp-stats > *:nth-child(5), body.nz-glass-page .nzci-kpis > *:nth-child(5) { animation-delay: .16s; }
+body.nz-glass-page .nzp-stats > *:nth-child(6) { animation-delay: .2s; }
+body.nz-glass-page .nzci-grid > *:nth-child(2) { animation-delay: .06s; }
+body.nz-glass-page .nzci-grid > *:nth-child(3) { animation-delay: .12s; }
+body.nz-glass-page .nzci-grid > *:nth-child(4) { animation-delay: .18s; }
+body.nz-glass-page .nzci-grid > *:nth-child(5) { animation-delay: .24s; }
+body.nz-glass-page .nzd-tr:not(.nzd-th) { animation: nz-rise .4s cubic-bezier(.2, .7, .2, 1) both; animation-delay: min(calc(var(--i, 0) * 22ms), 440ms); }
+body.nz-glass-page :is(.nzp-stat, .nzi-stat, .nzci-kpi, .nzk-tile, .nzdp-zone) { transition: transform .2s ease, box-shadow .2s ease; }
+body.nz-glass-page :is(a.nzp-stat, a.nzi-stat, .nzci-kpi, .nzdp-zone):hover { transform: translateY(-3px); box-shadow: var(--lg-edge), var(--lg-shadow-hover) !important; }
+body.nz-glass-page .nzb-card { transition: transform .18s ease, box-shadow .18s ease; }
+body.nz-glass-page .nzb-card:hover { transform: translateY(-2px); }
+body.nz-glass-page .nzb-live, body.nz-glass-page .nzci-live { animation: nz-pulse-dot 2.2s ease-in-out infinite; }
+
+@media (prefers-reduced-motion: reduce) {
+  body.nz-glass-page *, body.nz-glass-page *::before, body.nz-glass-page *::after { animation: none !important; transition: none !important; }
+}
+
+/* ---------------------------------------------------------------- shared bits */
+.nzci-bar, .nzdp-bar { position: relative; height: 8px; border-radius: 999px; background: color-mix(in srgb, var(--nz-text-secondary, #64748b) 14%, transparent); overflow: hidden; }
+.nzci-bar i, .nzdp-bar i { position: absolute; inset: 0 auto 0 0; border-radius: inherit; background: linear-gradient(90deg, var(--nz-primary, #6366f1), #22d3ee); transform-origin: left; animation: nz-grow-x .8s cubic-bezier(.2, .7, .2, 1) both; }
+
+/* ---------------------------------------------------------------- cart insights (Savatlar → Tahlil) */
+.nzci { display: grid; gap: 16px; margin-top: 4px; }
+.nzci-head { display: flex; justify-content: space-between; align-items: flex-end; gap: 12px; flex-wrap: wrap; }
+.nzci-head h3 { margin: 0; font-size: 1.15rem; font-weight: 800; }
+.nzci-head h3 i { color: var(--nz-primary, #6366f1); margin-right: 6px; }
+.nzci-head p { margin: 2px 0 0; color: var(--nz-text-secondary); font-size: .85rem; }
+.nzci-periods { display: inline-flex; gap: 4px; padding: 4px; border-radius: 12px; border: 1px solid var(--nz-border, #e2e8f0); }
+.nzci-periods a { padding: 6px 12px; border-radius: 9px; font-weight: 700; font-size: .82rem; color: var(--nz-text-secondary); text-decoration: none; }
+.nzci-periods a.on { background: var(--nz-primary, #6366f1); color: #fff; box-shadow: 0 6px 16px -8px var(--nz-primary, #6366f1); }
+.nzci-kpis { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 12px; }
+.nzci-kpi { position: relative; padding: 14px 16px; border-radius: 16px; border: 1px solid var(--nz-border, #e2e8f0); background: var(--nz-surface, #fff); overflow: hidden; }
+.nzci-kpi::before { content: ""; position: absolute; inset: 0 auto 0 0; width: 4px; background: var(--c); }
+.nzci-kpi small { display: block; font-size: .72rem; font-weight: 700; text-transform: uppercase; letter-spacing: .04em; color: var(--nz-text-secondary); }
+.nzci-kpi b { display: block; margin: 4px 0 2px; font-size: clamp(1.05rem, 1.6vw, 1.45rem); font-weight: 800; font-variant-numeric: tabular-nums; color: var(--nz-text-primary); white-space: nowrap; }
+.nzci-kpi b em { font-style: normal; font-size: .8em; color: var(--nz-text-secondary); }
+.nzci-kpi span { font-size: .78rem; color: var(--nz-text-secondary); }
+.nzci-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
+.nzci-card { padding: 18px 20px !important; }
+.nzci-card h4 { display: flex; justify-content: space-between; align-items: center; gap: 8px; margin: 0 0 12px; font-size: .98rem; font-weight: 800; }
+.nzci-card h4 a { font-size: .8rem; font-weight: 700; }
+.nzci-h-sm { margin-top: 18px !important; font-size: .86rem !important; }
+.nzci-wide { grid-column: 1 / -1; }
+.nzci-sub { margin: -6px 0 12px; color: var(--nz-text-secondary); font-size: .82rem; }
+.nzci-note { margin: 12px 0 0; padding: 10px 12px; border-radius: 12px; font-size: .82rem; background: color-mix(in srgb, var(--nz-primary, #6366f1) 8%, transparent); color: var(--nz-text-primary); }
+.nzci-note i { color: #f59e0b; margin-right: 4px; }
+.nzci-funnel { list-style: none; margin: 0; padding: 0; display: grid; gap: 10px; }
+.nzci-funnel li { display: grid; grid-template-columns: 34px minmax(110px, 1fr) 2fr 54px 54px; align-items: center; gap: 10px; }
+.nzci-f-ico { width: 34px; height: 34px; border-radius: 10px; display: grid; place-items: center; color: var(--c); background: color-mix(in srgb, var(--c) 15%, transparent); }
+.nzci-f-l { font-weight: 700; font-size: .86rem; }
+.nzci-f-bar { height: 12px; border-radius: 999px; background: color-mix(in srgb, var(--c) 12%, transparent); overflow: hidden; }
+.nzci-f-bar i { display: block; height: 100%; width: var(--w); border-radius: inherit; background: var(--c); transform-origin: left; animation: nz-grow-x .9s cubic-bezier(.2, .7, .2, 1) both; animation-delay: calc(var(--i) * 120ms); }
+.nzci-funnel b { text-align: right; font-variant-numeric: tabular-nums; }
+.nzci-funnel small { text-align: right; color: var(--nz-text-secondary); font-variant-numeric: tabular-nums; }
+.nzci-legend { display: inline-flex; align-items: center; gap: 6px; font-size: .75rem; font-weight: 600; color: var(--nz-text-secondary); }
+.nzci-legend i { width: 10px; height: 10px; border-radius: 3px; background: var(--c); margin-left: 6px; }
+.nzci-chart { height: 180px; display: grid; grid-auto-flow: column; grid-auto-columns: 1fr; gap: 3px; align-items: end; padding-bottom: 18px; position: relative; }
+.nzci-col { position: relative; height: 100%; display: flex; align-items: flex-end; justify-content: center; gap: 1px; }
+.nzci-col span { width: 45%; min-height: 2px; border-radius: 4px 4px 1px 1px; transform-origin: bottom; animation: nz-grow-y .7s cubic-bezier(.2, .7, .2, 1) both; animation-delay: calc(var(--i) * 15ms); }
+.nzci-col .a { background: linear-gradient(180deg, #818cf8, #6366f1); }
+.nzci-col .b { background: linear-gradient(180deg, #4ade80, #16a34a); }
+.nzci-col small { position: absolute; bottom: -18px; left: 50%; transform: translateX(-50%); font-size: .66rem; color: var(--nz-text-secondary); white-space: nowrap; }
+.nzci-col:hover span { filter: brightness(1.15); }
+.nzci-age, .nzci-src { display: grid; grid-template-columns: 76px 1fr 120px; grid-template-rows: auto auto; column-gap: 10px; align-items: center; padding: 6px 0; }
+.nzci-age > span, .nzci-src > span { font-weight: 700; font-size: .84rem; }
+.nzci-age > b, .nzci-src > b { text-align: right; font-variant-numeric: tabular-nums; font-size: .88rem; }
+.nzci-age > small, .nzci-src > small { grid-column: 2 / 4; color: var(--nz-text-secondary); font-size: .74rem; }
+.nzci-age.old .nzci-bar i { background: linear-gradient(90deg, #94a3b8, #cbd5e1); }
+.nzci-src { grid-template-columns: 120px 1fr 50px; }
+.nzci-remind { margin-top: 12px; }
+.nzci-remind summary { list-style: none; cursor: pointer; display: inline-flex; }
+.nzci-remind summary::-webkit-details-marker { display: none; }
+.nzci-remind form { margin-top: 10px; padding: 12px; border-radius: 12px; border: 1px dashed color-mix(in srgb, var(--nz-primary, #6366f1) 45%, transparent); }
+.nzci-remind form p { margin: 0 0 10px; font-size: .82rem; color: var(--nz-text-secondary); }
+.nzci-rem { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; }
+.nzci-rem div { padding: 10px; border-radius: 12px; background: color-mix(in srgb, var(--nz-primary, #6366f1) 7%, transparent); }
+.nzci-rem b { display: block; font-size: 1.05rem; font-weight: 800; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.nzci-rem small { font-size: .72rem; color: var(--nz-text-secondary); }
+.nzci-prod { display: grid; grid-template-columns: 40px minmax(180px, 1.4fr) 1fr 130px; gap: 12px; align-items: center; padding: 8px 0; border-bottom: 1px solid var(--lg-hairline, rgba(15, 23, 42, .06)); animation: nz-rise .4s both; animation-delay: calc(var(--i) * 50ms); }
+.nzci-prod:last-of-type { border-bottom: 0; }
+.nzci-prod img, .nzci-prod .ph { width: 40px; height: 40px; border-radius: 10px; object-fit: contain; background: #fff; display: grid; place-items: center; }
+.nzci-prod-n b { display: block; font-size: .86rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.nzci-prod-n small { color: var(--nz-text-secondary); font-size: .74rem; }
+.nzci-prod > b { text-align: right; font-variant-numeric: tabular-nums; }
+
+/* ---------------------------------------------------------------- courier list + card (Kuryerlar) */
+.nzk-cr { display: inline-flex; gap: 10px; align-items: center; }
+.nzk-cr-id { flex: none; min-width: 58px; padding: 6px 8px; border-radius: 10px; text-align: center; font-weight: 800; font-size: .74rem; letter-spacing: .03em;
+  color: #0369a1; background: linear-gradient(135deg, rgba(14, 165, 233, .16), rgba(99, 102, 241, .14)); border: 1px solid rgba(14, 165, 233, .25); }
+html[data-nz-theme="dark"] .nzk-cr-id { color: #7dd3fc; }
+.nzk-card h4 { margin: 18px 0 8px; font-weight: 800; }
+.nzk-acc { display: flex; align-items: center; gap: 12px; padding: 12px 14px; border-radius: 14px; background: color-mix(in srgb, #94a3b8 12%, transparent); }
+.nzk-acc.ok { background: color-mix(in srgb, #16a34a 11%, transparent); }
+.nzk-acc > i { font-size: 18px; color: #64748b; }
+.nzk-acc.ok > i { color: #16a34a; }
+.nzk-acc span { flex: 1; }
+.nzk-acc small { color: var(--nz-text-secondary); }
+.nzk-acc a { font-weight: 700; font-size: .82rem; white-space: nowrap; }
+.nzk-acc .nzk-copy { border: 0; border-radius: 8px; padding: 6px 10px; font-size: .78rem; font-weight: 700; cursor: pointer; background: color-mix(in srgb, var(--nz-primary) 12%, transparent); color: var(--nz-primary); white-space: nowrap; }
+@media (max-width: 640px) { .nzk-acc { flex-wrap: wrap; } }
+.nzk-tiles { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 10px; margin-top: 12px; }
+.nzk-tile { padding: 12px; border-radius: 14px; border: 1px solid var(--nz-border, #e2e8f0); background: var(--nz-surface, #fff); }
+.nzk-tile small { display: block; font-size: .7rem; font-weight: 700; text-transform: uppercase; letter-spacing: .04em; color: var(--nz-text-secondary); }
+.nzk-tile b { display: block; margin: 4px 0 2px; font-size: 1.1rem; font-weight: 800; white-space: nowrap; font-variant-numeric: tabular-nums; }
+.nzk-tile span { font-size: .74rem; color: var(--nz-text-secondary); }
+.nzk-settle { margin-top: 12px; display: inline-flex; align-items: center; gap: 8px; padding: 10px 16px; border: 0; border-radius: 12px; cursor: pointer; font-weight: 800;
+  color: #fff; background: linear-gradient(135deg, #f59e0b, #ea580c); box-shadow: 0 10px 24px -12px #ea580c; transition: transform .15s ease; }
+.nzk-settle:hover { transform: translateY(-1px); }
+.nzk-table { width: 100%; border-collapse: collapse; font-size: .84rem; }
+.nzk-table th { text-align: left; font-size: .7rem; text-transform: uppercase; letter-spacing: .04em; color: var(--nz-text-secondary); padding: 6px 8px; }
+.nzk-table td { padding: 8px; border-top: 1px solid var(--lg-hairline, rgba(15, 23, 42, .07)); vertical-align: top; }
+.nzk-table .r { text-align: right; }
+.nzk-st { display: inline-block; padding: 2px 8px; border-radius: 999px; font-size: .74rem; font-weight: 700; color: var(--t); background: color-mix(in srgb, var(--t) 14%, transparent); }
+.nzk-ok { color: #16a34a; font-weight: 700; font-size: .78rem; }
+.nzk-due { color: #d97706; font-weight: 800; font-size: .78rem; }
+
+/* ---------------------------------------------------------------- delivery prices analysis (Yetkazib berish narxlari) */
+.nzdp-lead { margin: 0 0 12px; color: var(--nz-text-secondary); font-size: .84rem; }
+.nzdp-zones { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }
+.nzdp-zone { position: relative; padding: 14px 16px; border-radius: 16px; border: 1px solid var(--nz-border, #e2e8f0); background: var(--nz-surface, #fff); overflow: hidden; }
+.nzdp-zone::before { content: ""; position: absolute; inset: 0 0 auto 0; height: 3px; background: var(--t); }
+.nzdp-zone-h { display: flex; align-items: center; gap: 8px; font-weight: 800; font-size: .86rem; color: var(--t); }
+.nzdp-zone-h span { margin-left: auto; font-size: .76rem; padding: 2px 8px; border-radius: 999px; background: color-mix(in srgb, var(--t) 14%, transparent); }
+.nzdp-zone > b { display: block; margin: 8px 0 2px; font-size: 1.3rem; font-weight: 800; font-variant-numeric: tabular-nums; }
+.nzdp-zone > small { color: var(--nz-text-secondary); font-size: .78rem; }
+.nzdp-zone .nzdp-bar { margin: 10px 0; }
+.nzdp-zone .nzdp-bar i { background: var(--t); }
+.nzdp-zone-f { font-size: .8rem; line-height: 1.5; }
+.nzdp h4 { margin: 18px 0 8px; font-weight: 800; font-size: .9rem; }
+.nzdp-row { display: grid; grid-template-columns: minmax(150px, 1fr) 2fr 40px 120px; gap: 10px; align-items: center; padding: 5px 0; font-size: .84rem; }
+.nzdp-row b { text-align: right; }
+.nzdp-row small { text-align: right; color: var(--nz-text-secondary); }
+.nzdp-health { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
+.nzdp-h { display: flex; gap: 10px; align-items: flex-start; padding: 10px 12px; border-radius: 12px; font-size: .86rem; --t: #0ea5e9; background: color-mix(in srgb, var(--t) 9%, transparent); border: 1px solid color-mix(in srgb, var(--t) 22%, transparent); }
+.nzdp-h.danger { --t: #e11d48; } .nzdp-h.warning { --t: #d97706; } .nzdp-h.ok { --t: #16a34a; }
+.nzdp-h > i { color: var(--t); margin-top: 2px; }
+.nzdp-h span { flex: 1; }
+.nzdp-h a { font-weight: 700; white-space: nowrap; }
+.nzdp-calc-grid { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 10px; }
+.nzdp-calc-grid label { display: grid; gap: 4px; font-size: .74rem; font-weight: 700; text-transform: uppercase; letter-spacing: .03em; color: var(--nz-text-secondary); }
+.nzdp-calc-grid :is(select, input) { width: 100%; padding: 8px 10px; border-radius: 10px; border: 1px solid var(--nz-border, #cbd5e1); background: var(--nz-surface, #fff); color: var(--nz-text-primary); font-size: .9rem; text-transform: none; letter-spacing: 0; }
+.nzdp-calc-grid label[hidden] { display: none; }
+.nzdp-result { margin-top: 14px; padding: 14px 16px; border-radius: 14px; background: linear-gradient(120deg, color-mix(in srgb, var(--nz-primary, #6366f1) 12%, transparent), color-mix(in srgb, #10b981 10%, transparent)); min-height: 54px; }
+.nzdp-result .fee { font-size: 1.6rem; font-weight: 900; font-variant-numeric: tabular-nums; animation: nz-rise .35s both; }
+.nzdp-result .meta { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 6px; }
+.nzdp-result .meta span { padding: 3px 9px; border-radius: 999px; font-size: .76rem; font-weight: 600; background: var(--lg-surface-strong, rgba(255, 255, 255, .7)); }
+.nzdp-muted { color: var(--nz-text-secondary); }
+
+@media (max-width: 1100px) {
+  .nzci-kpis { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .nzk-tiles, .nzdp-calc-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+}
+@media (max-width: 760px) {
+  .nzci-kpis, .nzci-grid, .nzdp-zones, .nzk-tiles, .nzdp-calc-grid, .nzci-rem { grid-template-columns: 1fr 1fr; }
+  .nzci-grid > * { grid-column: 1 / -1; }
+  .nzci-funnel li { grid-template-columns: 30px 1fr 1fr 40px; }
+  .nzci-funnel small { display: none; }
+  .nzci-prod { grid-template-columns: 36px 1fr 100px; }
+  .nzci-prod .nzci-bar { display: none; }
+  .nzdp-row { grid-template-columns: 1fr 1fr 34px; }
+  .nzdp-row small { display: none; }
+}
+
+/* ---------------------------------------------------------------- cart history (Savat tarixi) */
+.nzch { margin-bottom: 16px; }
+.nzch-chart { height: 150px; }
+.nzci-col .nzch-rm { background: linear-gradient(180deg, #fb7185, #e11d48); }
+.nzch-prod { grid-template-columns: 36px minmax(160px, 1.6fr) 1fr 44px; padding: 6px 0; }
+.nzch-prod img, .nzch-prod .ph { width: 36px; height: 36px; }
+.nzch-prod.rm .nzci-bar i { background: linear-gradient(90deg, #fb7185, #e11d48); }
+.nzch-day { display: block !important; padding: 14px 16px 6px !important; font-size: .74rem; font-weight: 800; text-transform: uppercase; letter-spacing: .06em; color: var(--nz-primary, #6366f1); border: 0 !important; background: transparent !important; }
+.nzch-day span { display: inline-flex; align-items: center; gap: 6px; }
+.nzch-day span::before { content: ""; width: 8px; height: 8px; border-radius: 50%; background: currentColor; box-shadow: 0 0 0 4px color-mix(in srgb, currentColor 18%, transparent); }

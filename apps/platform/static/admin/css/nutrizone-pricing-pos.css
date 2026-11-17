@@ -1,0 +1,105 @@
+/* Narxlash + POS analysis blocks (coupon ROI, Kassirlar nazorati, sales insight, payroll forecast) and phone layouts
+   for the coupon, sales and price-list tables. Loaded after the page's own stylesheets. */
+
+/* ---- coupon ROI chip */
+.cp-roi { display: inline-block; padding: 1px 6px; border-radius: 999px; font-weight: 700; font-size: .72rem; background: color-mix(in srgb, var(--t, #64748b) 14%, transparent); color: var(--t, #64748b); }
+.cp-roi.is-good { --t: #059669; } .cp-roi.is-ok { --t: #d97706; } .cp-roi.is-bad { --t: #e11d48; }
+
+/* ---- Kassirlar nazorati (Narx o'zgarishlari) */
+.pcx { padding: 16px 18px; margin-bottom: 16px; }
+.pcx-head { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 6px 16px; margin-bottom: 10px; }
+.pcx-head h3 { margin: 0; font-size: 1rem; font-weight: 800; display: flex; align-items: center; gap: 8px; }
+.pcx-head h3 i { color: #d97706; }
+.pcx-head h3 small, .pcx-head p { color: var(--nz-text-secondary, #64748b); font-weight: 600; font-size: .8rem; margin: 0; }
+.pcx-head p b { color: var(--nz-text, inherit); }
+.pcx-alert { flex-basis: 100%; display: flex; flex-wrap: wrap; align-items: center; gap: 4px; padding: 8px 12px; border-radius: 12px; font-size: .82rem; color: #b91c1c; background: color-mix(in srgb, #dc2626 10%, transparent); border: 1px solid color-mix(in srgb, #dc2626 25%, transparent); }
+.pcx-list { display: flex; flex-direction: column; }
+.pcx-row { display: grid; grid-template-columns: minmax(170px, 1.6fr) minmax(80px, 1.4fr) 92px 120px 120px; align-items: center; gap: 14px; padding: 9px 4px; border-top: 1px solid var(--nz-border, rgba(148, 163, 184, .25)); }
+.pcx-row.is-flag { background: color-mix(in srgb, #f59e0b 6%, transparent); border-radius: 10px; }
+.pcx-row > span { display: flex; flex-direction: column; min-width: 0; }
+.pcx-row small { color: var(--nz-text-secondary, #64748b); font-size: .74rem; }
+.pcx-name b { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.pcx-flag { align-self: flex-start; margin-top: 3px; padding: 1px 8px; border-radius: 999px; font-size: .7rem; font-weight: 700; color: var(--t); background: color-mix(in srgb, var(--t) 13%, transparent); }
+.pcx-bar { height: 8px; border-radius: 99px; background: color-mix(in srgb, var(--nz-text-secondary, #64748b) 14%, transparent); overflow: hidden; display: block !important; }
+.pcx-bar i { display: block; height: 100%; border-radius: inherit; background: linear-gradient(90deg, #f59e0b, #dc2626); }
+.pcx-rate, .pcx-num { align-items: flex-end; text-align: right; font-variant-numeric: tabular-nums; }
+.pcx-note { margin: 10px 0 0; font-size: .74rem; color: var(--nz-text-secondary, #64748b); }
+
+/* ---- Savdolar insight */
+.psx { display: grid; grid-template-columns: 1.2fr 1.2fr 1fr; gap: 22px; padding: 16px 18px; margin-bottom: 16px; }
+.psx h4 { margin: 0 0 8px; font-size: .86rem; font-weight: 800; display: flex; align-items: center; gap: 7px; flex-wrap: wrap; }
+.psx h4 i { color: var(--nz-primary, #2563eb); }
+.psx h4 small { font-weight: 600; color: var(--nz-text-secondary, #64748b); }
+.psx-row { display: grid; grid-template-columns: minmax(0, 1.4fr) minmax(40px, 1fr) auto; align-items: center; gap: 10px; padding: 6px 0; border-top: 1px solid var(--nz-border, rgba(148, 163, 184, .2)); }
+.psx-row > span:first-child { display: flex; flex-direction: column; min-width: 0; }
+.psx-row b { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: .84rem; }
+.psx-row small { color: var(--nz-text-secondary, #64748b); font-size: .72rem; }
+.psx-bar { height: 7px; border-radius: 99px; background: color-mix(in srgb, var(--nz-text-secondary, #64748b) 14%, transparent); overflow: hidden; }
+.psx-bar i { display: block; height: 100%; border-radius: inherit; background: linear-gradient(90deg, #10b981, #059669); }
+.psx-bar.is-alt i { background: linear-gradient(90deg, #6366f1, #8b5cf6); }
+.psx-num { font-variant-numeric: tabular-nums; font-size: .84rem; }
+.psx-hours { display: grid; grid-template-columns: repeat(24, 1fr); align-items: end; gap: 2px; height: 74px; }
+.psx-hours span { height: 100%; display: flex; align-items: flex-end; }
+.psx-hours i { display: block; width: 100%; min-height: 2px; border-radius: 3px 3px 1px 1px; background: linear-gradient(180deg, #38bdf8, #2563eb); }
+.psx-axis { display: flex; justify-content: space-between; font-size: .66rem; color: var(--nz-text-secondary, #64748b); margin-top: 4px; }
+.psx-facts { display: flex; gap: 14px; flex-wrap: wrap; margin: 10px 0 0; font-size: .78rem; color: var(--nz-text-secondary, #64748b); }
+.psx-facts b { color: var(--nz-text, inherit); font-size: .95rem; }
+
+/* ---- payroll forecast */
+.py-fc { color: #0891b2; font-weight: 700; white-space: nowrap; }
+
+@media (max-width: 1100px) {
+  .psx { grid-template-columns: 1fr 1fr; }
+  .psx-col:last-child { grid-column: 1 / -1; }
+  .pcx-row { grid-template-columns: minmax(0, 1.5fr) minmax(60px, 1fr) 84px 110px; }
+  .pcx-row > span:last-child { display: none; }
+}
+
+/* ---- phones: tables become cards */
+@media (max-width: 640px) {
+  .psx { grid-template-columns: 1fr; gap: 16px; padding: 14px; }
+  .pcx { padding: 14px; }
+  .pcx-row { grid-template-columns: minmax(0, 1fr) auto; gap: 4px 12px; padding: 10px 6px; }
+  .pcx-name { grid-column: 1; grid-row: 1; }
+  .pcx-rate { grid-column: 2; grid-row: 1; }
+  .pcx-bar { grid-column: 1 / -1; grid-row: 2; }
+  .pcx-row > .pcx-num:nth-of-type(4) { grid-column: 1 / -1; grid-row: 3; flex-direction: row; justify-content: flex-start; gap: 5px; align-items: baseline; }
+
+  /* coupons */
+  .wx-coupon-table .nzd-th { display: none !important; }
+  .wx-coupon-table .nzd-tr:not(.nzd-th) { grid-template-columns: minmax(0, 1fr) auto !important; gap: 6px 12px; padding: 12px 14px; }
+  .wx-coupon-table .nzd-tr > span { display: flex !important; min-width: 0; }
+  .wx-coupon-table .nzd-tr > span:nth-child(1) { grid-column: 1; grid-row: 1; flex-direction: column; }
+  .wx-coupon-table .nzd-tr > span:nth-child(2) { grid-column: 2; grid-row: 1; justify-content: flex-end; }
+  .wx-coupon-table .nzd-tr > span:nth-child(3) { grid-column: 1 / -1; grid-row: 2; flex-wrap: wrap; gap: 4px; }
+  .wx-coupon-table .nzd-tr > span:nth-child(3):empty { display: none !important; }
+  .wx-coupon-table .nzd-tr > span:nth-child(4) { grid-column: 1; grid-row: 3; flex-direction: column; }
+  .wx-coupon-table .nzd-tr > span:nth-child(5) { grid-column: 2; grid-row: 3; flex-direction: column; align-items: flex-end; text-align: right; }
+  .wx-coupon-table .nzd-tr > span:nth-child(6) { grid-column: 1 / -1; grid-row: 4; }
+
+  /* sales */
+  .px-sales-table .nzd-th { display: none !important; }
+  .px-sales-table .nzd-tr:not(.nzd-th) { grid-template-columns: minmax(0, 1fr) auto !important; gap: 6px 12px; padding: 12px 14px; }
+  .px-sales-table .nzd-tr > span { display: flex !important; min-width: 0; }
+  .px-sales-table .nzd-tr > span:nth-child(1) { grid-column: 1; grid-row: 1; flex-direction: column; }
+  .px-sales-table .nzd-tr > span:nth-child(1) b { white-space: nowrap; }
+  .px-sales-table .nzd-tr > span:nth-child(6) { grid-column: 2; grid-row: 1; flex-direction: column; align-items: flex-end; text-align: right; white-space: nowrap; }
+  .px-sales-table .nzd-tr > span:nth-child(2) { grid-column: 1; grid-row: 2; }
+  .px-sales-table .nzd-tr > span:nth-child(7) { grid-column: 2; grid-row: 2; justify-content: flex-end; align-items: center; }
+  .px-sales-table .nzd-tr > span:nth-child(3) { grid-column: 1 / -1; grid-row: 3; flex-direction: row; gap: 6px; align-items: baseline; flex-wrap: wrap; }
+  .px-sales-table .nzd-tr > span:nth-child(4) { display: none !important; }
+  .px-sales-table .nzd-tr > span:nth-child(5) { grid-column: 1 / -1; grid-row: 4; flex-wrap: wrap; gap: 4px; }
+  .px-sales-table .nzd-tr > span:nth-child(5):empty { display: none !important; }
+  .px-sales-toolbar .wx-date-filter { flex-wrap: wrap; justify-content: stretch; width: 100%; }
+  .px-sales-toolbar .wx-date-filter > * { flex: 1 1 140px; min-width: 0; }
+  .wx-type-chips { overflow-x: auto; flex-wrap: nowrap; scrollbar-width: none; }
+  .wx-type-chips a { white-space: nowrap; flex: 0 0 auto; }
+  .px-sales-kpis .nzp-stat b { font-size: 1.12rem; }
+
+  /* price list: the name must wrap inside its cell, never run under the price */
+  .wx-pl-table .wx-prod { min-width: 0; overflow: hidden; }
+  .wx-pl-table .wx-prod > span:last-child { min-width: 0; }
+  .wx-pl-table .wx-pl-name { white-space: normal; text-align: left; overflow-wrap: anywhere; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
+  .wx-pl-table .wx-prod small { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; display: block; }
+  .wx-pl-table .wx-pl-input { width: 100%; min-width: 0; }
+}

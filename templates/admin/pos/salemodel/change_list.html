@@ -1,7 +1,7 @@
 {% extends "admin/change_list.html" %}
 {% load i18n static admin_list nz_money %}
 {# Sales (Savdolar): totals of the current filter, quick date chips, status tabs, branch / seller / payment selects, premium rows (SaleAdmin.get_changelist_instance). #}
-{% block extrastyle %}{{ block.super }}<link rel="stylesheet" href="{% static 'admin/css/nutrizone-platform.css' %}?v=5"><link rel="stylesheet" href="{% static 'admin/css/nutrizone-orderdesk.css' %}?v=5"><link rel="stylesheet" href="{% static 'admin/css/nutrizone-wmsx.css' %}?v=13"><link rel="stylesheet" href="{% static 'admin/css/nutrizone-pos-terminal.css' %}?v=7">{% endblock %}
+{% block extrastyle %}{{ block.super }}<link rel="stylesheet" href="{% static 'admin/css/nutrizone-platform.css' %}?v=6"><link rel="stylesheet" href="{% static 'admin/css/nutrizone-orderdesk.css' %}?v=5"><link rel="stylesheet" href="{% static 'admin/css/nutrizone-wmsx.css' %}?v=13"><link rel="stylesheet" href="{% static 'admin/css/nutrizone-pos-terminal.css' %}?v=7"><link rel="stylesheet" href="{% static 'admin/css/nutrizone-pricing-pos.css' %}?v=1">{% endblock %}
 {% block content_title %}{% endblock %}
 {% block date_hierarchy %}{% endblock %}
 {% block content %}
@@ -28,6 +28,19 @@
     <div class="nzp-stat" style="--c:#c026d3"><i class="fas fa-percent" aria-hidden="true"></i><div><b>{{ sales_summary.discount|som }}</b><span>{% translate "Chegirmalar" %}</span></div></div>
     <div class="nzp-stat" style="--c:#e11d48"><i class="fas fa-rotate-left" aria-hidden="true"></i><div><b>{{ sales_summary.refunds_total|som }}</b><span>{% blocktranslate with n=sales_summary.refunds_count %}Returned · {{ n }} sales{% endblocktranslate %}</span></div></div>
   </div>
+  {% endif %}
+
+  {% if sales_insight %}
+  <section class="nzp-card psx">
+    <div class="psx-col"><h4><i class="fas fa-user-tie" aria-hidden="true"></i> {% translate "Eng yaxshi sotuvchilar" %}</h4>
+      {% for x in sales_insight.sellers %}<div class="psx-row"><span><b>{{ x.name }}</b><small>{{ x.branch }} · {% blocktranslate with n=x.count %}{{ n }} ta savdo{% endblocktranslate %}</small></span><span class="psx-bar"><i style="width:{{ x.w }}%"></i></span><b class="psx-num">{{ x.revenue|som }}</b></div>{% endfor %}</div>
+    <div class="psx-col"><h4><i class="fas fa-box" aria-hidden="true"></i> {% translate "Top mahsulotlar" %}</h4>
+      {% for p in sales_insight.products %}<div class="psx-row"><span><b>{{ p.name }}</b><small>{% blocktranslate with n=p.qty %}{{ n }} dona{% endblocktranslate %}</small></span><span class="psx-bar is-alt"><i style="width:{{ p.w }}%"></i></span><b class="psx-num">{{ p.revenue|som }}</b></div>{% endfor %}</div>
+    <div class="psx-col"><h4><i class="fas fa-clock" aria-hidden="true"></i> {% translate "Savdo soatlari" %} <small>{% blocktranslate with h=sales_insight.peak %}eng qizg'in: {{ h }}:00{% endblocktranslate %}</small></h4>
+      <div class="psx-hours">{% for h in sales_insight.hours %}<span title="{{ h.h }}:00 · {{ h.n }}"><i style="height:{{ h.w }}%"></i></span>{% endfor %}</div>
+      <div class="psx-axis"><span>00</span><span>06</span><span>12</span><span>18</span><span>23</span></div>
+      <p class="psx-facts"><span><b>{{ sales_insight.basket_units }}</b> {% translate "dona / chek" %}</span><span><b>{{ sales_insight.customers_pct }}%</b> {% translate "mijoz bilan" %}</span></p></div>
+  </section>
   {% endif %}
 
   {% if nz_dates %}<nav class="wx-type-chips" aria-label="{% translate 'Period' %}">{% for d in nz_dates %}<a href="{{ d.query_string }}" class="{% if d.selected %}on{% endif %}" style="--t:#10b981"><i></i>{{ d.display }}</a>{% endfor %}</nav>{% endif %}

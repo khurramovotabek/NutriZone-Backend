@@ -263,6 +263,8 @@ def _rule_text(rule: dict) -> str:
         text = f"{'+' if v > 0 else '−' if v < 0 else ''}{money(abs(v))} so'm"
     elif mode == "markup" and v is not None:
         text = f"Tannarx + {v.normalize():f}%"
+    elif mode == "margin" and v is not None:
+        text = f"Marja {v.normalize():f}%"
     elif mode == "fixed" and v is not None:
         text = f"= {money(v)} so'm"
     else:

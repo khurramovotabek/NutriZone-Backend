@@ -53,7 +53,7 @@ class PosPriceChangeAdmin(ExcelExportMixin, PremiumListMixin, admin.ModelAdmin):
     nz_search = "Mahsulot, kassir, kassa yoki sabab…"
     nz_empty = ("Narx o'zgarishi yo'q", "Kassir savatdagi mahsulot narxini o'zgartirganda shu yerda paydo bo'ladi.")
     nz_sorts = (("Yangi", ""), ("Eski", "1"))
-    nz_css = ("admin/css/nutrizone-adjustments.css",)
+    nz_css = ("admin/css/nutrizone-adjustments.css", "admin/css/nutrizone-pricing-pos.css")
     excel_title = "Narx o'zgarishlari"
     excel_columns = [
         Col("Qachon", "created_at", 18), Col("Kassa", "store.name", 22), Col("Mahsulot", "product_name", 40), Col("Soni", "quantity", 8, number=True),
@@ -134,9 +134,33 @@ class PosPriceChangeAdmin(ExcelExportMixin, PremiumListMixin, admin.ModelAdmin):
             ui.stat_card("Shu oy", f"{_money(agg['d_month'])} so'm", "#7c3aed", "fa-calendar"),
         ]
 
+    def nz_panel(self, request):
+        from apps.stores.infrastructure.price_change_insights import cashier_control
+
+        data = cashier_control(30)
+        if not data["rows"]:
+            return ""
+        flags = {"loss": ("Tannarxdan past", "#dc2626", "fa-triangle-exclamation"), "outlier": ("Me'yordan yuqori", "#d97706", "fa-user-secret")}
+        rows = []
+        for x in data["rows"][:12]:
+            flag = flags.get(x["flag"])
+            chip = format_html('<span class="pcx-flag" style="--t:{}"><i class="fas {}" aria-hidden="true"></i> {}</span>', flag[1], flag[2], flag[0]) if flag else ""
+            rows.append(format_html(
+                '<div class="pcx-row{}"><span class="pcx-name"><b>{}</b><small>{} ta savdo · {} ta o\'zgarish</small>{}</span>'
+                '<span class="pcx-bar"><i style="width:{}%"></i></span><span class="pcx-rate"><b>{}%</b><small>chegirma ulushi</small></span>'
+                '<span class="pcx-num"><b>{}</b><small>so\'m berildi</small></span><span class="pcx-num"><b>{}</b><small>so\'m tushum</small></span></div>',
+                " is-flag" if flag else "", x["name"], x["sales"], x["changes"], chip, x["w"], x["rate"], _money(x["given_total"]), _money(x["revenue"])))
+        loss = format_html('<span class="pcx-alert"><i class="fas fa-arrow-trend-down" aria-hidden="true"></i> <b>{}</b> <span>ta narx tannarxdan past qo\'yilgan</span> · <b>{}</b> <span>so\'m zarar</span></span>',
+                           data["below_cost"], _money(data["loss"])) if data["below_cost"] else ""
+        return format_html(
+            '<section class="nzp-card pcx"><header class="pcx-head"><h3><i class="fas fa-user-shield" aria-hidden="true"></i> <span>Kassirlar nazorati</span> <small>30 kun</small></h3>'
+            '<p><span>Umumiy chegirma ulushi</span> <b>{}%</b> · <span>mediana</span> <b>{}%</b> · <span>chegara</span> <b>{}%</b></p>{}</header>'
+            '<div class="pcx-list">{}</div><p class="pcx-note">Chegirma ulushi = kassir bergan chegirma (narx tushirish + savat chegirmasi) ÷ sotuvlarning ro\'yxatdagi qiymati. '
+            '«Me\'yordan yuqori» — boshqa kassirlar medianasidan statistik jihatdan sezilarli yuqori (mediana + 3·MAD).</p></section>',
+            data["rate"], data["median"], data["limit"], loss, mark_safe("".join(rows)))
+
     def nz_hero_actions(self, request):
-        return [{"label": "Sotuvlar", "url": reverse("admin:pos_salemodel_changelist"), "icon": "fa-receipt"},
-                {"label": "Excel", "url": self.excel_url(request), "icon": "fa-file-excel"}]
+        return [{"label": "Sotuvlar", "url": reverse("admin:pos_salemodel_changelist"), "icon": "fa-receipt"}]
 
     def nz_prepare(self, request, objs):
         sales = _sales(objs)

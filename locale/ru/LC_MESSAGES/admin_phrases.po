@@ -8026,3 +8026,96 @@ msgstr "Оплата курьеру не может быть отрицател�
 
 msgid "masalan {0} {1}"
 msgstr "например {0} {1}"
+
+msgid "Zararda — narx tannarxdan past"
+msgstr "В убыток — цена ниже себестоимости"
+
+msgid "Zararda"
+msgstr "В убыток"
+
+msgid "Past marja"
+msgstr "Низкая маржа"
+
+msgid "ROI — har 1 so'm chegirmaga tushum"
+msgstr "ROI — выручка на каждый сум скидки"
+
+msgid "Kassirlar nazorati"
+msgstr "Контроль кассиров"
+
+msgid "Umumiy chegirma ulushi"
+msgstr "Общая доля скидок"
+
+msgid "mediana"
+msgstr "медиана"
+
+msgid "chegara"
+msgstr "порог"
+
+msgid "ta narx tannarxdan past qo'yilgan"
+msgstr "цен установлено ниже себестоимости"
+
+msgid "so'm zarar"
+msgstr "сум убытка"
+
+msgid "ta savdo · {0} ta o'zgarish"
+msgstr "продаж · {0} изменений"
+
+msgid "chegirma ulushi"
+msgstr "доля скидки"
+
+msgid "so'm berildi"
+msgstr "сум скидки"
+
+msgid "so'm tushum"
+msgstr "сум выручки"
+
+msgid "Tannarxdan past"
+msgstr "Ниже себестоимости"
+
+msgid "Me'yordan yuqori"
+msgstr "Выше нормы"
+
+msgid "Chegirma ulushi = kassir bergan chegirma (narx tushirish + savat chegirmasi) ÷ sotuvlarning ro'yxatdagi qiymati. «Me'yordan yuqori» — boshqa kassirlar medianasidan statistik jihatdan sezilarli yuqori (mediana + {0}·MAD)."
+msgstr "Доля скидки = скидка кассира (снижение цены + скидка на корзину) ÷ прейскурантная стоимость продаж. «Выше нормы» — статистически значимо выше медианы других кассиров (медиана + {0}·MAD)."
+
+msgid "Eng yaxshi sotuvchilar"
+msgstr "Лучшие продавцы"
+
+msgid "Savdo soatlari"
+msgstr "Часы продаж"
+
+msgid "eng qizg'in: {0}:{1}"
+msgstr "пик: {0}:{1}"
+
+msgid "dona / chek"
+msgstr "шт / чек"
+
+msgid "mijoz bilan"
+msgstr "с клиентом"
+
+msgid "Oy oxiriga prognoz fond"
+msgstr "Прогноз фонда на конец месяца"
+
+msgid "savdo"
+msgstr "продажи"
+
+msgid "Joriy sur'atda oy oxiriga"
+msgstr "При текущем темпе к концу месяца"
+
+msgid "Maqsadli marja (%)"
+msgstr "Целевая маржа (%)"
+
+msgid "Marja, %"
+msgstr "Маржа, %"
+
+msgid "Sotuvlar"
+msgstr "Продажи"
+
+msgid "Mahsulot, kassir, kassa yoki sabab…"
+msgstr "Товар, кассир, касса или причина…"
+
+msgid "Narx o'zgarishi yo'q"
+msgstr "Изменений цены нет"
+
+msgid "Kassir savatdagi mahsulot narxini o'zgartirganda shu yerda paydo bo'ladi."
+msgstr "Появится здесь, когда кассир изменит цену товара в корзине."

@@ -81,6 +81,20 @@ def sales_of(month: date, user_ids=None, store_ids=None) -> dict:
     return out
 
 
+def run_rate(month: date, now=None) -> Decimal | None:
+    """Month-end multiplier for the current month (days in month ÷ days elapsed, Tashkent time); None for other months."""
+    import calendar
+
+    from django.utils import timezone
+
+    if not is_current(month):
+        return None
+    today = timezone.localtime(now or timezone.now(), TZ)
+    days = calendar.monthrange(month.year, month.month)[1]
+    elapsed = Decimal(today.day - 1) + Decimal(today.hour * 60 + today.minute) / 1440
+    return Decimal(days) / max(elapsed, Decimal("0.5"))
+
+
 def month_report(month: date) -> dict:
     """Every cashier's pay for the month: paid ones frozen, the rest live from their sales and current rates."""
     from apps.stores.infrastructure.models import CashierPayout, StoreCashier
@@ -105,6 +119,14 @@ def month_report(month: date) -> dict:
     totals["paid"] = sum((r["total"] for r in rows if r["payout"]), Decimal(0))
     totals["unpaid"] = totals["total"] - totals["paid"]
     totals["paid_n"] = sum(1 for r in rows if r["payout"])
+    rate = run_rate(month)
+    if rate is not None:
+        for r in rows:
+            if r["payout"] is None:
+                r["forecast_revenue"] = (r["revenue"] * rate).quantize(Decimal(1))
+                r["forecast_total"] = r["base"] + kpi(r["forecast_revenue"], r["percent"])
+        totals["forecast"] = sum((r.get("forecast_total", r["total"]) for r in rows), Decimal(0))
+        totals["forecast_revenue"] = sum((r.get("forecast_revenue", r["revenue"]) for r in rows), Decimal(0))
     return {"month": month, "rows": rows, "totals": totals, "current": is_current(month)}
 
 
