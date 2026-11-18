@@ -134,3 +134,32 @@ def test_real_models_read_a_clean_recording():
     with pytest.raises(stt.SpeechError) as e:
         stt.transcribe(buf.getvalue(), "uz")
     assert e.value.code == "EMPTY"
+
+
+class TestSpeechService:
+    """Production: web workers post recordings to the one process that holds the models (stt_server)."""
+
+    def test_uses_the_service_and_never_loads_models_here(self, settings):
+        settings.STT_SERVICE_URL = "http://stt:2700"
+        fake = mock.Mock(status_code=200, json=lambda: {"text": "Omega kerak", "lang": "uz", "confidence": 0.9, "seconds": 1.5})
+        with mock.patch("requests.post", return_value=fake) as post, mock.patch.object(stt, "transcribe_local") as local:
+            r = stt.transcribe(b"OggS", "uz")
+        assert (r.text, r.lang, r.confidence) == ("Omega kerak", "uz", 0.9)
+        assert post.call_args.args[0] == "http://stt:2700/transcribe" and post.call_args.kwargs["params"] == {"locale": "uz"}
+        local.assert_not_called()
+
+    def test_service_error_codes_come_through(self, settings):
+        settings.STT_SERVICE_URL = "http://stt:2700"
+        with mock.patch("requests.post", return_value=mock.Mock(status_code=422, json=lambda: {"code": "EMPTY"})):
+            with pytest.raises(stt.SpeechError) as e:
+                stt.transcribe(b"OggS", "uz")
+        assert e.value.code == "EMPTY"
+
+    def test_unreachable_service_falls_back_to_this_process(self, settings):
+        import requests
+
+        settings.STT_SERVICE_URL = "http://stt:2700"
+        heard = stt.Transcript(text="Kreatin", lang="uz", confidence=0.7, seconds=1)
+        with mock.patch("requests.post", side_effect=requests.ConnectionError), mock.patch.object(stt, "transcribe_local", return_value=heard) as local:
+            assert stt.transcribe(b"OggS", "uz") is heard
+        local.assert_called_once()

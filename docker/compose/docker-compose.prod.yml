@@ -71,6 +71,7 @@ services:
     environment:
       DJANGO_ENV: production
       LOG_ROTATION: external  # rotated by the host's logrotate (docker/deploy/host-logrotate.sh)
+      STT_SERVICE_URL: http://stt:2700  # voice messages: the speech models live once, in the stt service
     # One ASGI server for HTTP and WebSockets (chat) -- gunicorn managing
     # uvicorn workers; there is no separate WebSocket service.
     command: ["gunicorn", "config.asgi:application", "--worker-class", "uvicorn.workers.UvicornWorker", "--bind", "0.0.0.0:8000", "--workers", "4", "--timeout", "60", "--forwarded-allow-ips", "*"]
@@ -90,6 +91,31 @@ services:
       start_period: 30s
     deploy:
       replicas: 2
+    networks: [nutrizone_net]
+
+  # Speech-to-text for voice messages (apps/assistant/management/commands/stt_server.py): the Vosk models
+  # (~370 MB in memory) loaded once here instead of in each of the 8 web workers. Same image as web.
+  stt:
+    <<: [*logging, *django-env]
+    build:
+      context: ../../
+      dockerfile: docker/django/Dockerfile
+      target: production
+    environment:
+      DJANGO_ENV: production
+      LOG_ROTATION: external
+    command: ["python", "manage.py", "stt_server", "--port", "2700", "--parallel", "2"]
+    restart: always
+    depends_on:
+      db: {condition: service_healthy}
+    volumes:
+      - app_logs:/app/logs
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "http://localhost:2700/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 60s
     networks: [nutrizone_net]
 
   celery_worker_transactional:

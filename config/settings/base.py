@@ -456,6 +456,7 @@ ASSISTANT_TTS_RATE_PER_10_MIN = int(os.environ.get("ASSISTANT_TTS_RATE_PER_10_MI
 # Voice messages (apps/assistant/infrastructure/stt.py): offline Vosk models baked into the image under VOSK_MODEL_DIR
 ASSISTANT_VOICE_ENABLED = os.environ.get("ASSISTANT_VOICE_ENABLED", "1") == "1"
 VOSK_MODEL_DIR = os.environ.get("VOSK_MODEL_DIR", "/opt/vosk")
+STT_SERVICE_URL = os.environ.get("STT_SERVICE_URL", "")  # production: http://stt:2700 (one process holds the models)
 ASSISTANT_STT_RATE_PER_10_MIN = int(os.environ.get("ASSISTANT_STT_RATE_PER_10_MIN", "20"))
 TELEGRAM_ANALYTICS_BOT_USERNAME = os.environ.get("TELEGRAM_ANALYTICS_BOT_USERNAME", "NutriZoneAnalyticsBot")
 TELEGRAM_ANALYTICS_WEBHOOK_SECRET = os.environ.get("TELEGRAM_ANALYTICS_WEBHOOK_SECRET")

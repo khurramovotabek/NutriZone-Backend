@@ -173,6 +173,29 @@ def _tidy(text: str, lang: str) -> str:
 
 
 def transcribe(data: bytes, loc: str = "uz") -> Transcript:
+    """Through the shared speech service when one is configured (production: one process holds the models, see
+    management/commands/stt_server.py); in this process otherwise -- or when the service can't be reached."""
+    url = getattr(settings, "STT_SERVICE_URL", "")
+    if url:
+        if len(data) > MAX_BYTES:
+            raise SpeechError("TOO_BIG")
+        import requests
+
+        try:
+            res = requests.post(f"{url.rstrip('/')}/transcribe", params={"locale": loc}, data=data,
+                                headers={"Content-Type": "application/octet-stream"}, timeout=45)
+            body = res.json()
+        except (requests.RequestException, ValueError):
+            logger.warning("stt: service unreachable, transcribing in this process")
+        else:
+            if res.status_code == 200 and body.get("text"):
+                return Transcript(text=body["text"], lang=body.get("lang", loc), confidence=float(body.get("confidence", 0)),
+                                  seconds=float(body.get("seconds", 0)))
+            raise SpeechError(body.get("code") or "BAD_AUDIO")
+    return transcribe_local(data, loc)
+
+
+def transcribe_local(data: bytes, loc: str = "uz") -> Transcript:
     if not available():
         raise SpeechError("UNAVAILABLE")
     pcm = decode(data)

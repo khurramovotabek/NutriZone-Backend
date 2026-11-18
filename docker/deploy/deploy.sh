@@ -45,10 +45,12 @@ deploy_backend() {
   git pull --ff-only
   DC="docker compose --env-file .env -f docker/compose/docker-compose.prod.yml"
   log "Backend: build"
-  $DC build migrate web celery_worker_transactional celery_worker_default celery_worker_bulk celery_beat
+  $DC build migrate web stt celery_worker_transactional celery_worker_default celery_worker_bulk celery_beat
   log "Backend: migrate + collectstatic"
   # a failing migration stops the deploy here, with the old web replicas still serving
   $DC run --rm -T --no-deps migrate
+  log "Backend: speech service (voice messages) -- before web, so the new replicas find it"
+  $DC up -d --no-deps stt
   log "Backend: web (rolling -- new replicas next to the old ones, then the old ones retire)"
   roll_web
   log "Backend: workers, beat, the rest"
