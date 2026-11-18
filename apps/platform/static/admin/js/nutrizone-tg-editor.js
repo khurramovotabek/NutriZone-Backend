@@ -92,7 +92,7 @@
     }
 
     var wrap = document.createElement("div");
-    wrap.className = "nztg-wrap";
+    wrap.className = "nztg-wrap" + (textarea.hasAttribute("data-no-preview") ? " nztg-solo" : "");
     var left = document.createElement("div");
     left.className = "nztg-main";
     left.appendChild(bar); left.appendChild(linkBox); left.appendChild(emoji); left.appendChild(editor); left.appendChild(foot);

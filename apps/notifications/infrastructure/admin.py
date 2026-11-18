@@ -101,6 +101,24 @@ class TelegramDeliveryFilter(admin.SimpleListFilter):
         return qs
 
 
+
+_TONE = {"success": "#16a34a", "info": "#0ea5e9", "warning": "#d97706", "danger": "#dc2626", "primary": "#2563eb", "violet": "#7c3aed"}
+_LUCIDE_FA = {"shopping-bag": "fa-bag-shopping", "refresh-cw": "fa-rotate", "message-circle": "fa-comment", "wallet": "fa-wallet", "truck": "fa-truck",
+              "receipt": "fa-receipt", "gift": "fa-gift", "star": "fa-star", "coins": "fa-coins", "undo-2": "fa-rotate-left", "x-circle": "fa-circle-xmark"}
+
+
+def kind_meta(kind: str, fallback: str) -> tuple[str, str, str]:
+    """(label, fa icon, colour) for a notification kind: the curated KIND_META first, else the kind's own Uzbek title
+    from notify.KINDS -- so a kind added later never shows as a raw code like "store_order_new"."""
+    if kind in KIND_META:
+        return KIND_META[kind]
+    from apps.notifications.infrastructure.notify import KINDS
+
+    k = KINDS.get(kind)
+    if k is None:
+        return fallback, "fa-bell", "#64748b"
+    return k.uz[0], _LUCIDE_FA.get(k.icon, "fa-bell"), _TONE.get(k.tone, "#64748b")
+
 class PriorityFilter(admin.SimpleListFilter):
     title = "Muhimlik"
     parameter_name = "prio"
@@ -130,7 +148,7 @@ def _users(ids) -> dict:
 
 
 def _kind_cell(kind: str, title: str, body: str, template_key: str = "") -> str:
-    label, icon, tone = KIND_META.get(kind, (template_key or "Xabar", "fa-bell", "#64748b"))
+    label, icon, tone = kind_meta(kind, template_key or "Xabar")
     return format_html('<span class="ntf-msg" style="--t:{}"><span class="ic"><i class="fas {}" aria-hidden="true"></i></span><span><b>{}</b><small>{}</small></span></span>', tone, icon, title, body)
 
 
@@ -218,7 +236,7 @@ class NotificationAdmin(PremiumListMixin, PremiumFormMixin, admin.ModelAdmin):
         self._u = _users({o.recipient_id for o in objs})
 
     def nz_row(self, o):
-        label, icon, tone = KIND_META.get(o.kind, (o.template_key or "Boshqa", "fa-bell", "#64748b"))
+        label, icon, tone = kind_meta(o.kind, o.template_key or "Boshqa")
         st_label, st_tone = STATUS_META.get(o.status, (o.status, "#64748b"))
         prio = format_html(' <span class="nzi-chip" style="--t:#e11d48">{}</span>', "muhim") if o.priority in ("high", "urgent") else ""
         return [
@@ -229,7 +247,7 @@ class NotificationAdmin(PremiumListMixin, PremiumFormMixin, admin.ModelAdmin):
         ]
 
     def form_hero(self, request, obj):
-        label, icon, tone = KIND_META.get(obj.kind, (obj.template_key or "Xabar", "fa-bell", "#64748b"))
+        label, icon, tone = kind_meta(obj.kind, obj.template_key or "Xabar")
         u = _users([obj.recipient_id]).get(obj.recipient_id)
         st_label, st_tone = STATUS_META.get(obj.status, (obj.status, "#64748b"))
         return {
@@ -305,7 +323,7 @@ class NotificationBroadcastAdmin(PremiumListMixin, PremiumFormMixin, admin.Model
     nz_icon, nz_tone, nz_title = "fa-bullhorn", "#db2777", "Yuborilgan xabarlar"
     nz_subtitle = "Dashboard'dan yuborilgan e'lonlar va avtomatik promokod / aksiya xabarlari: qancha mijozga yetdi, nechtasi o'qidi, Telegram natijasi."
     nz_columns = (("Xabar", ""), ("Auditoriya", ""), ("Kanallar", ""), ("Qamrov", "r"), ("O'qilgan", ""), ("Vaqt", ""), ("Holat", "r"))
-    nz_grid = "minmax(260px,2.4fr) minmax(150px,1.2fr) 170px 120px minmax(140px,1fr) 130px 120px"
+    nz_grid = "minmax(220px,2.4fr) minmax(130px,1.2fr) 140px 90px minmax(110px,1fr) 110px 110px"
     nz_search = "Sarlavha, matn yoki kim yuborgan…"
     nz_empty = ("Hali xabar yuborilmagan", "«Xabar yuborish» orqali mijozlarga e'lon, aksiya yoki yangilik yuboring.")
     nz_css = ("admin/css/nutrizone-notify.css",)

@@ -714,6 +714,11 @@ class DeviceAdmin(ExcelExportMixin, ui.PremiumListMixin, admin.ModelAdmin):
     list_select_related = ("user",)
     list_per_page = 30
     ordering = ("-created_at",)
+
+    def get_queryset(self, request):
+        from django.db.models import Prefetch
+
+        return super().get_queryset(request).prefetch_related(Prefetch("user__avatar_assets", queryset=orm.UserAvatarAsset.objects.order_by("-created_at")))
     fields = ("id", "user", "device_type", "device_name", "is_trusted", "created_at")
     readonly_fields = fields
 

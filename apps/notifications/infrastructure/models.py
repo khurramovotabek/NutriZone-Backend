@@ -73,7 +73,7 @@ class NotificationModel(SoftDeleteModel):
         ]
 
     def __str__(self) -> str:  # pragma: no cover
-        return f"Notification({self.id}, {self.notification_type})"
+        return self.title or f"Bildirishnoma {str(self.id)[:8]}"
 
 
 class BroadcastAudience(models.TextChoices):

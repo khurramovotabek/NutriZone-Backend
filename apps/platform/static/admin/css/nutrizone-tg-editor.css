@@ -1,5 +1,6 @@
 /* Telegram RichText editor -- admin/js/nutrizone-tg-editor.js */
 .nztg-wrap { display: grid; grid-template-columns: minmax(0, 1fr) minmax(260px, 340px); gap: 16px; align-items: start; width: 100%; }
+.nztg-wrap.nztg-solo { grid-template-columns: minmax(0, 1fr); } /* no preview column -> the editor takes the full width */
 .nztg-main { border: 1px solid rgb(44, 53, 64); border-radius: 14px; background: rgba(32, 39, 47, .55); overflow: hidden; min-width: 0; }
 html[data-bs-theme="light"] .nztg-main { background: #fff; border-color: #d0d7de; }
 .nztg-bar { display: flex; flex-wrap: wrap; align-items: center; gap: 2px; padding: 6px 8px; border-bottom: 1px solid rgba(148, 163, 184, .18); background: rgba(148, 163, 184, .06); }

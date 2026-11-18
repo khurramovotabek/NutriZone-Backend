@@ -1,12 +1,15 @@
 {% extends "admin/base_site.html" %}
 {% load static %}
-{% block extrastyle %}{{ block.super }}<link rel="stylesheet" href="{% static 'admin/css/nutrizone-support.css' %}?v=3">{% endblock %}
+{% block extrastyle %}{{ block.super }}<link rel="stylesheet" href="{% static 'admin/css/nutrizone-platform.css' %}?v=6"><link rel="stylesheet" href="{% static 'admin/css/nutrizone-premium.css' %}?v=9"><link rel="stylesheet" href="{% static 'admin/css/nutrizone-support.css' %}?v=4">{% endblock %}
 {% block content_title %}{% endblock %}
 {% block breadcrumbs %}{% endblock %}
 {% block content %}
-<div class="sup" data-data="{{ data_url }}" data-move="{{ move_url }}" data-create="{{ create_url }}">
-  <header class="sup-head">
-    <div><h1><i class="fas fa-headset"></i> Support paneli</h1><p>Qo'ng'iroq va murojaatlar: kartani ustunga sudrab holatini o'zgartiring. Vaqti o'tgan qayta qo'ng'iroqlar qizil.</p></div>
+<div class="sup nzp" data-data="{{ data_url }}" data-move="{{ move_url }}" data-create="{{ create_url }}">
+  <header class="nzp-hero sup-head">
+    <div class="nzp-hero-main">
+      <span class="nzp-hero-icon" style="--c:#2563eb"><i class="fas fa-headset" aria-hidden="true"></i></span>
+      <div><h2>Support paneli</h2><p>Qo'ng'iroq va murojaatlar: kartani ustunga sudrab holatini o'zgartiring. Vaqti o'tgan qayta qo'ng'iroqlar qizil.</p></div>
+    </div>
     <div class="sup-tools">
       <input type="search" class="sup-search" placeholder="Telefon, ism yoki mazmun…" data-q>
       <select data-topic><option value="">Barcha mavzular</option>{% for v, l in topics %}<option value="{{ v }}">{{ l }}</option>{% endfor %}</select>

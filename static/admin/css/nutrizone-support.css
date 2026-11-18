@@ -6,7 +6,7 @@
 .sup-head p { margin: 4px 0 0; color: rgba(148, 163, 184, .95); font-size: .85rem; }
 .sup-tools { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
 .sup-tools input, .sup-tools select, .sup-new input, .sup-new select, .sup-new textarea {
-  height: 38px; border-radius: 11px; border: 1px solid rgb(44, 53, 64); background: rgba(32, 39, 47, .55); color: inherit; padding: 0 12px; font-size: .88rem; }
+  height: 38px; border-radius: 11px; border: 1px solid var(--nz-border, rgba(148,163,184,.35)); background: var(--nz-surface, #fff); color: var(--nz-text, inherit); padding: 0 12px; font-size: .88rem; }
 .sup-new textarea { height: auto; padding: 10px 12px; resize: vertical; width: 100%; }
 .sup-search { min-width: 230px; }
 .sup-btn { display: inline-flex; align-items: center; gap: 8px; height: 38px; padding: 0 16px; border-radius: 11px; border: 0; background: linear-gradient(135deg, #2563eb, #3b82f6); color: #fff !important; font-weight: 600; cursor: pointer; text-decoration: none !important; }
@@ -46,3 +46,9 @@ html[data-bs-theme="light"] .sup-card p { color: #475569; }
 .sup-head > div:first-child { flex: 1 1 320px; }
 /* phones: the search gets its own full row (it was squeezed to ~60px beside the topic select) */
 @media (max-width: 640px) { .sup-tools { width: 100%; } .sup-tools .sup-search { flex: 1 1 100%; width: 100% !important; max-width: none; } .sup-tools select { flex: 1 1 0; max-width: none; } }
+
+/* premium hero on the board (same chrome as the rest of the dashboard) */
+.sup-head.nzp-hero { align-items: center; }
+.sup-head.nzp-hero h2 { margin: 0; }
+.sup-head.nzp-hero .sup-tools { margin-left: auto; }
+.sup-head.nzp-hero .nzp-hero-main { flex: 1 1 380px; min-width: 0; }

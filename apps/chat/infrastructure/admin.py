@@ -271,6 +271,17 @@ class MessageAdmin(PremiumListMixin, admin.ModelAdmin):
         elif m.message_type == "sticker":
             emoji, label = STICKERS.get(m.content or "", ("🏷️", m.content or "Stiker"))
             body = format_html('<span class="nzc-row-sticker">{} <b>{}</b></span>', emoji, label)
+        elif m.message_type == "card":
+            from apps.chat.infrastructure.automation import card_payload
+
+            card = card_payload(m.content)
+            is_order = (m.content or "").startswith("order:")
+            if card is None:
+                body = ui.muted("karta endi mavjud emas")
+            else:
+                img = format_html('<img src="{}" alt="" class="nzc-row-img">', card["image"]) if card.get("image") else ""
+                body = format_html('<span class="nzc-row-att">{}<span><i class="fas {}" aria-hidden="true"></i> <b>{}</b> <small>{}</small></span></span>',
+                                   img, "fa-receipt" if is_order else "fa-box", card.get("title") or "", "buyurtma kartasi" if is_order else "mahsulot kartasi")
         elif m.attachment_url:
             thumb = format_html('<img src="{}" alt="" class="nzc-row-img">', attachment_url(m.attachment_url, absolute=False)) if m.attachment_type == "image" else format_html('<i class="fas fa-film" aria-hidden="true"></i> {}', m.attachment_filename or "video")
             body = format_html('<span class="nzc-row-att">{}<span>{}</span></span>', thumb, m.content or "")
@@ -445,6 +456,7 @@ class ChatQuickReplyAdmin(PremiumListMixin, PremiumFormMixin, admin.ModelAdmin):
     list_display = ("sort_order", "uses")
     list_filter = (("is_active", _titled(admin.BooleanFieldListFilter, "Faol")),)
     search_fields = ("title", "text")
+    fieldsets = (("Tayyor javob", {"fields": ("title", "text", "sort_order", "is_active")}),)
     ordering = ("sort_order", "title")
     actions = ["activate", "deactivate"]
 
