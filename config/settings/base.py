@@ -391,6 +391,8 @@ PUBLIC_BASE_URL = os.environ.get("PUBLIC_BASE_URL")
 GEOCODER_ENABLED = os.environ.get("GEOCODER_ENABLED", "1") not in ("0", "false", "False")
 GEOCODER_URL = os.environ.get("GEOCODER_URL", "https://nominatim.openstreetmap.org")
 GEOCODER_USER_AGENT = os.environ.get("GEOCODER_USER_AGENT", "NutriZone/1.0 (+https://nutrizone.uz)")
+# Photon (OSM data, typo-tolerant search-as-you-type) is asked first for place search; "" turns it off
+GEOCODER_PHOTON_URL = os.environ.get("GEOCODER_PHOTON_URL", "https://photon.komoot.io")
 
 # Fernet key (urlsafe base64, 32 bytes) encrypting payment-provider secrets stored from the Dashboard.
 # Optional: derived from SECRET_KEY when unset -- set it in production so rotating SECRET_KEY keeps the secrets readable.

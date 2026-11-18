@@ -277,7 +277,14 @@ class LocateView(APIView):
         from apps.geo.infrastructure.gateways import geocoder
 
         lat, lng = _point(request.query_params)
-        return success_response(data=geocoder.locate(lat, lng, geocoder.query_language(request), with_street=request.query_params.get("street", "1") != "0"))
+        lang = geocoder.query_language(request)
+        data = geocoder.locate(lat, lng, lang, with_street=request.query_params.get("street", "1") != "0")
+        if request.query_params.get("delivery") == "1" and data.get("in_uzbekistan"):
+            # the checkout map: price / time for this exact spot and the nearest pickup branch, under the pin
+            from apps.ordering.infrastructure import delivery_pricing
+
+            data["delivery"] = delivery_pricing.point_preview(lat, lng, (data.get("city") or {}).get("id"), (data.get("region") or {}).get("id"), lang)
+        return success_response(data=data)
 
 
 class GeocodeView(APIView):

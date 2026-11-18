@@ -141,9 +141,106 @@ def _search(query: str, lang: str, box: tuple[float, float, float, float] | None
         else:
             title = name or (parts[0] if parts else "")
             rest = ", ".join(parts[1:4])
-        rows.append({"title": title, "subtitle": rest, "lat": lat, "lng": lng, "kind": d.get("type") or d.get("category") or "",
+        rows.append({"title": title, "subtitle": rest, "lat": lat, "lng": lng, "kind": _kind(d.get("category") or "", d.get("type") or "", bool(road and house)),
                      "road": road, "house": house})
     return rows
+
+
+def _kind(key: str, value: str, address: bool) -> str:
+    """One vocabulary for both providers: metro / stop / building / street / area / place (the storefront's icon)."""
+    if key == "railway" and value in ("station", "stop", "subway_entrance", "halt") or value == "subway":
+        return "metro"
+    if value in ("bus_stop", "platform") or key == "public_transport":
+        return "stop"
+    if address:
+        return "building"
+    if key == "highway":
+        return "street"
+    if key in ("place", "landuse", "boundary"):
+        return "area"
+    return "place"
+
+
+# ---- Photon (komoot, OpenStreetMap data, built for search-as-you-type): forgiving with typos and partial words
+# ("Megaplanet", "Navoiy 30" -> "Navoiy shoh ko'chasi, 30"), knows Tashkent's "Yunusobod 4 mavzesi, 12" style
+# buildings and metro stations, where Nominatim often finds nothing. Searched first; Nominatim still adds its
+# street-name variants. GEOCODER_PHOTON_URL="" turns it off (or points at a self-hosted Photon).
+
+
+def _photon_base() -> str:
+    return (getattr(settings, "GEOCODER_PHOTON_URL", "https://photon.komoot.io") or "").rstrip("/")
+
+
+def _photon_slot(wait: float = 2.0) -> bool:
+    """At most ~2 requests a second to the public Photon, shared by all workers through the cache."""
+    deadline = time.monotonic() + wait
+    while True:
+        if cache.add(f"geo:photon:slot:{int(time.time() * 2)}", 1, timeout=2):
+            return True
+        if time.monotonic() >= deadline:
+            return False
+        time.sleep(0.1)
+
+
+def _photon(query: str, lang: str, centre: tuple[float, float], box: tuple[float, float, float, float] | None) -> list[dict]:
+    import requests
+
+    base = _photon_base()
+    if not _enabled() or not base or not _photon_slot():
+        raise _GeocoderBusy
+    params = {"q": query, "lat": f"{centre[0]:.4f}", "lon": f"{centre[1]:.4f}", "limit": 10, "lang": "en" if lang == "en" else "default"}
+    if box:
+        params["bbox"] = f"{box[0]},{box[3]},{box[2]},{box[1]}"  # minLon,minLat,maxLon,maxLat
+    try:
+        r = requests.get(f"{base}/api/", params=params, headers=_headers(), timeout=4)
+        data = r.json() if r.status_code == 200 else None
+    except Exception as exc:  # noqa: BLE001 - one provider down is not a failure, Nominatim still answers
+        logger.warning("geocoder: photon failed: %s", type(exc).__name__)
+        data = None
+    if data is None:
+        raise _GeocoderBusy
+    rows = []
+    for f in data.get("features") or []:
+        p = f.get("properties") or {}
+        try:
+            lng, lat = (float(x) for x in f["geometry"]["coordinates"][:2])
+        except (KeyError, TypeError, ValueError):
+            continue
+        if (p.get("countrycode") or "UZ").upper() != "UZ" or not in_uzbekistan(lat, lng):
+            continue
+        key, value = p.get("osm_key") or "", p.get("osm_value") or ""
+        name, street, house = (p.get("name") or "").strip(), (p.get("street") or "").strip(), (p.get("housenumber") or "").strip()
+        road = street or (name if key == "highway" or p.get("type") == "street" else "")
+        area = ", ".join(x for x in dict.fromkeys((p.get("locality") or "", p.get("district") or "", p.get("city") or p.get("county") or "")) if x)
+        if name and key not in ("highway", "building") and not (key == "place" and house):
+            title = name
+            rest = ", ".join(x for x in (f"{street}, {house}" if street and house else street, area) if x)
+        elif road and house:
+            title, rest = f"{road}, {house}", area
+        else:
+            title, rest = name or road or area, area if (name or road) else (p.get("state") or "")
+        if not title:
+            continue
+        kind = _kind(key, value, bool(road and house) and title.startswith(road))
+        rows.append({"title": title, "subtitle": rest, "lat": lat, "lng": lng, "kind": kind, "road": road, "house": house, "src": "photon"})
+    return rows
+
+
+_CITY_PREFIX = re.compile(r"^\s*(toshkent|tashkent|ташкент|тошкент)\s*(shahri|shahar|sh\.?|г\.?|город|city)?[\s,]+|^\s*(г\.|город)\s*ташкент[\s,]+"
+                          r"|[\s,]+(toshkent|tashkent|ташкент|тошкент)\s*(shahri|shahar|sh\.?|city)?\s*$", re.I)
+
+
+def _same_title(a: str, b: str) -> bool:
+    """ "Amir Temur shoh ko'chasi, 108" == "Amir Temur shoh ko‘chasi, 108" (OSM mixes the Uzbek apostrophes)."""
+    def k(x):
+        return re.sub(r"[‘’ʻʼ`´]", "'", x.lower()).replace(" ", "")
+    return k(a) == k(b)
+
+
+def _clean_query(query: str) -> str:
+    """ "Toshkent shahar Bunyodkor 1" -> "Bunyodkor 1": we already search around the map, the city name only adds noise."""
+    cleaned = _CITY_PREFIX.sub(" ", query).strip(" ,")
+    return cleaned if len(cleaned) >= 3 else query
 
 
 _STREET_WORDS = ("ko'cha", "kocha", "ko‘cha", "koʻcha", "кўча", "куча", "улица", "ул.", "ул ", "street", "проспект", "prospekt", "shoh",
@@ -162,8 +259,19 @@ def _variants(query: str) -> tuple[list[str], str, str]:
     "мирабад 66"): OSM keeps the house under the street's full name, and the bare words match side lanes first.
     """
     out = [query]
+    if re.search(r"[а-яёўқғҳ]", query.lower()):
+        # OSM names Tashkent's quarters and streets in Uzbek Latin: "Юнусабад 4 квартал 12" -> "Yunusobod 4 kvartal 12"
+        words = []
+        for w in query.lower().split():
+            latin = _latinize(re.sub(r"(ская|ский|ской|ское)$", "", w))
+            words.append(latin[:1] + latin[1:].replace("a", "o") if re.search(r"[а-яё]", w) and len(latin) > 4 else latin)
+        out.append(" ".join(words).replace("kvortol", "kvartal").replace("mikroroyon", "mavze"))
     m = _HOUSE_RE.match(query)
     street, house = (m.group("street").strip(" ,"), m.group("house")) if m else ("", "")
+    bare = re.sub(r"\b(ko'chasi|kochasi|ko‘chasi|koʻchasi|ko'cha|улица|ул\.?|кўчаси|kuchasi|street|st\.?)(?=\s|,|$)", " ", query, flags=re.I)
+    bare = re.sub(r"\s+", " ", bare).strip(" ,")
+    if bare != query and len(bare) >= 3:
+        out.insert(1, bare)  # for Photon, which matches words in any order but not a street type the name lacks
     if street and not any(w in query.lower() for w in _STREET_WORDS):
         if re.search(r"[а-яёўқғҳ]", street.lower()):
             # Cyrillic: OSM names Tashkent streets in Uzbek Latin. "Мирабадская" -> "мирабад" -> "mirabad" -> "mirobod"
@@ -183,19 +291,28 @@ def geocode(query: str, lang: str = "uz", near: tuple[float, float] | None = Non
     Tashkent when not given) are searched inside a ~40 km box; the rest of the country only when nothing local matched.
     Ranked: the typed house number on the typed street first, then that street, then the rest -- closest first.
     """
-    query = re.sub(r"\s+", " ", (query or "").strip())
+    query = _clean_query(re.sub(r"\s+", " ", (query or "").strip()))
     if len(query) < 3:
         return []
     lang = lang if lang in LANGS else "uz"
     centre = near if near and in_uzbekistan(*near) else TASHKENT
     cell = f"{round(centre[0] * 2) / 2},{round(centre[1] * 2) / 2}"  # ~50 km cache cells
-    key = f"geo:search:v4:{lang}:{cell}:{hashlib.sha1(query.lower().encode()).hexdigest()}"
+    key = f"geo:search:v6:{lang}:{cell}:{hashlib.sha1(query.lower().encode()).hexdigest()}"
     variants, street, house = _variants(query)
-    want_street = _skeleton(street)[:4]
+    # the street's own name, without the type the customer added ("Navoiy ko'chasi" is OSM's "Navoiy shoh ko'chasi")
+    core = re.sub(r"\b(ko'chasi|kochasi|ko‘chasi|koʻchasi|ko'cha|shoh|улица|ул\.?|кўчаси|street|prospekti|проспект)\b", " ", street, flags=re.I)
+    want_street = _skeleton(core or street)[:4]
     side_lane_asked = any(w in query.lower() for w in ("o'tish", "otish", "проезд", "tor", "berk", "тупик"))
 
+    # "Yunusobod 4-kvartal 12": the quarter's number must match too ("Юнусабад 11 квартал, 12" is another building)
+    q = re.search(r"(\d+)\s*-?\s*(?:kvartal|квартал|mavze|мавзе|daha|мкр|microrayon|mikrorayon)|(?:kvartal|квартал|mavze|мкр|daha)\s*-?\s*(\d+)", query.lower())
+    quarter = (q.group(1) or q.group(2)) if q else ""
+
     def on_street(r) -> bool:
-        lane = "o'tish" in (r.get("road") or "").lower() and not side_lane_asked  # "Mirobod 2-o'tish" is not "Mirobod ko'chasi"
+        road = (r.get("road") or "").lower()
+        lane = "o'tish" in road and not side_lane_asked  # "Mirobod 2-o'tish" is not "Mirobod ko'chasi"
+        if quarter and not re.search(rf"(?<!\d){quarter}(?!\d)", road):
+            return False
         return bool(want_street) and _skeleton(r.get("road") or r.get("title") or "").startswith(want_street) and not lane
 
     def same_house(r) -> bool:
@@ -205,19 +322,44 @@ def geocode(query: str, lang: str = "uz", near: tuple[float, float] | None = Non
     if rows is None:
         box = (centre[1] - LOCAL_BOX_DEG, centre[0] + LOCAL_BOX_DEG, centre[1] + LOCAL_BOX_DEG, centre[0] - LOCAL_BOX_DEG)
         rows, seen, failed = [], set(), False
-        for variant in variants:
-            try:
-                found = _search(variant, lang, box)
-            except _GeocoderBusy:
-                failed = True
-                continue
+
+        def add(found):
             for r in found:
                 spot = (round(r["lat"], 4), round(r["lng"], 4))
-                if spot not in seen:
+                # the same place twice (both providers, or OSM's node + building): keep the first, better-ranked one
+                twin = any(_same_title(r["title"], x["title"])
+                           and (haversine_km(r["lat"], r["lng"], x["lat"], x["lng"]) < 0.3 or (r.get("kind") == "street" and not r.get("house"))) for x in rows)
+                if spot not in seen and not twin:
                     seen.add(spot)
                     rows.append(r)
-            if any(on_street(r) and same_house(r) for r in rows):
-                break  # the exact house is found -- each further variant costs a second of the free geocoder
+
+        # Photon first, its variants in parallel (each ~0.3-0.8 s): the typed text, without the street type, in
+        # Uzbek Latin -- not the "<name> ko'chasi <house>" forms, those are for Nominatim
+        from concurrent.futures import ThreadPoolExecutor
+
+        photon_variants = [v for v in variants if v == query or "ko'chasi" not in v][:3]
+
+        def ask(v):
+            try:
+                return _photon(v, lang, centre, box)
+            except _GeocoderBusy:
+                return []
+
+        with ThreadPoolExecutor(max_workers=3) as pool:
+            for found in pool.map(ask, photon_variants):
+                add(found)
+        # Nominatim adds its street-name variants only when they can still help: a house was typed and not found
+        # exactly, or Photon had (almost) nothing -- each Nominatim call costs a second of the free service
+        if not any(on_street(r) and same_house(r) for r in rows) and (house or len(rows) < 3):
+            for variant in [query, *[v for v in variants if "ko'chasi" in v and v != query]][:3]:
+                try:
+                    found = _search(variant, lang, box)
+                except _GeocoderBusy:
+                    failed = True
+                    continue
+                add(found)
+                if any(on_street(r) and same_house(r) for r in rows):
+                    break  # the exact house is found -- each further variant costs a second of the free geocoder
         if not rows and not failed:
             try:
                 rows = _search(query, lang, None)
@@ -226,12 +368,18 @@ def geocode(query: str, lang: str = "uz", near: tuple[float, float] | None = Non
         if rows or not failed:
             cache.set(key, rows, 60 * 60 if rows else 60 * 5)
 
+    order = {id(r): i for i, r in enumerate(rows)}
+
     def rank(r):
         d = haversine_km(centre[0], centre[1], r["lat"], r["lng"])
         st, hs = on_street(r), same_house(r)
-        return (d > LOCAL_BOX_DEG * 111, not (st and hs), not st, not hs, d)
+        # typed house on the typed street, then that street, then Photon's own relevance order, then the rest closest first
+        photon = r.get("src") == "photon"
+        # a typed house number asks for the building itself, not the bar or shop that shares its address
+        address_first = bool(house) and r.get("kind") != "building"
+        return (d > LOCAL_BOX_DEG * 111, not (st and hs), not st, not hs, address_first, not photon, order[id(r)] if photon else 0, d)
 
-    return [{k: v for k, v in r.items() if k not in ("road", "house")} for r in sorted(rows, key=rank)[:limit]]
+    return [{k: v for k, v in r.items() if k not in ("road", "house", "src")} for r in sorted(rows, key=rank)[:limit]]
 
 
 # ---------------------------------------------------------------- our own reference data

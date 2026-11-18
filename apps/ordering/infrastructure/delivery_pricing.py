@@ -182,6 +182,30 @@ def quote_for_point(city_id, latitude, longitude, goods_total: Decimal | int | s
                  region_code=row["region__code"], city_code=row["code"])
 
 
+def point_preview(latitude: float, longitude: float, city_id=None, region_id=None, lang: str = "uz") -> dict | None:
+    """
+    What the map shows under the pin while the customer chooses a spot: the delivery price for an average parcel
+    (Tashkent: by distance -- exact; regions: "from", the parcel weight is not known yet), the promised time, and the
+    nearest branch that hands out orders (pickup is free -- worth saying when it is around the corner).
+    """
+    from apps.stores.infrastructure.models import Store
+
+    q = quote_for_point(city_id, latitude, longitude, 0, lang, region_id=region_id)
+    nearest = None
+    for name, s_lat, s_lng in Store.objects.filter(status="active", kind="store", pickup_enabled=True, latitude__isnull=False,
+                                                   longitude__isnull=False).values_list("name", "latitude", "longitude"):
+        km = _haversine_km(latitude, longitude, s_lat, s_lng)
+        if nearest is None or km < nearest["km"]:
+            nearest = {"name": name, "km": round(km, 1)}
+    if q is None and nearest is None:
+        return None
+    out = {"nearest_branch": nearest}
+    if q is not None:
+        out.update({"zone": q.zone, "fee": int(q.base_fee), "is_from": q.zone == REGIONS, "eta": q.eta, "carrier": q.carrier,
+                    "free_from": int(q.free_from) if q.free_from is not None else None})
+    return out
+
+
 def _regions_from(cfg) -> Decimal:
     """The cheapest regions price a shopper can meet ("... so'mdan"): a 1 kg parcel to the cheapest zone, or a contract rate."""
     contract = list(cfg.region_rates.values_list("base_fee", flat=True))

@@ -146,10 +146,12 @@ class TestGeocodeAndLinks:
 
     def test_a_typed_street_word_is_searched_as_is(self):
         variants, street, house = geocoder._variants("Amir Temur ko'chasi 15")
-        assert variants == ["Amir Temur ko'chasi 15"] and house == "15"
+        # as typed (no "<name> ko'chasi <house>" guess added), plus the bare name for Photon -- OSM may say "shoh ko'chasi"
+        assert variants == ["Amir Temur ko'chasi 15", "Amir Temur 15"] and house == "15"
         assert geocoder._skeleton("Мирабадская")[:4] == geocoder._skeleton("Mirobod")[:4] == "mrbd"
-        assert geocoder._variants("мирабад 66")[0] == ["мирабад 66", "mirobod ko'chasi 66", "mirabad ko'chasi 66"]
-        assert geocoder._variants("Мирабадская 66")[0][1] == "mirobod ko'chasi 66"
+        # Cyrillic: as typed, its Uzbek-Latin form (for Photon), then the "<street> ko'chasi <house>" guesses (Nominatim)
+        assert geocoder._variants("мирабад 66")[0] == ["мирабад 66", "mirobod 66", "mirobod ko'chasi 66", "mirabad ko'chasi 66"]
+        assert geocoder._variants("Мирабадская 66")[0][1:3] == ["mirobod 66", "mirobod ko'chasi 66"]
 
     @pytest.mark.parametrize("text", [
         "https://yandex.uz/maps/?ll=69.240562%2C41.299496&z=12&pt=69.2797,41.3111",
@@ -272,3 +274,66 @@ class TestHyphenatedCodes:
             r = _client_as(monkeypatch, uuid.uuid4()).post("/api/v1/geo/addresses", {"address_type": "residential", "country_id": str(country.id), "city_id": str(city.id),
                                                                                     "line1": "Registon 1", "recipient_name": "A", "recipient_phone": "+998901112233"}, format="json")
         assert r.status_code == 201, r.content
+
+
+class TestPhotonSearch:
+    """Photon (typo-tolerant OSM search) is asked first; Nominatim only adds what Photon lacks."""
+
+    def _feature(self, lng, lat, **props):
+        return {"geometry": {"coordinates": [lng, lat]}, "properties": {"countrycode": "UZ", **props}}
+
+    def test_quarter_house_and_metro_titles_and_kinds(self, settings):
+        settings.GEOCODER_ENABLED = True
+        feats = [
+            self._feature(69.2850, 41.3650, street="Yunusobod 4 mavzesi", housenumber="12", osm_key="building", osm_value="apartments", district="Yunusobod"),
+            self._feature(69.2860, 41.3660, street="Yunusobod 11 mavzesi", housenumber="12", osm_key="building", osm_value="apartments"),
+            self._feature(69.2050, 41.3060, name="Buyuk Ipak Yo'li", osm_key="railway", osm_value="station"),
+        ]
+        resp = mock.Mock(status_code=200, json=lambda: {"features": feats})
+        with mock.patch("requests.get", return_value=resp) as get, mock.patch.object(geocoder, "_get") as nominatim, \
+                mock.patch.object(geocoder.cache, "get", return_value=None):
+            data = geocoder.geocode("Yunusobod 4-kvartal 12", "uz", TASHKENT)
+        assert "photon" in get.call_args.args[0]
+        assert data[0]["title"] == "Yunusobod 4 mavzesi, 12" and data[0]["kind"] == "building"
+        assert data[1]["title"] == "Yunusobod 11 mavzesi, 12"  # the quarter number must match to come first
+        assert next(r for r in data if r["title"] == "Buyuk Ipak Yo'li")["kind"] == "metro"
+        nominatim.assert_not_called()  # exact house found -- the slow service is not asked
+
+    def test_city_prefix_is_dropped_and_photon_outage_falls_back(self, settings):
+        import requests
+
+        settings.GEOCODER_ENABLED = True
+        asked = []
+
+        def nominatim(path, params, **_kw):
+            asked.append(params["q"])
+            return [{"lat": "41.30", "lon": "69.27", "name": "Bunyodkor", "display_name": "Bunyodkor shoh ko'chasi, Toshkent"}]
+
+        with mock.patch("requests.get", side_effect=requests.ConnectionError), mock.patch.object(geocoder, "_get", side_effect=nominatim), \
+                mock.patch.object(geocoder.cache, "get", return_value=None):
+            data = geocoder.geocode("Toshkent shahar Bunyodkor 1", "uz", TASHKENT)
+        assert data and asked[0] == "Bunyodkor 1"
+
+    def test_same_street_from_two_providers_is_listed_once(self):
+        assert geocoder._same_title("Amir Temur shoh ko'chasi, 108", "Amir Temur shoh ko‘chasi, 108")
+
+
+class TestLocateWithDelivery:
+    """The checkout map asks ?delivery=1: price / time for the spot under the pin and the nearest pickup branch."""
+
+    def test_delivery_only_when_asked(self):
+        from unittest import mock
+
+        from django.test import Client
+
+        from apps.geo.infrastructure.gateways import geocoder
+        from apps.ordering.infrastructure import delivery_pricing
+
+        found = {"latitude": 41.3, "longitude": 69.28, "in_uzbekistan": True, "city": {"id": "c1"}, "region": {"id": "r1"}}
+        preview = {"nearest_branch": {"name": "Yunusobod", "km": 0.4}, "zone": "tashkent", "fee": 16000, "is_from": False, "eta": "1 ish kuni", "carrier": "Yandex", "free_from": None}
+        with mock.patch.object(geocoder, "locate", return_value=dict(found)), mock.patch.object(delivery_pricing, "point_preview", return_value=preview) as pp:
+            plain = Client().get("/api/v1/geo/locations/locate", {"lat": 41.3, "lng": 69.28}).json()["data"]
+            asked = Client().get("/api/v1/geo/locations/locate", {"lat": 41.3, "lng": 69.28, "delivery": 1}).json()["data"]
+        assert "delivery" not in plain
+        assert asked["delivery"]["fee"] == 16000 and asked["delivery"]["nearest_branch"]["km"] == 0.4
+        assert pp.call_args.args[:4] == (41.3, 69.28, "c1", "r1")
