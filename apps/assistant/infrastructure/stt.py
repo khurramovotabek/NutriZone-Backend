@@ -31,6 +31,7 @@ MAX_SECONDS = 60          # a voice question, not a podcast
 MAX_BYTES = 3 * 1024 * 1024
 UNSURE = 0.62             # mean word confidence under this -> also try the other language
 SWITCH_MARGIN = 0.15      # ...which then has to be this much more confident to replace the shopper's language
+SWITCH_SURE = 0.82        # ...and sure in absolute terms: Uzbek speech scores ~0.75 in the Russian model, real Russian ~0.9
 
 # The small Uzbek model has no word for the products themselves (kreatin, geyner, izolyat, omega...), so it writes
 # something that merely sounds alike. The Russian model knows them: it listens again in keyword mode (only these
@@ -211,7 +212,7 @@ def transcribe_local(data: bytes, loc: str = "uz") -> Transcript:
             t2, c2, w2 = _recognise(pcm, other)
             # the other language must be clearly better: any model "hears" its own words in foreign speech with a
             # fair confidence, so leaving the shopper's own language needs a real margin and a real sentence
-            if t2 and (not text or (c2 > conf + SWITCH_MARGIN and c2 >= 0.75 and len(w2) >= 2)):
+            if t2 and (not text or (c2 > conf + SWITCH_MARGIN and c2 >= SWITCH_SURE and len(w2) >= 2)):
                 text, conf, words, lang = t2, c2, w2, other
     if lang == "uz" and words:
         text = _with_keywords(pcm, words)
