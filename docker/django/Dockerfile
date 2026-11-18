@@ -13,6 +13,7 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
 # Runtime system dependencies
 RUN apt-get update && apt-get install -y --no-install-recommends \
         libpq5 \
+        libstdc++6 \
         curl \
     && rm -rf /var/lib/apt/lists/*
 
@@ -105,6 +106,16 @@ CMD ["python", "manage.py", "runserver", "0.0.0.0:8000"]
 
 
 # ---------------------------------------------------------------------------
+# Offline speech models for voice messages (apps/assistant/infrastructure/stt.py): Vosk small Uzbek / Russian /
+# English from the official alphacephei.com mirror, pinned by SHA-256. Own stage, so the ~135 MB download is
+# cached and only repeated when this block changes.
+# ---------------------------------------------------------------------------
+FROM base AS voskmodels
+COPY docker/django/fetch_vosk_models.py /tmp/fetch_vosk_models.py
+RUN python /tmp/fetch_vosk_models.py && chmod -R a+rX /opt/vosk
+
+
+# ---------------------------------------------------------------------------
 # Production image
 # ---------------------------------------------------------------------------
 FROM base AS production
@@ -117,6 +128,8 @@ RUN pip install \
         --no-index \
         --find-links=/wheels \
         -r requirements/production.txt
+
+COPY --from=voskmodels /opt/vosk /opt/vosk
 
 # Copy application source
 COPY . .

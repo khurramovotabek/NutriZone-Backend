@@ -453,6 +453,10 @@ ASSISTANT_TTS_VOICE_UZ = os.environ.get("ASSISTANT_TTS_VOICE_UZ", "")  # e.g. uz
 ASSISTANT_TTS_VOICE_RU = os.environ.get("ASSISTANT_TTS_VOICE_RU", "")
 ASSISTANT_TTS_VOICE_EN = os.environ.get("ASSISTANT_TTS_VOICE_EN", "")
 ASSISTANT_TTS_RATE_PER_10_MIN = int(os.environ.get("ASSISTANT_TTS_RATE_PER_10_MIN", "40"))
+# Voice messages (apps/assistant/infrastructure/stt.py): offline Vosk models baked into the image under VOSK_MODEL_DIR
+ASSISTANT_VOICE_ENABLED = os.environ.get("ASSISTANT_VOICE_ENABLED", "1") == "1"
+VOSK_MODEL_DIR = os.environ.get("VOSK_MODEL_DIR", "/opt/vosk")
+ASSISTANT_STT_RATE_PER_10_MIN = int(os.environ.get("ASSISTANT_STT_RATE_PER_10_MIN", "20"))
 TELEGRAM_ANALYTICS_BOT_USERNAME = os.environ.get("TELEGRAM_ANALYTICS_BOT_USERNAME", "NutriZoneAnalyticsBot")
 TELEGRAM_ANALYTICS_WEBHOOK_SECRET = os.environ.get("TELEGRAM_ANALYTICS_WEBHOOK_SECRET")
 TELEGRAM_ANALYTICS_CHAT_IDS = os.environ.get("TELEGRAM_ANALYTICS_CHAT_IDS", "")

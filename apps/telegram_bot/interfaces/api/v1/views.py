@@ -667,6 +667,11 @@ def telegram_webhook_view(request):
                 _handle_photo(message)
             elif message.get("text", "").startswith("/") and message.get("chat", {}).get("type") == "private" and _bot_command(message):
                 pass
+            elif message.get("chat", {}).get("type") == "private" and not message.get("text") and (message.get("voice") or message.get("audio")):
+                # a voice note: written down by the offline speech model, then answered like a typed question
+                from apps.telegram_bot.interfaces.callback_router import voice_question
+
+                voice_question(message)
             elif message.get("text"):
                 from apps.telegram_bot.interfaces import chat_state, onboarding_state
 

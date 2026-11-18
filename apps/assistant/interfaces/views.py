@@ -143,7 +143,45 @@ def _chat_input(request):
 async def status_view(request):
     from apps.assistant.infrastructure import tts
 
-    return _json({"enabled": engine.is_configured(), "tts": tts.enabled()})
+    from apps.assistant.infrastructure import stt
+
+    return _json({"enabled": engine.is_configured(), "tts": tts.enabled(), "voice": engine.is_configured() and stt.available()})
+
+
+@csrf_exempt
+async def stt_view(request):
+    """POST raw audio (any browser recording: webm / ogg / mp4 / wav) ?locale=uz -> {text, lang}: a voice question
+    written down by the offline speech model (stt.py). The widget then sends the text like a typed question."""
+    from apps.assistant.infrastructure import stt
+
+    if request.method != "POST":
+        return HttpResponseNotAllowed(["POST"])
+    if not stt.available():
+        return _json({"code": "UNAVAILABLE", "message": "Voice input is not available."}, 503)
+    client_key = _client_key(request)
+    if not client_key:
+        return _json({"code": "NO_CLIENT", "message": "Missing client id."}, 400)
+    limit = getattr(settings, "ASSISTANT_STT_RATE_PER_10_MIN", 20)
+    if not await sync_to_async(_hit)(f"ai:stt:{client_key}", limit, 600) or not await sync_to_async(_hit)(f"ai:stt:ip:{_ip(request)}", limit * 3, 600):
+        return _json({"code": "RATE_LIMITED", "message": "Too many voice messages -- try again a bit later."}, 429)
+    data = request.body or b""
+    locale = request.GET.get("locale") if request.GET.get("locale") in LOCALES else "uz"
+    try:
+        result = await sync_to_async(stt.transcribe, thread_sensitive=False)(data, locale)
+    except stt.SpeechError as exc:
+        status = {"TOO_BIG": 413, "TOO_LONG": 413, "UNAVAILABLE": 503}.get(exc.code, 422)
+        return _json({"code": exc.code, "message": STT_ERRORS.get(exc.code, STT_ERRORS["BAD_AUDIO"]).get(locale)}, status)
+    # confidence lets the widget send a clear recording at once and put an unsure one in the box to check first
+    return _json({"text": result.text, "lang": result.lang, "seconds": result.seconds, "confidence": result.confidence})
+
+
+STT_ERRORS = {
+    "EMPTY": {"uz": "Ovoz eshitilmadi — mikrofonga yaqinroq gapirib, qayta urinib ko'ring.", "ru": "Не расслышал — говорите ближе к микрофону и попробуйте ещё раз.", "en": "I couldn't hear anything — speak closer to the microphone and try again."},
+    "TOO_LONG": {"uz": "Xabar juda uzun — 1 daqiqagacha gapiring.", "ru": "Слишком длинно — до 1 минуты.", "en": "Too long — keep it under a minute."},
+    "TOO_BIG": {"uz": "Xabar juda uzun — 1 daqiqagacha gapiring.", "ru": "Слишком длинно — до 1 минуты.", "en": "Too long — keep it under a minute."},
+    "BAD_AUDIO": {"uz": "Ovozni o'qib bo'lmadi — qayta yozib ko'ring.", "ru": "Не удалось прочитать запись — попробуйте ещё раз.", "en": "Couldn't read the recording — please try again."},
+    "UNAVAILABLE": {"uz": "Ovozli xabar hozir ishlamayapti — matn bilan yozing.", "ru": "Голосовой ввод сейчас недоступен — напишите текстом.", "en": "Voice input is unavailable right now — please type."},
+}
 
 
 @csrf_exempt

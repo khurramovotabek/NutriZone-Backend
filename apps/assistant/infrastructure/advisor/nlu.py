@@ -115,8 +115,32 @@ class Parsed:
     text: str = ""
 
 
+# Uzbek typed without the apostrophe: "ichsa boladimi" is "bo'ladimi" (may I?), not "bola" (a child) -- the most
+# common way people ask, so the forms of bo'l- / yo'q / ko'p / og'ri / to'g'ri get their apostrophe back first.
+_APOS_FIX = [
+    (re.compile(r"(?<![\w'])bol(adi|maydi|masa|moq|ar|sa|ib|gan|ish|ay|di|ing|asiz|aman|ganmi|dimi)"), r"bo'l\1"),
+    (re.compile(r"(?<![\w'])yoq(?![\w'])"), "yo'q"),
+    (re.compile(r"(?<![\w'])kop(roq|chilik)?(?![\w'])"), r"ko'p\1"),
+    (re.compile(r"(?<![\w'])ogri"), "og'ri"),
+    (re.compile(r"(?<![\w'])togri"), "to'g'ri"),
+    # colloquial / dialect forms of the question words the intents are written with
+    (re.compile(r"(?<![\w'])qanaqa(siga)?(?![\w'])"), "qanday"),
+    (re.compile(r"(?<![\w'])qandoq(?![\w'])"), "qanday"),
+    (re.compile(r"(?<![\w'])nechchi(?![\w'])"), "necha"),
+    (re.compile(r"(?<![\w'])ichlad(i|imi)"), r"ichilad\1"),
+    (re.compile(r"(?<![\w'])ichamiz(?![\w'])"), "ichish"),
+    # the usual typos of product words
+    (re.compile(r"(?<![\w'])(protin|proten|protien|proteyin|pratein)"), "protein"),
+    (re.compile(r"(?<![\w'])(kriatin|kreyatin|kreatn|creatin(?!e))"), "kreatin"),
+    (re.compile(r"(?<![\w'])(gayner|geiner|gainr)"), "geyner"),
+]
+
+
 def normalize(text: str) -> str:
-    return re.sub(r"\s+", " ", (text or "").lower().translate(APOS)).strip()
+    out = re.sub(r"\s+", " ", (text or "").lower().translate(APOS)).strip()
+    for pattern, repl in _APOS_FIX:
+        out = pattern.sub(repl, out)
+    return out
 
 
 @functools.lru_cache(maxsize=4096)

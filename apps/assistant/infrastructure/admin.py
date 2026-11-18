@@ -153,13 +153,14 @@ class KnowledgeEntryAdmin(PremiumListMixin, PremiumFormMixin, admin.ModelAdmin):
                            {k: v[0] for k, v in TOPIC_STYLE.items()})
 
     def nz_stats(self, request):
-        from apps.assistant.infrastructure import tts
+        from apps.assistant.infrastructure import stt, tts
 
         agg = KnowledgeEntry.objects.aggregate(n=Count("id", filter=Q(is_active=True)), uses=Sum("uses"), no_ru=Count("id", filter=Q(answer_ru="")), no_en=Count("id", filter=Q(answer_en="")))
         return [ui.stat_card("Faol bilimlar", agg["n"], "#7c3aed", "fa-brain"), ui.stat_card("Javoblarda ishlatildi", agg["uses"] or 0, "#16a34a", "fa-comments"),
                 ui.stat_card("Tarjimasi yo'q", (agg["no_ru"] or 0) + (agg["no_en"] or 0), "#f59e0b", "fa-language", "ru/en bo'sh — o'zbekcha javob ishlatiladi"),
-                ui.stat_card("Ovozli o'qish", "Yoqilgan" if tts.enabled() else "O'chiq", "#0ea5e9" if tts.enabled() else "#94a3b8", "fa-volume-high",
-                             "Azure: Madina / Sardor" if tts.enabled() else "AZURE_SPEECH_KEY kerak")]
+                ui.stat_card("Ovozli xabar", "Yoqilgan" if stt.available() else "O'chiq", "#0ea5e9" if stt.available() else "#94a3b8", "fa-microphone",
+                             ("Savol: server (uz/ru/en) · " if stt.available() else "Savol: model yo'q · ")
+                             + ("javob: Azure ovozi" if tts.enabled() else "javob: brauzer ovozi"))]
 
     def nz_hero_actions(self, request):
         from django.urls import reverse

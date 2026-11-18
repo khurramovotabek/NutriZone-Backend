@@ -1739,6 +1739,59 @@ def group_question(message: dict) -> bool:
     return True
 
 
+VOICE_TEXT = {
+    "heard": {"uz": "🎙 Tushundim: <i>{text}</i>", "ru": "🎙 Понял: <i>{text}</i>", "en": "🎙 I heard: <i>{text}</i>"},
+    "EMPTY": {"uz": "🎙 Ovozni tushunolmadim — biroz sekinroq va aniqroq gapirib, qayta yuboring yoki yozib qo'ying.",
+              "ru": "🎙 Не расслышал — скажите чуть медленнее и чётче или напишите текстом.",
+              "en": "🎙 I couldn't make that out — please say it a little slower, or type it."},
+    "TOO_LONG": {"uz": "🎙 Xabar juda uzun — savolni 1 daqiqagacha qilib yuboring.", "ru": "🎙 Слишком длинно — до 1 минуты, пожалуйста.",
+                 "en": "🎙 That's too long — please keep it under a minute."},
+    "UNAVAILABLE": {"uz": "🎙 Ovozli xabar hozir ishlamayapti — savolingizni yozib yuboring.", "ru": "🎙 Голосовые сейчас недоступны — напишите, пожалуйста.",
+                    "en": "🎙 Voice messages are unavailable right now — please type."},
+}
+
+
+def voice_question(message: dict) -> bool:
+    """
+    A voice note in a private chat: the offline speech model (apps/assistant/infrastructure/stt.py) writes it down,
+    the bot shows what it heard, and the text goes on exactly like a typed message (advisor or product search).
+    Skipped while the customer is in onboarding or a live chat with an operator.
+    """
+    from apps.assistant.infrastructure import stt
+    from apps.telegram_bot.infrastructure import tg_files
+    from apps.telegram_bot.interfaces import chat_state, onboarding_state
+
+    chat_id, telegram_user_id = message["chat"]["id"], message["from"]["id"]
+    if onboarding_state.get_state(chat_id) or chat_state.get_active_conversation(chat_id) is not None:
+        return False
+    user = _resolve_user(telegram_user_id)
+    if user is None:
+        _send(chat_id, t("please_register", "uz"))
+        return True
+    lang = _lang(user)
+    lang = lang if lang in ("uz", "ru", "en") else "uz"
+    note = message.get("voice") or message.get("audio") or {}
+    if not stt.available():
+        _send(chat_id, VOICE_TEXT["UNAVAILABLE"][lang])
+        return True
+    if (note.get("duration") or 0) > stt.MAX_SECONDS:
+        _send(chat_id, VOICE_TEXT["TOO_LONG"][lang])
+        return True
+    try:
+        audio = tg_files.download(note.get("file_id", ""))
+        heard = stt.transcribe(audio.content, lang)
+    except stt.SpeechError as exc:
+        _send(chat_id, VOICE_TEXT.get(exc.code, VOICE_TEXT["EMPTY"])[lang])
+        return True
+    except Exception:  # noqa: BLE001 -- a download / decode problem: ask to type instead of going silent
+        logger.exception("voice note failed")
+        _send(chat_id, VOICE_TEXT["UNAVAILABLE"][lang])
+        return True
+    _send(chat_id, VOICE_TEXT["heard"][lang].format(text=html.escape(heard.text)))
+    search_text(chat_id, telegram_user_id, heard.text)
+    return True
+
+
 def search_text(chat_id: int, telegram_user_id: int, text: str) -> None:
     """
     A plain text message to the bot is a product search -- the website's smart search (typos, Latin/Cyrillic,
