@@ -556,4 +556,13 @@ def _premium_groups() -> None:
     group_admin.install()
 
 
+def _premium_jobs() -> None:
+    from apps.platform.infrastructure import jobs_admin
+
+    jobs_admin.install()
+
+
+_premium_jobs()
+
+
 _premium_groups()

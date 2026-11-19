@@ -34,6 +34,7 @@ from django.db import IntegrityError, transaction
 from django.db.models import Count, DecimalField, ExpressionWrapper, F, Max, Q, Sum
 from django.urls import NoReverseMatch, reverse
 from django.utils import timezone
+from django.utils.dateparse import parse_datetime
 
 logger = logging.getLogger("nutrizone.platform.control")
 TZ = ZoneInfo("Asia/Tashkent")
@@ -54,16 +55,18 @@ KINDS = {
     "shift_overdue": ("⏰", "Smena yopilmagan"),
     "late_order": ("🚚", "Kechikayotgan buyurtma"),
     "payment_errors": ("💳", "To'lov tizimi xatosi"),
+    "job_failing": ("⚙️", "Fon vazifasi ishlamayapti"),
     "low_stock": ("📦", "Minimal qoldiqdan past"),
     "stock_forecast": ("📉", "Tez orada tugaydi"),
     "expiry": ("⏳", "Yaroqlilik muddati"),
 }
 GROUPS = {"risk": ("big_discount", "quick_refund", "refund_burst", "void_burst", "cash_difference"),
-          "ops": ("shift_missing", "shift_overdue", "late_order", "payment_errors"),
+          "ops": ("shift_missing", "shift_overdue", "late_order", "payment_errors", "job_failing"),
           "stock": ("low_stock", "stock_forecast", "expiry")}
-AUTO_RESOLVED = ("shift_missing", "shift_overdue", "late_order", "low_stock", "stock_forecast", "expiry")
+AUTO_RESOLVED = ("shift_missing", "shift_overdue", "late_order", "low_stock", "stock_forecast", "expiry", "job_failing")
 # a stock problem that comes back after it was fixed is news again: its (resolved) row is re-opened and re-sent
-REOPENABLE = ("low_stock", "stock_forecast")
+REOPENABLE = ("low_stock", "stock_forecast", "job_failing")
+JOB_FAIL_STREAK = 3  # a background job failing this many runs in a row is an incident (one bad run is often a network blip)
 EXPIRY_TIERS = (30, 60, 90)
 SNOOZE = timedelta(hours=24)  # "Ko'rildi" on a stock problem that is still there silences it for a day
 
@@ -348,6 +351,26 @@ def rule_payment_errors(cfg, now, stores) -> list[Finding]:
         r["last"], None, _url("admin:payment_paymentcallbacklog_changelist", query=f"provider={r['provider']}")) for r in rows if r["n"] >= cfg.payment_errors]
 
 
+def rule_jobs_failing(cfg, now, stores) -> list[Finding]:
+    """Background jobs (Fon vazifalari) whose last runs all failed -- relays, reports, reminders stop silently otherwise."""
+    from django_celery_beat.models import PeriodicTask
+
+    from apps.platform.infrastructure import task_health
+    from apps.platform.infrastructure.jobs_admin import health_of
+
+    tasks = list(PeriodicTask.objects.filter(enabled=True).select_related("interval", "crontab", "clocked", "solar"))
+    health = task_health.read([t.name for t in tasks] + [t.task for t in tasks])
+    out = []
+    for t in tasks:
+        h = health.get(t.name) or health.get(t.task) or {}
+        if health_of(t, h) != "failing" or int(h.get("streak", 0)) < JOB_FAIL_STREAK:
+            continue
+        out.append(_finding(f"job_failing:{t.pk}", "job_failing", "critical", f"«{t.name}» ketma-ket {h['streak']} marta xato bilan tugadi",
+                            [("Vazifa", t.name), ("Xato", (h.get("error") or "—")[:160]), ("Oxirgi muvaffaqiyat", _hm(parse_datetime(h["ok_at"])) if h.get("ok_at") else "hali yo'q")],
+                            parse_datetime(h["fail_at"]) or now, None, _url("admin:django_celery_beat_periodictask_changelist", query="nz=failing")))
+    return out
+
+
 # ---------------------------------------------------------------- stock (planning_service: rules, sales speed, transfers on the way)
 
 
@@ -449,7 +472,7 @@ def stock_rules(cfg, now, stores) -> list[Finding]:
 
 
 RISK_RULES = (rule_big_discount, rule_quick_refund, rule_refund_burst, rule_void_burst, rule_cash_difference)
-OPS_RULES = (rule_shift_overdue, rule_shift_missing, rule_late_orders, rule_payment_errors, stock_rules)
+OPS_RULES = (rule_shift_overdue, rule_shift_missing, rule_late_orders, rule_payment_errors, rule_jobs_failing, stock_rules)
 
 
 # ---------------------------------------------------------------- scan

@@ -161,7 +161,11 @@ JAZZMIN_SETTINGS = {
     # exactly rather than silently hiding it from a staff user who
     # lacks some specific model permission.
     # The WMS models live in the stores app but are reached from the Ombor group (custom_links["inventory"]).
-    "hide_models": ["chat.chatsettings", "reviews.reviewrequestsettings", "stores.stockadjustment", "stores.pospricechange", "pricing.repricingmodel", "ordering.courier", "finance.moneyaccount", "finance.category", "finance.transaction", "stores.stocktransfer", "stores.stockreceipt", "stores.stockmovement", "stores.stockcount",
+    # unused machinery: results live in Redis (django_celery_results stays empty), JWT blacklist is not the login path;
+    # beat's schedule tables are edited from the job form itself
+    "hide_apps": ["django_celery_results", "token_blacklist"],
+    "hide_models": ["django_celery_beat.intervalschedule", "django_celery_beat.crontabschedule", "django_celery_beat.solarschedule", "django_celery_beat.clockedschedule",
+                    "chat.chatsettings", "reviews.reviewrequestsettings", "stores.stockadjustment", "stores.pospricechange", "pricing.repricingmodel", "ordering.courier", "finance.moneyaccount", "finance.category", "finance.transaction", "stores.stocktransfer", "stores.stockreceipt", "stores.stockmovement", "stores.stockcount",
                     "stores.writeoff", "stores.supplier", "stores.supplierpayment", "stores.reorderrule", "stores.storecashier",
                     "search.searchterm", "telegram_bot.telegrampost", "telegram_bot.channelautopostsettings", "telegram_bot.telegramstaffmember", "receipts.receiptsettings", "ordering.deliverysettings"],  # reached from the Catalog group (custom_links["products"])
     "usermenu_links": [{"name": _("Mening profilim"), "url": "admin:nz_profile", "icon": "fas fa-user-circle"}],

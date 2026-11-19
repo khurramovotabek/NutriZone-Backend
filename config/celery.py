@@ -53,6 +53,11 @@ from core.observability.middleware import register_celery_correlation_signals  #
 
 register_celery_correlation_signals()
 
+# Fon vazifalari (dashboard): each job's latest result / error / runtime -- apps/platform/infrastructure/task_health.py
+from apps.platform.infrastructure.task_health import connect as _connect_job_health  # noqa: E402
+
+_connect_job_health()
+
 
 @app.task(bind=True, ignore_result=True)
 def debug_task(self):  # pragma: no cover - manual diagnostic task only
