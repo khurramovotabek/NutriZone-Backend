@@ -15,7 +15,7 @@
   if (window.__nzLoadMore) return;
   window.__nzLoadMore = true;
 
-  var AUTO = ["#result_list tbody", ".nzi-gallery", ".nzi-table", ".nzd-table"];
+  var AUTO = ["#result_list tbody", ".nzi-gallery", ".nzi-table", ".nzd-table", ".nzp-banner-grid", ".nzp-mail-list"];
   var HEAD = ".nzi-th, .nzd-th, .nzp-empty";
   var t = function (s) { return (window.nzTranslate || String)(s); };
 
@@ -41,6 +41,51 @@
       if (node.parentElement && node.parentElement.closest("[data-nz-more]")) continue;
       if (/\d[\d\s ]*–\s*\d/.test(node.nodeValue)) { node.nodeValue = node.nodeValue.replace(/\d[\d\s ]*(?=–)/, from); return; }
     }
+  }
+
+  /* The bar under "1–200 / 253" shows how much of the list is on screen now; once every row is loaded the pager says so. */
+  function progress(pager) {
+    var from = parseInt(pager.getAttribute("data-nz-from"), 10) || 1;
+    var end = parseInt(pager.getAttribute("data-nz-end"), 10) || 0;
+    var count = parseInt(pager.getAttribute("data-nz-count"), 10) || 0;
+    if (!count) return;
+    var pct = Math.min(100, Math.round(((end - from + 1) * 100) / count));
+    var bar = pager.querySelector(".nz-pager-bar");
+    if (bar) { bar.setAttribute("aria-valuenow", pct); if (bar.firstElementChild) bar.firstElementChild.style.width = pct + "%"; }
+    var done = pager.querySelector(".nz-pager-done");
+    if (from === 1 && end >= count) {
+      // the whole list is on screen: page numbers and "show all" have nothing left to offer
+      if (done) done.innerHTML = '<i class="fas fa-circle-check" aria-hidden="true"></i> ' + t("Hammasi ko'rsatildi") + " · " + count;
+      Array.prototype.forEach.call(pager.querySelectorAll(".nz-pager-list, .nz-pager-all"), function (el) { el.hidden = true; });
+    }
+    toTop();
+  }
+
+  /* "Tepaga": a round button once a grown list is long -- the page scrolls inside Jazzmin's wrapper or the window. */
+  var topBtn = null;
+  function scroller() {
+    var el = document.querySelector("[data-nz-pager]");
+    for (var p = el && el.parentElement; p && p !== document.body; p = p.parentElement) {
+      var oy = getComputedStyle(p).overflowY;
+      if ((oy === "auto" || oy === "scroll") && p.scrollHeight > p.clientHeight + 4) return p;
+    }
+    return null;
+  }
+  function toTop() {
+    if (topBtn) return;
+    var box = scroller(), target = box || window;
+    topBtn = document.createElement("button");
+    topBtn.type = "button";
+    topBtn.className = "nz-totop";
+    topBtn.setAttribute("aria-label", t("Tepaga"));
+    topBtn.innerHTML = '<i class="fas fa-arrow-up" aria-hidden="true"></i><span>' + t("Tepaga") + "</span>";
+    topBtn.hidden = true;
+    document.body.appendChild(topBtn);
+    var pos = function () { return box ? box.scrollTop : (window.scrollY || document.documentElement.scrollTop); };
+    var sync = function () { topBtn.hidden = pos() < 900; };
+    target.addEventListener("scroll", sync, { passive: true });
+    topBtn.addEventListener("click", function () { (box || window).scrollTo({ top: 0, behavior: "smooth" }); });
+    sync();
   }
 
   function pagerIndex(pager) {
@@ -81,6 +126,7 @@
           else keepFrom(fresh, from); // "Showing 51–100 of 253" written by a translated sentence → "Showing 1–100 of 253"
         }
         pager.replaceWith(fresh);
+        progress(fresh);
         if (added[0] && added[0].focus) { added[0].setAttribute("tabindex", "-1"); added[0].focus({ preventScroll: true }); }
         document.dispatchEvent(new CustomEvent("nz:rows-added", { detail: { container: box, rows: added } }));
       })

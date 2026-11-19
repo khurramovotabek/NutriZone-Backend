@@ -307,3 +307,12 @@ html[data-nz-theme="dark"] .nza-trend.is-down { color: #f87171; }
   .nza-status li { grid-template-columns: 100px minmax(0, 1fr) 30px; }
   .nza-card { padding: 15px 14px; }
 }
+
+/* phones: amount + share columns fit a 390 px card (they were clipped by ~13 px) */
+@media (max-width: 640px) {
+  .nza-paylist, .nza-mix { grid-template-columns: minmax(0, 1fr); }
+  .nza-paylist li, .nza-mix li { grid-template-columns: 10px minmax(0, 1fr) auto 38px; gap: 8px; font-size: 12.5px; }
+}
+/* stock lists: the column never grows to a long product name (it pushed the amounts 13 px off a phone) */
+.nza-lists > div { min-width: 0; }
+.nza-lists ul { grid-template-columns: minmax(0, 1fr); }

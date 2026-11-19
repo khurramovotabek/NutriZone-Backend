@@ -45,16 +45,18 @@
   function initBulk(root) {
     var form = $("[data-nzp-bulk]", root);
     if (!form) return;
-    var checks = $$("[data-nzp-row-check]", form);
+    // read live: "Yana ko'rsatish" (nz-load-more.js) appends rows after init
+    function rowChecks() { return $$("[data-nzp-row-check]", form); }
     var all = $("[data-nzp-select-all]", form);
     var bar = $("[data-nzp-bulkbar]", form);
     var go = $("[data-nzp-bulk-go]", form);
     var label = $("[data-nzp-selected-label]", form);
     var labelDefault = label ? label.textContent : "";
     var select = $("select[name=action]", form);
-    if (!checks.length) return;
+    if (!rowChecks().length) return;
 
     function sync() {
+      var checks = rowChecks();
       var n = checks.filter(function (c) { return c.checked; }).length;
       checks.forEach(function (c) {
         var card = c.closest(".nzp-banner, .nzp-mail");
@@ -65,8 +67,9 @@
       if (label) label.textContent = n ? n + " / " + checks.length : labelDefault;
       if (go) go.disabled = n === 0 || (select && !select.value);
     }
-    checks.forEach(function (c) { c.addEventListener("change", sync); });
-    if (all) all.addEventListener("change", function () { checks.forEach(function (c) { c.checked = all.checked; }); sync(); });
+    form.addEventListener("change", function (e) { if (e.target.matches("[data-nzp-row-check]")) sync(); });
+    if (all) all.addEventListener("change", function () { rowChecks().forEach(function (c) { c.checked = all.checked; }); sync(); });
+    document.addEventListener("nz:rows-added", sync);
     if (select) select.addEventListener("change", sync);
     sync();
   }
@@ -76,8 +79,11 @@
     var activeEl = $("[data-nzp-active-count]", root);
     var hiddenEl = $("[data-nzp-hidden-count]", root);
 
-    $$("[data-nzp-toggle]", root).forEach(function (btn) {
-      btn.addEventListener("click", function () {
+    // delegated, so cards added by "Yana ko'rsatish" toggle too
+    root.addEventListener("click", function (e) {
+      var btn = e.target.closest("[data-nzp-toggle]");
+      if (!btn || !root.contains(btn)) return;
+      (function () {
         var card = btn.closest(".nzp-banner");
         btn.classList.add("is-busy");
         postJSON(btn.getAttribute("data-nzp-toggle")).then(function (data) {
@@ -97,7 +103,7 @@
         }).catch(function () {
           toast(root.getAttribute("data-msg-error"), true);
         }).then(function () { btn.classList.remove("is-busy"); });
-      });
+      })();
     });
 
     // Pill labels: read the localized words from the first rendered "on"/"off" pills.
@@ -321,7 +327,10 @@
     var editor = $("[data-nzp-banner-editor]");
     if (editor) initBannerEditor(editor);
     var inbox = $("[data-nzp-inbox]");
-    if (inbox) { initBulk(inbox); paintAvatars(inbox); }
+    if (inbox) {
+      initBulk(inbox); paintAvatars(inbox);
+      document.addEventListener("nz:rows-added", function () { paintAvatars(inbox); });
+    }
     var reader = $("[data-nzp-reader]");
     if (reader) { paintAvatars(reader); initReader(reader); }
   }

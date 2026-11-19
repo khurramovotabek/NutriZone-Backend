@@ -1,7 +1,7 @@
 {% extends "admin/base_site.html" %}
 {% load i18n static nza %}
 {# Dashboard → Mijozlar segmentlari (apps/platform/infrastructure/growth_view.py, segments.py). #}
-{% block extrastyle %}{{ block.super }}<link rel="stylesheet" href="{% static 'admin/css/nutrizone-analytics.css' %}?v=5"><link rel="stylesheet" href="{% static 'admin/css/nutrizone-growth.css' %}?v=1">{% endblock %}
+{% block extrastyle %}{{ block.super }}<link rel="stylesheet" href="{% static 'admin/css/nutrizone-analytics.css' %}?v=6"><link rel="stylesheet" href="{% static 'admin/css/nutrizone-growth.css' %}?v=1">{% endblock %}
 {% block breadcrumbs %}<ol class="breadcrumb"><li class="breadcrumb-item"><a href="{% url 'admin:index' %}">{% translate "Home" %}</a></li><li class="breadcrumb-item active">{{ title }}</li></ol>{% endblock %}
 {% block content_title %}{% endblock %}
 {% block content %}

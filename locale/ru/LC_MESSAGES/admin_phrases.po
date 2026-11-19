@@ -8119,3 +8119,15 @@ msgstr "Изменений цены нет"
 
 msgid "Kassir savatdagi mahsulot narxini o'zgartirganda shu yerda paydo bo'ladi."
 msgstr "Появится здесь, когда кассир изменит цену товара в корзине."
+
+msgid "Ro'yxat oxiri"
+msgstr "Конец списка"
+
+msgid "Hammasi ko'rsatildi"
+msgstr "Показано всё"
+
+msgid "Tepaga"
+msgstr "Наверх"
+
+msgid "Ko'rsatilgan"
+msgstr "Показано"

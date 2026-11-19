@@ -52,6 +52,9 @@ def nz_pager(cl, page_range) -> dict:
         "more": min(cl.list_per_page, max(cl.result_count - current * cl.list_per_page, 0)),  # rows "Yana ko'rsatish" adds
         "current": current,
         "total": total,
+        # share of the list on screen up to this page (the bar under the counter; nz-load-more.js redraws it after "Yana ko'rsatish")
+        "pct": round(min(current * cl.list_per_page, cl.result_count) * 100 / cl.result_count) if cl.result_count else 100,
+        "last": current >= total,
     }
 
 

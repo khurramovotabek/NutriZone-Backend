@@ -104,3 +104,24 @@ a.nz-pager-num:hover, a.nz-pager-step:hover { background: var(--nz-hover); color
   .nz-pager-list > li.nz-pager-narrow { display: none; }
   .nz-pager-of { display: block; font-weight: 700; font-size: .85rem; color: var(--nz-text-primary); }
 }
+
+/* ---- pager v2: progress under the counter, end-of-list state, "Tepaga" (nz-load-more.js) ---- */
+.nz-pager-bar { position: relative; display: inline-block; width: 120px; height: 6px; border-radius: 999px; overflow: hidden; background: var(--nz-hover, rgba(15, 23, 42, .08)); vertical-align: middle; }
+.nz-pager-bar > span { position: absolute; inset: 0 auto 0 0; border-radius: inherit; background: linear-gradient(90deg, var(--nz-primary, #3b82f6), #22c55e); transition: width .45s cubic-bezier(.2, .8, .2, 1); }
+.nz-pager-done { order: -1; flex: 1 1 100%; display: flex; align-items: center; justify-content: center; gap: 8px; min-height: 40px; padding: 8px 14px; border-radius: 14px; background: rgba(22, 163, 74, .08); color: #15803d; font-weight: 700; font-size: .84rem; }
+.nz-pager-more { position: relative; overflow: hidden; }
+.nz-pager-more.is-loading::after { content: ""; position: absolute; inset: auto 0 0 0; height: 3px; background: linear-gradient(90deg, transparent, var(--nz-primary, #3b82f6), transparent); animation: nz-pager-sweep 1s linear infinite; }
+@keyframes nz-pager-sweep { from { transform: translateX(-100%); } to { transform: translateX(100%); } }
+.nz-totop { position: fixed; right: 18px; bottom: 88px; z-index: 1040; display: inline-flex; align-items: center; gap: 8px; height: 44px; padding: 0 16px; border: 1px solid var(--nz-glass-border, var(--nz-border)); border-radius: 999px; background: var(--nz-glass-bg, var(--nz-surface)); color: var(--nz-primary, #3b82f6); font-weight: 700; font-size: .84rem; box-shadow: 0 12px 30px -14px rgba(15, 23, 42, .45); backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px); cursor: pointer; }
+.nz-totop[hidden] { display: none; }
+.nz-totop:hover { border-color: var(--nz-primary, #3b82f6); }
+@media (max-width: 768px) {
+  .nz-pager-bar { width: 100%; order: 9; }
+  .nz-totop { right: 12px; bottom: 80px; width: 44px; padding: 0; justify-content: center; }
+  .nz-totop span { display: none; }
+}
+@media (prefers-reduced-motion: reduce) { .nz-pager-bar > span, .nz-pager-more.is-loading::after { transition: none; animation: none; } }
+
+/* the footer names the shop, not the admin framework's version */
+.app-footer > .float-end { display: none !important; }
+.nz-pager-list[hidden], .nz-pager-all[hidden] { display: none !important; }

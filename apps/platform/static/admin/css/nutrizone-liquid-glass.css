@@ -239,3 +239,6 @@ body.nz-glass-page :is(.nzp-select, .nzp-search input, .nzi-search input, .nzi-f
 @media (prefers-reduced-transparency: reduce) {
   body.nz-glass-page :is(.nza-card, .nza-kpi, .nzp-card, .nz-card, .card), .nz-lg .nz-card { -webkit-backdrop-filter: none; backdrop-filter: none; background-color: var(--nz-surface) !important; }
 }
+
+/* phones: the aurora layer stays inside the screen (inset -24px pushed the page 16 px wide) */
+@media (max-width: 768px) { .nz-lg-aurora { inset: -16px 0 auto; border-radius: 0; } }

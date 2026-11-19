@@ -264,3 +264,12 @@ body.nz-glass-page .nzf .nzf-advice li:nth-child(4) { animation-delay: .18s; } b
 }
 .nzf-rowshare { display: grid; grid-template-columns: minmax(40px, 1fr) auto; gap: 6px; align-items: center; width: 100%; }
 .nzf-rowshare small { font-size: .72rem; font-weight: 800; color: var(--nz-text-muted); }
+
+/* phones: a budget line is a card -- the account on its own row, then plan / actual / progress */
+@media (max-width: 991px) {
+  .nzf-budget-head { display: none; }
+  .nzf-budget-row { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 8px 10px; padding: 12px; border: 1px solid var(--nz-border); margin-bottom: 8px; }
+  .nzf-budget-row > :first-child { grid-column: 1 / -1; }
+  .nzf-budget-row > :last-child { grid-column: 1 / -1; }
+  .nzf-acc { min-width: 0; overflow: hidden; }
+}

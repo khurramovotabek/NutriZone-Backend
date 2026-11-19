@@ -1,10 +1,12 @@
 {% load i18n nzi static %}{# Only one of the two number rows is displayed at a time (CSS), so assistive tech never hears both. Every changelist's pager (Django's {% pagination cl %} renders this): one row on desktop, a compact thumb-sized row on phones. #}
 {% nz_pager cl page_range as pg %}
-<nav class="nz-pager" aria-label="{% translate 'Sahifalar' %}" data-nz-pager data-nz-from="{{ pg.start }}">
+<nav class="nz-pager" aria-label="{% translate 'Sahifalar' %}" data-nz-pager data-nz-from="{{ pg.start }}" data-nz-end="{{ pg.end }}" data-nz-count="{{ cl.result_count }}">
   {% if pg.next and not cl.formset %}<a class="nz-pager-more" href="{{ pg.next }}" data-nz-more><i class="fas fa-angles-down" aria-hidden="true"></i> {% translate "Yana ko'rsatish" %} <span class="nz-pager-more-n">+{{ pg.more }}</span></a>{% endif %}
+  {% if pagination_required and pg.last %}<div class="nz-pager-done"><i class="fas fa-circle-check" aria-hidden="true"></i> {% translate "Ro'yxat oxiri" %}</div>{% endif %}
   <div class="nz-pager-info" role="status" aria-live="polite">
     {% if pagination_required %}<b><span data-nz-from-cell>{{ pg.start }}</span>–{{ pg.end }}</b> / {{ cl.result_count }}{% else %}<b>{{ cl.result_count }}</b>{% endif %}
     <span class="nz-pager-noun">{% if cl.result_count == 1 %}{{ cl.opts.verbose_name }}{% else %}{{ cl.opts.verbose_name_plural }}{% endif %}</span>
+    {% if pagination_required %}<span class="nz-pager-bar" role="progressbar" aria-label="{% translate "Ko'rsatilgan" %}" aria-valuemin="0" aria-valuemax="100" aria-valuenow="{{ pg.pct }}"><span style="width:{{ pg.pct }}%"></span></span>{% endif %}
     {% if show_all_url %}<a class="nz-pager-all" href="{{ show_all_url }}">{% translate 'Show all' %}</a>{% endif %}
     {% if cl.formset and cl.result_count %}<input type="submit" name="_save" class="btn btn-sm btn-success" value="{% translate 'Save' %}">{% endif %}
   </div>

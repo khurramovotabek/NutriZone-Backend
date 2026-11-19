@@ -153,7 +153,7 @@
 
 {% block extrajs %}
 {{ block.super }}
-<script src="{% static 'admin/js/nutrizone-platform.js' %}?v=5"></script>
+<script src="{% static 'admin/js/nutrizone-platform.js' %}?v=6"></script>
 <script>
 document.querySelectorAll("[data-nzp-quick] button").forEach(function (b) {
   b.addEventListener("click", function () { var t = document.getElementById("nz-reply"); t.value = (t.value ? t.value + " " : "") + b.dataset.text; t.focus(); t.dispatchEvent(new Event("input", { bubbles: true })); });

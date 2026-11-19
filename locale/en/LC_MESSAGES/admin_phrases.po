@@ -8080,3 +8080,15 @@ msgstr "No price changes"
 
 msgid "Kassir savatdagi mahsulot narxini o'zgartirganda shu yerda paydo bo'ladi."
 msgstr "Appears here when a cashier changes a product's price in the basket."
+
+msgid "Ro'yxat oxiri"
+msgstr "End of list"
+
+msgid "Hammasi ko'rsatildi"
+msgstr "Everything is shown"
+
+msgid "Tepaga"
+msgstr "Back to top"
+
+msgid "Ko'rsatilgan"
+msgstr "Shown"
