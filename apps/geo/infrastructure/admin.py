@@ -290,7 +290,7 @@ class CountryAdmin(_StatusActions, GeoMapMedia, PremiumListMixin, PremiumFormMix
         return self._status_tabs(request, orm.Country.objects.all())
 
     def nz_hero_actions(self, request):
-        return [{"label": "Manzillar xaritasi", "url": reverse("admin:nz_geo_map"), "icon": "fa-map-location-dot"},
+        return [{"label": "Mijozlar xaritasi", "url": reverse("admin:nz_geo_customers"), "icon": "fa-users-viewfinder"}, {"label": "Manzillar xaritasi", "url": reverse("admin:nz_geo_map"), "icon": "fa-map-location-dot"},
                 {"label": "Yangi davlat", "url": reverse("admin:geo_country_add"), "icon": "fa-plus", "primary": True}]
 
     def nz_row(self, c):
@@ -377,7 +377,7 @@ class RegionAdmin(_StatusActions, GeoMapMedia, PremiumListMixin, PremiumFormMixi
         return self._status_tabs(request, orm.Region.objects.all())
 
     def nz_hero_actions(self, request):
-        return [{"label": "Manzillar xaritasi", "url": reverse("admin:nz_geo_map"), "icon": "fa-map-location-dot"},
+        return [{"label": "Mijozlar xaritasi", "url": reverse("admin:nz_geo_customers"), "icon": "fa-users-viewfinder"}, {"label": "Manzillar xaritasi", "url": reverse("admin:nz_geo_map"), "icon": "fa-map-location-dot"},
                 {"label": "Yangi viloyat", "url": reverse("admin:geo_region_add"), "icon": "fa-plus", "primary": True}]
 
     def nz_row(self, r):
@@ -530,7 +530,7 @@ class CityAdmin(_StatusActions, GeoMapMedia, PremiumListMixin, PremiumFormMixin,
         return self._status_tabs(request, orm.City.objects.all())
 
     def nz_hero_actions(self, request):
-        return [{"label": "Manzillar xaritasi", "url": reverse("admin:nz_geo_map"), "icon": "fa-map-location-dot"},
+        return [{"label": "Mijozlar xaritasi", "url": reverse("admin:nz_geo_customers"), "icon": "fa-users-viewfinder"}, {"label": "Manzillar xaritasi", "url": reverse("admin:nz_geo_map"), "icon": "fa-map-location-dot"},
                 {"label": "Yangi shahar", "url": reverse("admin:geo_city_add"), "icon": "fa-plus", "primary": True}]
 
     def nz_row(self, c):
@@ -723,7 +723,7 @@ class AddressAdmin(ExcelExportMixin, GeoMapMedia, PremiumListMixin, PremiumFormM
         ]
 
     def nz_hero_actions(self, request):
-        return [{"label": "Manzillar xaritasi", "url": reverse("admin:nz_geo_map"), "icon": "fa-map-location-dot", "primary": True}]
+        return [{"label": "Mijozlar xaritasi", "url": reverse("admin:nz_geo_customers"), "icon": "fa-users-viewfinder"}, {"label": "Manzillar xaritasi", "url": reverse("admin:nz_geo_map"), "icon": "fa-map-location-dot", "primary": True}]
 
     def nz_row(self, a):
         from apps.geo.application.services.address import delivery_details_line

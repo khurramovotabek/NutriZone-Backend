@@ -77,6 +77,14 @@ def reading_minutes(text: str | None) -> int:
     return max(1, math.ceil(words / 200))
 
 
+def _live(prefix: str = ""):
+    """Published and its time has come: a post scheduled for later (published_at in the future) stays hidden until then."""
+    from django.db.models import Q
+    from django.utils import timezone
+
+    return Q(**{f"{prefix}published_at__isnull": True}) | Q(**{f"{prefix}published_at__lte": timezone.now()})
+
+
 class BlogCategoryListView(APIView):
     """`GET /content/categories` -- real, public (AllowAny), read-only. Only categories with at least one real PUBLISHED post (an empty category is never worth offering as a filter tab with zero results behind it), sorted the same way BlogCategoryAdmin's own `sort_order` field is meant to be used."""
 
@@ -85,7 +93,7 @@ class BlogCategoryListView(APIView):
     @extend_schema(tags=["Content"], summary="List blog categories with published posts", responses={200: OpenApiResponse(description="Blog categories")})
     def get(self, request):
         categories = (
-            BlogCategory.objects.filter(posts__status=BlogPostStatus.PUBLISHED).distinct().order_by("sort_order", "name")
+            BlogCategory.objects.filter(posts__status=BlogPostStatus.PUBLISHED).filter(_live("posts__")).distinct().order_by("sort_order", "name")
         )
         locale = _locale(request)
         return success_response(data=[{"id": str(c.id), "name": c.localized_name(locale), "slug": c.slug} for c in categories])
@@ -100,7 +108,7 @@ class BlogPostListView(APIView):
     def get(self, request):
         page = int(request.query_params.get("page", 1))
         page_size = min(int(request.query_params.get("page_size", 10)), 50)
-        qs = BlogPost.objects.filter(status=BlogPostStatus.PUBLISHED).select_related("category").order_by("-published_at")
+        qs = BlogPost.objects.filter(_live(), status=BlogPostStatus.PUBLISHED).select_related("category").order_by("-published_at")
         category_slug = request.query_params.get("category")
         if category_slug:
             qs = qs.filter(category__slug=category_slug)
@@ -119,7 +127,7 @@ class BlogPostDetailView(APIView):
 
     @extend_schema(tags=["Content"], summary="Get a published blog post by slug", responses={200: OpenApiResponse(description="Blog post detail"), 404: OpenApiResponse(description="Not found")})
     def get(self, request, slug: str):
-        post = BlogPost.objects.filter(slug=slug, status=BlogPostStatus.PUBLISHED).select_related("category").first()
+        post = BlogPost.objects.filter(_live(), slug=slug, status=BlogPostStatus.PUBLISHED).select_related("category").first()
         if post is None:
             raise ResourceNotFound("Blog post not found.")
         BlogPost.objects.filter(id=post.id).update(view_count=post.view_count + 1)

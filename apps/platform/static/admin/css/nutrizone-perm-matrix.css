@@ -1,0 +1,46 @@
+/* Permission matrix (Guruhlar / xodim shaxsiy ruxsatlari): section → model rows × view/add/change/delete + special rights. */
+.nzpm{display:grid;gap:10px;width:100%}
+.nzpm-bar{display:flex;flex-wrap:wrap;align-items:center;gap:10px;position:sticky;top:56px;z-index:5;padding:10px;border-radius:16px;
+  background:color-mix(in srgb,var(--nz-surface,#fff) 82%,transparent);-webkit-backdrop-filter:blur(14px) saturate(160%);backdrop-filter:blur(14px) saturate(160%);
+  border:1px solid var(--nz-border,#e2e8f0);box-shadow:0 6px 20px rgba(15,23,42,.06)}
+.nzpm-search{flex:1 1 260px;display:flex;align-items:center;gap:8px;padding:0 12px;height:38px;border-radius:12px;border:1px solid var(--nz-border,#e2e8f0);background:var(--nz-surface,#fff)}
+.nzpm-search i{color:var(--nz-text-muted,#94a3b8)}
+.nzpm-search input{border:0!important;outline:0;background:transparent!important;flex:1;min-width:0;height:36px;box-shadow:none!important;color:var(--nz-text-primary,#0f172a)}
+.nzpm-total{font-size:13px;color:var(--nz-text-muted,#64748b)}
+.nzpm-total b{color:var(--nz-primary,#4f46e5);font-size:15px}
+.nzpm-btn,.nzpm-tools button{border:1px solid var(--nz-border,#e2e8f0);background:var(--nz-surface,#fff);color:var(--nz-text-secondary,#334155);border-radius:10px;padding:6px 11px;font-size:12px;font-weight:600;cursor:pointer}
+.nzpm-btn:hover,.nzpm-tools button:hover{border-color:var(--nz-primary,#4f46e5);color:var(--nz-primary,#4f46e5)}
+.nzpm-app{border:1px solid var(--nz-border,#e2e8f0);border-radius:16px;background:color-mix(in srgb,var(--nz-surface,#fff) 90%,transparent);overflow:hidden}
+.nzpm-app.is-system{opacity:.8}
+.nzpm-app>summary{display:flex;align-items:center;gap:10px;padding:12px 14px;cursor:pointer;list-style:none;font-size:14px;color:var(--nz-text-primary,#0f172a)}
+.nzpm-app>summary::-webkit-details-marker{display:none}
+.nzpm-app>summary::after{content:"\f078";font-family:"Font Awesome 5 Free","Font Awesome 6 Free";font-weight:900;font-size:11px;color:var(--nz-text-muted,#94a3b8);transition:transform .2s}
+.nzpm-app[open]>summary::after{transform:rotate(180deg)}
+.nzpm-app>summary>i{width:30px;height:30px;border-radius:10px;display:grid;place-items:center;background:color-mix(in srgb,var(--nz-primary,#4f46e5) 12%,transparent);color:var(--nz-primary,#4f46e5);font-size:13px}
+.nzpm-count{margin-left:auto;font-size:12px;font-weight:700;padding:3px 9px;border-radius:999px;background:var(--nz-surface-secondary,#f1f5f9);color:var(--nz-text-muted,#64748b)}
+.nzpm-count.is-on{background:color-mix(in srgb,#16a34a 14%,transparent);color:#15803d}
+.nzpm-tools{display:flex;gap:6px}
+.nzpm-table{width:100%;border-collapse:collapse;font-size:13px}
+.nzpm-table th,.nzpm-table td{padding:8px 10px;border-top:1px solid var(--nz-border,#eef2f7);text-align:center;vertical-align:middle}
+.nzpm-table thead th{font-size:11px;text-transform:uppercase;letter-spacing:.04em;color:var(--nz-text-muted,#64748b);background:var(--nz-surface-secondary,#f8fafc)}
+.nzpm-table tbody th,.nzpm-table thead th:first-child{text-align:left}
+.nzpm-table td.nzpm-extra{text-align:left}
+.nzpm-row{border:0;background:none;padding:0;font-weight:600;color:var(--nz-text-primary,#0f172a);cursor:pointer;text-align:left}
+.nzpm-row:hover{color:var(--nz-primary,#4f46e5)}
+.nzpm-box{display:inline-flex;align-items:center;gap:6px;margin:2px;cursor:pointer}
+.nzpm-box input{width:18px;height:18px;accent-color:var(--nz-primary,#4f46e5);cursor:pointer}
+.nzpm-box.has-text{padding:3px 9px 3px 6px;border-radius:999px;border:1px solid var(--nz-border,#e2e8f0);font-size:12px;color:var(--nz-text-secondary,#334155)}
+.nzpm-box.has-text:has(input:checked){border-color:var(--nz-primary,#4f46e5);background:color-mix(in srgb,var(--nz-primary,#4f46e5) 10%,transparent)}
+.nzpm-none{color:var(--nz-text-muted,#cbd5e1)}
+.nzpm tr.is-hidden,.nzpm-app.is-hidden{display:none}
+ul.nzpm-members,.nzpm-members{display:flex;flex-wrap:wrap;gap:8px;padding:0;margin:0;list-style:none}
+.nzpm-members li{list-style:none}
+.nzpm-members label{display:inline-flex;align-items:center;gap:8px;padding:7px 12px;border-radius:999px;border:1px solid var(--nz-border,#e2e8f0);cursor:pointer;font-size:13px}
+.nzpm-members label:has(input:checked){border-color:#16a34a;background:color-mix(in srgb,#16a34a 10%,transparent)}
+@media (max-width:760px){.nzpm-bar{top:0}.nzpm-tools{display:none}.nzpm-table td.nzpm-extra{min-width:160px}.nzpm-app{overflow-x:auto}}
+/* the matrix takes the whole card width: no label column beside it */
+.form-group:has(.nzpm)>.row>label{display:none}
+.form-group:has(.nzpm)>.row>div{flex:0 0 100%;max-width:100%}
+.form-group:has(.nzpm) .related-widget-wrapper{display:block;width:100%}
+.form-group:has(.nzpm) .card-body,.card-body:has(.nzpm){padding:14px!important}
+.nzpm-members:empty::before,.nzpm-members-empty{content:"Hali dashboard xodimi yo'q (superuser'lar ro'yxatda ko'rinmaydi) — «Xodimlar» sahifasida yangi xodim qo'shing.";color:var(--nz-text-muted,#64748b);font-size:13px}

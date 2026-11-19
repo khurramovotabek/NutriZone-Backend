@@ -1,0 +1,47 @@
+{% extends "admin/base_site.html" %}
+{% load i18n static %}
+{# Geo → Mijozlar xaritasi (apps/geo/infrastructure/customer_map.py): customers, regions and branches on the map of Uzbekistan. Data: nz_geo_customers_json. #}
+{% block extrastyle %}{{ block.super }}<link rel="stylesheet" href="{% static 'admin/css/nutrizone-platform.css' %}?v=6"><link rel="stylesheet" href="{% static 'admin/css/nutrizone-premium.css' %}?v=9"><link rel="stylesheet" href="{% static 'admin/vendor/leaflet/leaflet.css' %}"><link rel="stylesheet" href="{% static 'admin/css/nutrizone-geo.css' %}?v=3"><link rel="stylesheet" href="{% static 'admin/css/nutrizone-geo-customers.css' %}?v=2">{% endblock %}
+{% block breadcrumbs %}<ol class="breadcrumb"><li class="breadcrumb-item"><a href="{% url 'admin:index' %}">{% translate "Home" %}</a></li><li class="breadcrumb-item"><a href="{% url 'admin:geo_address_changelist' %}">Geo</a></li><li class="breadcrumb-item active">{{ title }}</li></ol>{% endblock %}
+{% block content_title %}{% endblock %}
+{% block content %}
+<div class="nzp nzcm" data-nzcm data-src="{% url 'admin:nz_geo_customers_json' %}" data-period="{{ period }}">
+  <header class="nzp-hero">
+    <div class="nzp-hero-main">
+      <span class="nzp-hero-icon" style="--c:#0d9488"><i class="fas fa-users-viewfinder" aria-hidden="true"></i></span>
+      <div><h2>{{ title }}</h2><p>Mijozlar O'zbekiston xaritasida: kim, qayerda, qancha xarid qilgan. Hududlar — tushum va mijozlar bo'yicha; filialsiz hududlar — yangi do'kon uchun signal.</p></div>
+    </div>
+    <div class="nzp-hero-actions">
+      <div class="nzcm-seg" role="tablist" aria-label="Davr">{% for p in periods %}<button type="button" role="tab" data-period="{{ p.key }}"{% if p.key == period %} class="on" aria-selected="true"{% endif %}>{{ p.label }}</button>{% endfor %}</div>
+      <a class="nzp-btn nzp-btn-ghost" href="{% url 'admin:nz_geo_map' %}"><i class="fas fa-map-location-dot" aria-hidden="true"></i> Manzillar xaritasi</a>
+    </div>
+  </header>
+
+  <div class="nzi-stats" data-stats aria-live="polite"></div>
+
+  <div class="nzcm-grid">
+    <section class="nzcm-mapwrap">
+      <div class="nzcm-map" data-map aria-label="Mijozlar xaritasi"></div>
+      <div class="nzcm-float nzcm-top">
+        <label class="nzcm-search"><i class="fas fa-magnifying-glass" aria-hidden="true"></i><input type="search" data-search placeholder="Mijoz: ism yoki telefon…" aria-label="Mijozni qidirish" autocomplete="off"></label>
+        <div class="nzcm-results" data-results hidden></div>
+      </div>
+      <div class="nzcm-float nzcm-legend" data-legend></div>
+      <div class="nzcm-float nzcm-metric" role="radiogroup" aria-label="Hudud o'lchami">
+        <span>Hudud:</span>
+        <button type="button" data-metric="revenue" class="on">Tushum</button><button type="button" data-metric="customers">Mijozlar</button><button type="button" data-metric="orders">Buyurtmalar</button>
+      </div>
+      <div class="nzcm-loading" data-loading><i class="fas fa-spinner fa-spin" aria-hidden="true"></i> Yuklanmoqda…</div>
+    </section>
+
+    <aside class="nzcm-side">
+      <div class="nzcm-panel">
+        <h4><i class="fas fa-ranking-star" aria-hidden="true"></i> Hududlar reytingi <small data-period-label></small></h4>
+        <ol class="nzcm-regions" data-regions></ol>
+      </div>
+      <div class="nzcm-panel" data-insights></div>
+    </aside>
+  </div>
+</div>
+{% endblock %}
+{% block extrajs %}{{ block.super }}<script src="{% static 'admin/vendor/leaflet/leaflet.js' %}"></script><script src="{% static 'admin/js/nutrizone-geo-customers.js' %}?v=2" defer></script>{% endblock %}

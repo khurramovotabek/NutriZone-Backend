@@ -2,7 +2,9 @@
 from __future__ import annotations
 
 from django import forms
-from django.contrib import admin
+from django.conf import settings
+from django.contrib import admin, messages
+from django.contrib.admin.helpers import ActionForm
 from django.utils.html import format_html
 from django.utils.safestring import mark_safe
 from django.utils.translation import gettext_lazy as _
@@ -21,6 +23,16 @@ def timezone_local(dt) -> str:
     from zoneinfo import ZoneInfo
 
     return dt.astimezone(ZoneInfo("Asia/Tashkent")).strftime("%d.%m %H:%M") if dt else ""
+
+
+class StoreActionForm(ActionForm):
+    """The list's action bar also carries the fields of "Maxsus kun qo'shish" (a holiday / short day for the chosen branches)."""
+
+    day = forms.DateField(required=False, label="Sana", widget=forms.DateInput(attrs={"type": "date"}))
+    day_closed = forms.BooleanField(required=False, label="Dam olish")
+    day_open = forms.TimeField(required=False, label="Ochiladi", widget=forms.TimeInput(attrs={"type": "time"}, format="%H:%M"))
+    day_close = forms.TimeField(required=False, label="Yopiladi", widget=forms.TimeInput(attrs={"type": "time"}, format="%H:%M"))
+    day_note = forms.CharField(required=False, max_length=80, label="Izoh", widget=forms.TextInput(attrs={"placeholder": "Masalan: Navro'z"}))
 
 
 _WEEKDAYS = [
@@ -395,16 +407,19 @@ class StoreAdmin(ExcelExportMixin, admin.ModelAdmin):
     readonly_fields = ("id", "logo_display", "cover_image_display", "map_link_display", "map_picker", "created_at", "updated_at")
     change_form_template = "admin/stores/store/change_form.html"
 
+    action_form = StoreActionForm
+
     class Media:
         css = {"all": ("admin/vendor/leaflet/leaflet.css", "admin/css/nutrizone-store-form.css")}
-        js = ("admin/vendor/leaflet/leaflet.js", "admin/js/nutrizone-store-form.js")
+        # absolute path: a "?v=" inside a relative Media path gets URL-encoded (404); no hashed static storage here
+        js = ("admin/vendor/leaflet/leaflet.js", f"{settings.STATIC_URL}admin/js/nutrizone-store-form.js?v=3")
 
     @admin.display(description=_("Xaritada"))
     def map_picker(self, obj):
         from apps.stores.infrastructure.store_admin_ui import map_picker_html
 
         return map_picker_html(obj)
-    actions = ["mark_active", "mark_inactive", "mark_temporarily_closed"]
+    actions = ["apply_standard_hours", "add_special_day", "mark_active", "mark_inactive", "mark_temporarily_closed"]
 
     fieldsets = (
         (_("Asosiy ma'lumot"), {"fields": ("kind", "name", "slug", "status", "tagline", "description")}),
@@ -583,7 +598,20 @@ class StoreAdmin(ExcelExportMixin, admin.ModelAdmin):
             return pill("Sklad", "#64748b", "fa-warehouse")
         if obj.status != orm.StoreStatus.ACTIVE:
             return mark_safe('<span class="nzc-muted">—</span>')
-        return pill("Ochiq", "#16a34a", "fa-door-open") if obj.is_open_now() else pill("Yopiq", "#64748b", "fa-door-closed")
+        today = obj.today_hours()
+        if today.get("unknown"):
+            return pill("Ish vaqti yo'q", "#f59e0b", "fa-clock")
+        special = " · maxsus kun" if today.get("special") else ""
+        sub = '{}<small style="display:block;margin-top:3px;font-size:11px;color:var(--nz-text-soft,#64748b)">{}</small>'
+        if obj.is_open_now():
+            return format_html(sub, pill("Ochiq", "#16a34a", "fa-door-open"), f"{today['close']} gacha{special}")
+        from zoneinfo import ZoneInfo
+
+        from django.utils import timezone as tz
+
+        now = tz.now().astimezone(ZoneInfo("Asia/Tashkent")).strftime("%H:%M")
+        hint = f"bugun {today['open']} da ochiladi" if not today["closed"] and today["open"] and now < today["open"] else "ertaga ochiladi"
+        return format_html(sub, pill("Yopiq", "#64748b", "fa-door-closed"), hint + special)
 
     @admin.display(description=_("Holat"), ordering="status")
     def status_col(self, obj: orm.Store) -> str:
@@ -614,6 +642,42 @@ class StoreAdmin(ExcelExportMixin, admin.ModelAdmin):
         return format_html('<a href="https://www.google.com/maps?q={},{}" target="_blank" rel="noopener noreferrer">{}</a>', obj.latitude, obj.longitude, _("Open in Google Maps"))
 
     map_link_display.short_description = _("Map")
+
+    @admin.action(description="Standart ish vaqti: har kuni 10:00 · Du–Ju 20:00, Sh 19:00, Ya 17:00", permissions=["change"])
+    def apply_standard_hours(self, request, queryset):
+        n = queryset.exclude(kind=orm.StoreKind.WAREHOUSE).update(working_hours=orm.STANDARD_WORKING_HOURS)
+        skipped = queryset.count() - n
+        self.message_user(request, f"{n} ta filialga standart ish vaqti qo'yildi." + (f" {skipped} ta sklad o'zgarmadi." if skipped else ""), messages.SUCCESS)
+
+    @admin.action(description="Maxsus kun qo'shish (bayram / qisqa kun) — sanani yuqorida tanlang", permissions=["change"])
+    def add_special_day(self, request, queryset):
+        # only this action's own fields: a standalone ActionForm has no `action` choices, so the whole form never validates
+        fields, d = StoreActionForm().fields, {}
+        try:
+            for key in ("day", "day_closed", "day_open", "day_close", "day_note"):
+                d[key] = fields[key].clean(request.POST.get(key))
+        except forms.ValidationError:
+            d["day"] = None
+        if not d.get("day"):
+            self.message_user(request, "Avval sanani tanlang (amallar qatoridagi «Sana»).", messages.ERROR)
+            return
+        closed = bool(d.get("day_closed"))
+        if not closed and not (d.get("day_open") and d.get("day_close")):
+            self.message_user(request, "Ochilish va yopilish vaqtini kiriting yoki «Dam olish»ni belgilang.", messages.ERROR)
+            return
+        if not closed and d["day_open"] >= d["day_close"]:
+            self.message_user(request, "Yopilish vaqti ochilishdan keyin bo'lishi kerak.", messages.ERROR)
+            return
+        entry = {"date": d["day"].isoformat(), "closed": closed, "open": "" if closed else d["day_open"].strftime("%H:%M"),
+                 "close": "" if closed else d["day_close"].strftime("%H:%M"), "note": (d.get("day_note") or "").strip()}
+        n = 0
+        for store in queryset.exclude(kind=orm.StoreKind.WAREHOUSE):
+            # the same date entered again replaces the old entry instead of stacking a second one
+            store.special_hours = sorted([e for e in (store.special_hours or []) if e.get("date") != entry["date"]] + [entry], key=lambda e: e.get("date") or "")
+            store.save(update_fields=["special_hours", "updated_at"])
+            n += 1
+        when = "dam olish" if closed else f"{entry['open']}–{entry['close']}"
+        self.message_user(request, f"{n} ta filialga {d['day']:%d.%m.%Y} — {when} qo'shildi.", messages.SUCCESS)
 
     def mark_active(self, request, queryset):
         updated = queryset.update(status=orm.StoreStatus.ACTIVE)

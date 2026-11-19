@@ -28,6 +28,14 @@ from django.utils.translation import gettext_lazy as _
 
 
 # What a branch offers -- the storefront shows these as chips (labels translated in the storefront's messages).
+# The chain's standard week (owner, 2026-11-19): every day opens 10:00; Mon-Fri close 20:00, Sat 19:00, Sun 17:00.
+# Used by the data migration that filled every branch and by the "standard hours" bulk action on the dashboard.
+STANDARD_WORKING_HOURS = {
+    **{d: {"open": "10:00", "close": "20:00", "closed": False} for d in ("mon", "tue", "wed", "thu", "fri")},
+    "sat": {"open": "10:00", "close": "19:00", "closed": False},
+    "sun": {"open": "10:00", "close": "17:00", "closed": False},
+}
+
 STORE_AMENITIES = ("card_payment", "cash", "online_payment", "installments", "parking", "consultant", "tasting", "pickup", "delivery", "wifi", "accessible")
 
 

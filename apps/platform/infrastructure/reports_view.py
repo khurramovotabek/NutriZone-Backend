@@ -248,6 +248,20 @@ def _geo_map_view(request):
 
 
 @staff_member_required
+def _geo_customers_view(request):
+    from apps.geo.infrastructure.customer_map import customers_map_view
+
+    return customers_map_view(request)
+
+
+@staff_member_required
+def _geo_customers_json(request):
+    from apps.geo.infrastructure.customer_map import customers_map_json
+
+    return customers_map_json(request)
+
+
+@staff_member_required
 def geo_overview_view(request):
     from apps.geo.infrastructure.geo_overview import GeoOverviewAggregator
 
@@ -511,6 +525,8 @@ def _get_urls_with_reports():
         path("roles-overview/", roles_overview_view, name="nz_roles_overview"),
         path("geo-overview/", geo_overview_view, name="nz_geo_overview"),
         path("geo/map/", _geo_map_view, name="nz_geo_map"),
+        path("geo/customers/", _geo_customers_view, name="nz_geo_customers"),
+        path("geo/customers.json", _geo_customers_json, name="nz_geo_customers_json"),
         path("stores/branch-report/", _branch_report_view, name="nz_branch_report"),
         path("stores/branch-report/export.xlsx", _branch_report_xlsx, name="nz_branch_report_xlsx"),
         path("settings-overview/", settings_overview_view, name="nz_settings_overview"),

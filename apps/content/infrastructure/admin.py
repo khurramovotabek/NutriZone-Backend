@@ -42,8 +42,29 @@ def _cover(post: orm.BlogPost) -> str:
     return format_html('<img src="{}" class="nz-thumb" alt="" loading="lazy">', url)
 
 
-def _status_pill(status: str) -> str:
+def _scheduled(post: orm.BlogPost) -> bool:
+    return post.status == orm.BlogPostStatus.PUBLISHED and post.published_at is not None and post.published_at > django_timezone.now()
+
+
+def _status_pill(status: str, post: orm.BlogPost | None = None) -> str:
+    if post is not None and _scheduled(post):
+        return format_html('<span class="nzi-pill" style="--t:#2563eb">Rejalashtirilgan · {}</span>', ui.local(post.published_at, "%d.%m %H:%M"))
     return format_html('<span class="nzi-pill" style="--t:{}">{}</span>', STATUS_COLOR.get(status, "#94a3b8"), STATUS_LABEL.get(status, status))
+
+
+def readiness(post: orm.BlogPost) -> list[tuple[bool, str]]:
+    """What makes an article earn search traffic and clicks -- each check is something the editor can fix in the form."""
+    words = len((post.body or "").split())
+    langs = post.translated_locales()
+    return [
+        (30 <= len(post.title or "") <= 65, "Sarlavha 30–65 belgi (Google to'liq ko'rsatadi)"),
+        (70 <= len(post.excerpt or "") <= 160, "Qisqa matn 70–160 belgi (qidiruvdagi tavsif)"),
+        (words >= 300, f"Matn kamida 300 so'z (hozir {words})"),
+        (bool(post.cover_image_storage_path), "Muqova rasmi bor"),
+        (post.category_id is not None, "Bo'lim tanlangan"),
+        ("ru" in langs, "Ruscha tarjima"),
+        ("en" in langs, "Inglizcha tarjima"),
+    ]
 
 
 class BlogCategoryAdminForm(forms.ModelForm):
@@ -130,9 +151,10 @@ class BlogPostAdminForm(forms.ModelForm):
 
     class Meta:
         model = orm.BlogPost
-        fields = ["category", "title", "slug", "excerpt", "body", "status", "cover_image_upload"]  # cover_image_storage_path/cover_image_thumbnail_paths are internal implementation detail, never a real admin-editable field.
-        labels = {"category": "Bo'lim", "title": "Sarlavha", "slug": "Slug (URL manzil)", "excerpt": "Qisqa matn", "body": "Matn", "status": "Holat"}
-        help_texts = {"slug": "Sarlavhadan avtomatik to'ldiriladi: /blog/maqola-nomi", "excerpt": "Kartochka va qidiruv natijalarida ko'rinadi — 1–2 jumla, 300 belgigacha.",
+        fields = ["category", "title", "slug", "excerpt", "body", "status", "published_at", "cover_image_upload"]  # cover_image_storage_path/cover_image_thumbnail_paths are internal implementation detail, never a real admin-editable field.
+        labels = {"category": "Bo'lim", "title": "Sarlavha", "slug": "Slug (URL manzil)", "excerpt": "Qisqa matn", "body": "Matn", "status": "Holat", "published_at": "Chop etish vaqti"}
+        help_texts = {"published_at": "Bo'sh qolsa — «Chop etilgan» saqlangan zahoti chiqadi. Kelajakdagi vaqt — maqola aynan o'sha paytda saytda o'zi paydo bo'ladi (rejalashtirish).",
+                      "slug": "Sarlavhadan avtomatik to'ldiriladi: /blog/maqola-nomi", "excerpt": "Kartochka va qidiruv natijalarida ko'rinadi — 1–2 jumla, 300 belgigacha.",
                       "body": "Bo'sh qator — yangi blok. Nuqtasiz qisqa satr — sarlavha; «•» yoki «-» bilan boshlangan satrlar — ro'yxat; «Muhim:» bilan boshlangan blok — ajratilgan eslatma."}
         widgets = {"title": forms.TextInput(attrs={"class": "vTextField", "placeholder": "Masalan: Kreatin qanday ichiladi?", "autocomplete": "off"}),
                    "excerpt": forms.Textarea(attrs={"rows": 2, "placeholder": "Maqolaning qisqacha mazmuni…"}),
@@ -180,13 +202,13 @@ class BlogPostAdmin(ExcelExportMixin, PremiumListMixin, PremiumFormMixin, admin.
     prepopulated_fields = {"slug": ("title",)}
     ordering = ("-published_at", "-created_at")
     list_per_page = 25
-    readonly_fields = ("published_at", "view_count", "created_at", "updated_at")
+    readonly_fields = ("view_count", "created_at", "updated_at")
     fieldsets = (
         ("Maqola (o'zbekcha)", {"fields": ("title", "slug", "category", "excerpt", "body")}),
         ("Ruscha tarjima", {"fields": ("title_ru", "excerpt_ru", "body_ru"), "description": "Bo'sh qolsa — rus tilidagi saytda o'zbekcha matn ko'rinadi."}),
         ("Inglizcha tarjima", {"fields": ("title_en", "excerpt_en", "body_en"), "description": "Bo'sh qolsa — ingliz tilidagi saytda o'zbekcha matn ko'rinadi."}),
-        ("Muqova va holat", {"fields": ("cover_image_upload", "status")}),
-        ("Statistika", {"fields": ("published_at", "view_count", "created_at", "updated_at")}),
+        ("Muqova va holat", {"fields": ("cover_image_upload", "status", "published_at")}),
+        ("Statistika", {"fields": ("view_count", "created_at", "updated_at")}),
     )
     actions = ["publish_now", "unpublish"]
 
@@ -206,12 +228,14 @@ class BlogPostAdmin(ExcelExportMixin, PremiumListMixin, PremiumFormMixin, admin.
         return lookup == "status__exact" or super().lookup_allowed(lookup, value, request)
 
     def nz_stats(self, request):
-        agg = orm.BlogPost.objects.aggregate(n=Count("id"), live=Count("id", filter=Q(status=orm.BlogPostStatus.PUBLISHED)),
+        now = django_timezone.now()
+        agg = orm.BlogPost.objects.aggregate(n=Count("id"), live=Count("id", filter=Q(status=orm.BlogPostStatus.PUBLISHED) & (Q(published_at__isnull=True) | Q(published_at__lte=now))),
+                                             later=Count("id", filter=Q(status=orm.BlogPostStatus.PUBLISHED, published_at__gt=now)),
                                              draft=Count("id", filter=Q(status=orm.BlogPostStatus.DRAFT)), views=Sum("view_count"))
         top = orm.BlogPost.objects.filter(status=orm.BlogPostStatus.PUBLISHED).order_by("-view_count").first()
         base = reverse("admin:content_blogpost_changelist")
         return [ui.stat_card("Jami maqolalar", agg["n"], "#4f46e5", "fa-newspaper", href=base),
-                ui.stat_card("Chop etilgan", agg["live"], "#16a34a", "fa-circle-check", href=f"{base}?status__exact=published"),
+                ui.stat_card("Chop etilgan", agg["live"], "#16a34a", "fa-circle-check", f"+{agg['later']} rejalashtirilgan" if agg["later"] else "", href=f"{base}?status__exact=published"),
                 ui.stat_card("Qoralama", agg["draft"], "#f59e0b", "fa-pen-ruler", "tugatilishi kerak" if agg["draft"] else "", href=f"{base}?status__exact=draft"),
                 ui.stat_card("Ko'rishlar", agg["views"] or 0, "#0891b2", "fa-eye", f"eng ko'p: {top.title[:28]}" if top and top.view_count else "")]
 
@@ -227,9 +251,13 @@ class BlogPostAdmin(ExcelExportMixin, PremiumListMixin, PremiumFormMixin, admin.
     def nz_row(self, p):
         excerpt = p.excerpt if len(p.excerpt) <= 110 else p.excerpt[:107].rstrip() + "…"
         langs = format_html_join("", '<span class="nzi-chip" style="--t:{}">{}</span> ', ((("#16a34a" if code in p.translated_locales() else "#94a3b8"), code.upper()) for code in ("uz", "ru", "en")))
-        return [format_html('<span class="nzi-user">{}<span><b>{}</b><small>{}</small><small>{}</small></span></span>', _cover(p), p.title, excerpt or f"/{p.slug}", langs),
+        checks = readiness(p)
+        ok = sum(1 for good, _label in checks if good)
+        score = format_html('<span class="nzi-chip" style="--t:{}" title="{}">SEO {}/{}</span>', "#16a34a" if ok == len(checks) else "#f59e0b" if ok >= 5 else "#e11d48",
+                            "; ".join(label for good, label in checks if not good) or "Hammasi joyida", ok, len(checks))
+        return [format_html('<span class="nzi-user">{}<span><b>{}</b><small>{}</small><small>{} {}</small></span></span>', _cover(p), p.title, excerpt or f"/{p.slug}", langs, score),
                 ui.chip(p.category.name, "#0891b2", "fa-folder") if p.category else ui.muted(),
-                _status_pill(p.status),
+                _status_pill(p.status, p),
                 format_html("<small>{}</small>", ui.local(p.published_at, "%d.%m.%Y")) if p.published_at else ui.muted(),
                 format_html("<b>{}</b>", p.view_count)]
 
@@ -239,9 +267,11 @@ class BlogPostAdmin(ExcelExportMixin, PremiumListMixin, PremiumFormMixin, admin.
         site = storefront_url(f"/blog/{obj.slug}") if obj.status == orm.BlogPostStatus.PUBLISHED else ""
         words = len(obj.body.split())
         return {"title": obj.title, "subtitle": obj.excerpt[:160], "image": media_url(obj.cover_image_storage_path, obj.cover_image_thumbnail_paths),
-                "chips": [_status_pill(obj.status)] + ([ui.chip(obj.category.name, "#0891b2", "fa-folder")] if obj.category else []),
+                "chips": [_status_pill(obj.status, obj)] + ([ui.chip(obj.category.name, "#0891b2", "fa-folder")] if obj.category else [])
+                + [ui.chip(label, "#f59e0b", "fa-triangle-exclamation") for good, label in readiness(obj) if not good],
                 "links": [{"label": "Saytda ko'rish", "url": site, "icon": "fa-arrow-up-right-from-square", "external": True, "primary": True}] if site else [],
                 "stats": [hero_stat("Ko'rishlar", obj.view_count, "#0891b2", "marta o'qilgan", "fa-eye"),
+                          hero_stat("SEO tayyorlik", f"{sum(1 for g, _l in readiness(obj) if g)}/{len(readiness(obj))}", "#7c3aed", "sariq belgilar — nimani tuzatish kerak", "fa-list-check"),
                           hero_stat("Hajmi", words, "#4f46e5", f"so'z · ~{max(1, round(words / 200))} daqiqa", "fa-align-left"),
                           hero_stat("Chop etilgan", ui.local(obj.published_at, "%d.%m.%Y") if obj.published_at else "—", "#16a34a", ui.ago(obj.published_at) if obj.published_at else "hali yo'q", "fa-calendar")]}
 
@@ -264,10 +294,11 @@ class BlogPostAdmin(ExcelExportMixin, PremiumListMixin, PremiumFormMixin, admin.
     @admin.action(description="Hozir chop etish")
     def publish_now(self, request, queryset):
         updated = 0
+        now = django_timezone.now()
         for post in queryset:
-            if post.status != orm.BlogPostStatus.PUBLISHED:
+            if post.status != orm.BlogPostStatus.PUBLISHED or _scheduled(post):  # a scheduled post goes out now too
                 post.status = orm.BlogPostStatus.PUBLISHED
-                post.published_at = post.published_at or django_timezone.now()
+                post.published_at = now if post.published_at is None or post.published_at > now else post.published_at
                 post.save(update_fields=["status", "published_at"])
                 updated += 1
         self.message_user(request, f"{updated} ta maqola chop etildi.")

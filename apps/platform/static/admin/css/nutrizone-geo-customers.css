@@ -1,0 +1,63 @@
+/* Geo → Mijozlar xaritasi: liquid-glass floating controls over the map, region ranking beside it. */
+.nzcm-grid{display:grid;grid-template-columns:minmax(0,1fr) 340px;gap:16px;margin-top:16px}
+.nzcm-mapwrap{display:flex;flex-direction:column;position:relative;border-radius:22px;overflow:hidden;border:1px solid var(--nz-border,#e2e8f0);box-shadow:0 18px 40px rgba(15,23,42,.08)}
+.nzcm-map{flex:1 1 auto;height:min(74vh,720px);min-height:460px;background:var(--nz-surface-secondary,#eef2f7);z-index:0}
+.nzcm-float{position:absolute;z-index:500;border-radius:16px;padding:8px;
+  background:color-mix(in srgb,var(--nz-surface,#fff) 72%,transparent);-webkit-backdrop-filter:blur(18px) saturate(170%);backdrop-filter:blur(18px) saturate(170%);
+  border:1px solid color-mix(in srgb,#fff 55%,transparent);box-shadow:0 10px 30px rgba(15,23,42,.14)}
+.nzcm-top{left:12px;top:12px;width:min(340px,calc(100% - 150px));padding:6px}
+.nzcm-search{display:flex;align-items:center;gap:8px;padding:0 10px;height:38px;border-radius:12px;background:color-mix(in srgb,var(--nz-surface,#fff) 85%,transparent)}
+.nzcm-search i{color:var(--nz-text-muted,#94a3b8)}
+.nzcm-search input{flex:1;min-width:0;border:0!important;background:transparent!important;outline:0;box-shadow:none!important;height:36px;color:var(--nz-text-primary,#0f172a)}
+.nzcm-results{margin-top:6px;max-height:300px;overflow:auto;display:grid;gap:2px}
+.nzcm-results button{display:flex;align-items:center;gap:10px;width:100%;text-align:left;border:0;background:none;padding:8px;border-radius:10px;cursor:pointer;color:var(--nz-text-primary,#0f172a)}
+.nzcm-results button:hover{background:color-mix(in srgb,var(--nz-primary,#4f46e5) 10%,transparent)}
+.nzcm-results small{display:block;color:var(--nz-text-muted,#64748b);font-size:11px}
+.nzcm-legend{left:12px;bottom:12px;display:flex;flex-wrap:wrap;gap:6px;max-width:calc(100% - 24px)}
+.nzcm-legend label{display:inline-flex;align-items:center;gap:6px;padding:5px 10px;border-radius:999px;font-size:12px;font-weight:600;cursor:pointer;color:var(--nz-text-secondary,#334155);background:color-mix(in srgb,var(--nz-surface,#fff) 70%,transparent)}
+.nzcm-legend label i{width:10px;height:10px;border-radius:50%;background:var(--t);box-shadow:0 0 0 3px color-mix(in srgb,var(--t) 25%,transparent)}
+.nzcm-legend label b{color:var(--nz-text-primary,#0f172a)}
+.nzcm-legend input{display:none}
+.nzcm-legend label:has(input:not(:checked)){opacity:.45;text-decoration:line-through}
+.nzcm-metric{right:12px;bottom:12px;display:flex;align-items:center;gap:4px;font-size:12px}
+.nzcm-metric span{padding:0 6px;color:var(--nz-text-muted,#64748b);font-weight:600}
+.nzcm-metric button,.nzcm-seg button{border:0;background:none;padding:6px 11px;border-radius:10px;font-size:12px;font-weight:700;color:var(--nz-text-secondary,#334155);cursor:pointer}
+.nzcm-metric button.on,.nzcm-seg button.on{background:var(--nz-primary,#4f46e5);color:#fff;box-shadow:0 4px 12px color-mix(in srgb,var(--nz-primary,#4f46e5) 35%,transparent)}
+.nzcm-seg{display:inline-flex;gap:2px;padding:4px;border-radius:14px;background:color-mix(in srgb,var(--nz-surface,#fff) 70%,transparent);border:1px solid var(--nz-border,#e2e8f0)}
+.nzcm-loading{position:absolute;inset:0;z-index:600;display:grid;place-items:center;font-weight:600;color:var(--nz-text-secondary,#334155);background:color-mix(in srgb,var(--nz-surface,#fff) 45%,transparent);-webkit-backdrop-filter:blur(3px);backdrop-filter:blur(3px)}
+.nzcm-loading[hidden]{display:none}
+.nzcm-side{display:grid;gap:16px;align-content:start}
+.nzcm-panel{padding:16px;border-radius:20px;background:color-mix(in srgb,var(--nz-surface,#fff) 80%,transparent);-webkit-backdrop-filter:blur(16px);backdrop-filter:blur(16px);border:1px solid var(--nz-border,#e2e8f0)}
+.nzcm-panel h4{display:flex;align-items:center;gap:8px;margin:0 0 12px;font-size:14px;font-weight:800;color:var(--nz-text-primary,#0f172a)}
+.nzcm-panel h4 small{margin-left:auto;font-weight:600;color:var(--nz-text-muted,#64748b);font-size:11px}
+.nzcm-regions{list-style:none;margin:0;padding:0;display:grid;gap:4px;max-height:min(60vh,560px);overflow:auto}
+.nzcm-regions button{width:100%;display:grid;grid-template-columns:22px 1fr auto;gap:2px 8px;align-items:center;border:0;background:none;text-align:left;padding:8px;border-radius:12px;cursor:pointer;color:var(--nz-text-primary,#0f172a)}
+.nzcm-regions button:hover,.nzcm-regions button.on{background:color-mix(in srgb,var(--nz-primary,#4f46e5) 9%,transparent)}
+.nzcm-regions .n{font-size:11px;font-weight:800;color:var(--nz-text-muted,#94a3b8)}
+.nzcm-regions .nm{font-weight:700;font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.nzcm-regions .v{font-weight:800;font-size:13px}
+.nzcm-regions .bar{grid-column:2/4;height:5px;border-radius:9px;background:var(--nz-surface-secondary,#eef2f7);overflow:hidden}
+.nzcm-regions .bar i{display:block;height:100%;border-radius:9px;background:linear-gradient(90deg,#0d9488,#4f46e5)}
+.nzcm-regions .sub{grid-column:2/4;font-size:11px;color:var(--nz-text-muted,#64748b)}
+.nzcm-regions .is-empty{opacity:.5}
+.nzcm-insight{display:flex;gap:10px;align-items:flex-start;padding:10px;border-radius:14px;margin-bottom:8px;font-size:12.5px;line-height:1.45;background:color-mix(in srgb,var(--t) 9%,transparent);color:var(--nz-text-secondary,#334155)}
+.nzcm-insight i{color:var(--t);margin-top:2px}
+.nzcm-insight b{color:var(--nz-text-primary,#0f172a)}
+/* markers */
+.nzcm-dot{width:16px;height:16px;border-radius:50%;background:var(--t);border:2.5px solid #fff;box-shadow:0 2px 8px rgba(15,23,42,.35)}
+.nzcm-dot.vip{width:20px;height:20px;box-shadow:0 0 0 4px color-mix(in srgb,var(--t) 35%,transparent),0 2px 8px rgba(15,23,42,.35)}
+.nzcm-cluster{display:grid;place-items:center;border-radius:50%;color:#fff;font-weight:800;font-size:12px;background:radial-gradient(circle at 30% 30%,#14b8a6,#4f46e5);border:3px solid rgba(255,255,255,.85);box-shadow:0 6px 18px rgba(79,70,229,.4)}
+.nzcm-branch{display:grid;place-items:center;width:28px;height:28px;border-radius:10px;background:#ea580c;color:#fff;font-size:12px;border:2px solid #fff;box-shadow:0 3px 10px rgba(234,88,12,.45)}
+.nzcm-branch.wh{background:#64748b}
+.nzcm-region-label{white-space:nowrap;font-size:11px;font-weight:800;color:#0f172a;text-shadow:0 1px 0 #fff,0 0 6px #fff;transform:translate(-50%,-50%);text-align:center;pointer-events:none}
+.nzcm-region-label small{display:block;font-weight:700;color:#334155}
+.nzcm-pop{min-width:230px;font-size:12.5px;color:#0f172a}
+.nzcm-pop h5{margin:0 0 2px;font-size:14px;font-weight:800}
+.nzcm-pop .seg{display:inline-block;padding:2px 8px;border-radius:999px;font-size:11px;font-weight:800;color:#fff;background:var(--t)}
+.nzcm-pop dl{display:grid;grid-template-columns:auto 1fr;gap:3px 10px;margin:8px 0}
+.nzcm-pop dt{color:#64748b}
+.nzcm-pop dd{margin:0;font-weight:700;text-align:right}
+.nzcm-pop .acts{display:flex;flex-wrap:wrap;gap:6px}
+.nzcm-pop .acts a{padding:4px 9px;border-radius:9px;background:#eef2ff;color:#4338ca;font-weight:700;text-decoration:none}
+@media (max-width:1100px){.nzcm-grid{grid-template-columns:1fr}.nzcm-map{height:62vh}}
+@media (max-width:640px){.nzcm-top{width:calc(100% - 24px)}.nzcm-metric{bottom:auto;top:64px;right:12px}.nzcm-legend{bottom:8px}.nzp-hero-actions{flex-wrap:wrap}}

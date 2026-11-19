@@ -34,7 +34,10 @@
         rows.forEach(function (row, i) {
           var p = parts(row);
           if (copy) { p.closed.checked = src.closed.checked; p.open.value = src.open.value; p.close.value = src.close.value; }
-          else {
+          else if (preset.getAttribute("data-hours-preset") === "standard") {
+            // the chain's standard week: 10:00 daily; Mon-Fri 20:00, Sat 19:00, Sun 17:00
+            p.closed.checked = false; p.open.value = "10:00"; p.close.value = i < 5 ? "20:00" : i === 5 ? "19:00" : "17:00";
+          } else {
             var v = preset.getAttribute("data-hours-preset").split("-");
             p.closed.checked = v[2] === "sun" && i === 6;
             p.open.value = p.closed.checked ? "" : v[0]; p.close.value = p.closed.checked ? "" : v[1];

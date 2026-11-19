@@ -247,6 +247,7 @@ JAZZMIN_SETTINGS = {
         # Ombor (WMS) -- apps/stores/infrastructure/warehouse_admin.py: warehouses & branches share one stock
         # (StoreProductStock); every change is in the stock ledger.
         "geo": [
+            {"name": _("Mijozlar xaritasi"), "url": "admin:nz_geo_customers", "icon": "fas fa-users-viewfinder", "permissions": ["identity.view_user"]},
             {"name": _("Manzillar xaritasi"), "url": "admin:nz_geo_map", "icon": "fas fa-map-location-dot", "permissions": ["geo.view_address"]},
         ],
         "chat": [

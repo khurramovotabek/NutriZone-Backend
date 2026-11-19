@@ -548,3 +548,12 @@ def _profile_first_auth_user_admin() -> None:
 
 
 _profile_first_auth_user_admin()
+
+
+def _premium_groups() -> None:
+    from apps.platform.infrastructure import group_admin
+
+    group_admin.install()
+
+
+_premium_groups()
