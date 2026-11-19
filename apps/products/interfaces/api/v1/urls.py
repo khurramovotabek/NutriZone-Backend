@@ -19,6 +19,7 @@ urlpatterns = [
     path("products", views.ProductListView.as_view(), name="products-list"),
     path("wishlist", wishlist_views.WishlistListView.as_view(), name="wishlist-list"),
     path("wishlist/<str:product_id>", wishlist_views.WishlistItemView.as_view(), name="wishlist-item"),
+    path("products/feeds/<str:kind>.xml", views.product_feed_view, name="products-feed"),
     path("products/search", views.ProductSearchView.as_view(), name="products-search"),
     path("products/search/popular", views.PopularSearchesView.as_view(), name="products-search-popular"),
     path("products/best-sellers", views.BestSellersView.as_view(), name="products-best-sellers"),

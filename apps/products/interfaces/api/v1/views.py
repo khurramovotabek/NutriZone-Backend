@@ -961,3 +961,18 @@ def _product_detail_payload(product) -> dict:
         "updated_at": None,
         "version": None,
     }
+
+
+def product_feed_view(request, kind: str):
+    """`GET /products/feeds/google.xml?locale=uz|ru|en`, `/products/feeds/yandex.xml?locale=ru` -- public product feeds for
+    Google Merchant Center and Yandex (product cards in search). Plain Django view: XML, cached an hour in product_feed."""
+    from django.http import Http404, HttpResponse
+
+    from apps.products.infrastructure import product_feed
+
+    if kind not in ("google", "yandex"):
+        raise Http404
+    body = product_feed.cached(kind, request.GET.get("locale", "ru" if kind == "yandex" else "uz"))
+    resp = HttpResponse(body, content_type="application/xml; charset=utf-8")
+    resp["Cache-Control"] = "public, max-age=1800"
+    return resp
