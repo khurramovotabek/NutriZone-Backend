@@ -3,8 +3,8 @@
 
 * `offer_for(product_id)`  the one companion offered on a product page: a staff pick (ProductBundle, Dashboard →
   Katalog → Birga arzonroq) wins; otherwise -- when BundleSettings.auto_enabled -- the first in-stock product from
-  the page's own recommendations (bought together / same category best sellers), preferring another category (a
-  shaker or creatine next to a protein, not a second protein), and only when the discounted price still clears the
+  the page's own recommendations (bought together) that is in another category (a shaker or creatine next to a
+  protein, never a second protein), and only when the discounted price still clears the
   known purchase cost by `min_margin_percent`. Cached for an hour so the page and the cart agree.
 * `cart_discount(lines)`  what checkout takes off for every (product, companion) pair actually in the cart:
   percent × the companion line's unit price × the units that have a partner. Each unit is discounted once.
@@ -19,7 +19,7 @@ from django.core.cache import cache
 from apps.products.infrastructure import models as orm
 
 CACHE_TTL = 60 * 60
-_KEY = "bundle:v1:{}"
+_KEY = "bundle:v2:{}"
 
 
 def _settings() -> orm.BundleSettings:
@@ -66,6 +66,19 @@ def _margin_ok(variant_id, price: Decimal, percent: Decimal, min_margin: Decimal
     return discounted >= Decimal(cost) * (Decimal("100") + min_margin) / Decimal("100")
 
 
+def _category_roots() -> dict[str, str]:
+    """{category_id: its top-level ancestor id} for the whole tree (about a hundred rows, one query)."""
+    parent = {str(c): (str(p) if p else None) for c, p in orm.Category.objects.values_list("id", "parent_id")}
+    roots: dict[str, str] = {}
+    for cid in parent:
+        node, seen = cid, set()
+        while parent.get(node) and node not in seen:
+            seen.add(node)
+            node = parent[node]
+        roots[cid] = node
+    return roots
+
+
 def _compute(product_id) -> dict | None:
     pick = (orm.ProductBundle.objects.filter(product_id=product_id, is_active=True, companion__status="published", companion__is_deleted=False)
             .order_by("-updated_at").first())
@@ -80,9 +93,13 @@ def _compute(product_id) -> dict | None:
     from apps.products.infrastructure.selectors import RecommendationSelector
 
     main = orm.Product.objects.filter(id=product_id).values("category_id").first()
-    cards = RecommendationSelector().for_product(uuid.UUID(str(product_id)), limit=10)
-    other_category = [c for c in cards if c.get("category_id") != (str(main["category_id"]) if main and main["category_id"] else None)]
-    for card in other_category + [c for c in cards if c not in other_category]:
+    roots = _category_roots()
+    main_root = roots.get(str(main["category_id"])) if main and main["category_id"] else None
+    cards = RecommendationSelector().for_product(uuid.UUID(str(product_id)), limit=12)
+    # a companion completes the purchase (shaker / creatine next to a protein) -- never a second product of the same
+    # kind, so the automatic pair only takes products from another top-level category (whey isolate and whey blend
+    # sit in different leaves of the same "Protein" branch)
+    for card in [c for c in cards if main_root and c.get("category_id") and roots.get(str(c["category_id"])) not in (None, main_root)]:
         if card.get("stock_status") == "out_of_stock":
             continue
         variant_id, stock = _sellable_default(card["id"])

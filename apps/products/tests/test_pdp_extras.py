@@ -96,6 +96,23 @@ class TestBundle:
         # companion alone: nothing
         assert bundles.cart_discount([(sv.id, Decimal("60000"), 2)])[0] == 0
 
+    def test_auto_pair_only_from_another_category(self, monkeypatch):
+        from apps.products.infrastructure import bundles
+        from apps.products.infrastructure import models as orm
+
+        protein, accessory = orm.Category.objects.create(), orm.Category.objects.create()
+        isolate, blend = orm.Category.objects.create(parent=protein), orm.Category.objects.create(parent=protein)
+        whey, _ = _product("Whey", 800_000, category=isolate)
+        other_whey, _ = _product("Whey 2", 700_000, category=blend)
+        shaker, sv = _product("Shaker", 60_000, category=accessory)
+        cards = [{"id": str(other_whey.id), "category_id": str(blend.id), "stock_status": "in_stock"},
+                 {"id": str(shaker.id), "category_id": str(accessory.id), "stock_status": "in_stock"}]
+        monkeypatch.setattr("apps.products.infrastructure.selectors.RecommendationSelector.for_product", lambda self, pid, limit=12, locale=None: cards)
+        assert bundles.offer_for(whey.id)["companion_product_id"] == str(shaker.id)
+        cache.clear()
+        monkeypatch.setattr("apps.products.infrastructure.selectors.RecommendationSelector.for_product", lambda self, pid, limit=12, locale=None: cards[:1])
+        assert bundles.offer_for(whey.id) is None
+
     def test_auto_bundle_respects_margin_guard(self, monkeypatch):
         from apps.products.infrastructure import bundles
 
