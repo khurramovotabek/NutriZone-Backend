@@ -12,6 +12,10 @@ from config.settings.base import *  # noqa: F401,F403
 
 DEBUG = False
 
+# A catalog write must not make the next shopper wait ~1-9 s for the smart-search rebuild: serve the previous index
+# while one process rebuilds it (apps/products/infrastructure/smart_search.py::get_index).
+SMART_SEARCH_BACKGROUND_REBUILD = True
+
 if not ALLOWED_HOSTS:  # noqa: F405
     raise RuntimeError("ALLOWED_HOSTS must be set in production.")
 

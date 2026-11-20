@@ -37,6 +37,8 @@ application = ProtocolTypeRouter(
 # Web processes only (celery / manage.py never import this module): load the catalogue candidates in the background
 # so the first searches, catalogue pages and assistant answers after a deploy don't each pay a ~3 s build.
 if os.environ.get("DJANGO_ENV") == "production":
+    from apps.products.infrastructure import smart_search  # noqa: E402
     from apps.products.infrastructure.catalog_browse import warm_candidates  # noqa: E402
 
     warm_candidates()
+    smart_search.warm()

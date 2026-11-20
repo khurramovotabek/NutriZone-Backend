@@ -35,6 +35,9 @@ SECRET_KEY = os.environ.get("SECRET_KEY", "")
 INTERNAL_API_TOKEN = os.environ.get("INTERNAL_API_TOKEN", "")
 # Seconds one process reuses the catalogue candidates of catalog_browse (search, catalogue pages, advisor); 0 = off.
 CATALOG_CANDIDATES_TTL = int(os.environ.get("CATALOG_CANDIDATES_TTL", "30"))
+# Smart search: after a catalog write, searches answer from the previous index while one process rebuilds it in the
+# background (apps/products/infrastructure/smart_search.py). Off here (dev, tests search right after a write).
+SMART_SEARCH_BACKGROUND_REBUILD = False
 API_DOCS_ENABLED = os.environ.get("API_DOCS_ENABLED", "true").lower() == "true"
 if not SECRET_KEY:
     raise RuntimeError(

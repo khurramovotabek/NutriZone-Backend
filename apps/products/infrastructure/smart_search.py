@@ -43,8 +43,10 @@ matching rules explicit and testable.
 """
 from __future__ import annotations
 
+import logging
 import math
 import re
+import threading
 import time
 import unicodedata
 from dataclasses import dataclass, field
@@ -69,8 +71,10 @@ _WORD_RE = re.compile(r"[a-z0-9]+")
 _SPLIT_DIGIT_LETTER = re.compile(r"(?<=\d)(?=[a-z])|(?<=[a-z])(?=\d)")
 
 
+@lru_cache(maxsize=65536)
 def normalize(text: str) -> str:
-    """Lowercase Latin-only text, words separated by single spaces."""
+    """Lowercase Latin-only text, words separated by single spaces. Cached: an index build normalizes the same brand,
+    category and tag names for every product (28k calls, a few thousand distinct texts)."""
     text = (text or "").lower()
     text = "".join(_CYRILLIC.get(ch, ch) for ch in text)
     text = "".join(ch for ch in unicodedata.normalize("NFKD", text) if not unicodedata.combining(ch))
@@ -80,16 +84,23 @@ def normalize(text: str) -> str:
     return " ".join(_WORD_RE.findall(text))
 
 
+_PHONETIC_PAIRS = (("tion", "\x01n"), ("sion", "\x01n"), ("wh", "w"), ("sh", "\x01"), ("ch", "\x02"), ("ph", "f"), ("ck", "k"), ("kh", "g"), ("ts", "s"), ("x", "ks"))
+_PHONETIC_LETTERS = str.maketrans({"c": "k", "q": "k", "y": "i", "w": "v", "h": "g", "j": "j"})
+_REPEATS = re.compile(r"(.)\1+")
+
+
+@lru_cache(maxsize=131072)
 def phonetic(word: str) -> str:
-    """Spelling-insensitive key for one normalized word (numbers pass through)."""
+    """Spelling-insensitive key for one normalized word (numbers pass through). Cached: an index build asks for ~250k
+    keys of ~25k distinct words -- uncached that was 8 of the 9 s a rebuild took on prod (2026-11-20)."""
     if word.isdigit():
         return word
     w = word
-    for src, dst in (("tion", "\x01n"), ("sion", "\x01n"), ("wh", "w"), ("sh", "\x01"), ("ch", "\x02"), ("ph", "f"), ("ck", "k"), ("kh", "g"), ("ts", "s"), ("x", "ks")):
+    for src, dst in _PHONETIC_PAIRS:
         w = w.replace(src, dst)
-    w = w.translate(str.maketrans({"c": "k", "q": "k", "y": "i", "w": "v", "h": "g", "j": "j"}))
+    w = w.translate(_PHONETIC_LETTERS)
     w = w.replace("\x01", "sh").replace("\x02", "ch")
-    return re.sub(r"(.)\1+", r"\1", w)
+    return _REPEATS.sub(r"\1", w)
 
 
 _VOWELS = re.compile(r"[aeiou]")
@@ -282,6 +293,44 @@ def _index_cache_key() -> str:
 
 
 _LOCAL: dict = {}  # this process's copy of the current index version -- unpickling thousands of entries per search is the slow part
+_LAST_KEY = "smart_search:index:last"  # the newest index ever built, any version: what a process serves while a rebuild runs
+_BUILD_LOCK = "smart_search:building:"
+_log = logging.getLogger(__name__)
+
+
+def _background_rebuild() -> bool:
+    """Production: a catalog write never makes a shopper wait for the rebuild -- searches answer from the previous
+    index (seconds old) while ONE process builds the new one. Off in tests/dev, which search right after a write."""
+    from django.conf import settings
+
+    return bool(getattr(settings, "SMART_SEARCH_BACKGROUND_REBUILD", False))
+
+
+def _store(key: str, index: list[IndexedProduct]) -> None:
+    cache.set(key, index, _CACHE_TTL)
+    cache.set(_LAST_KEY, index, None)
+
+
+def _spawn(fn) -> None:
+    threading.Thread(target=fn, name="smart-search-rebuild", daemon=True).start()
+
+
+def _rebuild_in_background(key: str) -> None:
+    if not cache.add(_BUILD_LOCK + key, 1, 120):  # another process is already building this version
+        return
+
+    def run():
+        from django.db import close_old_connections, connection
+
+        try:
+            close_old_connections()
+            _store(key, build_index())
+        except Exception:  # noqa: BLE001 -- the lock expires and the next search tries again
+            _log.exception("smart search index rebuild failed")
+        finally:
+            connection.close()
+
+    _spawn(run)
 
 
 def get_index() -> list[IndexedProduct]:
@@ -290,11 +339,39 @@ def get_index() -> list[IndexedProduct]:
         return _LOCAL["index"]
     index = cache.get(key)
     if index is None:
+        if _background_rebuild():
+            stale = _LOCAL.get("index")
+            if stale is None:
+                stale = cache.get(_LAST_KEY)
+                if stale is not None:
+                    _LOCAL.clear()
+                    _LOCAL.update(key=None, index=stale)  # keep it in memory; key=None: the current version is still due
+            if stale is not None:
+                _rebuild_in_background(key)
+                return stale
         index = build_index()
-        cache.set(key, index, _CACHE_TTL)
+        _store(key, index)
     _LOCAL.clear()
     _LOCAL.update(key=key, index=index)
     return index
+
+
+def warm() -> None:
+    """Web processes at start-up (config/asgi.py): load the index and its inverted view in the background, so the first
+    search after a deploy doesn't pay for them."""
+
+    def run():
+        from django.db import close_old_connections, connection
+
+        try:
+            close_old_connections()
+            _prepared(get_index())
+        except Exception:  # noqa: BLE001 -- warming is best-effort; a search builds what is missing
+            _log.exception("smart search warm-up failed")
+        finally:
+            connection.close()
+
+    threading.Thread(target=run, name="smart-search-warm", daemon=True).start()
 
 
 @dataclass
@@ -326,7 +403,8 @@ def _scores_for(prepared: _Prepared, token_key: str) -> dict[str, float]:
     if scores is None:
         # shared across the web workers: a new query word costs a full fuzzy scan of the vocabulary (~0.3 s at 23k words)
         # (only for the shared index of the current version -- an index passed in by a caller has its own words)
-        shared = _LOCAL.get("index") is not None and _PREPARED.get("index") is _LOCAL.get("index")
+        # (never for a stale copy served during a rebuild: key=None, its words belong to no version's memo)
+        shared = bool(_LOCAL.get("key")) and _LOCAL.get("index") is not None and _PREPARED.get("index") is _LOCAL.get("index")
         shared_key = f"{_LOCAL['key']}:ts:{token_key}" if shared else None
         try:
             scores = cache.get(shared_key) if shared_key else None

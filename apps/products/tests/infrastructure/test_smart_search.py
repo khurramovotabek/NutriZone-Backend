@@ -292,3 +292,90 @@ class TestTypedWordTolerance:
 
     def test_three_typed_words_still_tolerate_one_miss(self):
         assert self.D3.id in ss.search("now vitamin d3 kapsula", self.IDX).product_ids
+
+
+def _names(index):
+    return [e.phrases[0] for e in index]
+
+
+@pytest.mark.django_db
+class TestBackgroundRebuild:
+    """Production mode (SMART_SEARCH_BACKGROUND_REBUILD): a catalog write never makes a shopper wait for the rebuild."""
+
+    @pytest.fixture(autouse=True)
+    def _setup(self, settings, monkeypatch):
+        settings.SMART_SEARCH_BACKGROUND_REBUILD = True
+        self.spawned = []
+        monkeypatch.setattr(ss, "_spawn", self.spawned.append)  # run the "thread" by hand
+        # own Redis keys: xdist workers share one Redis, and other tests bump the real version key
+        tag = uuid.uuid4().hex[:10]
+        monkeypatch.setattr(ss, "_CACHE_VERSION_KEY", f"test:{tag}:smart_search:index_version")
+        monkeypatch.setattr(ss, "_LAST_KEY", f"test:{tag}:smart_search:index:last")
+        monkeypatch.setattr(ss, "_BUILD_LOCK", f"test:{tag}:smart_search:building:")
+        monkeypatch.setattr(ss, "_index_cache_key", lambda real=ss._index_cache_key: f"test:{tag}:{real()}")
+        ss._LOCAL.clear()
+        ss._PREPARED.clear()
+        yield
+        ss._LOCAL.clear()
+        ss._PREPARED.clear()
+
+    def _built(self, monkeypatch, *names):
+        calls = []
+
+        def fake_build():
+            calls.append(1)
+            return [_entry(n) for n in names]
+
+        monkeypatch.setattr(ss, "build_index", fake_build)
+        return calls
+
+    def test_serves_the_previous_index_while_one_rebuild_runs(self, monkeypatch):
+        calls = self._built(monkeypatch, "Old Whey")
+        first = ss.get_index()  # nothing anywhere yet: built in the request, once
+        assert _names(first) == ["old whey"] and len(calls) == 1
+
+        ss.invalidate_index()
+        calls = self._built(monkeypatch, "New Whey")
+        assert ss.get_index() is first  # answered at once from the previous copy
+        assert ss.get_index() is first
+        assert calls == [] and len(self.spawned) == 1  # one rebuild scheduled, not one per search (lock)
+
+        self.spawned[0]()  # the background build finishes
+        assert _names(ss.get_index()) == ["new whey"] and len(calls) == 1
+
+    def test_a_fresh_process_starts_from_the_last_index_built(self, monkeypatch):
+        self._built(monkeypatch, "Cached Creatine")
+        ss.get_index()
+        ss.invalidate_index()
+        ss._LOCAL.clear()  # a new worker: no copy of its own
+        self._built(monkeypatch, "Rebuilt Creatine")
+
+        assert _names(ss.get_index()) == ["cached creatine"]
+        assert ss._LOCAL["key"] is None  # the current version is still due
+        self.spawned[0]()
+        assert _names(ss.get_index()) == ["rebuilt creatine"]
+
+    def test_without_any_index_the_first_search_builds_it(self, monkeypatch, settings):
+        calls = self._built(monkeypatch, "Only Omega")
+        ss.invalidate_index()
+        assert _names(ss.get_index()) == ["only omega"] and len(calls) == 1 and self.spawned == []
+
+    def test_a_stale_copy_never_writes_the_shared_word_memo(self, monkeypatch):
+        from django.core.cache import cache
+
+        self._built(monkeypatch, "Memo Magnesium")
+        ss.get_index()
+        ss.invalidate_index()
+        ss._LOCAL.clear()
+        index = ss.get_index()  # stale copy from _LAST_KEY, key=None
+        ss._scores_for(ss._prepared(index), "magnesium")
+        assert cache.get("None:ts:magnesium") is None
+
+
+def test_phonetic_cache_returns_the_same_keys():
+    ss.phonetic.cache_clear()
+    words = ["chocolate", "whey", "isolate", "xtend", "shaker", "kreatin", "100"]
+    first = [ss.phonetic(w) for w in words]
+    assert [ss.phonetic(w) for w in words] == first
+    assert first[0] == "chokolate" and first[-1] == "100"
+    assert ss.normalize("Ўзбек  Протеин") == ss.normalize("Ўзбек  Протеин") == "ozbek protein"
