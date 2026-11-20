@@ -126,13 +126,8 @@ deploy_frontend() {
     mv node_modules "$ROOT/frontend/node_modules"
     echo "$LOCK_SHA" > "$ROOT/frontend/.deps-lock-sha"
   fi
-  # Keep next/image's optimised copies: they lived inside .next and were thrown away with it on every deploy, so
-  # each product photo was re-encoded (AVIF: 0.6-1.2 s each, measured 2026-11-13) the first time anyone saw it again.
-  if [ -d "$ROOT/frontend/.next/cache/images" ]; then
-    mkdir -p .next/cache
-    rm -rf .next/cache/images
-    cp -al "$ROOT/frontend/.next/cache/images" .next/cache/images
-  fi
+  # Optimised photos are cached by host nginx (survives deploys), not in .next: Next's own disk cache is off
+  # (images.maximumDiskCacheSize: 0 in next.config.ts) because its start-up scan stalled every new photo for 60+ s.
   rm -rf "$ROOT/frontend/.next.old"
   [ -d "$ROOT/frontend/.next" ] && mv "$ROOT/frontend/.next" "$ROOT/frontend/.next.old"
   mv .next "$ROOT/frontend/.next"
@@ -145,7 +140,7 @@ deploy_frontend() {
   wait_http http://127.0.0.1:3001/ standby
   pm2 restart frontend --update-env
   wait_http http://127.0.0.1:3000/ frontend
-  sleep 12  # host nginx keeps the restarted :3000 out for fail_timeout (10 s); the standby serves until then
+  sleep 3  # requests already on the standby finish; :3000 has max_fails=0 in host nginx, so it is used again at once
   pm2 delete frontend-standby >/dev/null
   curl -fsS -o /dev/null -w "frontend %{http_code}\n" http://127.0.0.1:3000/
   rm -rf "$BUILD" "$ROOT/frontend/node_modules.old"
