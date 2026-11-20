@@ -90,9 +90,13 @@ else
 fi
 
 # Storefront upstream: the live Next.js on :3000, the deploy-time standby on :3001 as backup (idle otherwise).
+# max_fails=0: with nginx's default (1 failure -> peer down for 10 s) a single slow /_next/image answer marked the
+# only live Node.js "down", and as the standby only runs during a deploy every page -- /orders, /, the cart --
+# answered 502 "no live upstreams" for 10 s (2026-11-20). A refused connection (pm2 restart) still moves the
+# request on to the :3001 standby: proxy_next_upstream works per request, independently of max_fails.
 cat > /etc/nginx/conf.d/nz-storefront-upstream.conf <<'CONF'
 upstream nz_storefront {
-    server 127.0.0.1:3000;
+    server 127.0.0.1:3000 max_fails=0;
     server 127.0.0.1:3001 backup;
 }
 CONF
