@@ -135,3 +135,22 @@ class TestProductVariantPricingAdmin:
         assert response.status_code == 200
         assert "old price" in response.content.decode().lower()
         assert not products_orm.Product.objects.filter(variants__sku=f"SKU-{suffix.upper()}").exists()
+
+    def test_price_set_on_the_standalone_variant_page_is_saved(self):
+        """Real, closed bug (2026-11-20): ProductVariantAdmin saves via form.save(commit=False), so the form's
+        commit-only _save_price never ran and a price typed on /productvariant/add/ was silently dropped."""
+        suffix = uuid.uuid4().hex[:6]
+        client = _admin_client(suffix)
+        ContentType.objects.clear_cache()
+        assert client.post("/django-admin/products/product/add/", _base_add_data(suffix)).status_code == 302
+        product = products_orm.Product.objects.get(variants__sku=f"SKU-{suffix.upper()}")
+
+        response = client.post("/django-admin/products/productvariant/add/", {
+            "product": str(product.id), "sku": f"SKU-{suffix.upper()}-B", "barcode": "", "status": "active",
+            "weight_value": "500", "weight_unit": "g", "package": "", "base_cost_price": "", "price": "300000", "old_price": "",
+            "extra_barcodes-TOTAL_FORMS": "0", "extra_barcodes-INITIAL_FORMS": "0", "extra_barcodes-MIN_NUM_FORMS": "0", "extra_barcodes-MAX_NUM_FORMS": "1000",
+        })
+
+        assert response.status_code == 302, response.content.decode()[:2000]
+        variant = products_orm.ProductVariant.objects.get(sku=f"SKU-{suffix.upper()}-B")
+        assert PriceListEntryModel.objects.get(product_variant_id=variant.id).base_price_amount == 300000

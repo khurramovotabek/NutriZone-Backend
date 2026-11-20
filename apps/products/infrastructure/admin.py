@@ -1424,6 +1424,12 @@ class ProductVariantAdmin(ExcelExportMixin, CatalogFormMixin, CatalogAnalyticsMi
         ("Tizim ma'lumotlari", {"classes": ("nzp-fold",), "fields": ("id", "created_at", "updated_at")}),
     )
 
+    def save_model(self, request, obj, form, change):
+        # ModelAdmin saves via form.save(commit=False) + obj.save(), so the form's commit-only _save_price never ran
+        # here: a price typed on this page was silently dropped (seen live 2026-11-20 on GAT-CREA-500).
+        super().save_model(request, obj, form, change)
+        form._save_price(obj)
+
     def form_hero(self, request, obj):
         if obj is None:
             return {}
