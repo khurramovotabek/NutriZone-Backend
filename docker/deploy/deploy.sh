@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Production deploy: ./deploy.sh [backend|frontend|all]   (default: all)
 # Backend: pull -> build images -> migrate (old web keeps serving) -> rolling web swap (no 502) -> workers -> health check.
-# Frontend: pull -> build in a copy -> swap .next -> standby on :3001 -> pm2 restart -> standby gone (no gap).
+# Frontend: pull -> build in a copy -> swap .next -> pm2 reload of the cluster, one worker at a time (no gap).
 set -euo pipefail
 
 ROOT=/opt/nutrizone
@@ -131,17 +131,24 @@ deploy_frontend() {
   rm -rf "$ROOT/frontend/.next.old"
   [ -d "$ROOT/frontend/.next" ] && mv "$ROOT/frontend/.next" "$ROOT/frontend/.next.old"
   mv .next "$ROOT/frontend/.next"
-  # No gap while the live process restarts: a standby on :3001 (the backup server of host nginx's nz_storefront
-  # upstream, docker/deploy/host-nginx-tune.sh) answers meanwhile. Only one process serves at a time -- the
-  # refresh-token exchange dedupe in proxy.ts is per process, so two live ones could replay a refresh token.
   cd "$ROOT/frontend"
-  pm2 delete frontend-standby >/dev/null 2>&1 || true
-  pm2 start npm --name frontend-standby --cwd "$ROOT/frontend" -- start -- -p 3001 -H 127.0.0.1 >/dev/null
-  wait_http http://127.0.0.1:3001/ standby
-  pm2 restart frontend --update-env
-  wait_http http://127.0.0.1:3000/ frontend
-  sleep 3  # requests already on the standby finish; :3000 has max_fails=0 in host nginx, so it is used again at once
-  pm2 delete frontend-standby >/dev/null
+  if pm2 jlist | python3 -c 'import json,sys; sys.exit(0 if any(p["name"] == "frontend" and p["pm2_env"]["exec_mode"] == "cluster_mode" for p in json.load(sys.stdin)) else 1)'; then
+    # Cluster (ecosystem.config.cjs): workers are replaced one at a time, the others keep serving -- no gap.
+    pm2 reload ecosystem.config.cjs --update-env
+    wait_http http://127.0.0.1:3000/ frontend
+  else
+    # First switch from the old single process: a standby on :3001 (backup server of host nginx's nz_storefront
+    # upstream, docker/deploy/host-nginx-tune.sh) answers while it is replaced by the cluster.
+    pm2 delete frontend-standby >/dev/null 2>&1 || true
+    pm2 start npm --name frontend-standby --cwd "$ROOT/frontend" -- start -- -p 3001 -H 127.0.0.1 >/dev/null
+    wait_http http://127.0.0.1:3001/ standby
+    pm2 delete frontend >/dev/null 2>&1 || true
+    pm2 start ecosystem.config.cjs
+    wait_http http://127.0.0.1:3000/ frontend
+    sleep 3  # requests already on the standby finish; :3000 has max_fails=0 in host nginx, so it is used again at once
+    pm2 delete frontend-standby >/dev/null
+  fi
+  pm2 save >/dev/null  # the cluster comes back after a server reboot
   curl -fsS -o /dev/null -w "frontend %{http_code}\n" http://127.0.0.1:3000/
   rm -rf "$BUILD" "$ROOT/frontend/node_modules.old"
 }

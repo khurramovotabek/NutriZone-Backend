@@ -45,6 +45,7 @@ from __future__ import annotations
 
 import logging
 import math
+from bisect import bisect_left
 import re
 import threading
 import time
@@ -381,6 +382,42 @@ class _Prepared:
     postings: dict[str, list[tuple[int, str]]]
     token_scores: dict[str, dict[str, float]] = field(default_factory=dict)  # memo: query word -> {matching word: raw score}
     letters: dict[str, frozenset] = field(default_factory=dict)  # indexed word -> its set of letters (pre-filter)
+    lookup: _Lookup | None = None  # sorted / bucketed views of the vocabulary for _candidates()
+
+
+class _Lookup:
+    """The vocabulary arranged so a query word's possible matches are found without scoring all ~24k words."""
+
+    def __init__(self, words) -> None:
+        self.sorted_words = sorted(words)
+        self.sorted_skeletons = sorted((skeleton(w), w) for w in words)
+        self.by_length: dict[int, list[str]] = {}
+        for w in words:
+            self.by_length.setdefault(len(w), []).append(w)
+        self._prefixes: dict[int, dict[str, list[str]]] = {}
+
+    def starting_with(self, prefix: str):
+        i = bisect_left(self.sorted_words, prefix)
+        while i < len(self.sorted_words) and self.sorted_words[i].startswith(prefix):
+            yield self.sorted_words[i]
+            i += 1
+
+    def skeleton_starting_with(self, prefix: str):
+        i = bisect_left(self.sorted_skeletons, (prefix,))
+        while i < len(self.sorted_skeletons) and self.sorted_skeletons[i][0].startswith(prefix):
+            yield self.sorted_skeletons[i][1]
+            i += 1
+
+    def prefixes(self, length: int) -> dict[str, list[str]]:
+        """Distinct first-`length`-letter prefixes -> the words (at least that long) that start with them."""
+        table = self._prefixes.get(length)
+        if table is None:
+            table = {}
+            for w in self.sorted_words:
+                if len(w) >= length:
+                    table.setdefault(w[:length], []).append(w)
+            self._prefixes[length] = table
+        return table
 
 
 _PREPARED: dict = {}
@@ -419,7 +456,9 @@ def _scores_for(prepared: _Prepared, token_key: str) -> dict[str, float]:
         query_letters = frozenset(token_key)
         lq = len(token_key)
         typos = _allowed_typos(lq)
-        for wk, letters in prepared.letters.items():
+        candidates = _candidates(prepared, token_key)
+        pool = prepared.letters.items() if candidates is None else ((wk, prepared.letters[wk]) for wk in candidates)
+        for wk, letters in pool:
             missing = query_letters - letters
             # Cheap exact pre-filter: each of the query's letters absent from the word costs at least one edit, so a word
             # missing more than any rule tolerates -- and missing a consonant, which the skeleton/stem rules need -- cannot match.
@@ -437,6 +476,48 @@ def _scores_for(prepared: _Prepared, token_key: str) -> dict[str, float]:
             except Exception:  # noqa: BLE001
                 pass
     return scores
+
+
+try:  # C implementation of the same optimal-string-alignment distance damerau() computes
+    from rapidfuzz import process as _rf_process
+    from rapidfuzz.distance import OSA as _OSA
+except ImportError:  # pragma: no cover -- without it _scores_for scans the whole vocabulary, as before
+    _rf_process = _OSA = None
+
+
+def _candidates(prepared: _Prepared, q: str) -> set[str] | None:
+    """
+    Every indexed word that word_score() could score above 0, or _same_stem() accept, for the query word `q` -- a
+    superset built from the necessary condition of each scoring rule, so the scores themselves stay exactly the same
+    (word_score() still decides). A new query word used to be scored against all ~24k words (0.2-1.2 s on prod,
+    2026-11-20); this finds the few hundred candidates in milliseconds. None: no rapidfuzz, scan everything.
+    """
+    if _OSA is None or not q:
+        return None
+    lookup = prepared.lookup
+    if lookup is None:
+        lookup = prepared.lookup = _Lookup(prepared.postings.keys())
+    lq = len(q)
+    found: set[str] = set(lookup.starting_with(q))  # equal, prefix, digit prefix
+    stem = _ENDING.sub("", q)
+    if len(stem) >= 3:
+        found.update(lookup.starting_with(stem))  # same stem: the word is the stem plus vowels
+    sq = skeleton(q)
+    if len(sq) >= 3:
+        found.update(lookup.skeleton_starting_with(sq))  # same consonants
+    if q.isdigit() or lq < 4:
+        return found  # the typo rules below need a non-numeric word of 4+ letters
+    typos = _allowed_typos(lq)
+    for length in (lq, lq + 1):  # typed prefix within `typos` edits of the word's first lq / lq+1 letters
+        table = lookup.prefixes(length)
+        for prefix, _score, _i in _rf_process.extract(q, list(table), scorer=_OSA.distance, score_cutoff=typos, limit=None):
+            found.update(table[prefix])
+    for wl, words in lookup.by_length.items():  # whole word within 30% edits
+        limit = int(max(lq, wl) * 0.3)
+        if abs(wl - lq) > limit:
+            continue
+        found.update(w for w, _score, _i in _rf_process.extract(q, words, scorer=_OSA.distance, score_cutoff=limit, limit=None))
+    return found
 
 
 def _units_sold_by_product() -> dict[str, int]:

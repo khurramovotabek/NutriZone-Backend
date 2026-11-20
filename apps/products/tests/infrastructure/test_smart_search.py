@@ -379,3 +379,42 @@ def test_phonetic_cache_returns_the_same_keys():
     assert [ss.phonetic(w) for w in words] == first
     assert first[0] == "chokolate" and first[-1] == "100"
     assert ss.normalize("Ўзбек  Протеин") == ss.normalize("Ўзбек  Протеин") == "ozbek protein"
+
+
+class TestCandidateLookup:
+    """_candidates() only narrows which indexed words get scored: every score must equal the full-vocabulary scan's."""
+
+    def test_same_scores_as_scanning_every_word(self, monkeypatch):
+        import random
+
+        pytest.importorskip("rapidfuzz")
+        rnd = random.Random(11)
+        names = [CREATINE_AN, WHEY] + [
+            _entry(n, brand=b)
+            for n, b in [
+                ("Ashwagandha KSM-66 600 mg", "Now Foods"), ("L-Carnitine 3000 Liquid", "Biotech"), ("Omega-3 Fish Oil 1000", "Solgar"),
+                ("Vitamin D3 5000 IU", "Doctor's Best"), ("Magnesium Bisglycinate", "Ostrovit"), ("BCAA 2:1:1 Xtend", "Scivation"),
+                ("Collagen Peptides Unflavored", "Vital Proteins"), ("Serious Mass Gainer 2.7 kg", "Optimum Nutrition"), ("Shaker Bottle 700 ml", "SmartShake"),
+                ("Melatonin 5 mg Sleep", "Natrol"), ("Zinc Picolinate 50", "Thorne"), ("Pre-Workout C4 Original", "Cellucor"), ("Isolate 100 Whey Isolate", "Dymatize"),
+            ]
+        ]
+        prepared = ss._Prepared({})
+        for i, e in enumerate(names):
+            for wk, f in e.words:
+                prepared.postings.setdefault(wk, []).append((i, f))
+        vocab = sorted(prepared.postings)
+
+        def typo(w):
+            i = rnd.randrange(len(w))
+            return rnd.choice([w[:i] + w[i + 1 :], w[:i] + "x" + w[i + 1 :], w[:i] + "a" + w[i:], w[:i] + w[i + 1 : i + 2] + w[i : i + 1] + w[i + 2 :]])
+
+        queries = set(vocab) | {typo(w) for w in vocab if len(w) > 2} | {w[:n] for w in vocab for n in (2, 3, 4, 5)} | {"kreatin", "protien", "ashvaganda", "d3", "100", "zzzq"}
+        monkeypatch.setattr(ss, "_LOCAL", {})
+        real = ss._OSA
+        for q in sorted(q for q in queries if q):
+            monkeypatch.setattr(ss, "_OSA", None)
+            prepared.token_scores.clear()
+            full = ss._scores_for(prepared, q)
+            monkeypatch.setattr(ss, "_OSA", real)
+            prepared.token_scores.clear()
+            assert ss._scores_for(prepared, q) == full, q

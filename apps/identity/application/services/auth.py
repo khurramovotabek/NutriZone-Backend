@@ -309,15 +309,72 @@ class VerifyOTP:
         )
 
 
+class _ReuseDetected(Exception):
+    """Internal: a rotated-out token was presented again -- reported after _rotate's transaction has ended."""
+
+    def __init__(self, user_id: uuid.UUID, session_id: uuid.UUID) -> None:
+        super().__init__("refresh token reuse")
+        self.user_id, self.session_id = user_id, session_id
+
+
 class RefreshToken:
-    def __init__(self, session_repo: UserSessionRepository, token_issuer: TokenIssuer, user_repo: UserRepository, stage_events) -> None:
+    def __init__(self, session_repo: UserSessionRepository, token_issuer: TokenIssuer, user_repo: UserRepository, stage_events, grace=None) -> None:
         self._session_repo = session_repo
         self._token_issuer = token_issuer
         self._user_repo = user_repo
         self._stage_events = stage_events
+        # Optional reuse grace window (infrastructure/refresh_grace.py): the same token presented again within seconds
+        # -- parallel requests of one browser -- gets the pair its first presentation got, instead of a revocation.
+        self._grace = grace
+
+    def execute(self, raw_refresh_token: str, ip_address: str | None = None) -> AuthResult:
+        if self._grace is None:
+            return self._rotate_or_report(raw_refresh_token, ip_address)
+        token_hash = self._token_issuer.hash_refresh_token(raw_refresh_token)
+        granted = self._from_grace(self._grace.recall(token_hash))
+        if granted is not None:
+            return granted
+        if not self._grace.claim(token_hash):
+            granted = self._from_grace(self._grace.wait(token_hash))
+            if granted is not None:
+                return granted
+            # the concurrent rotation failed or took too long: fall through -- its outcome decides as usual
+        try:
+            result = self._rotate_or_report(raw_refresh_token, ip_address)
+        except Exception:
+            self._grace.release(token_hash)
+            raise
+        self._grace.remember(
+            token_hash,
+            {"user_id": str(result.user_id), "access_token": result.access_token, "refresh_token": result.refresh_token, "session_id": str(result.session_id)},
+        )
+        return result
+
+    def _from_grace(self, stored: dict | None) -> AuthResult | None:
+        """The remembered pair -- only while the session it opened is still active (no logout / revocation since)."""
+        if not stored:
+            return None
+        if self._session_repo.get_by_refresh_token_hash(self._token_issuer.hash_refresh_token(stored["refresh_token"])) is None:
+            return None
+        return AuthResult(
+            user_id=uuid.UUID(stored["user_id"]),
+            access_token=stored["access_token"],
+            refresh_token=stored["refresh_token"],
+            session_id=uuid.UUID(stored["session_id"]),
+            is_new_user=False,
+        )
+
+    def _rotate_or_report(self, raw_refresh_token: str, ip_address: str | None) -> AuthResult:
+        try:
+            return self._rotate(raw_refresh_token)
+        except _ReuseDetected as reuse:
+            # Outside _rotate's transaction on purpose: the revocation used to run inside it and was rolled back by the
+            # very RefreshTokenReusedError it raised, so a replayed token never actually ended any session (2026-11-20).
+            self.report_reuse(reuse.user_id, reuse.session_id, ip_address, self._stage_events)
+            raise  # unreachable: report_reuse raises RefreshTokenReusedError
 
     @transaction.atomic
-    def execute(self, raw_refresh_token: str, ip_address: str | None = None) -> AuthResult:
+    def _rotate(self, raw_refresh_token: str) -> AuthResult:
         token_hash = self._token_issuer.hash_refresh_token(raw_refresh_token)
         session = self._session_repo.get_by_refresh_token_hash(token_hash)
 
@@ -333,8 +390,7 @@ class RefreshToken:
             # family, never an unrelated user's sessions.
             reuse = self._session_repo.is_token_reuse(token_hash)
             if reuse is not None:
-                reused_user_id, reused_session_id = reuse
-                self.report_reuse(reused_user_id, reused_session_id, ip_address, self._stage_events)
+                raise _ReuseDetected(*reuse)
             raise RefreshTokenInvalidError("This refresh token is invalid or has already been rotated.")
 
         if not session.is_active or session.expires_at <= Clock.now():
@@ -385,8 +441,9 @@ class RefreshToken:
         detected (Architecture Review §14): revokes the full session
         family and raises SuspiciousLoginDetected.
         """
-        self._session_repo.revoke_all_for_user(user_id)
-        stage_events([("SuspiciousLoginDetected", SuspiciousLoginDetected(user_id=user_id, session_id=session_id, ip_address=ip_address).to_payload())])
+        with transaction.atomic():  # committed before the error below leaves this method
+            self._session_repo.revoke_all_for_user(user_id)
+            stage_events([("SuspiciousLoginDetected", SuspiciousLoginDetected(user_id=user_id, session_id=session_id, ip_address=ip_address).to_payload())])
         raise RefreshTokenReusedError("Token reuse detected -- all sessions for this account have been revoked.")
 
 

@@ -25,6 +25,7 @@ from apps.identity.application.services.sessions import ListOwnSessions, RevokeS
 from apps.identity.application.services.staff import AdminGetUser, AdminListUsers, AdminUpdateUserStatus
 from apps.identity.infrastructure import models as orm
 from apps.identity.infrastructure.gateways.otp_providers import get_otp_provider
+from apps.identity.infrastructure.refresh_grace import RedisRefreshGrace
 from apps.identity.infrastructure.repositories import (
     DjangoAvatarAssetRepository,
     DjangoOTPChallengeRepository,
@@ -126,6 +127,7 @@ def build_refresh_token() -> RefreshToken:
         token_issuer=SimpleJWTTokenIssuer(),
         user_repo=DjangoUserRepository(),
         stage_events=stage_identity_events,
+        grace=RedisRefreshGrace(),
     )
 
 

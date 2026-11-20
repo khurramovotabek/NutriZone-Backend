@@ -5,6 +5,7 @@
 amqp==5.4.1
 annotated-types==0.8.0
 anthropic==1.13.0
+rapidfuzz==3.13.0
 vosk==0.3.45
 av==19.0.2
 anyio==4.16.0

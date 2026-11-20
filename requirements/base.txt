@@ -26,6 +26,7 @@ prometheus-client==0.21.1
 Pillow==11.0.0
 django-jazzmin==3.0.5
 openpyxl==3.1.5
+rapidfuzz==3.13.0  # smart search: C optimal-string-alignment distance to find a new query word's candidates (apps/products/infrastructure/smart_search.py)
 anthropic==1.13.0  # AI shopping assistant (apps/assistant)
 vosk==0.3.45  # offline speech-to-text for voice messages (apps/assistant/infrastructure/stt.py)
 av==19.0.2  # PyAV: decodes browser / Telegram voice recordings (bundles ffmpeg libs)
