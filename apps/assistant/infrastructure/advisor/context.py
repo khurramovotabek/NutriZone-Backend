@@ -196,14 +196,23 @@ def named_products(text: str, loc: str, limit: int = 5) -> list[dict]:
     words = _words(text)
     if not words or len(words) > 5:
         return []
-    query = " ".join(re.sub(r"[?!.,]", " ", nlu.normalize(text)).split())[:120]
-    found = tools.search_products({"query": query, "limit": 8, "in_stock_only": False}, loc)["products"]
+    kinds = nlu.concepts_in(_both(text))
+    full = " ".join(re.sub(r"[?!.,]", " ", nlu.normalize(text)).split())[:120]
+    # the telling words alone first ("iso100", not "iso100 olmoqchiman"), then the whole message
+    found, ids = [], set()
+    for query in dict.fromkeys((" ".join(words), full)):
+        for x in tools.search_products({"query": query, "limit": 8, "in_stock_only": False}, loc)["products"]:
+            if x["id"] not in ids:
+                ids.add(x["id"])
+                found.append(x)
     out = []
     for x in found:
         name, brand = x.get("name") or "", x.get("brand") or ""
         if not all(_matches(w, f"{brand} {name}") for w in words):
             continue
-        if all(_matches(w, brand) for w in words):  # "olimp bormi" -- only the brand: Brain lists the brand
+        if all(_matches(w, brand) for w in words) and not kinds:  # "olimp bormi" -- only the brand: Brain lists the brand
+            continue
+        if kinds and not set(kinds) & set(nlu.concepts_in(_both(name))):  # "OstroVit kreatin" -- their creatine, not their protein
             continue
         out.append(x)
     out.sort(key=lambda x: not x.get("in_stock"))

@@ -115,3 +115,10 @@ def test_arginine_is_arginine(db):
 def test_why_without_kerak(shop):
     reply, _ids, _c, meta = answer({}, "kreatin nima uchun", "uz")
     assert meta["last"] in ("why", "knowledge") and "Ha, bor" not in reply
+
+
+def test_brand_plus_kind_shows_that_brands_kind(shop):
+    from apps.assistant.infrastructure.advisor import context as ctx
+
+    names = [x["name"] for x in ctx.named_products("OstroVit kreatin", "uz")]
+    assert names and all("Creatine" in n for n in names)
