@@ -24,6 +24,7 @@ class ProductsConfig(AppConfig):
              against core.health.registry.
         """
 
+        from apps.products.infrastructure import bundle_admin  # noqa: F401 -- Birga arzonroq
         from apps.products.infrastructure import admin  # noqa: F401 -- registers admin.py, which Django default discovery cannot reach at this project's infrastructure/admin.py location
         from shared.event_contracts import products as products_event_contracts  # noqa: F401
 

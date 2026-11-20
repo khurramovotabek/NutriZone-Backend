@@ -1,0 +1,37 @@
+{% extends "admin/base_site.html" %}
+{% load i18n static %}
+{# Dashboard → Platforma → Server holati (apps/platform/infrastructure/server_status.py, server_status_view.py). #}
+{% block extrastyle %}{{ block.super }}<link rel="stylesheet" href="{% static 'admin/css/nutrizone-analytics.css' %}?v=6"><link rel="stylesheet" href="{% static 'admin/css/nutrizone-server-status.css' %}?v={{ asset_v }}">{% endblock %}
+{% block breadcrumbs %}<ol class="breadcrumb"><li class="breadcrumb-item"><a href="{% url 'admin:index' %}">{% translate "Home" %}</a></li><li class="breadcrumb-item active">{{ title }}</li></ol>{% endblock %}
+{% block content_title %}{% endblock %}
+{% block content %}
+<div class="nzs" data-nz-server-status data-url="{% url 'admin:nz_server_status' %}?partial=1">
+  {% include "admin/platform/server_status_body.html" %}
+</div>
+<script>
+(function () {
+  var root = document.querySelector("[data-nz-server-status]");
+  if (!root) return;
+  var busy = false, every = 30, left = every;
+  function tick() {
+    var el = root.querySelector("[data-countdown]");
+    if (el) el.textContent = left + " s";
+    var bar = root.querySelector("[data-countdown-bar]");
+    if (bar) bar.style.transform = "scaleX(" + (left / every) + ")";
+  }
+  function refresh() {
+    if (busy) return;
+    busy = true;
+    root.classList.add("is-loading");
+    fetch(root.dataset.url, { credentials: "same-origin", headers: { "X-Requested-With": "fetch" } })
+      .then(function (r) { if (!r.ok) throw new Error(r.status); return r.text(); })
+      .then(function (html) { root.innerHTML = html; })
+      .catch(function () { var e = root.querySelector("[data-refresh-error]"); if (e) e.hidden = false; })
+      .finally(function () { busy = false; left = every; root.classList.remove("is-loading"); tick(); });
+  }
+  root.addEventListener("click", function (e) { if (e.target.closest("[data-refresh]")) { e.preventDefault(); refresh(); } });
+  setInterval(function () { if (document.hidden) return; left -= 1; if (left <= 0) refresh(); else tick(); }, 1000);
+  tick();
+})();
+</script>
+{% endblock %}

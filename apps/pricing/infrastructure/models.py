@@ -295,3 +295,26 @@ class RepricingLineModel(models.Model):
     class Meta:
         db_table = "pricing_repricing_lines"
         constraints = [models.UniqueConstraint(fields=["repricing", "product_variant_id"], name="uniq_repricing_line_variant")]
+
+
+class PriceWatchModel(models.Model):
+    """
+    "Narx tushsa xabar bering" -- one customer watching one variant. When the variant's shop price drops below the
+    price they last saw (`notified_amount`, else `baseline_amount`), they get one notification (price_watch.py) and
+    the new price becomes the bar for the next drop.
+    """
+
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    customer_id = models.UUIDField(db_index=True)
+    product_variant_id = models.UUIDField(db_index=True)
+    baseline_amount = models.DecimalField(max_digits=14, decimal_places=2)
+    notified_amount = models.DecimalField(max_digits=14, decimal_places=2, null=True, blank=True)
+    notified_at = models.DateTimeField(null=True, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        db_table = "pricing_price_watches"
+        verbose_name = _("Narx kuzatuvi")
+        verbose_name_plural = _("Narx kuzatuvlari")
+        constraints = [models.UniqueConstraint(fields=["customer_id", "product_variant_id"], name="uq_price_watch_customer_variant")]
+

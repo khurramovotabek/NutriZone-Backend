@@ -588,3 +588,138 @@ class ReviewRequestSettingsAdmin(PremiumFormMixin, admin.ModelAdmin):
             ],
             "links": [{"label": "Sharhlar", "url": reverse("admin:reviews_reviewmodel_changelist"), "icon": "fa-star", "primary": True}],
         }
+
+
+# ---------------------------------------------------------------- product questions ("Savol-javob")
+
+from apps.reviews.infrastructure import questions as q_service  # noqa: E402
+
+Q_STATUS = {"pending": ("Javob kutilmoqda", "#d97706"), "answered": ("Saytda", "#16a34a"), "hidden": ("Yashirilgan", "#64748b")}
+
+
+class ProductQuestionForm(forms.ModelForm):
+    class Meta:
+        model = orm.ProductQuestionModel
+        fields = ("answer", "status")
+        labels = {"answer": "Do'kon javobi", "status": "Holat"}
+        help_texts = {
+            "answer": "Javob saqlanganda savol mahsulot sahifasidagi «Savol-javob» bo'limida chiqadi va mijozga bir marta bildirishnoma boradi. "
+                      "Aniq, qisqa va to'g'ri yozing — tibbiy tashxis qo'ymang, kerak bo'lsa shifokor bilan maslahatlashishni tavsiya qiling.",
+            "status": "«Yashirilgan» — savol saytda ko'rinmaydi (spam, reklama, mahsulotga aloqasiz).",
+        }
+        widgets = {"answer": forms.Textarea(attrs={"rows": 5, "maxlength": q_service.ANSWER_MAX, "placeholder": "Masalan: Ha, bu protein laktozasiz — tarkibida sut qandi yo'q."})}
+
+    def clean(self):
+        data = super().clean()
+        if data.get("status") == "answered" and not (data.get("answer") or "").strip():
+            self.add_error("answer", "«Saytda» holati uchun javob yozing.")
+        return data
+
+
+@admin.register(orm.ProductQuestionModel)
+class ProductQuestionAdmin(PremiumListMixin, PremiumFormMixin, admin.ModelAdmin):
+    """Savollar: customers' questions from the product page; answering publishes them and tells the asker."""
+
+    form = ProductQuestionForm
+    list_display = ("created_at",)
+    search_fields = ("question", "answer", "author_name")
+    ordering = ("-created_at",)
+    list_per_page = 30
+    readonly_fields = ("question_panel",)
+    fieldsets = (("Savol", {"classes": ("nzi-panel",), "fields": ("question_panel",)}), ("Javob", {"fields": ("answer", "status")}))
+    actions = ["hide_selected"]
+
+    nz_icon, nz_tone, nz_title = "fa-circle-question", "#0ea5e9", "Mahsulot savollari"
+    nz_subtitle = "Mijozlar mahsulot sahifasida bergan savollar. Javob yozilgach savol saytdagi «Savol-javob» bo'limida chiqadi va mijozga xabar boradi."
+    nz_columns = (("Mahsulot", ""), ("Savol", ""), ("Mijoz", ""), ("Sana", ""), ("Holat", "r"))
+    nz_grid = "minmax(180px,1.3fr) minmax(240px,2.4fr) minmax(130px,1fr) 100px 150px"
+    nz_search = "Savol yoki javob matni…"
+    nz_empty = ("Hali savol yo'q", "Mijoz mahsulot sahifasida savol berganda shu yerda paydo bo'ladi.")
+    nz_css = ("admin/css/nutrizone-reviews.css",)
+    hero_icon, hero_tone = "fa-circle-question", "#0ea5e9"
+
+    def has_add_permission(self, request) -> bool:
+        return False  # questions are asked by customers
+
+    def has_delete_permission(self, request, obj=None) -> bool:
+        return False  # hide instead
+
+    def get_queryset(self, request):
+        qs = super().get_queryset(request)
+        st = request.GET.get("status__exact")
+        return qs.filter(status=st) if st in Q_STATUS else qs
+
+    def get_changelist(self, request, **kwargs):
+        from django.contrib.admin.views.main import ChangeList
+
+        class _CL(ChangeList):
+            def get_filters_params(self, params=None):
+                out = super().get_filters_params(params)
+                out.pop("status__exact", None)
+                return out
+
+        return _CL
+
+    def nz_stats(self, request):
+        k = orm.ProductQuestionModel.objects.aggregate(
+            pending=Count("id", filter=Q(status="pending")), answered=Count("id", filter=Q(status="answered")), hidden=Count("id", filter=Q(status="hidden")))
+        week = orm.ProductQuestionModel.objects.filter(created_at__gte=timezone.now() - timedelta(days=7)).count()
+        return [
+            ui.stat_card("Javob kutmoqda", k["pending"], "#d97706" if k["pending"] else "#16a34a", "fa-hourglass-half", "tezroq javob bering" if k["pending"] else "navbat bo'sh", "?status__exact=pending"),
+            ui.stat_card("Saytda", k["answered"], "#16a34a", "fa-globe", "javob berilgan", "?status__exact=answered"),
+            ui.stat_card("Shu hafta", week, "#0ea5e9", "fa-calendar-week", "yangi savollar"),
+            ui.stat_card("Yashirilgan", k["hidden"], "#64748b", "fa-eye-slash", "", "?status__exact=hidden"),
+        ]
+
+    def nz_tabs(self, request):
+        counts = dict(orm.ProductQuestionModel.objects.values_list("status").annotate(n=Count("id")))
+        return ui.tabs_for(request, "status__exact", [("", "Hammasi", sum(counts.values()))] + [(s, v[0], counts.get(s, 0)) for s, v in Q_STATUS.items()],
+                           {s: v[1] for s, v in Q_STATUS.items()})
+
+    def nz_prepare(self, request, objs):
+        self._p = _products([o.product_id for o in objs])
+
+    def nz_row(self, o):
+        p = self._p.get(o.product_id)
+        label, color = Q_STATUS.get(o.status, (o.status, "#64748b"))
+        return [
+            format_html("<b>{}</b>", p["name"] if p else "O'chirilgan mahsulot"),
+            format_html("<span>{}</span>{}", o.question[:140], format_html("<br><small>↳ {}</small>", o.answer[:90]) if o.answer else ""),
+            format_html("{}", o.author_name or "Mijoz"),
+            format_html("<small>{}</small>", ui.local(o.created_at)),
+            format_html('<span class="nzi-pill" style="--t:{}">{}</span>', color, label),
+        ]
+
+    @admin.display(description="Savol")
+    def question_panel(self, obj):
+        p = _products([obj.product_id]).get(obj.product_id)
+        product = format_html('<a href="{}"><b>{}</b></a>', p["url"], p["name"]) if p else "O'chirilgan mahsulot"
+        answered = format_html(" · javob: {} · {}", obj.answered_by or "Do'kon", ui.local(obj.answered_at, "%d.%m.%Y %H:%M")) if obj.answered_at else ""
+        templates = (("Ha", "Ha, "), ("Tarkib", "Tarkibi bo'yicha: "), ("Shifokor", "Bu savol bo'yicha shifokor yoki dietolog bilan maslahatlashishingizni tavsiya qilamiz. "),
+                     ("Do'konda bor", "Ha, bu mahsulot do'konlarimizda mavjud — sahifadagi «Do'konlarda mavjudlik» bo'limidan yaqin filialni ko'rishingiz mumkin."))
+        chips = format_html_join("", '<button type="button" class="nzr-tpl" data-nzq-tpl="{}">{}</button>', ((t, label) for label, t in templates))
+        return format_html(
+            '<div class="nzi-panel-body"><p style="margin:0 0 6px">{}</p><blockquote style="margin:0 0 8px;padding:10px 14px;border-radius:14px;'
+            'background:color-mix(in srgb,#0ea5e9 9%,transparent);font-size:15px">{}</blockquote>'
+            '<small>{} · {}{}</small><p style="margin:10px 0 0" class="nzr-tpls">{}</p></div>'
+            '<script>document.addEventListener("click",function(e){{var b=e.target.closest("[data-nzq-tpl]");if(!b)return;'
+            'var t=document.getElementById("id_answer");if(!t)return;t.value=(t.value?t.value+" ":"")+b.dataset.nzqTpl;t.focus();}});</script>',
+            product, obj.question, obj.author_name or "Mijoz", ui.local(obj.created_at, "%d.%m.%Y %H:%M"), answered, chips,
+        )
+
+    def save_model(self, request, obj, form, change):
+        actor = getattr(request.user, "get_full_name", lambda: "")() or request.user.get_username()
+        hide = form.cleaned_data.get("status") == "hidden"
+        if not hide:
+            q_service.set_hidden(obj.pk, False)  # un-hide first, so a first answer still notifies the asker
+        result = q_service.answer(obj.pk, form.cleaned_data.get("answer", ""), actor)
+        if hide:
+            q_service.set_hidden(obj.pk, True)
+        if result == "added":
+            messages.success(request, "Javob saqlandi — savol saytda chiqdi va mijozga bildirishnoma yuborildi.")
+
+    @admin.action(description="Tanlanganlarni yashirish")
+    def hide_selected(self, request, queryset):
+        for pk in queryset.values_list("pk", flat=True):
+            q_service.set_hidden(pk, True)
+        messages.success(request, "Yashirildi.")

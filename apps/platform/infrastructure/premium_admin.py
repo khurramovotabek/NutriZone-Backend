@@ -12,7 +12,7 @@ from django.utils import timezone
 from django.utils.html import format_html
 
 TZ = ZoneInfo("Asia/Tashkent")
-ASSET_V = "18"  # cache-buster for the section stylesheets (nz_css) -- bump after editing one
+ASSET_V = "19"  # cache-buster for the section stylesheets (nz_css) -- bump after editing one
 AVATAR_TONES = ["#2563eb", "#16a34a", "#9333ea", "#ea580c", "#0891b2", "#db2777", "#4f46e5", "#0d9488"]
 
 

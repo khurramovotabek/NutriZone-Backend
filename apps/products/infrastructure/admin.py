@@ -1566,9 +1566,10 @@ class BrandAdminForm(forms.ModelForm):
 
     class Meta:
         model = orm.Brand
-        fields = ["is_active", "is_manufacturer", "logo_upload"]  # logo_storage_path/logo_thumbnail_paths are internal implementation detail, never a real admin-editable field -- save_model() sets them directly from the upload.
-        labels = {"is_active": "Faol", "is_manufacturer": "Ishlab chiqaruvchi"}
-        help_texts = {"is_active": "O'chirilsa brend saytdagi brendlar ro'yxatida ko'rinmaydi.", "is_manufacturer": "Brend o'zi zavod / ishlab chiqaruvchi bo'lsa yoqing."}
+        fields = ["is_active", "is_manufacturer", "is_official_distributor", "logo_upload"]  # logo_storage_path/logo_thumbnail_paths are internal implementation detail, never a real admin-editable field -- save_model() sets them directly from the upload.
+        labels = {"is_active": "Faol", "is_manufacturer": "Ishlab chiqaruvchi", "is_official_distributor": "Rasmiy distribyutor"}
+        help_texts = {"is_active": "O'chirilsa brend saytdagi brendlar ro'yxatida ko'rinmaydi.", "is_manufacturer": "Brend o'zi zavod / ishlab chiqaruvchi bo'lsa yoqing.",
+                      "is_official_distributor": "Mahsulotni brendning rasmiy vakili / importyoridan olsangiz yoqing — mahsulot sahifasida «Rasmiy distribyutor» belgisi chiqadi. Faqat haqiqatan shartnoma bo'lsa."}
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -1592,7 +1593,7 @@ class BrandAdmin(ExcelExportMixin, CatalogFormMixin, CatalogAnalyticsMixin, admi
     form = BrandAdminForm
     hero_icon, hero_tone, hero_noun = "fa-tags", "#6366f1", "brend"
     fieldsets = (
-        ("Holat", {"fields": ("is_active", "is_manufacturer", "country")}),
+        ("Holat", {"fields": ("is_active", "is_manufacturer", "is_official_distributor", "country")}),
         ("Logotip", {"fields": ("logo_upload",)}),
         ("Tizim ma'lumotlari", {"classes": ("nzp-fold",), "fields": ("id", "created_at", "updated_at")}),
     )

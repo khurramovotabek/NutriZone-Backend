@@ -117,6 +117,36 @@ class ReviewRequestSettings(models.Model):
         return obj
 
 
+class ProductQuestionModel(models.Model):
+    """
+    "Savol-javob" on the product page: a signed-in customer asks, the store answers in Dashboard → Sharhlar →
+    Savollar. Only answered, not hidden questions are public; the asker is told once when the answer is written.
+    """
+
+    STATUS_CHOICES = (("pending", _("Javob kutilmoqda")), ("answered", _("Javob berilgan")), ("hidden", _("Yashirilgan")))
+
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    product_id = models.UUIDField(db_index=True)
+    customer_id = models.UUIDField(db_index=True)
+    author_name = models.CharField(_("Muallif"), max_length=80, blank=True, default="")
+    question = models.TextField(_("Savol"), max_length=600)
+    answer = models.TextField(_("Javob"), blank=True, default="")
+    answered_at = models.DateTimeField(null=True, blank=True)
+    answered_by = models.CharField(max_length=150, blank=True, default="")
+    status = models.CharField(_("Holat"), max_length=16, choices=STATUS_CHOICES, default="pending", db_index=True)
+    created_at = models.DateTimeField(auto_now_add=True, db_index=True)
+
+    class Meta:
+        db_table = "reviews_product_questions"
+        verbose_name = _("Mahsulot savoli")
+        verbose_name_plural = _("Mahsulot savollari")
+        ordering = ["-created_at"]
+        indexes = [models.Index(fields=["product_id", "status"])]
+
+    def __str__(self) -> str:  # pragma: no cover
+        return (self.question or "Savol").strip().splitlines()[0][:60] if (self.question or "").strip() else "Savol"
+
+
 class ReviewOutboxEvent(AbstractOutboxEvent):
     class Meta:
         db_table = "reviews_outbox_events"

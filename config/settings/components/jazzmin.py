@@ -167,12 +167,13 @@ JAZZMIN_SETTINGS = {
     "hide_models": ["django_celery_beat.intervalschedule", "django_celery_beat.crontabschedule", "django_celery_beat.solarschedule", "django_celery_beat.clockedschedule",
                     "chat.chatsettings", "reviews.reviewrequestsettings", "stores.stockadjustment", "stores.pospricechange", "pricing.repricingmodel", "ordering.courier", "finance.moneyaccount", "finance.category", "finance.transaction", "stores.stocktransfer", "stores.stockreceipt", "stores.stockmovement", "stores.stockcount",
                     "stores.writeoff", "stores.supplier", "stores.supplierpayment", "stores.reorderrule", "stores.storecashier",
-                    "search.searchterm", "telegram_bot.telegrampost", "telegram_bot.channelautopostsettings", "telegram_bot.telegramstaffmember", "receipts.receiptsettings", "ordering.deliverysettings"],  # reached from the Catalog group (custom_links["products"])
+                    "search.searchterm", "telegram_bot.telegrampost", "telegram_bot.channelautopostsettings", "telegram_bot.telegramstaffmember", "receipts.receiptsettings", "ordering.deliverysettings", "products.bundlesettings"],  # reached from the Catalog group (custom_links["products"])
     "usermenu_links": [{"name": _("Mening profilim"), "url": "admin:nz_profile", "icon": "fas fa-user-circle"}],
     "custom_links": {
         # Biznes analitikasi (apps/platform/infrastructure/analytics_view.py) -- the same numbers NutriZoneAnalyticsBot sends.
         "platform": [
             {"name": _("Nazorat markazi"), "url": "admin:nz_control", "icon": "fas fa-shield-halved", "permissions": ["ordering.view_ordermodel", "pos.view_salemodel"]},
+            {"name": _("Server holati"), "url": "admin:nz_server_status", "icon": "fas fa-server", "permissions": ["django_celery_beat.view_periodictask"]},
         ],
         # Analitika -- every report in one section. Not an app: Jazzmin turns a custom_links key that is no installed app into its own sidebar group, named by the key.
         "Analitika": [

@@ -24,6 +24,7 @@ import uuid
 
 from django.contrib.postgres.indexes import GinIndex
 from django.contrib.postgres.search import SearchVectorField
+from django.core.validators import MaxValueValidator, MinValueValidator
 from django.db import models
 from django.utils.translation import gettext_lazy as _
 
@@ -107,6 +108,9 @@ class Brand(SoftDeleteModel):
 
     is_active = models.BooleanField(default=True)
     is_manufacturer = models.BooleanField(default=False, db_index=True)
+    # Shown on the product page as "Rasmiy distribyutor" -- only when the store really buys from the brand's official
+    # importer / has the distributor agreement (Dashboard → Brendlar).
+    is_official_distributor = models.BooleanField(_("Rasmiy distribyutor"), default=False)
     country = models.ForeignKey("geo.Country", on_delete=models.SET_NULL, null=True, blank=True, related_name="brands", verbose_name=_("Country of origin"))
     # Media Asset architecture removed per explicit product decision --
     # direct file storage fields, populated by core.media.MediaPipeline
@@ -594,6 +598,61 @@ class ProductRecommendation(BaseModel):
             models.UniqueConstraint(fields=["product", "related_product"], name="uq_product_recommendations_product_related"),
             models.CheckConstraint(condition=~models.Q(product=models.F("related_product")), name="ck_product_recommendations_not_self"),
         ]
+
+
+class ProductBundle(BaseModel):
+    """
+    "Birga arzonroq" -- a staff-picked pair shown on `product`'s page: buy it together with `companion` and the
+    companion's line gets `discount_percent` off (cart + checkout, see products/infrastructure/bundles.py). Without a
+    staff pick the page offers an automatic pair from what customers buy together (BundleSettings).
+    """
+
+    product = models.ForeignKey(Product, on_delete=models.CASCADE, related_name="bundles", verbose_name=_("Asosiy mahsulot"))
+    companion = models.ForeignKey(Product, on_delete=models.CASCADE, related_name="bundled_with", verbose_name=_("Birga taklif qilinadigan mahsulot"))
+    discount_percent = models.DecimalField(_("Chegirma, %"), max_digits=5, decimal_places=2, default=5,
+                                           validators=[MinValueValidator(1), MaxValueValidator(50)])
+    is_active = models.BooleanField(_("Faol"), default=True)
+
+    class Meta:
+        db_table = "catalog_product_bundles"
+        verbose_name = _("Birga arzonroq to'plam")
+        verbose_name_plural = _("Birga arzonroq to'plamlar")
+        constraints = [
+            models.UniqueConstraint(fields=["product", "companion"], name="uq_product_bundles_pair"),
+            models.CheckConstraint(condition=~models.Q(product=models.F("companion")), name="ck_product_bundles_not_self"),
+        ]
+
+    def __str__(self) -> str:  # pragma: no cover
+        return f"{self.product} + {self.companion}"
+
+
+class BundleSettings(models.Model):
+    """Singleton (pk=1): the automatic "Birga arzonroq" pair for products without a staff pick."""
+
+    auto_enabled = models.BooleanField(_("Avtomatik to'plamlar yoqilgan"), default=True)
+    auto_percent = models.DecimalField(_("Avtomatik chegirma, %"), max_digits=5, decimal_places=2, default=5,
+                                       validators=[MinValueValidator(1), MaxValueValidator(30)])
+    min_margin_percent = models.DecimalField(_("Chegirmadan keyin minimal ustama, %"), max_digits=5, decimal_places=2, default=5,
+                                             validators=[MinValueValidator(0), MaxValueValidator(100)],
+                                             help_text=_("Chegirmali narx tannarxdan shuncha foiz yuqori bo'lmasa, avtomatik to'plam taklif qilinmaydi."))
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        db_table = "catalog_bundle_settings"
+        verbose_name = _("Birga arzonroq sozlamalari")
+        verbose_name_plural = _("Birga arzonroq sozlamalari")
+
+    def __str__(self) -> str:
+        return "Birga arzonroq sozlamalari"
+
+    def save(self, *args, **kwargs):
+        self.pk = 1
+        super().save(*args, **kwargs)
+
+    @classmethod
+    def load(cls) -> "BundleSettings":
+        obj, _created = cls.objects.get_or_create(pk=1)
+        return obj
 
 
 # ---------------------------------------------------------------------------

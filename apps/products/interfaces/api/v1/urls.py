@@ -10,7 +10,7 @@ from __future__ import annotations
 
 from django.urls import path
 
-from apps.products.interfaces.api.v1 import views, wishlist_views
+from apps.products.interfaces.api.v1 import pdp_views, views, wishlist_views
 
 app_name = "products"
 
@@ -27,7 +27,10 @@ urlpatterns = [
     path("products/recommendations", views.PersonalizedRecommendationsView.as_view(), name="products-personalized-recommendations"),
     path("products/recommendations/for-cart", views.CartRecommendationsView.as_view(), name="products-cart-recommendations"),
     path("products/variants", views.VariantDisplayView.as_view(), name="products-variant-display"),
+    path("products/price-watch/<str:variant_id>", pdp_views.PriceWatchView.as_view(), name="products-price-watch"),
     path("products/<str:slug>", views.ProductDetailView.as_view(), name="products-detail"),
+    path("products/<str:slug>/extras", pdp_views.ProductExtrasView.as_view(), name="products-extras"),
+    path("products/<str:slug>/questions", pdp_views.ProductQuestionsView.as_view(), name="products-questions"),
     path("products/<str:slug>/recommendations", views.ProductRecommendationsView.as_view(), name="products-recommendations"),
     path("categories", views.CategoryListView.as_view(), name="categories-list"),
     path("categories/tree", views.CategoryTreeView.as_view(), name="categories-tree"),

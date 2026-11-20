@@ -493,6 +493,12 @@ def _grouping_view(request):
     return grouping_view(request)
 
 
+def _server_status(request):
+    from apps.platform.infrastructure.server_status_view import server_status_view
+
+    return server_status_view(request)
+
+
 def _get_urls_with_reports():
     from django.urls import path
 
@@ -508,6 +514,7 @@ def _get_urls_with_reports():
         path("products/price-list/api/bulk", price_list_view.price_list_api_bulk, name="nz_price_list_bulk"),
         path("products/price-list/api/stock/<str:variant_id>", price_list_view.price_list_api_stock, name="nz_price_list_stock"),
         path("control/", _control_view, name="nz_control"),
+        path("server-status/", _server_status, name="nz_server_status"),
         path("sales-plan/", _growth("sales_plan_view"), name="nz_sales_plan"),
         path("sales-plan/save/", _growth("sales_plan_save_view"), name="nz_sales_plan_save"),
         path("segments/", _growth("segments_view"), name="nz_segments"),

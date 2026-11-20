@@ -537,6 +537,21 @@ class CartNotReadyForCheckout(ConflictError):
     code = "CART_NOT_READY"
 
 
+def _bundle_discount(active_items) -> tuple[Decimal, list]:
+    """"Birga arzonroq": the product + companion pairs in the cart (products/infrastructure/bundles.py). Never fails
+    the cart -- a broken offer simply gives no discount."""
+    try:
+        from apps.products.infrastructure import bundles
+
+        lines = [(i.product_variant_id, i.price_reference.unit_amount.amount, i.quantity.value) for i in active_items if i.price_reference is not None]
+        return bundles.cart_discount(lines)
+    except Exception:
+        import logging
+
+        logging.getLogger("nutrizone.app").exception("bundle discount failed")
+        return Decimal("0"), []
+
+
 def _checkout_discounts(cart, active_items, actor_id, requested_coins: int) -> tuple[list, int, Decimal, list, Decimal]:
     """
     Order-level discounts are spread over the lines as `discount_amount`, the one
@@ -551,6 +566,8 @@ def _checkout_discounts(cart, active_items, actor_id, requested_coins: int) -> t
     gross = sum(line_gross, Decimal("0"))
     applied, coupon_discount = _compute_cart_discount(cart.coupon_ids, {"amount": str(gross), "currency": cart.currency.value} if gross else None, actor_id)
     coupon_amount = Decimal(coupon_discount["amount"]) if coupon_discount else Decimal("0")
+    bundle_amount, _bundles = _bundle_discount(active_items)
+    coupon_amount = min(gross, coupon_amount + bundle_amount)
     payable_before_coins = gross - coupon_amount
     coins = 0
     if requested_coins and cart.currency.value == "UZS":
@@ -1024,6 +1041,10 @@ def preview_payload(cart, actor_id, delivery) -> dict:
             subtotal = {"amount": str(total), "currency": currencies.pop()}
 
     applied_coupons, discount = _compute_cart_discount(cart.coupon_ids, subtotal, actor_id)
+    bundle_amount, bundle_applied = _bundle_discount(priced_items) if subtotal else (Decimal("0"), [])
+    if bundle_amount > 0:
+        merged = min(Decimal(subtotal["amount"]), (Decimal(discount["amount"]) if discount else Decimal("0")) + bundle_amount)
+        discount = {"amount": str(merged), "currency": subtotal["currency"]}
 
     total_after_discount = None
     if subtotal and discount:
@@ -1042,6 +1063,7 @@ def preview_payload(cart, actor_id, delivery) -> dict:
         "subtotal": subtotal,
         "applied_coupons": [{"code": a["code"], "amount": a["amount"]} for a in applied_coupons],
         "discount": discount,
+        "bundle_discount": {"amount": str(bundle_amount), "currency": subtotal["currency"], "pairs": bundle_applied} if bundle_amount > 0 else None,
         "total": total_after_discount or subtotal,
         "currency": cart.currency.value,
         "expires_at": cart.expires_at.isoformat() if cart.expires_at else None,

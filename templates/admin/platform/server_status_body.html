@@ -1,0 +1,64 @@
+{# The refreshable part of Server holati -- fetched again every 30 s with ?partial=1. #}
+<header class="nzs-hero is-{{ s.overall }}">
+  <div class="nzs-hero-main">
+    <span class="nzs-orb is-{{ s.overall }}" aria-hidden="true"><i class="fas {% if s.overall == 'ok' %}fa-check{% elif s.overall == 'warn' %}fa-triangle-exclamation{% else %}fa-circle-exclamation{% endif %}"></i></span>
+    <div class="nzs-hero-text">
+      <p class="nzs-eyebrow">NutriZone · {{ s.environment }}{% if s.release %} · {{ s.release|truncatechars:14 }}{% endif %}</p>
+      <h2>{{ s.overall_text }}</h2>
+      <p class="nzs-hero-sub">{{ s.counts.ok }} ta xizmat ishlayapti{% if s.counts.warn %} · {{ s.counts.warn }} ta e'tibor talab qiladi{% endif %}{% if s.counts.down %} · {{ s.counts.down }} ta ishlamayapti{% endif %} · server {{ s.host.hostname }} {{ s.host.uptime }} dan beri yoniq</p>
+    </div>
+  </div>
+  <div class="nzs-hero-side">
+    <button type="button" class="nzs-refresh" data-refresh><i class="fas fa-rotate" aria-hidden="true"></i> Yangilash</button>
+    <span class="nzs-countdown" title="Avtomatik yangilanish"><i class="fas fa-clock" aria-hidden="true"></i> <span data-countdown>30 s</span><span class="nzs-countdown-bar"><span data-countdown-bar></span></span></span>
+    <small>Tekshirildi: {{ s.checked_at|date:"H:i:s" }}</small>
+  </div>
+</header>
+<p class="nzs-refresh-error" data-refresh-error hidden><i class="fas fa-wifi" aria-hidden="true"></i> Yangilab bo'lmadi — internet yoki server javob bermadi. Keyingi urinish 30 soniyadan keyin.</p>
+
+<section class="nzs-gauges" aria-label="Server resurslari">
+  {% for g in s.host.gauges %}
+  <article class="nzs-card nzs-gauge is-{{ g.status }}">
+    <div class="nzs-ring" style="--p:{{ g.pct }}" role="img" aria-label="{{ g.label }}: {{ g.pct }}%">
+      <svg viewBox="0 0 120 120" aria-hidden="true"><circle class="nzs-ring-track" cx="60" cy="60" r="52"/><circle class="nzs-ring-fill" cx="60" cy="60" r="52" pathLength="100"/></svg>
+      <b>{{ g.value }}</b>
+    </div>
+    <div class="nzs-gauge-text">
+      <h3>{{ g.label }}</h3>
+      <p>{{ g.sub }}</p>
+      <span class="nzs-pill is-{{ g.status }}">{% if g.status == 'ok' %}Me'yorda{% elif g.status == 'warn' %}Yuqori{% else %}Juda yuqori{% endif %}</span>
+    </div>
+  </article>
+  {% endfor %}
+</section>
+
+<section class="nzs-grid" aria-label="Xizmatlar">
+  {% for x in s.services %}
+  <article class="nzs-card nzs-svc is-{{ x.status }}">
+    <div class="nzs-svc-head">
+      <span class="nzs-svc-icon"><i class="fas {{ x.icon }}" aria-hidden="true"></i></span>
+      <h3>{{ x.title }}</h3>
+      <span class="nzs-dot is-{{ x.status }}" aria-hidden="true"></span>
+      <span class="nzs-pill is-{{ x.status }}">{% if x.status == 'ok' %}Ishlayapti{% elif x.status == 'warn' %}Diqqat{% elif x.status == 'off' %}O'chiq{% else %}Ishlamayapti{% endif %}</span>
+    </div>
+    {% if x.big is not None %}<p class="nzs-big"><b>{{ x.big }}</b> <small>{{ x.big_label }}</small></p>{% endif %}
+    {% if x.facts %}<dl class="nzs-facts">{% for k, v in x.facts %}<div><dt>{{ k }}</dt><dd>{{ v }}</dd></div>{% endfor %}</dl>{% endif %}
+    {% if x.meter %}<div class="nzs-meter" title="{{ x.meter.label }}: {{ x.meter.pct }}%"><span style="width:{{ x.meter.pct }}%"></span></div>{% endif %}
+    {% if x.list %}<ul class="nzs-list">{% for n in x.list %}<li><i class="fas fa-circle-exclamation" aria-hidden="true"></i> {{ n }}</li>{% endfor %}</ul>{% endif %}
+    {% if x.error %}<p class="nzs-error">{{ x.error }}</p>{% endif %}
+    {% if x.latency is not None %}<p class="nzs-latency"><i class="fas fa-stopwatch" aria-hidden="true"></i> {{ x.latency }} ms javob</p>{% endif %}
+  </article>
+  {% endfor %}
+</section>
+
+<section class="nzs-card nzs-meta">
+  <div><span>Muhit</span><b>{{ s.environment }}</b></div>
+  <div><span>Versiya</span><b>{{ s.release|default:"—"|truncatechars:20 }}</b></div>
+  <div><span>Python</span><b>{{ s.python }}</b></div>
+  <div><span>Django</span><b>{{ s.django }}</b></div>
+  <div><span>Server</span><b>{{ s.host.hostname }}</b></div>
+  <div class="nzs-meta-links">
+    <a href="{% url 'admin:django_celery_beat_periodictask_changelist' %}"><i class="fas fa-gears" aria-hidden="true"></i> Fon vazifalari</a>
+    <a href="{% url 'admin:nz_control' %}"><i class="fas fa-shield-halved" aria-hidden="true"></i> Nazorat markazi</a>
+  </div>
+</section>

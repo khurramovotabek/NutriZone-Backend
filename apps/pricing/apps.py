@@ -20,6 +20,12 @@ class PricingConfig(AppConfig):
 
         from apps.pricing.infrastructure import admin, repricing_admin  # noqa: F401 -- registers admin.py, which Django default discovery cannot reach at this project's infrastructure/admin.py location
         from shared.event_contracts import pricing as pricing_event_contracts  # noqa: F401
+        from django.db.models.signals import post_save
+
+        from apps.pricing.infrastructure.models import PriceListEntryModel
+        from apps.pricing.infrastructure.price_watch import on_entry_saved
+
+        post_save.connect(on_entry_saved, sender=PriceListEntryModel, dispatch_uid="pricing.price_watch")
 
         from apps.pricing.infrastructure.health import (
             check_pricing_calculation_engine,
