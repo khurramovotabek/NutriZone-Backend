@@ -96,41 +96,48 @@ class TestBundle:
         # companion alone: nothing
         assert bundles.cart_discount([(sv.id, Decimal("60000"), 2)])[0] == 0
 
-    def test_auto_pair_only_from_another_category(self, monkeypatch):
+    @staticmethod
+    def _tree():
+        """Sport ozuqalari → Proteinlar, Kreatin; Vitaminlar → Maxsus; Aksessuarlar → Shakerlar."""
+        from apps.products.infrastructure import models as orm
+
+        def cat(slug, parent=None):
+            c = orm.Category.objects.create(parent=parent)
+            orm.CategoryTranslation.objects.create(category=c, locale_code="uz", name=slug, slug=slug if parent else f"{slug}-{uuid.uuid4().hex[:4]}")
+            return c
+
+        sport, vit, acc = cat("sport"), cat("vit"), cat("acc")
+        return {"protein": cat("proteinlar", sport), "creatine": cat("kreatin", sport), "prenatal": cat("maxsus-qoshimchalar", vit),
+                "shakers": cat("shakerlar", acc), "acc": acc}
+
+    def test_auto_pair_completes_the_purchase(self, monkeypatch):
         from apps.products.infrastructure import bundles
         from apps.products.infrastructure import models as orm
 
-        protein, accessory = orm.Category.objects.create(), orm.Category.objects.create()
-        isolate, blend = orm.Category.objects.create(parent=protein), orm.Category.objects.create(parent=protein)
-        whey, _ = _product("Whey", 800_000, category=isolate)
-        other_whey, _ = _product("Whey 2", 700_000, category=blend)
-        shaker, sv = _product("Shaker", 60_000, category=accessory)
-        cards = [{"id": str(other_whey.id), "category_id": str(blend.id), "stock_status": "in_stock"},
-                 {"id": str(shaker.id), "category_id": str(accessory.id), "stock_status": "in_stock"}]
-        monkeypatch.setattr("apps.products.infrastructure.selectors.RecommendationSelector.for_product", lambda self, pid, limit=12, locale=None: cards)
-        assert bundles.offer_for(whey.id)["companion_product_id"] == str(shaker.id)
-        cache.clear()
-        monkeypatch.setattr("apps.products.infrastructure.selectors.RecommendationSelector.for_product", lambda self, pid, limit=12, locale=None: cards[:1])
-        assert bundles.offer_for(whey.id)["companion_product_id"] == str(shaker.id)  # the other whey is never offered
-
-    def test_best_seller_fallback_is_an_add_on_from_companion_departments(self, monkeypatch):
-        from apps.products.infrastructure import bundles
-        from apps.products.infrastructure import models as orm
-
-        protein, accessory, vitamins = orm.Category.objects.create(), orm.Category.objects.create(), orm.Category.objects.create()
-        shakers = orm.Category.objects.create(parent=accessory)
-        whey, _ = _product("Whey", 1_000_000, category=protein)
-        _product("Other whey", 300_000, category=protein)              # same department: never
-        _product("Big vitamin pack", 600_000, category=vitamins)       # above 40 % of the whey: not an add-on
-        shaker, sv = _product("Shaker", 60_000, category=shakers)
-        omega, ov = _product("Omega", 150_000, category=vitamins)
+        c = self._tree()
+        isolate = orm.Category.objects.create(parent=c["protein"])  # a leaf under Proteinlar is still Proteinlar
+        whey, _ = _product("Whey", 1_000_000, category=isolate)
+        _product("Other whey", 300_000, category=c["protein"])           # same department: never
+        _product("Prenatal", 150_000, category=c["prenatal"])            # unrelated department: never
+        _product("Big creatine", 600_000, category=c["creatine"])        # above 40 %: not an add-on
+        creatine, cv = _product("Creatine", 180_000, category=c["creatine"])
+        shaker, sv = _product("Shaker", 60_000, category=c["shakers"])
         monkeypatch.setattr("apps.products.infrastructure.selectors.RecommendationSelector.for_product", lambda self, pid, limit=12, locale=None: [])
-        monkeypatch.setattr("apps.products.infrastructure.smart_search._units_sold_by_product", lambda: {str(omega.id): 9, str(shaker.id): 3})
-        assert bundles.offer_for(whey.id)["companion_product_id"] == str(omega.id)   # best seller among add-ons
+        monkeypatch.setattr("apps.products.infrastructure.smart_search._units_sold_by_product", lambda: {str(shaker.id): 50, str(creatine.id): 2})
+        assert bundles.offer_for(whey.id)["companion_variant_id"] == str(cv.id)  # creatine first, even if shakers sell more
         cfg = orm.BundleSettings.load()
-        cfg.companion_categories.set([accessory])                                  # only accessories (and below)
+        cfg.companion_categories.set([c["acc"]])               # the dashboard narrows it to accessories
         cache.clear()
         assert bundles.offer_for(whey.id)["companion_variant_id"] == str(sv.id)
+
+    def test_department_without_partners_gets_no_auto_pair(self, monkeypatch):
+        from apps.products.infrastructure import bundles
+
+        c = self._tree()
+        prenatal, _ = _product("Prenatal", 150_000, category=c["prenatal"])
+        _product("Shaker", 20_000, category=c["shakers"])
+        monkeypatch.setattr("apps.products.infrastructure.selectors.RecommendationSelector.for_product", lambda self, pid, limit=12, locale=None: [])
+        assert bundles.offer_for(prenatal.id) is None
 
     def test_auto_bundle_respects_margin_guard(self, monkeypatch):
         from apps.products.infrastructure import bundles

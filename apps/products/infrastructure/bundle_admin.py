@@ -116,9 +116,11 @@ class BundleSettingsForm(forms.ModelForm):
         fields = ("auto_enabled", "auto_percent", "min_margin_percent", "max_companion_share", "companion_categories")
         widgets = {"companion_categories": forms.CheckboxSelectMultiple}
         help_texts = {
-            "auto_enabled": "Qo'lda juftlik tanlanmagan mahsulotlarda tizim o'zi juftlik tanlaydi: mijozlar birga xarid qilgan, omborda bor, "
-                            "iloji bo'lsa boshqa kategoriyadagi mahsulot (proteinga — shaker yoki kreatin).",
+            "auto_enabled": "Qo'lda juftlik tanlanmagan mahsulotlarda tizim o'zi juftlik tanlaydi: uni to'ldiradigan bo'limdan (proteinga — kreatin, "
+                            "shaker yoki batonchik; multivitaminga — omega yoki minerallar), omborda bor, avval mijozlar birga olgani, bo'lmasa eng ko'p sotilgani.",
             "auto_percent": "Avtomatik juftlikda ikkinchi mahsulotga beriladigan chegirma.",
+            "companion_categories": "Bo'sh qoldirsangiz tizimning tayyor xaritasi ishlaydi (proteinga — kreatin, shaker, batonchik; kreatinga — shaker, aminokislota; "
+                                    "multivitaminga — omega, minerallar...). Tanlasangiz, hamroh faqat shu bo'limlardan (va ularning ichidagilaridan) olinadi.",
         }
 
 
@@ -171,7 +173,7 @@ def _flush_bundle_cache() -> None:
         import redis as redis_lib
 
         r = redis_lib.Redis.from_url(settings.REDIS_URL, socket_timeout=2)
-        for key in r.scan_iter(match="*bundle:v2:*", count=500):
+        for key in r.scan_iter(match="*bundle:v3:*", count=500):
             r.delete(key)
     except Exception:  # noqa: BLE001 - the cache simply expires within the hour
         pass

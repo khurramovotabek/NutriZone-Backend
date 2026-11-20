@@ -2,10 +2,11 @@
 "Birga arzonroq" -- buy a product together with its companion and the companion line gets a discount.
 
 * `offer_for(product_id)`  the one companion offered on a product page: a staff pick (ProductBundle, Dashboard →
-  Katalog → Birga arzonroq) wins; otherwise -- when BundleSettings.auto_enabled -- an in-stock add-on from another
-  department (a shaker or creatine next to a protein, never a second protein; within `companion_categories` when
-  set, priced at most `max_companion_share` of the main product): first what customers bought together with it,
-  else the best seller of those departments; and only when the discounted price still clears the
+  Katalog → Birga arzonroq) wins; otherwise -- when BundleSettings.auto_enabled -- an in-stock add-on from a
+  department that completes this one (COMPLEMENTS: creatine / a shaker next to a protein, omega next to a
+  multivitamin; or the dashboard's `companion_categories`), priced at most `max_companion_share` of the main
+  product: first what customers bought together with it, else that department's best seller; and only when the
+  discounted price still clears the
   known purchase cost by `min_margin_percent`. Cached for an hour so the page and the cart agree.
 * `cart_discount(lines)`  what checkout takes off for every (product, companion) pair actually in the cart:
   percent × the companion line's unit price × the units that have a partner. Each unit is discounted once.
@@ -20,7 +21,7 @@ from django.core.cache import cache
 from apps.products.infrastructure import models as orm
 
 CACHE_TTL = 60 * 60
-_KEY = "bundle:v2:{}"
+_KEY = "bundle:v3:{}"
 
 
 def _settings() -> orm.BundleSettings:
@@ -67,17 +68,49 @@ def _margin_ok(variant_id, price: Decimal, percent: Decimal, min_margin: Decimal
     return discounted >= Decimal(cost) * (Decimal("100") + min_margin) / Decimal("100")
 
 
-def _category_roots() -> dict[str, str]:
-    """{category_id: its top-level ancestor id} for the whole tree (about a hundred rows, one query)."""
+# What completes a purchase from each department (the owner's category tree, uz slugs of the second level), most
+# natural first. A department without an entry gets no automatic pair -- no pair beats a nonsense one.
+COMPLEMENTS: dict[str, tuple[str, ...]] = {
+    "proteinlar": ("kreatin", "shakerlar", "protein-sneklar", "aminokislotalar"),
+    "geynerlar": ("kreatin", "shakerlar", "protein-sneklar"),
+    "kreatin": ("shakerlar", "aminokislotalar", "pre-workout", "suv-idishlari"),
+    "aminokislotalar": ("shakerlar", "hydration", "suv-idishlari"),
+    "pre-workout": ("kreatin", "pump", "shakerlar"),
+    "pump": ("pre-workout", "kreatin", "shakerlar"),
+    "performance": ("hydration", "shakerlar", "suv-idishlari"),
+    "hydration": ("suv-idishlari", "aminokislotalar"),
+    "tiklanish": ("protein-sneklar", "shakerlar", "minerallar"),
+    "yog-yoquvchilar": ("hydration", "suv-idishlari", "multivitaminlar"),
+    "multivitaminlar": ("omega", "minerallar"),
+    "vitaminlar-vitaminlar": ("minerallar", "omega", "multivitaminlar"),
+    "minerallar": ("vitaminlar-vitaminlar", "omega", "multivitaminlar"),
+    "omega": ("multivitaminlar", "vitaminlar-vitaminlar", "bogimlar-salomatligi"),
+    "bogimlar-salomatligi": ("omega", "minerallar"),
+    "soglom-uyqu": ("minerallar",),
+    "testosteron": ("minerallar", "multivitaminlar"),
+    "osimlik-ekstraktlari": ("multivitaminlar", "omega"),
+    "salomatlik-aminokislotalari": ("multivitaminlar", "minerallar"),
+    "protein-sneklar": ("shakerlar",),
+    "soglom-ovqat": ("protein-sneklar",),
+}
+
+
+def _departments() -> tuple[dict[str, str], dict[str, str]]:
+    """({category_id: its department id}, {department id: uz slug}). A department is the second level of the tree
+    (Sport ozuqalari → Proteinlar); a top-level category is its own department. About a hundred rows, two queries."""
+    from apps.products.infrastructure.models import CategoryTranslation
+
     parent = {str(c): (str(p) if p else None) for c, p in orm.Category.objects.values_list("id", "parent_id")}
-    roots: dict[str, str] = {}
+    dept: dict[str, str] = {}
     for cid in parent:
-        node, seen = cid, set()
+        chain, node, seen = [cid], cid, set()
         while parent.get(node) and node not in seen:
             seen.add(node)
             node = parent[node]
-        roots[cid] = node
-    return roots
+            chain.append(node)
+        dept[cid] = chain[-2] if len(chain) >= 2 else chain[-1]  # chain ends at the root
+    slugs = {str(c): sl for c, sl in CategoryTranslation.objects.filter(locale_code="uz").values_list("category_id", "slug")}
+    return dept, {d: slugs.get(d, "") for d in set(dept.values())}
 
 
 def _compute(product_id) -> dict | None:
@@ -91,50 +124,50 @@ def _compute(product_id) -> dict | None:
     cfg = _settings()
     if not cfg.auto_enabled:
         return None
-    from apps.products.infrastructure.selectors import RecommendationSelector
-
     main = orm.Product.objects.filter(id=product_id).values("category_id").first()
-    roots = _category_roots()
-    main_root = roots.get(str(main["category_id"])) if main and main["category_id"] else None
-    cards = RecommendationSelector().for_product(uuid.UUID(str(product_id)), limit=12)
-    # a companion completes the purchase (shaker / creatine next to a protein) -- never a second product of the same
-    # kind, so the automatic pair only takes products from another top-level category (whey isolate and whey blend
-    # sit in different leaves of the same "Protein" branch), and one priced as an add-on (max_companion_share)
-    if not main_root:
+    if not main or not main["category_id"]:
         return None
-    allowed = _allowed_categories(cfg, roots)
+    dept, slug_of = _departments()
+    main_dept = dept.get(str(main["category_id"]))
+    allowed = _allowed_categories(cfg)
+    if allowed is not None:  # the dashboard's own companion departments win over the built-in map
+        rank = lambda cid: 0 if cid in allowed and dept.get(cid) != main_dept else None  # noqa: E731
+    else:
+        wanted = COMPLEMENTS.get(slug_of.get(main_dept, ""), ())
+        if not wanted:
+            return None
+        order = {sl: i for i, sl in enumerate(wanted)}
+        rank = lambda cid: order.get(slug_of.get(dept.get(cid, ""), ""))  # noqa: E731
     main_variant, _stock = _sellable_default(product_id)
     main_price = _variant_price(main_variant) if main_variant else None
     if not main_price:
         return None
     ceiling = main_price * cfg.max_companion_share / Decimal("100")
 
-    def fits(category_id, price) -> bool:
-        cid = str(category_id) if category_id else None
-        if not cid or roots.get(cid) in (None, main_root):
-            return False
-        if allowed is not None and cid not in allowed:
-            return False
-        return bool(price) and Decimal(price) <= ceiling
+    def fits(category_id, price) -> int | None:
+        r = rank(str(category_id)) if category_id else None
+        return r if r is not None and price and Decimal(price) <= ceiling else None
 
-    # 1) bought together with this product, 2) the best sellers of the companion departments
-    for card in cards:
-        if card.get("stock_status") == "out_of_stock" or not fits(card.get("category_id"), card.get("price")):
+    # 1) bought together with this product (recommendations), 2) the best seller of the most natural companion department
+    from apps.products.infrastructure.selectors import RecommendationSelector
+
+    for card in RecommendationSelector().for_product(uuid.UUID(str(product_id)), limit=12):
+        if card.get("stock_status") == "out_of_stock" or fits(card.get("category_id"), card.get("price")) is None:
             continue
         variant_id, stock = _sellable_default(card["id"])
         price = _variant_price(variant_id) if variant_id and stock > 0 else None
         if price and _margin_ok(variant_id, price, cfg.auto_percent, cfg.min_margin_percent):
             return {"companion_product_id": str(card["id"]), "companion_variant_id": str(variant_id), "percent": str(cfg.auto_percent), "source": "auto"}
-    for row in _companion_pool():
-        if row["product_id"] == str(product_id) or not fits(row["category_id"], row["price"]):
-            continue
+    ranked = [(r, i, row) for i, row in enumerate(_companion_pool())
+              if row["product_id"] != str(product_id) and (r := fits(row["category_id"], row["price"])) is not None]
+    for _r, _i, row in sorted(ranked, key=lambda x: (x[0], x[1])):
         if _margin_ok(row["variant_id"], Decimal(row["price"]), cfg.auto_percent, cfg.min_margin_percent):
             return {"companion_product_id": row["product_id"], "companion_variant_id": row["variant_id"], "percent": str(cfg.auto_percent), "source": "auto"}
     return None
 
 
-def _allowed_categories(cfg, roots: dict[str, str]) -> set[str] | None:
-    """The configured companion departments with everything under them; None = any other department."""
+def _allowed_categories(cfg) -> set[str] | None:
+    """The dashboard's companion departments with everything under them; None = use the built-in COMPLEMENTS map."""
     picked = {str(c) for c in cfg.companion_categories.values_list("id", flat=True)} if cfg.pk else set()
     if not picked:
         return None
@@ -151,7 +184,7 @@ def _allowed_categories(cfg, roots: dict[str, str]) -> set[str] | None:
     return out
 
 
-POOL_KEY = "bundle:v2:pool"
+POOL_KEY = "bundle:v3:pool"
 
 
 def _companion_pool() -> list[dict]:
