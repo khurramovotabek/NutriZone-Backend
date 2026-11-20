@@ -187,7 +187,13 @@ def _kind_ids(concept: str | None, loc: str, text: str = "") -> list[str]:
     if not concept:
         return []
     concept, sub = expert.kind_of(text, concept)
-    return [x["id"] for x in expert.kind_search(concept, loc, sub=sub, limit=3)]
+    found = expert.kind_search(concept, loc, sub=sub, limit=6)
+    if not SPECIAL_GROUP.search(nlu.normalize(text)):  # "soch to'kilyapti" is not a question for pregnant women or toddlers
+        found = [x for x in found if not SPECIAL_GROUP.search(nlu.normalize(x.get("name") or ""))] or found
+    return [x["id"] for x in found[:3]]
+
+
+SPECIAL_GROUP = re.compile(r"(prenatal|homilador|bolalar|kids|child|baby|chaqaloq|беремен|детск|для детей|pregnan)")
 
 
 ADVICE_FIRST = ("sleep",)  # topics whose how-to is the answer itself, shown above the products
@@ -601,7 +607,7 @@ def _context(meta: dict, p, text: str, loc: str, taught: list | None = None):  #
                     {"uz": ["Arzon protein", "Arzon kreatin", "Arzon geyner"], "ru": ["Недорогой протеин", "Недорогой креатин", "Недорогой гейнер"],
                      "en": ["Cheap protein", "Cheap creatine", "Cheap gainer"]}.get(loc, []), meta)
     wants = nlu._has(both, context.WANT) or len(p.text.split()) <= 4
-    if (wants and not p.facts and not seen.health and not seen.stores and not catalog.aspects_in(text) and not nlu._has(both, brain.CHEAP)
+    if (wants and not p.facts and not seen.health and not seen.stores and not catalog.aspects_in(text) and not nlu._has(both, brain.CHEAP) and not expert.free_of(text)
             and not context.NOT_A_LISTING.search(both)):
         items = context.named_products(text, loc)
         if items:  # "Ostovip monogidrat kreatin", "iso100 olmoqchiman" -- that very product, not the best of its kind

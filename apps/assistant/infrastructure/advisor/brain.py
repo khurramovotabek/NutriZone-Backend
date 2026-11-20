@@ -558,7 +558,10 @@ def _why(seen: Seen, loc: str) -> Reply | None:
     kind = seen.concepts[0]
     if kind not in kb.T["why"][loc]:
         return None
-    items = _search(_kind_query(seen), loc, limit=3, sort="-popularity")
+    from apps.assistant.infrastructure.advisor import expert
+
+    exact = expert.kind_search(kind, loc, limit=3) if kind in expert.KIND_CATEGORY else []
+    items = ([{"id": x["id"]} for x in exact]) or _search(_kind_query(seen), loc, limit=3, sort="-popularity")
     text = (f"**{kb.T['kind_name'][loc][kind]}** — {kb.T['why'][loc][kind]}.\n\n"
             f"{_l(loc, 'Kimga kerak', 'Кому нужно', 'Who needs it')}: {kb.T['who'][loc][kind]}\n\n"
             f"_{_l(loc, 'Qanday ichish', 'Как принимать', 'How to take')}:_ {kb.T['usage'][loc][kind]}")

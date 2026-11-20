@@ -133,7 +133,7 @@ def payment_reply(text: str, loc: str) -> str:
         if hits:
             knowledge.mark_used([hits[0].entry])
             return hits[0].entry.answer(loc)
-    hits = knowledge.search(text, limit=2)
+    hits = knowledge.search(text, limit=2) + knowledge.search("to'lov usullari karta naqd", limit=1)
     for h in hits:  # what the shop taught about paying (cards, cash on delivery...) wins over the bare list of methods
         about = nlu.normalize(" ".join((h.entry.title, h.entry.keywords or "")))
         if h.score >= 5.5 and nlu._has(f"{about} {about.translate(nlu.LATIN_FROM_CYR)}", nlu.INTENTS["faq_payment"]):
