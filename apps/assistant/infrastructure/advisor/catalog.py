@@ -132,11 +132,14 @@ def _compact(text: str) -> str:
     return re.sub(r"[^0-9a-zа-яёўқғҳ]", "", nlu.normalize(text))
 
 
+_GLUE = {"uchun", "bilan", "ham", "для", "with", "for", "and"}  # words every other product name contains
+
+
 def _names_it(name: str, query: str) -> bool:
     """The search hit really is the product asked about: a word of the question that isn't a kind ("vitamin", "protein")
     starts a part of its name -- "goldstandart" in "Optimum Nutrition Gold Standard", not "ko'p mashg'ulotda" in "Vitamin C"."""
     compact = _compact(name)
-    words = [_compact(w) for w in query.split() if len(w) >= 3 and not nlu.concepts_in(nlu.normalize(w))]
+    words = [_compact(w) for w in query.split() if len(w) >= 3 and not nlu.concepts_in(nlu.normalize(w)) and w not in _GLUE]
     return any(len(w) >= 3 and w[:5] in compact for w in words)
 
 

@@ -16,7 +16,7 @@ from asgiref.sync import sync_to_async
 from django.utils import timezone
 
 from apps.assistant.infrastructure import knowledge, tools
-from apps.assistant.infrastructure.advisor import brain, catalog, expert, kb, needs, nlu, reco, talk
+from apps.assistant.infrastructure.advisor import brain, catalog, context, expert, kb, needs, nlu, reco, talk
 
 logger = logging.getLogger("nutrizone.assistant.local")
 LOCALES = ("uz", "ru", "en")
@@ -161,7 +161,7 @@ def _expert(meta: dict, p, text: str, loc: str, taught: list):  # noqa: C901 - o
     if not (budget or cheap or best) or concept in ADVICE_FIRST:  # "uyqum yomon" -- the routine first, engine's own path
         return None
     lean = concept == "protein" and sub is None and p.goal == "weight_loss"  # cutting: isolate -- more protein, least carbs and fat
-    r = expert.budget_answer(concept, "isolate" if lean else sub, budget, loc, cheap=cheap and not budget, free=free)
+    r = expert.budget_answer(concept, "isolate" if lean else sub, budget, loc, cheap=cheap and not budget, free=free, sex=p.facts.get("sex"))
     if r and lean:
         r = (kb_lean_note(loc) + "\n\n" + r[0], r[1])
     if r is None:
@@ -281,6 +281,11 @@ def answer(conv_meta: dict, text: str, loc: str) -> tuple[str, list[str], list[s
 
 def _answer(conv_meta: dict, text: str, loc: str) -> tuple[str, list[str], list[str], dict]:
     meta = dict(conv_meta or {})
+    phone = context.callback_phone(text)
+    if phone:  # "позвоните на номер +99890…" -- the staff channel gets it (_turn_sync), the shopper gets a confirmation
+        meta["last"] = "callback"
+        meta["_callback"] = phone
+        return context.callback_reply(phone, loc), [], CHIPS["faq"][loc], meta
     profile = dict(meta.get("profile") or {})
     p = nlu.parse(text)
     profile.update(p.facts)
@@ -323,6 +328,13 @@ def _answer(conv_meta: dict, text: str, loc: str) -> tuple[str, list[str], list[
         meta["last"] = "knowledge"
         ids = _kind_ids(p.concept, loc, text)
         return taught[0].entry.answer(loc), ids, (CHIPS["after_reco"] if ids else CHIPS["faq"])[loc], meta
+    routed = _context(meta, p, text, loc, taught)
+    if isinstance(routed, str):  # "Qanday ichiladi?" right after creatine -> "Kreatin qanday ichiladi?"
+        text = routed
+        p = nlu.parse(text)
+        taught = _taught(text, p.concept)
+    elif routed is not None:
+        return routed
     if nlu._has(f"{p.text} {p.text.translate(nlu.LATIN_FROM_CYR)}", nlu.GIFT) and not p.concept:
         # "sovg'a sertifikati bormi" -- the catalogue's fuzzy search would answer with random tubs; the shop knows (and
         # once it teaches this under AI maslahatchini o'qitish, the taught answer above wins)
@@ -429,6 +441,7 @@ def _answer(conv_meta: dict, text: str, loc: str) -> tuple[str, list[str], list[
         budget = p.facts.get("budget")  # "300 ming so'mgacha protein"
         _c, sub = expert.kind_of(text, p.concept)
         found = expert.kind_search(p.concept, loc, sub=sub, limit=4, max_price=budget) or expert.kind_search(p.concept, loc, sub=sub, limit=4, in_stock=False, max_price=budget)
+        found = expert.for_sex(found, p.facts.get("sex"), concept=p.concept, loc=loc, sub=sub, max_price=budget)
         over_budget = False
         if not found and budget:  # nothing that cheap: the cheapest of the kind, and say so
             found = sorted(expert.kind_search(p.concept, loc, sub=sub, limit=8), key=lambda x: x.get("price_uzs") or 0)[:3]
@@ -495,8 +508,10 @@ def _answer(conv_meta: dict, text: str, loc: str) -> tuple[str, list[str], list[
     # plain product question → catalogue search (the smart search understands misspellings and all 3 languages)
     query = text.strip()[:120]
     found = tools.search_products({"query": query, "limit": 4, "in_stock_only": False}, loc)["products"]
+    if found and not context.relevant(text, found):  # "bugun ob-havo qanday" -- menopause vitamins are not an answer
+        found = []
     meta["last"] = "search"
-    if not found and talk.looks_like_a_sentence(text):  # a sentence that matched nothing: ask, don't say "nothing found for <sentence>"
+    if not found and (talk.looks_like_a_sentence(text) or len(text.strip()) < 2):  # a sentence that matched nothing: ask, don't say "nothing found for <sentence>"
         meta["last"] = "unclear"
         meta["_gap"] = "unclear"
         reply, chips = talk.reply("unclear", loc, name)
@@ -511,6 +526,116 @@ def _answer(conv_meta: dict, text: str, loc: str) -> tuple[str, list[str], list[
         stock = "" if x.get("in_stock") else {"uz": " — hozir yo'q", "ru": " — нет в наличии", "en": " — out of stock"}[loc]
         lines.append(f"• **{x['name']}** — {price}{old}{stock}")
     return "\n".join(lines), [x["id"] for x in found], CHIPS["after_reco"][loc], meta
+
+
+def _context(meta: dict, p, text: str, loc: str, taught: list | None = None):  # noqa: C901 - one plain rule per kind of message
+    """advisor/context.py: payment, delivery to a place, stores, "when will I feel it", follow-ups ("Qanday ichiladi?",
+    "Arzonroq variant"), arginine, products named by name. A reply tuple, a rewritten question (str) or None."""
+    both = context._both(text)
+    seen = brain.understand(text)
+    if (p.intent == "faq_payment" or nlu._has(both, context.INSTALLMENT)) and not p.concept and not seen.brands:
+        meta["last"] = "faq_payment"
+        return context.payment_reply(text, loc), [], CHIPS["faq"][loc], meta
+    if taught and taught[0].score >= KNOWLEDGE_MATCH and nlu._has(both, context.SYMPTOMS) and not seen.health and not seen.brands:
+        # "soch to'kilyapti qaysi vitamin" -- the reason and what helps (taught), not the "best multivitamin" ranking
+        knowledge.mark_used([taught[0].entry])
+        meta["last"] = "knowledge"
+        ids = _kind_ids(p.concept, loc, text)
+        return taught[0].entry.answer(loc), ids, (CHIPS["after_reco"] if ids else CHIPS["faq"])[loc], meta
+    place = context.place_in(text)
+    if (place or nlu._has(both, context.REGION_WORDS)) and nlu._has(both, context.ARRIVE) and not seen.health:
+        # "Olmaliqqa qanchaga keladi?" -- delivery, with the price of the product named before the place
+        named = context.named_products(context.before_place(text), loc, limit=3) if (p.concept or seen.brands or context._words(context.before_place(text))) else []
+        reply = context.delivery_reply(text, loc, place)
+        if named:
+            reply = context._l(loc, "💰 **Narxi:**", "💰 **Цена:**", "💰 **Price:**") + "\n" + context.product_lines(named, loc) + "\n\n" + reply
+        meta["last"] = "faq_delivery"
+        return reply, [x["id"] for x in named], CHIPS["faq"][loc], meta
+    if p.intent == "faq_stores" and not p.concept and not seen.brands and not seen.cats and not nlu._has(both, brain.HOURS + brain.CONTACT):
+        meta["last"] = "faq_stores"
+        venues = brain.venues_for(text)
+        if venues:
+            meta["_venues"] = venues
+        return context.stores_reply(text, loc), [], CHIPS["faq"][loc], meta
+    if nlu._has(both, context.ARGININE) and not nlu._has(both, ("sitrul", "citrul", "цитрул")) and not seen.health:
+        reply, ids = context.arginine_reply(loc)
+        meta.update(last="arginine", last_kind="citrulline")
+        return reply, ids, CHIPS["after_reco"][loc], meta
+    if nlu._has(both, context.EFFECT) and not seen.health and not place:
+        kind = p.concept or context.kind_of_focus(meta, loc) or meta.get("last_kind")
+        reply = context.effect_reply(kind, loc) if kind else None
+        if reply:
+            meta.update(last="effect", last_kind=kind)
+            return reply + "\n\n" + kb.T["disclaimer"][loc], [], CHIPS["after_reco"][loc], meta
+        if not kind and not p.goal and len(p.text.split()) <= 6:
+            meta["last"] = "ask_which"
+            reply, chips = context.which_product_reply(loc)
+            return reply, [], chips, meta
+    follow_up = not p.concept and not seen.brands and not context._words(text) and len(p.text.split()) <= 5
+    if p.intent == "usage" and follow_up and meta.get("last") != "recommend" and not p.facts:
+        if meta.get("focus"):  # one product on screen: its own directions
+            r = catalog.product_answer(text, loc, ["directions"], meta["focus"])
+            if r is not None:
+                meta["last"] = "catalog"
+                return r.text, r.product_ids, r.chips, meta
+        kind = meta.get("last_kind") or context.kind_of_focus(meta, loc)
+        if kind and kind in kb.T["kind_name"]["uz"]:
+            return f"{kb.T['kind_name']['uz'][kind]} {text}"
+        meta["last"] = "ask_which"
+        reply, chips = context.which_product_reply(loc)
+        return reply, [], chips, meta
+    if nlu._has(both, context.CHEAPER) and meta.get("last") != "recommend" and not p.facts.get("budget") and not seen.brands:
+        kind = p.concept or meta.get("last_kind") or context.kind_of_focus(meta, loc)
+        if kind in expert.KIND_CATEGORY:
+            shown = meta.get("last_shown") or ([meta["focus"]] if meta.get("focus") else [])
+            prices = [r.price for r in expert.rows_for(shown, loc) if r.price] if shown and kind == meta.get("last_kind") else []
+            cap = int(min(prices)) - 1 if prices else None
+            sub = meta.get("last_sub") if kind == meta.get("last_kind") else None
+            r = expert.budget_answer(kind, sub, cap, loc, cheap=True)
+            if r:
+                meta.update(last="expert_pick", last_kind=kind, last_sub=sub)
+                return r[0], r[1], CHIPS["after_reco"][loc], meta
+        elif follow_up:
+            meta["last"] = "ask_which"
+            return (context._l(loc, "Qaysi mahsulotning arzonrog'ini ko'rsatay?", "Какой продукт подобрать подешевле?", "Which product should I find cheaper?"), [],
+                    {"uz": ["Arzon protein", "Arzon kreatin", "Arzon geyner"], "ru": ["Недорогой протеин", "Недорогой креатин", "Недорогой гейнер"],
+                     "en": ["Cheap protein", "Cheap creatine", "Cheap gainer"]}.get(loc, []), meta)
+    wants = nlu._has(both, context.WANT) or len(p.text.split()) <= 4
+    if (wants and not p.facts and not seen.health and not seen.stores and not catalog.aspects_in(text) and not nlu._has(both, brain.CHEAP)
+            and not context.NOT_A_LISTING.search(both)):
+        items = context.named_products(text, loc)
+        if items:  # "Ostovip monogidrat kreatin", "iso100 olmoqchiman" -- that very product, not the best of its kind
+            found = nlu.concepts_in(context._both(items[0].get("name") or ""))
+            meta.update(last="listing", last_kind=found[0] if found else meta.get("last_kind"))
+            if len({x["name"] for x in items}) == 1:
+                meta["focus"] = items[0]["id"]
+            return context.named_reply(items, loc), [x["id"] for x in items], CHIPS["after_reco"][loc], meta
+    return None
+
+
+def _alert_callback(conversation_id, phone: str, transcript: list) -> None:
+    """A shopper asked the AI chat to be called back -> the staff Telegram channel (once per number per 6 hours)."""
+    from html import escape
+
+    from django.core.cache import cache
+
+    try:
+        if not cache.add(f"assistant:callback:{phone}", 1, 6 * 3600):
+            return
+        from apps.telegram_bot.infrastructure.orders_chat import chat_id
+
+        chat = chat_id()
+        if not chat:
+            return
+        asked = [m.get("text", "") for m in transcript if m.get("role") == "user"][-4:]
+        lines = ["📞 <b>Qayta qo'ng'iroq so'rovi (AI maslahatchi)</b>", f"Raqam: <b>{escape(phone)}</b>", "Mijoz yozgan:"]
+        lines += [f"• {escape(t[:200])}" for t in asked]
+        lines.append(f"Suhbat: <code>{escape(str(conversation_id))}</code>")
+        from apps.notifications.infrastructure import composition
+
+        composition.build_orders_telegram_gateway().send_message_with_keyboard(str(chat), "\n".join(lines), [])
+    except Exception:  # noqa: BLE001 - an alert must never break the chat
+        logger.exception("assistant callback alert failed")
 
 
 GOAL_FROM_ACCOUNT = {"muscle_gain": "muscle", "fat_loss": "weight_loss", "healthy_lifestyle": "health"}
@@ -580,6 +705,7 @@ def _turn_sync(conversation_id, user_text: str) -> dict:
     reply, ids, chips, meta = answer(start, user_text, loc)
     venues = meta.pop("_venues", None) or []
     gap = meta.pop("_gap", None)
+    callback = meta.pop("_callback", None)
     if conv.customer_id:
         save_account_facts(conv.customer_id, meta.get("profile") or {})
     cards = tools.cards([tools._uuid(i) for i in ids], loc) if ids else []
@@ -601,6 +727,8 @@ def _turn_sync(conversation_id, user_text: str) -> dict:
         row.last_message = user_text[:300]
         row.save()
         row.refresh_from_db(fields=["turns"])
+    if callback:
+        _alert_callback(conversation_id, callback, row.transcript)
     if gap:  # Dashboard → AI maslahatchini o'qitish
         from apps.assistant.infrastructure import gaps
 

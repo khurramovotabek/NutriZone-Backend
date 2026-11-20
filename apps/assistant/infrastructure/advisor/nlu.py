@@ -30,7 +30,7 @@ INTENTS: dict[str, tuple[str, ...]] = {
     "faq_returns": ("qaytar", "almashtir", "vozvrat", "возврат", "обмен", "return", "refund", "exchange"),
     "faq_order": ("buyurtmam", "zakazim", "заказ", "где мой", "my order", "order status", "track"),
     "usage": ("qanday ich", "qanday qabul", "qachon qabul", "qancha ich", "necha mg", "necha gramm", "kuniga qancha", "сколько пить", "сколько принимать", "сколько мг", "how many mg", "how much a day", "qachon ich", "doza", "dozirovka", "как приним", "как пить", "когда пить", "дозиров", "how to take", "how to use", "when to take", "dosage", "how much should", "per day", "a day", "в день", "в сутки", "daily dose", "should i take", "should take", "do i take", "need to take", "нужно принимать", "надо принимать"),
-    "recommend": ("tavsiya", "maslahat", "tanlab", "nima ich", "qaysi", "taklif", "kerak bo'l", "nima olay", "посовет", "что выбрать", "какой", "какую", "рекоменд", "подбер", "recommend", "suggest", "which", "what should", "advise", "best for", "maqsad"),
+    "recommend": ("tavsiya", "maslahat", "tanlab", "pick a", "pick me", "pick one", "choose", "help me choose", "nima ich", "qaysi", "taklif", "kerak bo'l", "nima olay", "посовет", "что выбрать", "какой", "какую", "рекоменд", "подбер", "recommend", "suggest", "which", "what should", "advise", "best for", "maqsad"),
     "profile": ("bo'y", "vazn", "yosh", "рост", "вес", "лет", "height", "weight", "years old"),
 }
 
@@ -49,7 +49,7 @@ CONCEPT_WORDS: dict[str, tuple[str, ...]] = {
     "glutamine": ("glutamin", "glyutamin", "глютамин", "glutamine"),
     "beta_alanine": ("beta-alanin", "beta alanin", "betaalanin", "бета-аланин", "бета аланин", "beta-alanine"),
     "citrulline": ("sitrullin", "citrullin", "цитруллин", "arginin", "аргинин"),
-    "preworkout": ("preworkout", "pre-workout", "pre workout", "predtren", "предтрен"),
+    "preworkout": ("preworkout", "pre-workout", "pre workout", "predtren", "предтрен", "pump", "памп"),
     "caffeine": ("kofein", "caffeine", "кофеин"),
     "carnitine": ("karnitin", "carnitine", "карнитин", "fat burner", "жиросжиг", "yog' yoqiruvchi", "yog' yoquvchi"),
     "test_booster": ("testosteron", "тестостерон", "tribulus", "трибулус", "testobuster", "test booster"),
@@ -131,7 +131,8 @@ _APOS_FIX = [
     (re.compile(r"(?<![\w'])ichamiz(?![\w'])"), "ichish"),
     # the usual typos of product words
     (re.compile(r"(?<![\w'])(protin|proten|protien|proteyin|pratein)"), "protein"),
-    (re.compile(r"(?<![\w'])(kriatin|kreyatin|kreatn|creatin(?!e))"), "kreatin"),
+    (re.compile(r"(?<![\w'])(kriatin|kreyatin|kreatn|kireatin|creatin(?!e))"), "kreatin"),
+    (re.compile(r"(?<![\w'])creatine[a-z]+"), "kreatin"),
     (re.compile(r"(?<![\w'])(gayner|geiner|gainr)"), "geyner"),
 ]
 
@@ -168,11 +169,11 @@ def _num(pattern: str, text: str) -> float | None:
 def extract_facts(t: str) -> dict:
     """Height (cm), weight (kg), age, sex, activity, budget (so'm), lactose / vegan flags from free text."""
     facts: dict = {}
-    h = _num(r"(1[4-9]\d|2[0-2]\d)\s*(?:sm|cm|см|санти)", t) or _num(r"(?:bo'y\w*|boy\w*|рост\w*|height)\D{0,12}(1[4-9]\d|2[0-2]\d)", t)
+    h = _num(r"(1[4-9]\d|2[0-2]\d)\s*(?:sm|cm|см|санти)", t) or _num(r"(?:bo'y\w*|boy\w*|buy\w*|рост\w*|height)\D{0,12}(1[4-9]\d|2[0-2]\d)", t) or _num(r"(1[4-9]\d|2[0-2]\d)\s*(?:bo'y|boy|buy)\w*", t)
     if h is None:
         mh = re.search(r"\b(1)[.,]([5-9]\d)\s*(?:m|м)\b", t)
         h = float(mh.group(1) + mh.group(2)) if mh else None
-    w = _num(r"(\d{2,3}(?:[.,]\d)?)\s*(?:kg|кг|kilo|кило)", t) or _num(r"(?:vazn\w*|og'irlig\w*|вес\w*|weight)\D{0,12}(\d{2,3}(?:[.,]\d)?)", t)
+    w = _num(r"(\d{2,3}(?:[.,]\d)?)\s*(?:kg|кг|kilo|кило)", t) or _num(r"(?:vazn\w*|og'irlig\w*|ogirlig\w*|вес\w*|weight)\D{0,12}(\d{2,3}(?:[.,]\d)?)", t)
     a = _num(r"(\d{2})\s*(?:yosh|ёш|лет|год|years?|y\.?o)", t) or _num(r"(?:yosh\w*|возраст\w*|age)\D{0,10}(\d{2})", t)
     if h and 140 <= h <= 229:
         facts["height"] = int(h)

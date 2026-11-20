@@ -57,6 +57,22 @@ STIM_FREE_NAME = re.compile(r"stim[- ]?free|non[- ]?stim|\bpump\b", re.I)
 STIM_NAME = re.compile(r"burn|caffeine|kofein|energy|shot|focus|jack3d|psychotic|xplode legendary", re.I)
 
 
+MEN_NAME = re.compile(r"(?i)(men['’]?s\b|for men|\bmale\b|erkak|мужск|для мужчин)")
+WOMEN_NAME = re.compile(r"(?i)(women['’]?s\b|for women|\bfemale\b|\bher\b|ayol|qizlar|женск|для женщин)")
+
+
+def for_sex(found: list[dict], sex: str | None, *, concept: str | None = None, loc: str = "uz", sub: str | None = None, max_price: int | None = None) -> list[dict]:
+    """"multivitamin ayollarniki" -- no men's formula for a woman (and the other way round); a woman's own formula first."""
+    if sex not in ("f", "m"):
+        return found
+    wrong = MEN_NAME if sex == "f" else WOMEN_NAME
+    kept = [x for x in found if not wrong.search(x.get("name") or "")]
+    if sex == "f" and concept:
+        own = [x for x in kind_search(concept, loc, sub=sub, limit=6, max_price=max_price, query="women") if WOMEN_NAME.search(x.get("name") or "")]
+        kept = own + [x for x in kept if x["id"] not in {o["id"] for o in own}]
+    return kept[:max(len(found), 1)] if kept else found
+
+
 def free_of(text: str) -> str | None:
     both = _both(text)
     return "stim" if nlu._has(both, STIM_FREE) else "sugar" if nlu._has(both, SUGAR_FREE) else None
@@ -389,7 +405,7 @@ HOW_COMPARE = {
 }
 
 
-def budget_answer(concept: str, sub: str | None, budget: int | None, loc: str, *, cheap: bool = False, free: str | None = None) -> tuple[str, list[str]] | None:  # noqa: C901 - one plain step per constraint
+def budget_answer(concept: str, sub: str | None, budget: int | None, loc: str, *, cheap: bool = False, free: str | None = None, sex: str | None = None) -> tuple[str, list[str]] | None:  # noqa: C901 - one plain step per constraint
     """"500 minggacha protein", "eng arzon izolyat", "лучший креатин до 300 тысяч" -- ranked, with numbers and a verdict."""
     from apps.assistant.infrastructure.advisor import kb
 
@@ -401,6 +417,7 @@ def budget_answer(concept: str, sub: str | None, budget: int | None, loc: str, *
     found = kind_search(concept, loc, sub=sub, limit=8, max_price=budget, query=query)
     if free == "stim" and concept == "preworkout":
         found = [x for x in found if STIM_FREE_NAME.search(x.get("name") or "") and not STIM_NAME.search(x.get("name") or "")]
+    found = for_sex(found, sex, concept=concept, loc=loc, sub=sub, max_price=budget)
     over = False
     if not found and budget:
         found = sorted(kind_search(concept, loc, sub=sub, limit=8, query=query), key=lambda x: float(x.get("price_uzs") or 0))[:3]

@@ -30,7 +30,7 @@ HAVE = ("bormi", "bor mi", "mavjudmi", "qoldimi", "sotasiz", "sotiladimi", "tops
 BEST = ("eng ko'p sotil", "ko'p sotil", "top", "xit", "mashhur", "eng yaxshi", "eng zo'r", "zo'r", "хит", "популяр", "самый продаваем", "лучш", "топ", "best seller", "bestseller", "best", "popular", "top rated")
 COMPARE = ("farq", "farqi", "yoki", "qaysi biri", "solishtir", "taqqosla", "или", "разниц", "отлича", "сравн", "что лучше", "versus", " vs ", "difference", "compare", "or ", "better than")
 CHEAP = ("eng arzon", "arzon", "hamyonbop", "qimmat emas", "дешев", "недорог", "бюджетн", "cheapest", "cheap", "affordable", "lowest price", "арзон")
-WHY = ("nima uchun kerak", "nima uchun ich", "nimaga kerak", "nimaga ich", "nima foyda", "foydasi", "nima beradi", "nima qiladi", "nima o'zi", "nima degani",
+WHY = ("nima uchun kerak", "nima uchun ich", "nima uchun", "nimaga", "vazifasi", "nima ish qil", "nimaga kerak", "nimaga ich", "nima foyda", "foydasi", "nima beradi", "nima qiladi", "nima o'zi", "nima degani",
        "для чего", "зачем", "польза", "что дает", "что даёт", "что такое", "what is", "what does", "why take", "why do i need", "benefit", "good for")
 CHEAP_WORDS = re.compile(r"\b(eng|arzon\w*|hamyonbop\w*|qimmat|emas|qaysi\w*|biri|variant\w*|bormi|самы\w*|дешев\w*|недорог\w*|бюджетн\w*|какой|какая|какие|"
                          r"вариант\w*|the|cheap\w*|affordable|lowest|price|which|one|option|is|what)\b")
