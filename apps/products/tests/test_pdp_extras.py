@@ -111,7 +111,26 @@ class TestBundle:
         assert bundles.offer_for(whey.id)["companion_product_id"] == str(shaker.id)
         cache.clear()
         monkeypatch.setattr("apps.products.infrastructure.selectors.RecommendationSelector.for_product", lambda self, pid, limit=12, locale=None: cards[:1])
-        assert bundles.offer_for(whey.id) is None
+        assert bundles.offer_for(whey.id)["companion_product_id"] == str(shaker.id)  # the other whey is never offered
+
+    def test_best_seller_fallback_is_an_add_on_from_companion_departments(self, monkeypatch):
+        from apps.products.infrastructure import bundles
+        from apps.products.infrastructure import models as orm
+
+        protein, accessory, vitamins = orm.Category.objects.create(), orm.Category.objects.create(), orm.Category.objects.create()
+        shakers = orm.Category.objects.create(parent=accessory)
+        whey, _ = _product("Whey", 1_000_000, category=protein)
+        _product("Other whey", 300_000, category=protein)              # same department: never
+        _product("Big vitamin pack", 600_000, category=vitamins)       # above 40 % of the whey: not an add-on
+        shaker, sv = _product("Shaker", 60_000, category=shakers)
+        omega, ov = _product("Omega", 150_000, category=vitamins)
+        monkeypatch.setattr("apps.products.infrastructure.selectors.RecommendationSelector.for_product", lambda self, pid, limit=12, locale=None: [])
+        monkeypatch.setattr("apps.products.infrastructure.smart_search._units_sold_by_product", lambda: {str(omega.id): 9, str(shaker.id): 3})
+        assert bundles.offer_for(whey.id)["companion_product_id"] == str(omega.id)   # best seller among add-ons
+        cfg = orm.BundleSettings.load()
+        cfg.companion_categories.set([accessory])                                  # only accessories (and below)
+        cache.clear()
+        assert bundles.offer_for(whey.id)["companion_variant_id"] == str(sv.id)
 
     def test_auto_bundle_respects_margin_guard(self, monkeypatch):
         from apps.products.infrastructure import bundles

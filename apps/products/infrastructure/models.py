@@ -635,6 +635,13 @@ class BundleSettings(models.Model):
     min_margin_percent = models.DecimalField(_("Chegirmadan keyin minimal ustama, %"), max_digits=5, decimal_places=2, default=5,
                                              validators=[MinValueValidator(0), MaxValueValidator(100)],
                                              help_text=_("Chegirmali narx tannarxdan shuncha foiz yuqori bo'lmasa, avtomatik to'plam taklif qilinmaydi."))
+    companion_categories = models.ManyToManyField(
+        Category, blank=True, related_name="+", verbose_name=_("Hamroh kategoriyalar"),
+        help_text=_("Avtomatik juftlik shu kategoriyalardan (va ularning ichidagilaridan) tanlanadi: masalan Sheykerlar, Kreatin, Vitaminlar. "
+                    "Bo'sh bo'lsa — asosiy mahsulotdan boshqa har qanday bo'lim."))
+    max_companion_share = models.DecimalField(_("Hamroh narxi, asosiy narxning ko'pi bilan %"), max_digits=5, decimal_places=2, default=40,
+                                              validators=[MinValueValidator(5), MaxValueValidator(100)],
+                                              help_text=_("To'plam «qo'shimcha» bo'lib qolsin: 1 150 000 so'mlik proteinga 460 000 so'mgacha bo'lgan mahsulot."))
     updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:

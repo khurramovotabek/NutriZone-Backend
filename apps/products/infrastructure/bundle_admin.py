@@ -105,9 +105,16 @@ class ProductBundleAdmin(PremiumListMixin, PremiumFormMixin, admin.ModelAdmin):
 
 
 class BundleSettingsForm(forms.ModelForm):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        # departments and their first level are enough to choose from (the choice covers everything under them)
+        self.fields["companion_categories"].queryset = (orm.Category.objects.filter(Q(parent__isnull=True) | Q(parent__parent__isnull=True), is_active=True)
+                                                        .prefetch_related("translations").order_by("parent__sort_order", "sort_order"))
+
     class Meta:
         model = orm.BundleSettings
-        fields = ("auto_enabled", "auto_percent", "min_margin_percent")
+        fields = ("auto_enabled", "auto_percent", "min_margin_percent", "max_companion_share", "companion_categories")
+        widgets = {"companion_categories": forms.CheckboxSelectMultiple}
         help_texts = {
             "auto_enabled": "Qo'lda juftlik tanlanmagan mahsulotlarda tizim o'zi juftlik tanlaydi: mijozlar birga xarid qilgan, omborda bor, "
                             "iloji bo'lsa boshqa kategoriyadagi mahsulot (proteinga — shaker yoki kreatin).",
@@ -118,7 +125,8 @@ class BundleSettingsForm(forms.ModelForm):
 @admin.register(orm.BundleSettings)
 class BundleSettingsAdmin(PremiumFormMixin, admin.ModelAdmin):
     form = BundleSettingsForm
-    fieldsets = (("Avtomatik to'plamlar", {"fields": ("auto_enabled", "auto_percent", "min_margin_percent")}),)
+    fieldsets = (("Avtomatik to'plamlar", {"fields": ("auto_enabled", "auto_percent", "min_margin_percent", "max_companion_share")}),
+                 ("Hamroh bo'limlar", {"fields": ("companion_categories",)}))
     hero_icon, hero_tone = "fa-wand-magic-sparkles", "#10b981"
 
     def changelist_view(self, request, extra_context=None):

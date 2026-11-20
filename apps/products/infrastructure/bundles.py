@@ -2,9 +2,10 @@
 "Birga arzonroq" -- buy a product together with its companion and the companion line gets a discount.
 
 * `offer_for(product_id)`  the one companion offered on a product page: a staff pick (ProductBundle, Dashboard →
-  Katalog → Birga arzonroq) wins; otherwise -- when BundleSettings.auto_enabled -- the first in-stock product from
-  the page's own recommendations (bought together) that is in another category (a shaker or creatine next to a
-  protein, never a second protein), and only when the discounted price still clears the
+  Katalog → Birga arzonroq) wins; otherwise -- when BundleSettings.auto_enabled -- an in-stock add-on from another
+  department (a shaker or creatine next to a protein, never a second protein; within `companion_categories` when
+  set, priced at most `max_companion_share` of the main product): first what customers bought together with it,
+  else the best seller of those departments; and only when the discounted price still clears the
   known purchase cost by `min_margin_percent`. Cached for an hour so the page and the cart agree.
 * `cart_discount(lines)`  what checkout takes off for every (product, companion) pair actually in the cart:
   percent × the companion line's unit price × the units that have a partner. Each unit is discounted once.
@@ -98,18 +99,87 @@ def _compute(product_id) -> dict | None:
     cards = RecommendationSelector().for_product(uuid.UUID(str(product_id)), limit=12)
     # a companion completes the purchase (shaker / creatine next to a protein) -- never a second product of the same
     # kind, so the automatic pair only takes products from another top-level category (whey isolate and whey blend
-    # sit in different leaves of the same "Protein" branch)
-    for card in [c for c in cards if main_root and c.get("category_id") and roots.get(str(c["category_id"])) not in (None, main_root)]:
-        if card.get("stock_status") == "out_of_stock":
+    # sit in different leaves of the same "Protein" branch), and one priced as an add-on (max_companion_share)
+    if not main_root:
+        return None
+    allowed = _allowed_categories(cfg, roots)
+    main_variant, _stock = _sellable_default(product_id)
+    main_price = _variant_price(main_variant) if main_variant else None
+    if not main_price:
+        return None
+    ceiling = main_price * cfg.max_companion_share / Decimal("100")
+
+    def fits(category_id, price) -> bool:
+        cid = str(category_id) if category_id else None
+        if not cid or roots.get(cid) in (None, main_root):
+            return False
+        if allowed is not None and cid not in allowed:
+            return False
+        return bool(price) and Decimal(price) <= ceiling
+
+    # 1) bought together with this product, 2) the best sellers of the companion departments
+    for card in cards:
+        if card.get("stock_status") == "out_of_stock" or not fits(card.get("category_id"), card.get("price")):
             continue
         variant_id, stock = _sellable_default(card["id"])
-        if not variant_id or stock <= 0:
+        price = _variant_price(variant_id) if variant_id and stock > 0 else None
+        if price and _margin_ok(variant_id, price, cfg.auto_percent, cfg.min_margin_percent):
+            return {"companion_product_id": str(card["id"]), "companion_variant_id": str(variant_id), "percent": str(cfg.auto_percent), "source": "auto"}
+    for row in _companion_pool():
+        if row["product_id"] == str(product_id) or not fits(row["category_id"], row["price"]):
             continue
-        price = _variant_price(variant_id)
-        if not price or price <= 0 or not _margin_ok(variant_id, price, cfg.auto_percent, cfg.min_margin_percent):
-            continue
-        return {"companion_product_id": str(card["id"]), "companion_variant_id": str(variant_id), "percent": str(cfg.auto_percent), "source": "auto"}
+        if _margin_ok(row["variant_id"], Decimal(row["price"]), cfg.auto_percent, cfg.min_margin_percent):
+            return {"companion_product_id": row["product_id"], "companion_variant_id": row["variant_id"], "percent": str(cfg.auto_percent), "source": "auto"}
     return None
+
+
+def _allowed_categories(cfg, roots: dict[str, str]) -> set[str] | None:
+    """The configured companion departments with everything under them; None = any other department."""
+    picked = {str(c) for c in cfg.companion_categories.values_list("id", flat=True)} if cfg.pk else set()
+    if not picked:
+        return None
+    parent = {str(c): (str(p) if p else None) for c, p in orm.Category.objects.values_list("id", "parent_id")}
+    out = set()
+    for cid in parent:
+        node, seen = cid, set()
+        while node and node not in seen:
+            if node in picked:
+                out.add(cid)
+                break
+            seen.add(node)
+            node = parent.get(node)
+    return out
+
+
+POOL_KEY = "bundle:v2:pool"
+
+
+def _companion_pool() -> list[dict]:
+    """Every published, in-stock product's default variant with its price and units sold, best sellers first
+    (cheaper first on a tie). Cached for an hour -- one pass over the catalog, shared by every product page."""
+    hit = cache.get(POOL_KEY)
+    if hit is not None:
+        return hit
+    from apps.pricing.infrastructure.models import PriceListEntryModel
+    from apps.products.infrastructure.smart_search import _units_sold_by_product
+    from apps.stores.infrastructure.availability import sellable
+
+    variants = list(orm.ProductVariant.objects.filter(status="active", product__status="published", product__is_deleted=False)
+                    .order_by("product_id", "-is_default", "created_at").values_list("id", "product_id", "product__category_id"))
+    stock = sellable([v for v, _p, _c in variants])
+    chosen: dict = {}
+    for vid, pid, cid in variants:
+        if pid not in chosen and stock.get(vid, 0) > 0:
+            chosen[pid] = (vid, cid)
+    prices = {}
+    for e in PriceListEntryModel.objects.filter(product_variant_id__in=[v for v, _c in chosen.values()]).order_by("created_at"):
+        prices.setdefault(e.product_variant_id, e.sale_price_amount if e.sale_price_amount is not None else e.base_price_amount)
+    sold = _units_sold_by_product()
+    pool = [{"product_id": str(pid), "variant_id": str(vid), "category_id": str(cid) if cid else None, "price": str(prices[vid]), "sold": sold.get(str(pid), 0)}
+            for pid, (vid, cid) in chosen.items() if prices.get(vid)]
+    pool.sort(key=lambda r: (-r["sold"], Decimal(r["price"])))
+    cache.set(POOL_KEY, pool, CACHE_TTL)
+    return pool
 
 
 def offer_for(product_id) -> dict | None:
