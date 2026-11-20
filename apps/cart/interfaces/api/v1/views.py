@@ -128,7 +128,14 @@ def _cart_payload(cart) -> dict:
         "coupon_ids": [str(c) for c in cart.coupon_ids], "note": cart.note.text if cart.note else None,
         "gift_message": cart.gift_message.text if cart.gift_message else None,
         "expires_at": cart.expires_at.isoformat() if cart.expires_at else None, "is_locked": cart.lock_reason is not None,
+        # "Birga arzonroq" pairs among the priced lines -- the same amount checkout takes off
+        "bundle_discount": _bundle_payload(live),
     }
+
+
+def _bundle_payload(live) -> dict | None:
+    amount, pairs = _bundle_discount(live)
+    return {"amount": str(amount), "pairs": pairs} if amount > 0 else None
 
 
 _OUT_OF_STOCK_TEXT = {
