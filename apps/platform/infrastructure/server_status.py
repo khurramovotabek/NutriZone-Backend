@@ -114,7 +114,7 @@ def workers() -> dict:
         return {"key": "celery", "title": "Fon ishchilari (Celery)", "icon": "fa-gears", "status": "down", "latency": ms,
                 "error": err or "Hech bir ishchi javob bermadi — buyurtma xabarlari, Telegram va hisobotlar to'xtab qoladi.", "facts": []}
     return {"key": "celery", "title": "Fon ishchilari (Celery)", "icon": "fa-gears", "status": "ok", "latency": ms, "error": None,
-            "facts": [("Ishchilar", len(names))] + [("•", n.split("@")[0]) for n in names[:4]]}
+            "facts": [("Ishchilar", len(names))] + [(n.split("@")[0], n.split("@")[-1][:12]) for n in names[:4]]}
 
 
 def beat_and_jobs() -> dict:
