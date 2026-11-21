@@ -2607,3 +2607,42 @@ msgstr "Location or product not found."
 
 msgid "Qoldiqni o‘zgartirish — bosing, yangi sonni yozing, Enter"
 msgstr "Change the count — click, type the number, Enter"
+
+msgid "Order reopened — it is confirmed again and stock is reserved."
+msgstr ""
+
+msgid "Reopen selected cancelled orders (back to confirmed)"
+msgstr ""
+
+msgid "%(n)s order(s) reopened and confirmed again."
+msgstr ""
+
+msgid "Only a cancelled order can be reopened."
+msgstr ""
+
+msgid "Coins paid for this order were already returned to the customer — it can't be reopened. Place a new order instead."
+msgstr ""
+
+msgid "Every item of this order was cancelled — nothing is left to reopen."
+msgstr ""
+
+msgid "Reopened after the cancellation"
+msgstr ""
+
+msgid "The customer changed their mind? Put the order back to confirmed — stock is reserved again."
+msgstr ""
+
+msgid "Reopen order"
+msgstr ""
+
+msgid "Reopen order %(number)s?"
+msgstr ""
+
+msgid "The order goes back to confirmed with the same items and prices, and stock is reserved again at the warehouse."
+msgstr ""
+
+msgid "e.g. Called the customer — they will take it"
+msgstr ""
+
+msgid "Back"
+msgstr ""

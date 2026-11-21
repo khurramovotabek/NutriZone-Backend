@@ -303,3 +303,64 @@ class TestCustomerSelfService:
         assert customer.client.post(f"/api/v1/orders/{order.order_number}/customer-cancel", {}, format="json").status_code == 403
         order.refresh_from_db()
         assert order.status == "confirmed"
+
+
+# ------------------------------------------------------------------ superadmin reopens a cancelled order
+
+
+class TestReopenCancelledOrder:
+    def test_superadmin_puts_a_cancelled_order_back_to_confirmed_and_stock_is_reserved_again(self, staff_client, warehouse):
+        variant = _variant()
+        _stock(warehouse, variant, 10)
+        order, _line = _order(status="pending_payment", qty=2, variant_id=variant)
+        _act(staff_client, "ordermodel", order.id, action="confirm")
+        _act(staff_client, "ordermodel", order.id, action="cancel", reason="customer_request")
+        order.refresh_from_db()
+        assert order.status == "cancelled" and _on_hand(warehouse, variant) == (10, 0)
+
+        page = staff_client.get(f"/django-admin/ordering/ordermodel/{order.id}/change/", HTTP_ACCEPT_LANGUAGE="uz")
+        assert b'value="reopen"' in page.content
+
+        assert _act(staff_client, "ordermodel", order.id, action="reopen", note="Mijoz bilan gaplashildi").status_code == 302
+        order.refresh_from_db()
+        assert order.status == "confirmed" and "Mijoz bilan gaplashildi" in (order.note or "")
+        assert _on_hand(warehouse, variant) == (10, 2)
+        last = orm.OrderStatusHistoryEntryModel.objects.filter(order=order).order_by("-changed_at").first()
+        assert (last.from_status, last.to_status) == ("cancelled", "confirmed") and last.reason.startswith("reopened")
+        # and it moves on normally
+        _act(staff_client, "ordermodel", order.id, action="start_processing")
+        order.refresh_from_db()
+        assert order.status == "processing"
+
+    def test_plain_staff_cannot_reopen(self, warehouse):
+        from django.contrib.auth.models import Permission
+
+        order, _line = _order(status="cancelled")
+        user = StaffUser.objects.create_user(username=f"op_{uuid.uuid4().hex[:6]}", password="test-pass-12345", is_staff=True)
+        user.user_permissions.add(*Permission.objects.filter(content_type__app_label="ordering", codename__in=["view_ordermodel", "change_ordermodel"]))
+        client = Client()
+        client.force_login(user)
+        assert b'value="reopen"' not in client.get(f"/django-admin/ordering/ordermodel/{order.id}/change/").content
+        _act(client, "ordermodel", order.id, action="reopen")
+        order.refresh_from_db()
+        assert order.status == "cancelled"
+
+    def test_only_cancelled_orders_and_not_when_coins_were_refunded(self, staff_client, monkeypatch):
+        done, _l = _order(status="delivered")
+        _act(staff_client, "ordermodel", done.id, action="reopen")
+        done.refresh_from_db()
+        assert done.status == "delivered"
+
+        cancelled, _l = _order(status="cancelled")
+        monkeypatch.setattr("apps.ordering.infrastructure.admin_desk.coins_refunded", lambda _oid: True)
+        _act(staff_client, "ordermodel", cancelled.id, action="reopen")
+        cancelled.refresh_from_db()
+        assert cancelled.status == "cancelled"
+
+    def test_list_action_reopens_selected(self, staff_client):
+        a, _l = _order(status="cancelled")
+        b, _l = _order(status="confirmed")
+        staff_client.post("/django-admin/ordering/ordermodel/", {"action": "reopen_selected", "_selected_action": [str(a.id), str(b.id)]})
+        a.refresh_from_db()
+        b.refresh_from_db()
+        assert a.status == "confirmed" and b.status == "confirmed"

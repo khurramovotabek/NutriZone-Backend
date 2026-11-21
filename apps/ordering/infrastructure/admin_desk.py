@@ -105,6 +105,31 @@ def staff_ctx(request):
     return build_ordering_service_context(actor_id=getattr(user, "id", None), actor_label=label)
 
 
+def coins_refunded(order_id) -> bool:
+    """Coins paid for this order already went back to the customer (loyalty refunds them when it is cancelled)."""
+    from apps.loyalty.infrastructure.models import WalletTransaction, WalletTransactionKind
+
+    return WalletTransaction.objects.filter(order_id=order_id, kind=WalletTransactionKind.REFUND).exists()
+
+
+def reopen(request, order: orm.OrderModel, note: str = "") -> None:
+    """Superadmin: a cancelled order back to "confirmed" (ReopenOrder) with a readable reason when it can't be."""
+    from apps.ordering.application.services.lifecycle import ReopenOrder
+    from apps.ordering.infrastructure.repositories import DjangoOrderRepository
+
+    if order.status != "cancelled":
+        raise ValueError(_("Only a cancelled order can be reopened."))
+    if coins_refunded(order.id):
+        raise ValueError(_("Coins paid for this order were already returned to the customer — it can't be reopened. Place a new order instead."))
+    if not orm.OrderLineItemModel.objects.filter(order_id=order.id, status="active").exists():
+        raise ValueError(_("Every item of this order was cancelled — nothing is left to reopen."))
+    ReopenOrder(DjangoOrderRepository(), staff_ctx(request), coins_refunded=coins_refunded).execute(order.id, reason="reopened")
+    if note.strip():
+        from apps.ordering.infrastructure.admin import _append_note
+
+        orm.OrderModel.objects.filter(pk=order.pk).update(note=_append_note(order.note, note.strip()))
+
+
 def _variant_infos(variant_ids) -> dict:
     from apps.stores.infrastructure.stock_service import variant_infos
 
@@ -178,6 +203,7 @@ def _humanise_reason(reason: str) -> str:
     known = {
         "": "", "completed": "", "returned": "", "processing_started": "", "shipped": "", "delivered": "", "confirmed": "",
         "admin_bulk_cancel": _("Cancelled from the order list"),
+        "reopened": _("Reopened after the cancellation"),
         "Manager cancelled via Telegram Orders Channel": _("Cancelled in the Telegram orders channel"),
     }
     if reason in known:
@@ -280,6 +306,9 @@ def order_snapshot(order: orm.OrderModel) -> dict:
         "coins": coins, "customer": _customer(order), "history": _history(order),
         "next": NEXT_STEP.get(order.status) if not order.is_archived else None,
         "can_cancel_now": order.status in ("pending_payment", "confirmed", "processing"),
+        # superadmin: a cancelled order the customer wants after all goes back to "confirmed" (blocked when coins were refunded)
+        "can_reopen": order.status == "cancelled" and any(l["active"] for l in lines),
+        "reopen_blocked": order.status == "cancelled" and coins_refunded(order.id),
         "can_request_cancellation": order.status in ("pending_payment", "confirmed", "processing", "shipped"),
         "can_return": order.status in ("delivered", "completed"),
         "stock_options": _stock_options(order, lines) if order.status in ("confirmed", "processing") else [],

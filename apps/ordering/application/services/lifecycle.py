@@ -171,6 +171,38 @@ class CancelOrder:
         return saved
 
 
+class ReopenOrder:
+    """Superadmin only (enforced by the dashboard): a cancelled order goes back to CONFIRMED -- stock is reserved
+    again. `coins_refunded(order_id)` is supplied by the wiring (Ordering doesn't know loyalty): coins the customer
+    paid with went back to them on cancel, so such an order can't be reopened (the discount would be given twice)."""
+
+    def __init__(self, repo: OrderRepository, ctx: OrderingServiceContext, coins_refunded=None) -> None:
+        self._repo = repo
+        self._ctx = ctx
+        self._coins_refunded = coins_refunded or (lambda _order_id: False)
+
+    @transaction.atomic
+    def execute(self, order_id: uuid.UUID, reason: str = "reopened") -> Order:
+        from apps.ordering.domain.exceptions import InvalidOrderLifecycleTransition
+
+        order = self._repo.get_by_id(order_id)
+        if order is None:
+            raise ResourceNotFound("Order not found.")
+        if self._coins_refunded(order_id):
+            raise InvalidOrderLifecycleTransition("Coins paid for this order were already returned to the customer -- it can't be reopened; place a new order.")
+        event = order.reopen(django_timezone.now(), reason=reason)
+        self._ctx.stamp_actor(order)
+        saved = self._repo.save(order)
+        if self._ctx.stock is not None:
+            shortages = self._ctx.stock.reserve(order.order_number.value, stock_lines(order))
+            if shortages:
+                logger.warning("Order %s reopened with stock shortages at the fulfilment warehouse: %s", order.order_number.value, shortages)
+        self._ctx.stage_events([("OrderConfirmed", {**event.to_payload(), "reopened": True})])
+        self._ctx.audit().updated(entity_type="Order", entity_id=str(order_id), before={"status": "cancelled"}, after={"status": "confirmed", "reason": reason})
+        self._ctx.invalidate_ordering_cache()
+        return saved
+
+
 class ExpireOrder:
     def __init__(self, repo: OrderRepository, ctx: OrderingServiceContext) -> None:
         self._repo = repo

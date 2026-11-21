@@ -10155,3 +10155,39 @@ msgstr "Изменить остаток — нажмите, введите чи�
 
 msgid "Gift (campaign)"
 msgstr "Подарок (акция)"
+
+msgid "Order reopened — it is confirmed again and stock is reserved."
+msgstr "Заказ восстановлен — он снова подтверждён, товар зарезервирован."
+
+msgid "Reopen selected cancelled orders (back to confirmed)"
+msgstr "Восстановить выбранные отменённые заказы (в подтверждённые)"
+
+msgid "%(n)s order(s) reopened and confirmed again."
+msgstr "Восстановлено и снова подтверждено заказов: %(n)s."
+
+msgid "Only a cancelled order can be reopened."
+msgstr "Восстановить можно только отменённый заказ."
+
+msgid "Coins paid for this order were already returned to the customer — it can't be reopened. Place a new order instead."
+msgstr "Монеты, оплаченные за этот заказ, уже возвращены клиенту — восстановить его нельзя. Оформите новый заказ."
+
+msgid "Every item of this order was cancelled — nothing is left to reopen."
+msgstr "Все товары этого заказа отменены — восстанавливать нечего."
+
+msgid "Reopened after the cancellation"
+msgstr "Восстановлен после отмены"
+
+msgid "The customer changed their mind? Put the order back to confirmed — stock is reserved again."
+msgstr "Клиент передумал? Верните заказ в подтверждённые — товар снова зарезервируется."
+
+msgid "Reopen order"
+msgstr "Восстановить заказ"
+
+msgid "Reopen order %(number)s?"
+msgstr "Восстановить заказ %(number)s?"
+
+msgid "The order goes back to confirmed with the same items and prices, and stock is reserved again at the warehouse."
+msgstr "Заказ вернётся в подтверждённые с теми же товарами и ценами, товар снова зарезервируется на складе."
+
+msgid "e.g. Called the customer — they will take it"
+msgstr "напр.: Связались с клиентом — заберёт"

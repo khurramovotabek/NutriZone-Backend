@@ -187,6 +187,17 @@ class Order:
         self._record_transition(OrderStatus.CANCELLED, at, reason=reason)
         return OrderCancelled(order_id=self.id, reason=reason)
 
+    def reopen(self, at: datetime, reason: str = "reopened") -> OrderConfirmed:
+        """A cancelled order the customer wants after all (staff called them): back to CONFIRMED, with the same lines.
+        Only a whole-order cancel can be undone -- when a cancellation workflow already took every line off, there is
+        nothing left to confirm."""
+        if self.status != OrderStatus.CANCELLED:
+            raise InvalidOrderLifecycleTransition(f"Only a cancelled order can be reopened (current status: {self.status.value}).")
+        if not self.active_lines():
+            raise InvalidOrderLifecycleTransition("Every item of this order was cancelled -- nothing is left to reopen.")
+        self._record_transition(OrderStatus.CONFIRMED, at, reason=reason)
+        return OrderConfirmed(order_id=self.id)
+
     def mark_returned(self, at: datetime, reason: str = "returned") -> None:
         """Every line has come back through OrderReturn: the order's own terminal outcome becomes RETURNED."""
         if self.status not in (OrderStatus.DELIVERED, OrderStatus.COMPLETED):

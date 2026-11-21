@@ -212,7 +212,7 @@ class OrderAdmin(ExcelExportMixin, admin.ModelAdmin):
     ordering = ("-placed_at", "-created_at")
     inlines = [OrderLineItemInline, OrderStatusHistoryInline]
     readonly_fields = ("id", "version", "created_at", "updated_at", "financial_summary", "delivery_location", "coupon_ids", "promotion_ids")
-    actions = ["cancel_selected", "archive_selected"]
+    actions = ["cancel_selected", "archive_selected", "reopen_selected"]
     change_form_template = "admin/ordering/ordermodel/change_form.html"
 
     def has_add_permission(self, request) -> bool:
@@ -260,6 +260,7 @@ class OrderAdmin(ExcelExportMixin, admin.ModelAdmin):
         "confirm": _("Order confirmed."), "start_processing": _("Packing started."), "ship": _("Handed over to the courier."),
         "deliver": _("Marked as delivered."), "complete": _("Order completed."), "cancel": _("Order cancelled."),
         "archive": _("Order archived."), "restore": _("Order restored from the archive."),
+        "reopen": _("Order reopened — it is confirmed again and stock is reserved."),
     }
 
     def run_order_action(self, request, order, action: str, store_id=None, reason: str = "", note: str = "") -> str:
@@ -271,6 +272,13 @@ class OrderAdmin(ExcelExportMixin, admin.ModelAdmin):
             "confirm": lc.ConfirmOrder, "start_processing": lc.StartOrderProcessing, "ship": lc.ShipOrder, "deliver": lc.DeliverOrder,
             "complete": lc.CompleteOrder, "cancel": lc.CancelOrder, "archive": lc.ArchiveOrder, "restore": lc.RestoreOrder,
         }
+        if action == "reopen":
+            from django.core.exceptions import PermissionDenied
+
+            if not request.user.is_superuser:
+                raise PermissionDenied
+            admin_desk.reopen(request, order, note)
+            return str(self.ORDER_ACTION_DONE[action])
         if action not in services:
             raise ValueError(_("Unknown action."))
         service = services[action](DjangoOrderRepository(), _admin_ctx(request))
@@ -751,6 +759,28 @@ class OrderAdmin(ExcelExportMixin, admin.ModelAdmin):
                 service.execute(order.id, reason="admin_bulk_cancel")
             except Exception:  # noqa: BLE001
                 self.message_user(request, f"Could not cancel {order.order_number}.", level="error")
+
+    def get_actions(self, request):
+        actions = super().get_actions(request)
+        if not request.user.is_superuser:
+            actions.pop("reopen_selected", None)  # undoing a cancel is the superadmin's call
+        return actions
+
+    @admin.action(description=_("Reopen selected cancelled orders (back to confirmed)"))
+    def reopen_selected(self, request, queryset):
+        from apps.ordering.infrastructure import admin_desk
+
+        if not request.user.is_superuser:
+            return
+        done = 0
+        for order in queryset:
+            try:
+                admin_desk.reopen(request, order)
+                done += 1
+            except Exception as exc:  # noqa: BLE001
+                self.message_user(request, f"{order.order_number}: {admin_desk.error_text(exc)}", level="error")
+        if done:
+            self.message_user(request, _("%(n)s order(s) reopened and confirmed again.") % {"n": done})
 
     @admin.action(description=_("Archive selected orders"))
     def archive_selected(self, request, queryset):

@@ -61,6 +61,16 @@
           {% with last=d.history|last %}<small>{{ last.at|date:"d.m.Y H:i" }}{% if last.reason %} · {{ last.reason }}{% endif %}{% if last.actor %} · {{ last.actor }}{% endif %}</small>{% endwith %}
         </div>
       </div>
+      {% if d.can_reopen and has_change_permission and request.user.is_superuser and not o.is_archived %}
+      <div class="nzd-next nzd-reopen">
+        {% if d.reopen_blocked %}
+          <p class="nzd-next-hint"><i class="fas fa-circle-info" aria-hidden="true"></i> {% translate "Coins paid for this order were already returned to the customer — it can't be reopened. Place a new order instead." %}</p>
+        {% else %}
+          <span class="nzd-next-hint">{% translate "The customer changed their mind? Put the order back to confirmed — stock is reserved again." %}</span>
+          <div class="nzd-next-side"><button type="button" class="nzp-btn nzp-btn-primary" data-nzd-open="reopen-dialog"><i class="fas fa-rotate-left" aria-hidden="true"></i> {% translate "Reopen order" %}</button></div>
+        {% endif %}
+      </div>
+      {% endif %}
     {% else %}
       <ol class="nzd-steps">
         {% for s in d.steps %}
@@ -305,6 +315,21 @@
       <footer>
         <button type="button" class="nzp-btn nzp-btn-ghost" data-nzd-close>{% translate "Keep the order" %}</button>
         <button type="submit" class="nzp-btn nzd-btn-danger"><i class="fas fa-ban" aria-hidden="true"></i> {% translate "Cancel order" %}</button>
+      </footer>
+    </form>
+  </dialog>
+  {% endif %}
+
+  {% if d.can_reopen and not d.reopen_blocked and has_change_permission and request.user.is_superuser %}
+  <dialog class="nzd-dialog" id="reopen-dialog" aria-labelledby="reopen-title">
+    <form method="post" action="{{ act_url }}">{% csrf_token %}
+      <input type="hidden" name="action" value="reopen">
+      <header><span class="nzd-dialog-icon is-ok"><i class="fas fa-rotate-left" aria-hidden="true"></i></span><div><h3 id="reopen-title">{% blocktranslate with number=o.order_number %}Reopen order {{ number }}?{% endblocktranslate %}</h3><p>{% translate "The order goes back to confirmed with the same items and prices, and stock is reserved again at the warehouse." %}</p></div></header>
+      <label class="nzd-field-label" for="reopen-note">{% translate "Comment (optional)" %}</label>
+      <textarea id="reopen-note" name="note" rows="2" placeholder="{% translate 'e.g. Called the customer — they will take it' %}"></textarea>
+      <footer>
+        <button type="button" class="nzp-btn nzp-btn-ghost" data-nzd-close>{% translate "Back" %}</button>
+        <button type="submit" class="nzp-btn nzp-btn-primary"><i class="fas fa-rotate-left" aria-hidden="true"></i> {% translate "Reopen order" %}</button>
       </footer>
     </form>
   </dialog>

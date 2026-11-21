@@ -9939,3 +9939,39 @@ msgstr "Qoldiqni o‘zgartirish — bosing, yangi sonni yozing, Enter"
 
 msgid "Gift (campaign)"
 msgstr "Sovg'a (aksiya)"
+
+msgid "Order reopened — it is confirmed again and stock is reserved."
+msgstr "Buyurtma qayta tiklandi — u yana tasdiqlangan, mahsulotlar omborda band qilindi."
+
+msgid "Reopen selected cancelled orders (back to confirmed)"
+msgstr "Tanlangan bekor qilingan buyurtmalarni qayta tiklash (tasdiqlanganga)"
+
+msgid "%(n)s order(s) reopened and confirmed again."
+msgstr "%(n)s ta buyurtma qayta tiklanib, yana tasdiqlandi."
+
+msgid "Only a cancelled order can be reopened."
+msgstr "Faqat bekor qilingan buyurtmani qayta tiklash mumkin."
+
+msgid "Coins paid for this order were already returned to the customer — it can't be reopened. Place a new order instead."
+msgstr "Bu buyurtma uchun to'langan Coins mijozga qaytarib berilgan — uni qayta tiklab bo'lmaydi. Yangi buyurtma oching."
+
+msgid "Every item of this order was cancelled — nothing is left to reopen."
+msgstr "Bu buyurtmaning barcha mahsulotlari bekor qilingan — tiklanadigan narsa qolmagan."
+
+msgid "Reopened after the cancellation"
+msgstr "Bekor qilingandan keyin qayta tiklandi"
+
+msgid "The customer changed their mind? Put the order back to confirmed — stock is reserved again."
+msgstr "Mijoz fikridan qaytdimi? Buyurtmani yana tasdiqlangan holatga qaytaring — mahsulotlar qayta band qilinadi."
+
+msgid "Reopen order"
+msgstr "Buyurtmani qayta tiklash"
+
+msgid "Reopen order %(number)s?"
+msgstr "%(number)s buyurtmani qayta tiklaysizmi?"
+
+msgid "The order goes back to confirmed with the same items and prices, and stock is reserved again at the warehouse."
+msgstr "Buyurtma o'sha mahsulotlar va narxlar bilan yana tasdiqlangan holatga qaytadi, omborda mahsulotlar qayta band qilinadi."
+
+msgid "e.g. Called the customer — they will take it"
+msgstr "masalan: Mijoz bilan gaplashildi — oladi"
