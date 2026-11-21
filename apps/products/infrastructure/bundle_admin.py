@@ -173,7 +173,7 @@ def _flush_bundle_cache() -> None:
         import redis as redis_lib
 
         r = redis_lib.Redis.from_url(settings.REDIS_URL, socket_timeout=2)
-        for key in r.scan_iter(match="*bundle:v3:*", count=500):
+        for key in r.scan_iter(match="*bundle:v4:*", count=500):
             r.delete(key)
     except Exception:  # noqa: BLE001 - the cache simply expires within the hour
         pass

@@ -130,6 +130,31 @@ class TestBundle:
         cache.clear()
         assert bundles.offer_for(whey.id)["companion_variant_id"] == str(sv.id)
 
+    def test_lead_brand_plain_creatine_rotates_and_any_shortlisted_one_is_discounted(self, monkeypatch):
+        from apps.products.infrastructure import bundles
+        from apps.products.infrastructure import models as orm
+
+        def brand(name):
+            b = orm.Brand.objects.create()
+            orm.BrandTranslation.objects.create(brand=b, locale_code="uz", name=name, slug=f"b-{uuid.uuid4().hex[:6]}")
+            return b
+
+        c = self._tree()
+        whey, wv = _product("Whey", 1_000_000, category=c["protein"])
+        ostro, _ = _product("OstroVit Creatine Monohydrate", 150_000, category=c["creatine"], brand=brand("OstroVit"))  # best seller, not a lead brand
+        _product("Optimum Nutrition Creatine Gummies", 200_000, category=c["creatine"], brand=brand("Optimum Nutrition"))  # lead brand, odd form
+        applied, av = _product("Applied Nutrition Creatine Monohydrate", 180_000, category=c["creatine"], brand=brand("Applied Nutrition"))
+        gat, gv = _product("GAT Sport Creatine Monohydrate", 190_000, category=c["creatine"], brand=brand("GAT Sport"))
+        monkeypatch.setattr("apps.products.infrastructure.smart_search._units_sold_by_product", lambda: {str(ostro.id): 40})
+        offer = bundles.offer_for(whey.id)
+        assert {offer["companion_product_id"], *offer["alternates"]} == {str(applied.id), str(gat.id)}
+        cache.clear()
+        assert bundles.offer_for(whey.id)["companion_product_id"] == offer["companion_product_id"]  # same day: same pick
+        other = str(gat.id) if offer["companion_product_id"] == str(applied.id) else str(applied.id)
+        other_v = gv.id if other == str(gat.id) else av.id
+        total, applied_rows = bundles.cart_discount([(wv.id, Decimal("1000000"), 1), (other_v, Decimal("180000"), 1)])
+        assert total > 0 and applied_rows[0]["companion_product_id"] == other
+
     def test_department_without_partners_gets_no_auto_pair(self, monkeypatch):
         from apps.products.infrastructure import bundles
 

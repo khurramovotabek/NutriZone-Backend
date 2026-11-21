@@ -5,14 +5,20 @@
   Katalog → Birga arzonroq) wins; otherwise -- when BundleSettings.auto_enabled -- an in-stock add-on from a
   department that completes this one (COMPLEMENTS: creatine / a shaker next to a protein, omega next to a
   multivitamin; or the dashboard's `companion_categories`), priced at most `max_companion_share` of the main
-  product: first what customers bought together with it, else that department's best seller; and only when the
-  discounted price still clears the
-  known purchase cost by `min_margin_percent`. Cached for an hour so the page and the cart agree.
+  product, and only when the discounted price still clears the known purchase cost by `min_margin_percent`.
+  Among those: the most natural department first, then the store's lead brands (PREFERRED_BRANDS), then the plain
+  form (powder monohydrate, not gummies / capsules / blends). The few that tie are a shortlist and the page shows
+  one of them -- a different one per product and per day (seeded, not random per request, so the page, the cache
+  and the cart agree). Any shortlisted companion earns the discount in the cart, so a day change never takes it
+  back. Cached for an hour.
 * `cart_discount(lines)`  what checkout takes off for every (product, companion) pair actually in the cart:
   percent × the companion line's unit price × the units that have a partner. Each unit is discounted once.
 """
 from __future__ import annotations
 
+import datetime as dt
+import hashlib
+import re
 import uuid
 from decimal import ROUND_HALF_UP, Decimal
 
@@ -21,7 +27,8 @@ from django.core.cache import cache
 from apps.products.infrastructure import models as orm
 
 CACHE_TTL = 60 * 60
-_KEY = "bundle:v3:{}"
+_KEY = "bundle:v4:{}"
+SHORTLIST = 10
 
 
 def _settings() -> orm.BundleSettings:
@@ -144,26 +151,58 @@ def _compute(product_id) -> dict | None:
         return None
     ceiling = main_price * cfg.max_companion_share / Decimal("100")
 
-    def fits(category_id, price) -> int | None:
-        r = rank(str(category_id)) if category_id else None
-        return r if r is not None and price and Decimal(price) <= ceiling else None
-
-    # 1) bought together with this product (recommendations), 2) the best seller of the most natural companion department
-    from apps.products.infrastructure.selectors import RecommendationSelector
-
-    for card in RecommendationSelector().for_product(uuid.UUID(str(product_id)), limit=12):
-        if card.get("stock_status") == "out_of_stock" or fits(card.get("category_id"), card.get("price")) is None:
+    candidates = []
+    for row in _companion_pool():
+        r = rank(row["category_id"]) if row["category_id"] and row["product_id"] != str(product_id) else None
+        if r is None or Decimal(row["price"]) > ceiling:
             continue
-        variant_id, stock = _sellable_default(card["id"])
-        price = _variant_price(variant_id) if variant_id and stock > 0 else None
-        if price and _margin_ok(variant_id, price, cfg.auto_percent, cfg.min_margin_percent):
-            return {"companion_product_id": str(card["id"]), "companion_variant_id": str(variant_id), "percent": str(cfg.auto_percent), "source": "auto"}
-    ranked = [(r, i, row) for i, row in enumerate(_companion_pool())
-              if row["product_id"] != str(product_id) and (r := fits(row["category_id"], row["price"])) is not None]
-    for _r, _i, row in sorted(ranked, key=lambda x: (x[0], x[1])):
-        if _margin_ok(row["variant_id"], Decimal(row["price"]), cfg.auto_percent, cfg.min_margin_percent):
-            return {"companion_product_id": row["product_id"], "companion_variant_id": row["variant_id"], "percent": str(cfg.auto_percent), "source": "auto"}
-    return None
+        dept_slug = slug_of.get(dept.get(row["category_id"], ""), "")
+        candidates.append(((r, row["brand"] not in PREFERRED_BRANDS, not _plain(dept_slug, row["name"])), row))
+    candidates.sort(key=lambda x: x[0])  # stable: inside a tier the pool order (best sellers, then cheaper) stays
+    ok = _margins_ok([row for _t, row in candidates], cfg.auto_percent, cfg.min_margin_percent)
+    candidates = [(t, row) for t, row in candidates if row["variant_id"] in ok]
+    if not candidates:
+        return None
+    best = candidates[0][0]
+    shortlist = [row for t, row in candidates if t == best][:SHORTLIST]
+    seed = int(hashlib.sha1(f"{product_id}:{dt.date.today().isoformat()}".encode()).hexdigest(), 16)
+    row = shortlist[seed % len(shortlist)]
+    return {"companion_product_id": row["product_id"], "companion_variant_id": row["variant_id"], "percent": str(cfg.auto_percent), "source": "auto",
+            "alternates": [x["product_id"] for x in shortlist if x is not row]}
+
+
+# The store's lead sports brands (uz brand names, lower case): an automatic companion comes from these when one fits.
+PREFERRED_BRANDS = frozenset({
+    "applied nutrition", "gat sport", "myprotein", "optimum nutrition", "allmax nutrition", "yava labs", "dy nutrition",
+    "dymatize", "olimp sport nutrition", "mutant", "aps nutrition", "hi-tech pharmaceuticals", "maxler",
+})
+# The everyday form a companion should have, per department: creatine = plain powder monohydrate, not a gummy,
+# chew, capsule, "for women" or a multi-ingredient system.
+_ODD_FORM = {
+    "kreatin": re.compile(r"gumm|chew|candy|chayna|caps|kapsul|tablet|women|ayollar|jetmass|nitraflex|3-in-1|charged|xplode|decanate|"
+                          r"\bhcl\b|tri-creatine|alkalyn|\btcm\b|crea-lean|plus|cell-tech|creakong|-xs\b", re.I),
+}
+
+
+def _plain(dept_slug: str, name: str) -> bool:
+    odd = _ODD_FORM.get(dept_slug)
+    return not (odd and odd.search(name or ""))
+
+
+def _margins_ok(rows: list[dict], percent: Decimal, min_margin: Decimal) -> set[str]:
+    """The variant ids among `rows` whose discounted price clears the known purchase cost (one cost_info call)."""
+    from apps.stores.infrastructure.count_service import cost_info
+
+    if not rows:
+        return set()
+    costs = cost_info([uuid.UUID(r["variant_id"]) for r in rows])
+    out = set()
+    for r in rows:
+        cost, source = costs.get(uuid.UUID(r["variant_id"]), (Decimal("0"), None))
+        discounted = Decimal(r["price"]) * (Decimal("100") - percent) / Decimal("100")
+        if source not in ("receipt", "catalog") or not cost or discounted >= Decimal(cost) * (Decimal("100") + min_margin) / Decimal("100"):
+            out.add(r["variant_id"])
+    return out
 
 
 def _allowed_categories(cfg) -> set[str] | None:
@@ -184,7 +223,7 @@ def _allowed_categories(cfg) -> set[str] | None:
     return out
 
 
-POOL_KEY = "bundle:v3:pool"
+POOL_KEY = "bundle:v4:pool"
 
 
 def _companion_pool() -> list[dict]:
@@ -208,7 +247,13 @@ def _companion_pool() -> list[dict]:
     for e in PriceListEntryModel.objects.filter(product_variant_id__in=[v for v, _c in chosen.values()]).order_by("created_at"):
         prices.setdefault(e.product_variant_id, e.sale_price_amount if e.sale_price_amount is not None else e.base_price_amount)
     sold = _units_sold_by_product()
-    pool = [{"product_id": str(pid), "variant_id": str(vid), "category_id": str(cid) if cid else None, "price": str(prices[vid]), "sold": sold.get(str(pid), 0)}
+    from apps.products.infrastructure.models import BrandTranslation, ProductTranslation
+
+    brand_of = dict(orm.Product.objects.filter(id__in=list(chosen)).values_list("id", "brand_id"))
+    brand_name = {b: n.strip().lower() for b, n in BrandTranslation.objects.filter(locale_code="uz").values_list("brand_id", "name")}
+    names = dict(ProductTranslation.objects.filter(product_id__in=list(chosen), locale_code="uz").values_list("product_id", "name"))
+    pool = [{"product_id": str(pid), "variant_id": str(vid), "category_id": str(cid) if cid else None, "price": str(prices[vid]), "sold": sold.get(str(pid), 0),
+             "brand": brand_name.get(brand_of.get(pid), ""), "name": names.get(pid, "")}
             for pid, (vid, cid) in chosen.items() if prices.get(vid)]
     pool.sort(key=lambda r: (-r["sold"], Decimal(r["price"])))
     cache.set(POOL_KEY, pool, CACHE_TTL)
@@ -249,13 +294,17 @@ def cart_discount(lines: list[tuple]) -> tuple[Decimal, list[dict]]:
     applied: list[dict] = []
     for pid, main_units in qty_by_product.items():
         offer = offer_for(pid)
-        if not offer or offer["companion_product_id"] not in companion_lines or offer["companion_product_id"] == pid:
+        if not offer:
+            continue
+        # the companion shown today first, then any other shortlisted one (the page may have shown it yesterday)
+        partners = [c for c in [offer["companion_product_id"], *offer.get("alternates", ())] if c in companion_lines and c != pid]
+        if not partners:
             continue
         percent = Decimal(offer["percent"])
         left = main_units
         amount = Decimal("0")
         units = 0
-        for line in sorted(companion_lines[offer["companion_product_id"]], key=lambda x: x[0]):
+        for line in [ln for c in partners for ln in sorted(companion_lines[c], key=lambda x: x[0])]:
             take = min(left, line[1])
             if take <= 0:
                 continue
@@ -266,5 +315,5 @@ def cart_discount(lines: list[tuple]) -> tuple[Decimal, list[dict]]:
         amount = amount.quantize(Decimal("1"), rounding=ROUND_HALF_UP)
         if amount > 0:
             total += amount
-            applied.append({"product_id": pid, "companion_product_id": offer["companion_product_id"], "percent": offer["percent"], "units": units, "amount": str(amount)})
+            applied.append({"product_id": pid, "companion_product_id": partners[0], "percent": offer["percent"], "units": units, "amount": str(amount)})
     return total, applied
