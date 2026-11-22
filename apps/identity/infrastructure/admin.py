@@ -747,6 +747,20 @@ class DeviceAdmin(ExcelExportMixin, ui.PremiumListMixin, admin.ModelAdmin):
                          "#2563eb", "fa-globe", "hozir kirgan holatda", reverse("admin:identity_usersession_changelist") + "?state=active"),
         ]
 
+    nz_css = ("admin/css/nutrizone-visitors.css",)
+
+    def nz_panel(self, request):
+        from apps.identity.infrastructure.visitors import panel_html, period_of
+
+        return panel_html(request, reverse("admin:identity_visitordevice_changelist") + "?period=" + period_of(request)[0])
+
+    def changelist_view(self, request, extra_context=None):
+        # ?period= drives only the statistics panel, not the Device rows -- keep Django's ChangeList from treating it as a field lookup
+        if "period" in request.GET:
+            request.GET = request.GET.copy()
+            request.nz_period = request.GET.pop("period")[0]
+        return super().changelist_view(request, extra_context)
+
     def nz_prepare(self, request, objs):
         counts = dict(orm.UserSession.objects.filter(device__in=objs).values("device_id").annotate(n=Count("id")).values_list("device_id", "n"))
         for d in objs:
@@ -764,6 +778,101 @@ class DeviceAdmin(ExcelExportMixin, ui.PremiumListMixin, admin.ModelAdmin):
             ui.chip("Yoqilgan", "#9333ea", "fa-bell") if d.push_token else ui.muted("yo'q"),
             format_html("<b>{}</b>", d._sessions), ui.local(d.created_at, "%d.%m.%Y"),
         ]
+
+
+# ================================================================ visitor devices (storefront statistics)
+
+
+class _VisitorPeriodFilter(admin.SimpleListFilter):
+    title, parameter_name = "Davr", "period"
+
+    def lookups(self, request, model_admin):
+        from apps.identity.infrastructure.visitors import PERIODS
+
+        return [(k, label) for k, label, _d in PERIODS]
+
+    def queryset(self, request, queryset):
+        from apps.identity.infrastructure.visitors import PERIODS, _since
+
+        days = next((d for k, _l, d in PERIODS if k == (self.value() or "30")), 30)
+        start = _since(days)
+        if start:
+            from datetime import datetime
+
+            queryset = queryset.filter(last_seen__gte=timezone.make_aware(datetime.combine(start, datetime.min.time())))
+        return queryset
+
+
+@admin.register(orm.VisitorDevice)
+class VisitorDeviceAdmin(ExcelExportMixin, ui.PremiumListMixin, admin.ModelAdmin):
+    """Tashrif qurilmalari: every browser / phone that opened the storefront (bots excluded) + the statistics panel."""
+
+    excel_title = "Tashrif qurilmalari"
+    excel_columns = [
+        Col("Turi", lambda d: _VCLASS.get(d.device_class, d.device_class), 11), Col("Tizim", lambda d: f"{d.os} {d.os_version}".strip(), 16),
+        Col("Brauzer", "browser", 16), Col("Ilova ichida", "in_app", 11), Col("Brend", "brand", 12), Col("Model", "model", 18), Col("Ekran", "screen", 11),
+        Col("Kunlar", "days", 8, number=True), Col("Tashriflar", "hits", 10, number=True),
+        Col("Birinchi", lambda d: timezone.localtime(d.first_seen).replace(tzinfo=None), 17), Col("Oxirgi", lambda d: timezone.localtime(d.last_seen).replace(tzinfo=None), 17),
+    ]
+    list_display = ("os", "last_seen", "hits", "first_seen")
+    list_filter = (_VisitorPeriodFilter, ("device_class", _titled(admin.AllValuesFieldListFilter, "Turi")), ("os", _titled(admin.AllValuesFieldListFilter, "Tizim")),
+                   ("in_app", _titled(admin.AllValuesFieldListFilter, "Qayerdan")))
+    search_fields = ("os", "brand", "model", "browser", "os_version")
+    list_per_page = 40
+    ordering = ("-last_seen",)
+    fields = ("device_class", "os", "os_version", "browser", "in_app", "brand", "model", "screen", "user_agent", "source", "first_seen", "last_seen", "days", "hits")
+    readonly_fields = fields
+
+    nz_icon, nz_tone, nz_title = "fa-chart-pie", "#2563eb", "Tashrif qurilmalari"
+    nz_subtitle = "Saytga kirgan har bir telefon va kompyuter: tizim (Android, iOS, Windows…), brauzer, brend, qachon va necha marta kelgani. Botlar hisobga olinmaydi."
+    nz_columns = (("Qurilma", ""), ("Tizim", ""), ("Brauzer", ""), ("Ekran", ""), ("Kunlar", "r"), ("Tashriflar", "r"), ("Oxirgi tashrif", "r"))
+    nz_grid = "minmax(190px,1.6fr) minmax(130px,1fr) minmax(130px,1fr) 100px 80px 100px 130px"
+    nz_search = "Tizim, brend, model yoki brauzer…"
+    nz_empty = ("Bu davrda tashrif yo'q", "Sayt ochilganda har bir qurilma shu yerda paydo bo'ladi.")
+    nz_sorts = (("Oxirgi tashrif", ""), ("Eng ko'p kelgan", "-3"), ("Yangi", "-4"))
+    nz_css = ("admin/css/nutrizone-visitors.css",)
+
+    def get_queryset(self, request):
+        return super().get_queryset(request).filter(is_bot=False)
+
+    def has_add_permission(self, request):
+        return False
+
+    def has_change_permission(self, request, obj=None):
+        return False
+
+    def nz_panel(self, request):
+        from apps.identity.infrastructure.visitors import panel_html
+
+        return panel_html(request)
+
+    def nz_tabs(self, request):
+        from apps.identity.infrastructure.visitors import period_of, visitors_qs
+
+        qs = visitors_qs(period_of(request)[2])
+        k = dict(qs.values_list("device_class").annotate(n=Count("id")).values_list("device_class", "n"))
+        return ui.tabs_for(request, "device_class", [("", "Hammasi", sum(k.values())), ("mobile", "Telefon", k.get("mobile", 0)),
+                                                     ("desktop", "Kompyuter", k.get("desktop", 0)), ("tablet", "Planshet", k.get("tablet", 0))],
+                           {"mobile": "#2a78d6", "desktop": "#eb6834", "tablet": "#1baf7a"})
+
+    def nz_href(self, obj):
+        return reverse("admin:identity_visitordevice_change", args=[obj.pk])
+
+    def nz_row(self, d):
+        icon = {"mobile": "fa-mobile-screen-button", "desktop": "fa-desktop", "tablet": "fa-tablet-screen-button"}.get(d.device_class, "fa-circle")
+        name = " ".join(x for x in (d.brand, d.model if d.model != d.brand else "") if x) or f"{d.os} {_VCLASS.get(d.device_class, '').lower()}".strip()
+        app = {"telegram": "Telegram ichida", "instagram": "Instagram ichida", "facebook": "Facebook ichida"}.get(d.in_app, "")
+        return [
+            format_html('<span class="nzi-dev"><i class="fas {}" aria-hidden="true"></i><span><b>{}</b><small>{}</small></span></span>', icon, name,
+                        _VCLASS.get(d.device_class, "") + (f" · {app}" if app else "")),
+            format_html("<b>{}</b><small>{}</small>", d.os, d.os_version or "—"),
+            format_html("{}", d.browser or "—"), ui.muted(d.screen or "—") if not d.screen else format_html("<code>{}</code>", d.screen),
+            format_html("<b>{}</b>", d.days), format_html("<b>{}</b>", d.hits),
+            format_html('<span title="{}">{}</span><small>{} dan beri</small>', ui.local(d.last_seen), ui.ago(d.last_seen), ui.local(d.first_seen, "%d.%m.%Y")),
+        ]
+
+
+_VCLASS = {"mobile": "Telefon", "desktop": "Kompyuter", "tablet": "Planshet"}
 
 
 # ================================================================ roles & permissions

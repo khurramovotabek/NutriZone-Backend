@@ -27,6 +27,8 @@ urlpatterns = [
     path("auth/logout", views.LogoutView.as_view(), name="auth-logout"),
     path("auth/logout-all", views.LogoutAllView.as_view(), name="auth-logout-all"),
     path("auth/ws-ticket", views.WsTicketView.as_view(), name="auth-ws-ticket"),
+    # --- Device statistics beacon (storefront) ---
+    path("visits", views.VisitBeaconView.as_view(), name="visits"),
     # --- Profile ---
     path("users/me", views.MeView.as_view(), name="users-me"),
     path("users/me/avatar", views.AvatarUploadView.as_view(), name="users-me-avatar"),

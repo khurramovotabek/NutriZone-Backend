@@ -309,3 +309,45 @@ class IdentityOutboxEvent(AbstractOutboxEvent):
     class Meta:
         db_table = "identity_outbox_events"
         ordering = ["created_at"]
+
+
+class VisitorDevice(models.Model):
+    """
+    One browser / phone that opened the storefront (anonymous or signed in) -- the source of the Qurilmalar statistics
+    (OS, mobile vs computer, browser, phone brand). `key` is a sha256 of the storefront's random per-browser id (or of
+    IP + User-Agent for rows imported from the web-server log), never the raw id or the IP itself.
+    """
+
+    key = models.CharField(max_length=64, unique=True)
+    device_class = models.CharField(max_length=10, db_index=True)  # mobile | tablet | desktop
+    os = models.CharField(max_length=24, db_index=True)  # Android, iOS, Windows, macOS, Linux, ChromeOS, ...
+    os_version = models.CharField(max_length=24, blank=True, default="")
+    browser = models.CharField(max_length=32, blank=True, default="")
+    in_app = models.CharField(max_length=16, blank=True, default="")  # telegram | instagram | facebook | ''
+    brand = models.CharField(max_length=32, blank=True, default="")
+    model = models.CharField(max_length=64, blank=True, default="")
+    screen = models.CharField(max_length=16, blank=True, default="")  # CSS px, e.g. 390x844
+    user_agent = models.CharField(max_length=512, blank=True, default="")
+    is_bot = models.BooleanField(default=False, db_index=True)
+    source = models.CharField(max_length=8, default="beacon")  # beacon | log
+    first_seen = models.DateTimeField(db_index=True)
+    last_seen = models.DateTimeField(db_index=True)
+    days = models.PositiveIntegerField(default=1)  # distinct days it visited
+    hits = models.PositiveIntegerField(default=1)  # page sessions
+
+    class Meta:
+        db_table = "identity_visitor_devices"
+        verbose_name = "Tashrif qurilmasi"
+        verbose_name_plural = "Tashrif qurilmalari"
+
+
+class VisitorDay(models.Model):
+    """One row per visitor device per day it opened the site -- daily trend + any period's unique visitors."""
+
+    device = models.ForeignKey(VisitorDevice, on_delete=models.CASCADE, related_name="visit_days")
+    day = models.DateField(db_index=True)
+    hits = models.PositiveIntegerField(default=1)
+
+    class Meta:
+        db_table = "identity_visitor_days"
+        constraints = [models.UniqueConstraint(fields=["device", "day"], name="identity_visitor_day_unique")]

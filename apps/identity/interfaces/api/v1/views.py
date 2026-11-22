@@ -19,6 +19,7 @@ from __future__ import annotations
 
 import uuid
 
+from drf_spectacular.utils import OpenApiExample, OpenApiResponse, extend_schema
 from rest_framework.parsers import FormParser, JSONParser, MultiPartParser
 from rest_framework.permissions import AllowAny
 from rest_framework.views import APIView
@@ -46,10 +47,8 @@ from common.exceptions import ValidationFailed
 from common.responses import paginated_response, success_response
 from core.metrics import default_collector
 from core.observability import timed
-from core.ratelimit import ScopedRateLimitThrottle
-from drf_spectacular.utils import OpenApiExample, OpenApiResponse, extend_schema
-
 from core.openapi import STANDARD_ERROR_RESPONSES, auth_examples, error_examples
+from core.ratelimit import ScopedRateLimitThrottle
 
 
 def _responses(*codes: int) -> dict:
@@ -130,6 +129,7 @@ class RequestOTPView(APIView):
     )
     def post(self, request):
         from django.conf import settings
+
         from apps.identity.domain.exceptions import OTPDeliveryFailedError
 
         if not getattr(settings, "NUTRIZONE_SMS_LOGIN_ENABLED", False):
@@ -777,3 +777,38 @@ class AdminUpdateUserRolesView(APIView):
             user_id=uuid.UUID(user_id), role_code=role_code, store_id=uuid.UUID(store_id) if store_id else None
         )
         return success_response(data={"user_id": str(assignment.user_id), "role_id": str(assignment.role_id), "store_id": str(assignment.store_id) if assignment.store_id else None}, status_code=201)
+
+
+class VisitBeaconView(APIView):
+    """
+    `POST /identity/visits` -- public: the storefront reports one page session of this browser (random per-browser id
+    + a few device hints). Feeds the Dashboard "Qurilmalar" statistics; nothing personal is stored (see visitors.py).
+    """
+
+    permission_classes = [AllowAny]
+    authentication_classes: list = []
+    parser_classes = [FormParser, JSONParser, MultiPartParser]  # navigator.sendBeacon(URLSearchParams) -- form body, no CORS preflight
+
+    @extend_schema(tags=["Identity"], summary="Count a storefront visit (device statistics)", responses={204: OpenApiResponse(description="Counted")})
+    def post(self, request):
+        import re
+
+        from django.core.cache import cache
+        from django.http import HttpResponse
+
+        from apps.identity.infrastructure.visitors import record_visit
+
+        data = request.data if hasattr(request.data, "get") else {}
+        vid = str(data.get("v") or "")
+        if not re.fullmatch(r"[A-Za-z0-9-]{16,64}", vid):
+            return HttpResponse(status=204)
+        if cache.add(f"visit-beacon:{vid}", 1, 60):  # at most one write per browser a minute
+            hints = {k: data.get(k) for k in ("w", "h", "tp", "tg", "m", "md", "pv") if data.get(k) not in (None, "")}
+            ua = request.META.get("HTTP_USER_AGENT") or ""
+            try:
+                record_visit(vid, ua, hints)
+            except Exception:  # pragma: no cover - statistics must never break the storefront
+                import logging
+
+                logging.getLogger(__name__).exception("visit beacon failed")
+        return HttpResponse(status=204)
