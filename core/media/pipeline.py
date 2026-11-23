@@ -30,6 +30,13 @@ THUMBNAIL_SIZES: dict[str, int] = {"small": 150, "medium": 400, "large": 800}
 # 25 MiB -- generous enough for a certificate scan or product video-thumbnail
 # image, small enough that a single upload can't monopolize a request/worker.
 MAX_FILE_SIZE_BYTES = 25 * 1024 * 1024
+# Phone-shot product videos (30-60 s, 1080p) are routinely 30-45 MB; the host
+# nginx in front of the API caps request bodies at 50M, so videos get that.
+MAX_VIDEO_SIZE_BYTES = 50 * 1024 * 1024
+
+
+def max_size_for(media_type: MediaType) -> int:
+    return MAX_VIDEO_SIZE_BYTES if media_type == MediaType.VIDEO else MAX_FILE_SIZE_BYTES
 
 ALLOWED_MIME_TYPES: dict[MediaType, frozenset[str]] = {
     MediaType.IMAGE: frozenset({"image/jpeg", "image/png", "image/webp", "image/gif"}),
@@ -63,8 +70,9 @@ class MediaPipeline:
         if not request.content:
             return Result.single_failure("EMPTY_FILE", "The uploaded file is empty.", field="content")
 
-        if len(request.content) > MAX_FILE_SIZE_BYTES:
-            limit_mb = MAX_FILE_SIZE_BYTES // (1024 * 1024)
+        limit = max_size_for(request.media_type)
+        if len(request.content) > limit:
+            limit_mb = limit // (1024 * 1024)
             return Result.single_failure("FILE_TOO_LARGE", f"The uploaded file exceeds the {limit_mb}MB limit.", field="content")
 
         allowed = ALLOWED_MIME_TYPES.get(request.media_type, frozenset())

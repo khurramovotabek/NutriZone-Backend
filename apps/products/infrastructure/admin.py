@@ -533,6 +533,53 @@ class ProductMediaInlineForm(forms.ModelForm):
         labels = {"variant": "Variant (ta'm/hajm)"}
         help_texts = {"variant": "Bo'sh = butun mahsulot rasmi. Variant tanlansa, shu ta'm/hajm tanlanganda ko'rsatiladi."}
 
+    VIDEO_EXTENSIONS = (".mp4", ".mov", ".webm", ".m4v")
+    DEFAULT_VIDEO_SECONDS = 45
+
+    def clean(self):
+        """Catch every video problem here, as a form error, instead of letting the
+        domain raise ValidationFailed inside save_formset (that was a 500): a video
+        file picked with an image role, an empty duration (the domain needs > 0),
+        an unsupported format or a file over the video size limit."""
+        from core.media.enums import MediaType
+        from core.media.pipeline import ALLOWED_MIME_TYPES, max_size_for
+
+        data = super().clean()
+        uploaded = data.get("file_upload")
+        if not uploaded:
+            return data
+        name = (uploaded.name or "").lower()
+        mime = (getattr(uploaded, "content_type", "") or "").lower()
+        is_video = mime.startswith("video/") or name.endswith(self.VIDEO_EXTENSIONS)
+        role = data.get("media_role")
+        if is_video and role != "video":
+            data["media_role"] = role = "video"
+            self.instance.media_role = "video"
+        if role == "video":
+            if mime not in ALLOWED_MIME_TYPES[MediaType.VIDEO]:
+                if name.endswith((".mp4", ".m4v")):
+                    uploaded.content_type = "video/mp4"
+                elif name.endswith(".mov"):
+                    uploaded.content_type = "video/quicktime"
+                elif name.endswith(".webm"):
+                    uploaded.content_type = "video/webm"
+                else:
+                    raise forms.ValidationError("Video formati MP4, MOV yoki WebM bo'lishi kerak.")
+            limit = max_size_for(MediaType.VIDEO)
+            if uploaded.size > limit:
+                raise forms.ValidationError(f"Video {uploaded.size / 1048576:.1f} MB -- ruxsat {limit // 1048576} MB gacha. Videoni siqib (720p/1080p H.264) qayta yuklang.")
+            duration = data.get("duration_seconds")
+            if not duration or duration <= 0:
+                data["duration_seconds"] = self.DEFAULT_VIDEO_SECONDS
+                self.instance.duration_seconds = self.DEFAULT_VIDEO_SECONDS
+            elif duration > 600:
+                raise forms.ValidationError("Video davomiyligi 600 soniyadan (10 daqiqa) oshmasin.")
+        else:
+            limit = max_size_for(MediaType.IMAGE)
+            if uploaded.size > limit:
+                raise forms.ValidationError(f"Rasm {uploaded.size / 1048576:.1f} MB -- ruxsat {limit // 1048576} MB gacha.")
+        return data
+
 
 class ProductMediaInline(admin.TabularInline):
     model = orm.ProductMedia
@@ -1070,6 +1117,7 @@ class ProductAdmin(ExcelExportMixin, CatalogFormMixin, CatalogAnalyticsMixin, ad
             return
 
         from apps.products.infrastructure.composition import build_upload_image, build_upload_video
+        from common.exceptions import ValidationFailed as DomainValidationFailed
 
         instances = formset.save(commit=False)
         for deleted in formset.deleted_objects:
@@ -1087,6 +1135,8 @@ class ProductAdmin(ExcelExportMixin, CatalogFormMixin, CatalogAnalyticsMixin, ad
                         build_upload_image().execute(product_id=form.instance.id, filename=uploaded.name, content=content, mime_type=uploaded.content_type, media_role=instance.media_role, variant_id=instance.variant_id)
                 except MediaLimitExceeded:
                     messages.error(request, _("\"%(name)s\" yuklanmadi: rasm limiti to'lgan (mahsulotga 12 ta, har bir variantga 6 ta). Avval eskisini o'chiring.") % {"name": uploaded.name})
+                except DomainValidationFailed as exc:
+                    messages.error(request, f"\"{uploaded.name}\" yuklanmadi: {exc}")
                 # The Application Service above already persisted the real ProductMedia via the domain repository -- this ORM instance (created only because the inline form required a value) must not also be saved, or a duplicate/invalid row would result.
             else:
                 instance.save()
