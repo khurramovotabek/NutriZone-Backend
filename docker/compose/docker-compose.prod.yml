@@ -74,7 +74,7 @@ services:
       STT_SERVICE_URL: http://stt:2700  # voice messages: the speech models live once, in the stt service
     # One ASGI server for HTTP and WebSockets (chat) -- gunicorn managing
     # uvicorn workers; there is no separate WebSocket service.
-    command: ["gunicorn", "config.asgi:application", "--worker-class", "uvicorn.workers.UvicornWorker", "--bind", "0.0.0.0:8000", "--workers", "4", "--timeout", "60", "--forwarded-allow-ips", "*"]
+    command: ["gunicorn", "config.asgi:application", "--worker-class", "uvicorn.workers.UvicornWorker", "--bind", "0.0.0.0:8000", "--workers", "3", "--max-requests", "1000", "--max-requests-jitter", "200", "--timeout", "60", "--forwarded-allow-ips", "*"]
     restart: always
     depends_on:
       db: {condition: service_healthy}
@@ -94,7 +94,7 @@ services:
     networks: [nutrizone_net]
 
   # Speech-to-text for voice messages (apps/assistant/management/commands/stt_server.py): the Vosk models
-  # (~370 MB in memory) loaded once here instead of in each of the 8 web workers. Same image as web.
+  # (~370 MB in memory) loaded once here instead of in each of the 6 web workers. Same image as web.
   stt:
     <<: [*logging, *django-env]
     build:
@@ -129,7 +129,7 @@ services:
       LOG_ROTATION: external  # rotated by the host's logrotate (docker/deploy/host-logrotate.sh)
     healthcheck:
       disable: true
-    command: ["celery", "-A", "config", "worker", "-Q", "transactional,inventory_critical", "-c", "8", "-l", "info"]
+    command: ["celery", "-A", "config", "worker", "-Q", "transactional,inventory_critical", "-c", "4", "--max-tasks-per-child", "200", "--max-memory-per-child", "350000", "-l", "info"]
     restart: always
     volumes:
       - media_volume:/app/media
@@ -151,7 +151,7 @@ services:
       LOG_ROTATION: external  # rotated by the host's logrotate (docker/deploy/host-logrotate.sh)
     healthcheck:
       disable: true
-    command: ["celery", "-A", "config", "worker", "-Q", "default", "-c", "4", "-l", "info"]
+    command: ["celery", "-A", "config", "worker", "-Q", "default", "-c", "3", "--max-tasks-per-child", "200", "--max-memory-per-child", "350000", "-l", "info"]
     restart: always
     volumes:
       - media_volume:/app/media
@@ -173,7 +173,7 @@ services:
       LOG_ROTATION: external  # rotated by the host's logrotate (docker/deploy/host-logrotate.sh)
     healthcheck:
       disable: true
-    command: ["celery", "-A", "config", "worker", "-Q", "bulk,dead_letter", "-c", "2", "-l", "info"]
+    command: ["celery", "-A", "config", "worker", "-Q", "bulk,dead_letter", "-c", "2", "--max-tasks-per-child", "100", "--max-memory-per-child", "400000", "-l", "info"]
     restart: always
     volumes:
       - media_volume:/app/media

@@ -135,6 +135,9 @@ deploy_frontend() {
   if pm2 jlist | python3 -c 'import json,sys; sys.exit(0 if any(p["name"] == "frontend" and p["pm2_env"]["exec_mode"] == "cluster_mode" for p in json.load(sys.stdin)) else 1)'; then
     # Cluster (ecosystem.config.cjs): workers are replaced one at a time, the others keep serving -- no gap.
     pm2 reload ecosystem.config.cjs --update-env
+    # reload keeps the old worker count; bring it to the ecosystem's `instances` (3 -> 2 on 2026-11-25 to save RAM)
+    want=$(node -e 'console.log(require("./ecosystem.config.cjs").apps[0].instances)')
+    pm2 scale frontend "$want" >/dev/null
     wait_http http://127.0.0.1:3000/ frontend
   else
     # First switch from the old single process: a standby on :3001 (backup server of host nginx's nz_storefront
