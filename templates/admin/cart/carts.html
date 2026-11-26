@@ -70,7 +70,7 @@
     <div class="nzp-empty"><span class="nzp-empty-icon" style="--c:#2563eb"><i class="fas fa-cart-shopping" aria-hidden="true"></i></span><h3>{% translate "Nothing here" %}</h3><p>{% translate "Try another tab or search." %}</p></div>
     {% endif %}
   </section>
-  {% if cl.result_count > cl.list_per_page %}<div class="nzp-pagination">{% pagination cl %}</div>{% endif %}
+  {% if cl.result_count > 25 %}<div class="nzp-pagination">{% pagination cl %}</div>{% endif %}
   {% endif %}
 </div>
 {% endblock %}

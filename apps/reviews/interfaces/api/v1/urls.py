@@ -13,6 +13,7 @@ urlpatterns = [
     path("", views.CreateReviewView.as_view(), name="review-create"),
     path("statistics", views.ReviewStatisticsView.as_view(), name="review-statistics"),
     path("featured", views.FeaturedReviewsView.as_view(), name="review-featured"),
+    path("reward", views.ReviewRewardInfoView.as_view(), name="review-reward"),
     path("products/<str:product_id>", views.ProductReviewListView.as_view(), name="product-review-list"),
     path("products/<str:product_id>/public", views.PublicProductReviewListView.as_view(), name="product-review-list-public"),
     path("customers/<str:customer_id>", views.CustomerReviewListView.as_view(), name="customer-review-list"),

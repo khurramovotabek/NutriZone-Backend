@@ -35,8 +35,8 @@ INTENTS: dict[str, tuple[str, ...]] = {
 }
 
 GOALS: dict[str, tuple[str, ...]] = {
-    "muscle": ("massa", "mushak", "muskul", "kuch", "bulk", "muscle", "mass", "gain", "набор", "масс", "мышц", "сила", "рельеф мышц", "kattalash"),
-    "weight_loss": ("ozish", "ozmoq", "ozay", "ozdir", "ozg'in", "vazn tashla", "vazn yo'qot", "yog' yoq", "quriti", "sushka", "похуд", "сброс", "сушк", "жиросжиг", "lose weight", "weight loss", "fat loss", "cut", "slim", "lean"),
+    "muscle": ("massa", "mushak", "muskul", "kuch", "bulk", "muscle", "mass", "gain", "набор", "масс", "мышц", "сила", "kattalash"),
+    "weight_loss": ("ozish", "ozmoq", "ozay", "ozdir", "ozib", "ozg'in", "vazn tashla", "vazn yo'qot", "vazn kamaytir", "qorin ket", "qornimni", "yog'dan qutul", "подтянут", "рельеф", "стройн", "yog' yoq", "quriti", "sushka", "похуд", "сброс", "сушк", "жиросжиг", "lose weight", "weight loss", "fat loss", "cut", "slim", "lean"),
     "endurance": ("chidam", "energiya", "yugur", "marafon", "velosiped", "futbol", "boks", "выносл", "энерги", "бег", "марафон", "endurance", "stamina", "running", "cardio", "energy"),
     "health": ("salomat", "sog'l", "immunitet", "vitamin", "здоров", "иммун", "витамин", "health", "immunity", "wellness"),
 }
@@ -111,6 +111,7 @@ class Parsed:
     intent: str = "search"
     facts: dict = field(default_factory=dict)
     goal: str | None = None
+    recomp: bool = False  # fat loss AND muscle in one message (body recomposition)
     concept: str | None = None
     text: str = ""
 
@@ -218,7 +219,11 @@ def parse(text: str) -> Parsed:
     both = f"{t} {latin}"
     p = Parsed(text=t, facts=extract_facts(t))
     goal_hay = re.sub(r"\b(?:mushak|muskul|мышц|muscle)\w*", " ", both) if _has(both, SORE) else both  # "mushagim og'riyapti" is soreness, not a mass goal
-    p.goal = next((g for g, stems in GOALS.items() if _has(goal_hay, stems)), None)
+    found = [g for g, stems in GOALS.items() if _has(goal_hay, stems)]
+    # "похудеть и подтянуть мышцы", "ozib mushak chiqarmoqchiman": losing fat while keeping/toning muscle is a cut
+    # (calorie deficit + high protein), never a bulk -- weight loss wins over a muscle word in the same message
+    p.goal = "weight_loss" if "weight_loss" in found else (found[0] if found else None)
+    p.recomp = "weight_loss" in found and "muscle" in found
     p.concept = next(iter(concepts_in(both)), None)
     for intent in ("operator", "faq_order", "faq_returns", "faq_original", "faq_referral", "faq_loyalty", "faq_payment", "faq_delivery", "faq_stores", "faq_brands", "faq_flavours", "usage", "recommend"):
         hay = re.sub(r"qayerdan\w*", " ", both) if intent == "faq_stores" else both  # "qayerdan olsam" asks where to get it, not the shop address

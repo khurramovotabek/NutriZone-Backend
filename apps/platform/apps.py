@@ -38,6 +38,10 @@ class PlatformConfig(AppConfig):
         from apps.platform.infrastructure.admin_labels import install as install_admin_labels
 
         install_admin_labels()
+
+        from apps.platform.infrastructure.admin_page_size import install as install_admin_page_size
+
+        install_admin_page_size()
         _localize_admin_descriptions_on_first_request()
 
         from apps.platform.infrastructure.health import (

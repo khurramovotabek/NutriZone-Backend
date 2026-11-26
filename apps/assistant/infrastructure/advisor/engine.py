@@ -16,7 +16,7 @@ from asgiref.sync import sync_to_async
 from django.utils import timezone
 
 from apps.assistant.infrastructure import knowledge, tools
-from apps.assistant.infrastructure.advisor import brain, catalog, context, expert, kb, needs, nlu, reco, talk
+from apps.assistant.infrastructure.advisor import brain, catalog, context, expert, kb, needs, nlu, reco, talk, tone
 
 logger = logging.getLogger("nutrizone.assistant.local")
 LOCALES = ("uz", "ru", "en")
@@ -75,6 +75,10 @@ def recommend_answer(profile: dict, loc: str) -> tuple[str, list[str], list[str]
             "ru": {"under": "дефицит веса", "normal": "норма", "over": "избыточный вес", "obese": "ожирение"},
             "en": {"under": "underweight", "normal": "normal", "over": "overweight", "obese": "obese"}}[loc]
     lines = [f"{L[0]} {_profile_line(profile, loc)}"]
+    if profile.get("recomp"):
+        lines.append({"uz": "_Yog'ni yo'qotib, mushakni saqlash (rekompozitsiya): kaloriya biroz kam, oqsil yuqori, kuch mashg'uloti haftada 3–4 marta._",
+                      "ru": "_Сбросить жир и сохранить мышцы (рекомпозиция): небольшой дефицит калорий, много белка, силовые 3–4 раза в неделю._",
+                      "en": "_Lose fat, keep muscle (recomposition): a small calorie deficit, high protein, strength training 3–4× a week._"}[loc])
     if n:
         kcal = {"uz": "kkal", "ru": "ккал", "en": "kcal"}[loc]
         lines += ["", f"**{L[1]}:**", f"• {L[10]}: {n.bmi} ({band[n.bmi_band]})", f"• {L[2]}: ~{money(n.calories)} {kcal}",
@@ -263,6 +267,8 @@ def detect_locale(text: str, fallback: str) -> str:
             return "en"
         if uz >= 1 and fallback != "uz" and en == 0:
             return "uz"
+        if fallback == "ru" and en == 0 and len(words) >= 2:
+            return "uz"  # Russian is typed in Cyrillic: a Latin, non-English sentence ("pulimni qaytaring") is Uzbek
     return fallback
 
 
@@ -271,6 +277,7 @@ def answer(conv_meta: dict, text: str, loc: str) -> tuple[str, list[str], list[s
     # the language of this message, else the one the shopper last wrote in, else the site's
     loc = detect_locale(text, (conv_meta or {}).get("lang") or loc)
     reply, ids, chips, meta = _answer(conv_meta, text, loc)
+    reply, chips = tone.soften(reply, chips, text, loc)  # an upset shopper hears an apology and the way to a person first
     meta["lang"] = loc
     if len(ids) >= 2:  # "qaysi biri yaxshi?" next turn compares exactly these
         meta["last_shown"] = [str(i) for i in ids[:6]]
@@ -297,6 +304,7 @@ def _answer(conv_meta: dict, text: str, loc: str) -> tuple[str, list[str], list[
     profile.update(p.facts)
     if p.goal:
         profile["goal"] = p.goal
+        profile["recomp"] = p.recomp
     t = p.text
     repick = meta.get("last") == "recommend" and any(s in t for s in CHEAPER)
     if repick:

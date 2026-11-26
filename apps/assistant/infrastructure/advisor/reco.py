@@ -84,6 +84,8 @@ def stack(profile: dict, locale: str, needs=None) -> list[tuple[str, dict]]:
     kinds = list(STACKS.get(goal, STACKS["health"]))
     if goal == "muscle" and not (needs and needs.bmi_band == "under"):
         kinds.remove("gainer")
+    if goal == "weight_loss" and profile.get("recomp"):
+        kinds = ["protein", "creatine", "carnitine"]  # cutting while keeping muscle: creatine protects strength in a deficit
     if (profile.get("age") or 99) < 18:
         kinds = [k for k in kinds if k in ("protein", "vitamin", "omega")]  # no creatine / stimulants for minors
     budget = profile.get("budget")

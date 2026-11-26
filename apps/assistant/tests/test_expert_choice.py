@@ -153,7 +153,7 @@ def test_personal_dose_from_weight_and_goal(shop):
     reply, ids, _c, meta = answer({}, "90 kg, massa olmoqchiman. kreatinni qanday ichaman?", "uz")
     assert meta["last"] == "personal_usage" and "kuniga **5 g**" in reply and ids == [str(shop["creatine"].id)]
     reply, *_r, meta = answer({"profile": {"weight": 70, "goal": "weight_loss"}}, "протеин как принимать", "ru")
-    assert "140–168 г белка" in reply
+    assert "126–154 г белка" in reply  # 1.8–2.2 g/kg while cutting
 
 
 def test_stack_answer_has_a_daily_schedule(shop):
@@ -244,3 +244,23 @@ def test_kidneys_are_not_kids(db):
 def test_fat_loss_protein_is_an_isolate(shop):
     reply, ids, _c, meta = answer({}, "ozish uchun eng yaxshi protein qaysi", "uz")
     assert meta["last"] == "expert_pick" and ids == [str(shop["iso"].id)] and "Ozish uchun — izolyat" in reply
+
+
+def test_cut_and_tone_wins_over_a_muscle_word_and_counts_lean_mass(shop):
+    from apps.assistant.infrastructure.advisor import needs, nlu
+
+    assert nlu.parse("хочу похудеть и подтянуть мышцы").goal == "weight_loss"
+    assert nlu.parse("ozib mushak chiqarmoqchiman").recomp is True
+    assert nlu.parse("massa olmoqchiman").goal == "muscle"
+    n = needs.compute({"height": 165, "weight": 82, "age": 35, "goal": "weight_loss", "sex": "f"})
+    assert (n.protein_low, n.protein_high) == (123, 150)  # on the BMI-25 weight (68 kg), not 82 kg
+
+
+def test_an_upset_shopper_hears_an_apology_and_gets_the_operator_chip(shop):
+    from apps.assistant.infrastructure.advisor import tone
+
+    reply, _ids, chips, _m = answer({"lang": "ru"}, "bu narsa umuman ishlamadi, pulimni qaytaring!!!", "uz")
+    assert reply.startswith("Noqulaylik uchun chin dildan uzr") and "operator" in reply
+    assert chips[0] == "Operator bilan bog'lanish"
+    assert tone.mood("ВЫ МЕНЯ ОБМАНУЛИ ГДЕ ЗАКАЗ") == "upset" and tone.mood("srochno kreatin kerak") == "urgent"
+    assert tone.mood("kreatin qanday ichiladi?") is None

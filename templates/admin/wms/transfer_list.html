@@ -51,6 +51,6 @@
       {% if can_create %}<a class="nzp-btn nzp-btn-primary" href="{% url 'admin:stores_stocktransfer_new' %}"><i class="fas fa-plus" aria-hidden="true"></i> {% translate "Yangi transfer" %}</a>{% endif %}</div>
     {% endif %}
   </section>
-  {% if cl.result_count > cl.list_per_page %}<div class="nzp-pagination">{% pagination cl %}</div>{% endif %}
+  {% if cl.result_count > 25 %}<div class="nzp-pagination">{% pagination cl %}</div>{% endif %}
 </div>
 {% endblock %}

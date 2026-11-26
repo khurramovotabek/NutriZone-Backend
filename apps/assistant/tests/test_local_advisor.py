@@ -34,7 +34,7 @@ class TestNlu:
 
 def test_needs_mifflin():
     n = needs.compute({"height": 180, "weight": 80, "age": 25, "goal": "muscle", "activity": "medium"})
-    assert (n.protein_low, n.protein_high, n.bmi) == (144, 176, 24.7)
+    assert (n.protein_low, n.protein_high, n.bmi) == (128, 176, 24.7)  # ISSN 1.6–2.2 g/kg
     assert 2900 < n.calories < 3100
     assert needs.missing({"height": 180}) == ["weight", "age", "goal"]
 

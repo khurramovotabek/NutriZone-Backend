@@ -22,6 +22,13 @@ TZ = ZoneInfo("Asia/Tashkent")
 BOT = "orders"
 
 
+
+SHOWN = 25  # rows per table in a chat message; the rest is counted, never silently dropped
+
+
+def _more(total: int, where: str) -> str:
+    return R.p(R.i(f"… va yana {total - SHOWN} ta — to'liq ro'yxat: {where}")) if total > SHOWN else ""
+
 def token() -> str:
     return getattr(settings, "TELEGRAM_ORDERS_BOT_TOKEN", None) or ""
 
@@ -103,21 +110,24 @@ def today_doc(scope: staff_access.Scope, focus: str = "today") -> R.RichDoc:
     if focus in ("today", "sales"):
         rows = [[R.e(timezone.localtime(r["when"], TZ).strftime("%H:%M")), R.code(r["receipt_number"] or str(r["id"])[:8]),
                  R.e(store_names.get(r["branch_id"], "—")) if scope.all_access or len(scope.stores) > 1 else R.e(people.get(r["cashier_id"], "—")),
-                 R.e(f"{r['units']} dona"), R.b(num(r["revenue"]))] for r in sales[:25]]
+                 R.e(f"{r['units']} dona"), R.b(num(r["revenue"]))] for r in sales[:SHOWN]]
         third = "Filial" if scope.all_access or len(scope.stores) > 1 else "Kassir"
         doc.add(R.h(3, "🧾 Kassa savdolari"),
-                R.table(["Vaqt", "Chek", third, "Soni", "Summa"], rows, align=["center", "left", "left", "center", "right"]) if rows else R.p(R.i("Bugun hali kassa savdosi yo'q")))
+                R.table(["Vaqt", "Chek", third, "Soni", "Summa"], rows, align=["center", "left", "left", "center", "right"]) if rows else R.p(R.i("Bugun hali kassa savdosi yo'q")),
+                _more(len(sales), "Dashboard → Kassa → Savdolar"))
     if focus in ("today", "orders"):
         rows = [[R.e(timezone.localtime(o["placed_at"], TZ).strftime("%H:%M") if o["placed_at"] else "—"), R.code(o["order_number"]),
                  R.e(("🏪 " if o["fulfilment_method"] == "pickup" else "🚚 ") + (o["shipping_recipient_name"] or "")[:18]),
-                 R.e(" ".join(STATUS.get(o["status"], ("", o["status"])))), R.b(num(o["amount"] or 0))] for o in orders[:25]]
+                 R.e(" ".join(STATUS.get(o["status"], ("", o["status"])))), R.b(num(o["amount"] or 0))] for o in orders[:SHOWN]]
         doc.add(R.h(3, "🛒 Bugungi onlayn buyurtmalar"),
-                R.table(["Vaqt", "Raqam", "Mijoz", "Holat", "Summa"], rows, align=["center", "left", "left", "left", "right"]) if rows else R.p(R.i("Bugun onlayn buyurtma yo'q")))
+                R.table(["Vaqt", "Raqam", "Mijoz", "Holat", "Summa"], rows, align=["center", "left", "left", "left", "right"]) if rows else R.p(R.i("Bugun onlayn buyurtma yo'q")),
+                _more(len(orders), "Dashboard → Buyurtmalar"))
     if focus in ("today", "open") and open_orders:
         rows = [[R.code(o["order_number"]), R.e(store_names.get(o["fulfilment_store_id"], "—")), R.e(" ".join(STATUS.get(o["status"], ("", o["status"])))),
-                 R.e(timezone.localtime(o["placed_at"], TZ).strftime("%d.%m %H:%M") if o["placed_at"] else "—"), R.b(num(o["amount"] or 0))] for o in open_orders[:25]]
+                 R.e(timezone.localtime(o["placed_at"], TZ).strftime("%d.%m %H:%M") if o["placed_at"] else "—"), R.b(num(o["amount"] or 0))] for o in open_orders[:SHOWN]]
         block = R.table(["Raqam", "Filial", "Holat", "Berilgan", "Summa"], rows, align=["left", "left", "left", "center", "right"])
-        doc.add(R.h(3, "⏳ Jarayondagi buyurtmalar") if focus == "open" else "", block if focus == "open" else R.details(f"⏳ Jarayondagi buyurtmalar — {len(open_orders)} ta", block))
+        doc.add(R.h(3, "⏳ Jarayondagi buyurtmalar") if focus == "open" else "", block if focus == "open" else R.details(f"⏳ Jarayondagi buyurtmalar — {len(open_orders)} ta", block),
+                _more(len(open_orders), "Dashboard → Buyurtmalar"))
     doc.add(R.footer("NutriZone Orders · yangi savdo va buyurtmalar shu chatga avtomatik keladi"))
     doc.fallback = (f"📋 <b>{R.e(title)}</b>\n🧾 Kassa: {len(sales)} ta · {som(revenue)}\n🛒 Onlayn: {len(orders)} ta · {som(online_value)}\n⏳ Jarayonda: {len(open_orders)} ta")
     return doc

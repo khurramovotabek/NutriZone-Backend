@@ -59,6 +59,6 @@
     <div class="nzp-empty"><h3>{% translate "Nothing found" %}</h3><p>{% translate "Try a different search or filter." %}</p><a class="nzp-btn nzp-btn-ghost" href="?">{% translate "Clear filters" %}</a></div>
     {% endif %}
   </section>
-  {% if cl.result_count > cl.list_per_page %}<div class="nzp-pagination">{% pagination cl %}</div>{% endif %}
+  {% if cl.result_count > 25 %}<div class="nzp-pagination">{% pagination cl %}</div>{% endif %}
 </div>
 {% endblock %}

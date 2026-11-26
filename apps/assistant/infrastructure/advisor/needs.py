@@ -7,7 +7,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 
 ACTIVITY = {"low": 1.375, "medium": 1.55, "high": 1.725}
-PROTEIN_G_PER_KG = {"muscle": (1.8, 2.2), "weight_loss": (2.0, 2.4), "endurance": (1.4, 1.7), "health": (1.2, 1.6)}
+PROTEIN_G_PER_KG = {"muscle": (1.6, 2.2), "weight_loss": (1.8, 2.2), "endurance": (1.4, 1.7), "health": (1.2, 1.6)}
 CALORIE_SHIFT = {"muscle": 1.10, "weight_loss": 0.80, "endurance": 1.05, "health": 1.0}
 REQUIRED = ("height", "weight", "age", "goal")
 
@@ -37,8 +37,11 @@ def compute(profile: dict) -> Needs | None:
     bmi = round(w / (h / 100) ** 2, 1)
     band = "under" if bmi < 18.5 else "normal" if bmi < 25 else "over" if bmi < 30 else "obese"
     lo, hi = PROTEIN_G_PER_KG.get(goal, (1.4, 1.8))
+    # protein follows lean, not total, mass: above BMI 25 it is counted on the weight at BMI 25 (an 82 kg / 165 cm
+    # woman cutting needs ~120-150 g, not 200 g -- ISSN position on protein for overweight adults)
+    ref_w = min(w, 25 * (h / 100) ** 2)
     return Needs(
         bmi=bmi, bmi_band=band, calories=int(round(tdee * CALORIE_SHIFT.get(goal, 1.0), -1)),
-        protein_low=int(round(w * lo)), protein_high=int(round(w * hi)), water_l=round(w * 0.035, 1),
+        protein_low=int(round(ref_w * lo)), protein_high=int(round(ref_w * hi)), water_l=round(w * 0.035, 1),
         creatine_g=None if goal == "health" or age < 18 else (5 if w >= 80 else 3),
     )

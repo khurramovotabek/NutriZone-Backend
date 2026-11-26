@@ -61,6 +61,6 @@
     <div class="nzp-empty"><span class="nzp-empty-icon" style="--c:#10b981"><i class="fas fa-circle-check" aria-hidden="true"></i></span><h3>{% translate "Hammasi mos keladi" %}</h3><p>{% translate "To'lovlar, buyurtmalar va provayder ma'lumotlari o'rtasida nomuvofiqlik topilmadi." %}</p></div>
     {% endif %}
   </section>
-  {% if cl.result_count > cl.list_per_page %}<div class="nzp-pagination">{% pagination cl %}</div>{% endif %}
+  {% if cl.result_count > 25 %}<div class="nzp-pagination">{% pagination cl %}</div>{% endif %}
 </div>
 {% endblock %}

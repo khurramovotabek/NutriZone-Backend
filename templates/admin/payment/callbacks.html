@@ -65,6 +65,6 @@
     <div class="nzp-empty"><span class="nzp-empty-icon" style="--c:#8b5cf6"><i class="fas fa-satellite-dish" aria-hidden="true"></i></span><h3>{% translate "Jurnal bo'sh" %}</h3><p>{% translate "Provayder birinchi so'rovni yuborganda u shu yerda paydo bo'ladi." %}</p></div>
     {% endif %}
   </section>
-  {% if cl.result_count > cl.list_per_page %}<div class="nzp-pagination">{% pagination cl %}</div>{% endif %}
+  {% if cl.result_count > 25 %}<div class="nzp-pagination">{% pagination cl %}</div>{% endif %}
 </div>
 {% endblock %}

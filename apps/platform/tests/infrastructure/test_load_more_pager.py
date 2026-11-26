@@ -9,7 +9,7 @@ from apps.platform.templatetags.nzi import nz_pager
 def _cl(count, page, per_page=25):
     pag = Paginator(range(count), per_page)
     return SimpleNamespace(page_num=page, paginator=pag, list_per_page=per_page, result_count=count,
-                           get_query_string=lambda d: f"?p={d['p']}")
+                           get_query_string=lambda d, remove=None: "?" + "&".join(f"{k}={v}" for k, v in d.items()))
 
 
 def test_more_is_the_rows_the_next_page_adds():

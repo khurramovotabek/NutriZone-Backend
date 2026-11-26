@@ -106,6 +106,9 @@ class SubmitReview:
         self._ctx.audit().updated(entity_type="Review", entity_id=str(review_id), before={}, after={"status": "published"})
         self._ctx.metric("reviews_submitted_total")
         self._ctx.metric("reviews_published_total")
+        from apps.reviews.infrastructure.rewards import safe_award
+
+        safe_award(saved.id)  # coins for a review written after the goods were received (rewards.py), after commit
         return saved
 
 

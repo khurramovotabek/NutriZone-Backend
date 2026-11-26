@@ -110,6 +110,9 @@ def replenish_reminders() -> int:
 
 
 _MORE_TEXT = {"uz": " va yana {n} ta mahsulot", "ru": " и ещё {n} товар(ов)", "en": " and {n} more"}
+_REWARD_TEXT = {"uz": "\n\n🎁 Har bir mahsulot sharhi ({stars}★, kamida bir-ikki gap) uchun {coins} NutriZone Coins sovg'a.",
+                "ru": "\n\n🎁 За каждый отзыв о товаре ({stars}★, хотя бы пара предложений) — {coins} NutriZone Coins в подарок.",
+                "en": "\n\n🎁 {coins} NutriZone Coins for each product review ({stars}★, a sentence or two)."}
 
 
 @shared_task(queue="default", name="ordering.review_requests")
@@ -119,7 +122,15 @@ def review_requests() -> int:
     from apps.ordering.infrastructure.review_requests import due
     from apps.products.infrastructure.models import ProductTranslation
 
+    from apps.notifications.infrastructure.notify import fmt
+    from apps.reviews.infrastructure.models import ReviewRequestSettings
+
     asks = due()
+    cfg = ReviewRequestSettings.load()
+    reward = {lang: "" for lang in _REWARD_TEXT}
+    if cfg.reward_enabled and cfg.reward_coins:
+        stars = "4–5" if cfg.reward_min_rating == 4 else ("5" if cfg.reward_min_rating == 5 else f"{cfg.reward_min_rating}+")
+        reward = {lang: t.format(coins=fmt(cfg.reward_coins), stars=stars) for lang, t in _REWARD_TEXT.items()}
     names: dict = {}
     slugs: dict = {}
     for pid, locale, name, slug in ProductTranslation.objects.filter(product_id__in={p for a in asks for p in a.product_ids}).values_list("product_id", "locale_code", "name", "slug"):
@@ -132,8 +143,8 @@ def review_requests() -> int:
         product_names = names.get(first) or {}
         fallback = product_names.get("uz") or next(iter(product_names.values()), "")
         extra = len(ask.product_ids) - 1
-        i18n = {lang: {"product": product_names.get(lang) or fallback, "more": more.format(n=extra) if extra else ""} for lang, more in _MORE_TEXT.items()}
-        notify(ask.customer_id, "review_request", {"product": fallback, "more": i18n["uz"]["more"], "i18n": i18n},
+        i18n = {lang: {"product": product_names.get(lang) or fallback, "more": more.format(n=extra) if extra else "", "reward": reward[lang]} for lang, more in _MORE_TEXT.items()}
+        notify(ask.customer_id, "review_request", {"product": fallback, "more": i18n["uz"]["more"], "reward": reward["uz"], "i18n": i18n},
                link=f"/products/{slugs[first]}#reviews" if first in slugs else "/orders", dedupe_key=f"review_request:{ask.ref}")
         sent += 1
     return sent

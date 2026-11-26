@@ -7,6 +7,7 @@
     {% if pagination_required %}<b><span data-nz-from-cell>{{ pg.start }}</span>–{{ pg.end }}</b> / {{ cl.result_count }}{% else %}<b>{{ cl.result_count }}</b>{% endif %}
     <span class="nz-pager-noun">{% if cl.result_count == 1 %}{{ cl.opts.verbose_name }}{% else %}{{ cl.opts.verbose_name_plural }}{% endif %}</span>
     {% if pagination_required %}<span class="nz-pager-bar" role="progressbar" aria-label="{% translate "Ko'rsatilgan" %}" aria-valuemin="0" aria-valuemax="100" aria-valuenow="{{ pg.pct }}"><span style="width:{{ pg.pct }}%"></span></span>{% endif %}
+    {% if pg.sizes %}<span class="nz-pager-sizes" role="group" aria-label="{% translate 'Sahifada' %}"><span class="nz-pager-sizes-l">{% translate 'Sahifada' %}:</span>{% for s in pg.sizes %}{% if s.current %}<span class="nz-pager-size is-current" aria-current="true">{{ s.n }}</span>{% else %}<a class="nz-pager-size" href="{{ s.url }}" rel="nofollow">{{ s.n }}</a>{% endif %}{% endfor %}</span>{% endif %}
     {% if show_all_url %}<a class="nz-pager-all" href="{{ show_all_url }}">{% translate 'Show all' %}</a>{% endif %}
     {% if cl.formset and cl.result_count %}<input type="submit" name="_save" class="btn btn-sm btn-success" value="{% translate 'Save' %}">{% endif %}
   </div>
@@ -24,6 +25,7 @@
       {% else %}<li class="nz-pager-narrow"><a class="nz-pager-num" href="{{ it.url }}" aria-label="{% blocktranslate with n=it.n %}Page {{ n }}{% endblocktranslate %}">{{ it.n }}</a></li>{% endif %}
     {% endfor %}
     <li class="nz-pager-of" aria-hidden="true">{{ pg.current }} / {{ pg.total }}</li>
+    {% if pg.jump %}<li class="nz-pager-jump-li"><form class="nz-pager-jump" data-nz-jump="{{ pg.jump }}" data-nz-total="{{ pg.total }}"><label><span class="sr-only">{% translate "Sahifaga o'tish" %}</span><input type="number" inputmode="numeric" min="1" max="{{ pg.total }}" placeholder="№" aria-label="{% translate "Sahifaga o'tish" %}"></label><button type="submit" aria-label="{% translate "O'tish" %}"><i class="fas fa-arrow-right" aria-hidden="true"></i></button></form></li>{% endif %}
     <li>{% if pg.next %}<a class="nz-pager-step" href="{{ pg.next }}" rel="next" aria-label="{% translate 'Next' %}"><span>{% translate 'Next' %}</span><i class="fas fa-chevron-right" aria-hidden="true"></i></a>{% else %}<span class="nz-pager-step is-off" aria-disabled="true"><span>{% translate 'Next' %}</span><i class="fas fa-chevron-right" aria-hidden="true"></i></span>{% endif %}</li>
   </ul>
   {% endif %}

@@ -52,6 +52,6 @@
       {% if can_add %}<a class="nzp-btn nzp-btn-primary" href="{% url 'admin:pricing_couponmodel_add' %}"><i class="fas fa-plus" aria-hidden="true"></i> {% translate "New coupon" %}</a>{% endif %}</div>
     {% endif %}
   </section>
-  {% if cl.result_count > cl.list_per_page %}<div class="nzp-pagination">{% pagination cl %}</div>{% endif %}
+  {% if cl.result_count > 25 %}<div class="nzp-pagination">{% pagination cl %}</div>{% endif %}
 </div>
 {% endblock %}

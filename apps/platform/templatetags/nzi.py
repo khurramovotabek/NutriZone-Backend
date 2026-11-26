@@ -28,6 +28,8 @@ def nz_pager(cl, page_range) -> dict:
     filters, search and ordering (ChangeList.get_query_string)."""
     from django.contrib.admin.views.main import PAGE_VAR
 
+    from apps.platform.infrastructure.admin_page_size import PARAM as PER, SIZES
+
     current, total = cl.page_num, cl.paginator.num_pages
     link = lambda n: cl.get_query_string({PAGE_VAR: n})  # noqa: E731
     def entry(i):
@@ -55,6 +57,10 @@ def nz_pager(cl, page_range) -> dict:
         # share of the list on screen up to this page (the bar under the counter; nz-load-more.js redraws it after "Yana ko'rsatish")
         "pct": round(min(current * cl.list_per_page, cl.result_count) * 100 / cl.result_count) if cl.result_count else 100,
         "last": current >= total,
+        # "Sahifada: 25 · 50 · 100 · 200" (admin_page_size.py) -- each link keeps filters/search/ordering, restarts at page 1
+        "sizes": [{"n": n, "url": cl.get_query_string({PER: n}, remove=[PAGE_VAR]), "current": n == cl.list_per_page}
+                  for n in sorted(set(SIZES) | {cl.list_per_page})] if cl.result_count > min(SIZES) else [],
+        "jump": cl.get_query_string({PAGE_VAR: "__P__"}) if total > 5 else "",
     }
 
 

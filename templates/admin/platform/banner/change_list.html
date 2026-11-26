@@ -126,7 +126,7 @@
   </form>
 
   {% if cl.result_list and not cl.query and not nz_filter_active and nz_can_change %}<p class="nzp-hint"><i class="fas fa-hand-pointer" aria-hidden="true"></i> {% translate "Tip: drag a card by its handle to reorder. The order is saved automatically." %}</p>{% endif %}
-  {% if cl.result_count > cl.list_per_page %}<div class="nzp-pagination">{% pagination cl %}</div>{% endif %}
+  {% if cl.result_count > 25 %}<div class="nzp-pagination">{% pagination cl %}</div>{% endif %}
   <div class="nzp-toast" data-nzp-toast role="status" aria-live="polite" hidden></div>
 </div>
 {% endblock %}

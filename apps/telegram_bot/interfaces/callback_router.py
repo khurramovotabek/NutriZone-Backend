@@ -324,7 +324,7 @@ def handle_callback(callback_query: dict) -> None:
 
     try:
         if namespace == "menu":
-            _handle_menu(user, chat_id, action, arg, lang)
+            _handle_menu(user, chat_id, action, arg, lang, message)
         elif namespace == "catalog":
             _handle_catalog(user, chat_id, action, arg, lang)
         elif namespace == "cart":
@@ -865,9 +865,12 @@ def _handle_pay(user, chat_id: int, action: str, order_number: str | None, lang:
     _send(chat_id, t(key, lang, order_number=order_number))
 
 
-def _handle_menu(user, chat_id: int, action: str, arg: str | None, lang: str) -> None:
+def _handle_menu(user, chat_id: int, action: str, arg: str | None, lang: str, message: dict | None = None) -> None:
+    # "menu:<list>:<page>" -- a pager tap edits the same message in place instead of stacking a new one
+    page = int(arg) if arg and arg.isdigit() else None
+    edit_id = str((message or {}).get("message_id") or "") if page else ""
     if action == "catalog":
-        _show_categories(chat_id, lang)
+        _show_categories(chat_id, lang, page or 1, edit_id)
     elif action == "cart":
         _show_cart(user, chat_id, lang)
     elif action == "home":
@@ -879,9 +882,9 @@ def _handle_menu(user, chat_id: int, action: str, arg: str | None, lang: str) ->
     elif action == "products":
         _show_products_menu(chat_id, lang)
     elif action == "brands":
-        _show_brands(chat_id, lang)
+        _show_brands(chat_id, lang, page or 1, edit_id)
     elif action == "orders":
-        _show_my_orders(user, chat_id, lang)
+        _show_my_orders(user, chat_id, lang, page or 1, edit_id)
     elif action == "social":
         _show_social_links(chat_id, lang)
     elif action == "find":
@@ -938,22 +941,67 @@ def _show_products_menu(chat_id: int, lang: str) -> None:
     _send(chat_id, t("products_menu_title", lang), keyboard)
 
 
-def _show_brands(chat_id: int, lang: str) -> None:
+LIST_PER_PAGE = 16  # brands / categories per screen, two per row
+
+
+def _pages(n: int, per: int) -> int:
+    return max(1, (n + per - 1) // per)
+
+
+def _pager_row(base: str, page: int, pages: int) -> list:
+    """◀️ 2 / 5 ▶️ under a list -- `base` + ":<page>" is the callback (menu:brands:3); the ends show a dot, not a dead arrow."""
+    if pages <= 1:
+        return []
+    prev = {"text": "◀️", "callback_data": f"{base}:{page - 1}"} if page > 1 else {"text": "·", "callback_data": "pc:noop"}
+    nxt = {"text": "▶️", "callback_data": f"{base}:{page + 1}"} if page < pages else {"text": "·", "callback_data": "pc:noop"}
+    return [[prev, {"text": f"{page} / {pages}", "callback_data": "pc:noop"}, nxt]]
+
+
+def _two_columns(buttons: list) -> list:
+    return [buttons[i:i + 2] for i in range(0, len(buttons), 2)]
+
+
+def _send_or_edit(chat_id: int, edit_id: str, text: str, keyboard: list) -> None:
+    if edit_id:
+        from apps.notifications.infrastructure import composition as notifications_composition
+
+        try:
+            notifications_composition.build_telegram_gateway().edit_message_text(str(chat_id), edit_id, text, inline_keyboard=keyboard)
+            return
+        except Exception:  # noqa: BLE001 -- e.g. the message was a photo: send a fresh one
+            pass
+    _send(chat_id, text, keyboard)
+
+
+def _show_brands(chat_id: int, lang: str, page: int = 1, edit_id: str = "") -> None:
     from apps.telegram_bot.application.services.shopping import TelegramCatalogService
 
     brands = [b for b in TelegramCatalogService().list_brands(locale=lang) if b.get("name")]  # a brand with no translation for the active locale yields an empty name -- never render it as a blank, useless button
     if not brands:
         _send(chat_id, t("no_brands", lang), [[{"text": t("home_button", lang), "callback_data": "menu:home"}]])
         return
-    keyboard = [[{"text": b["name"], "callback_data": f"catalog:brand:{b['id']}"}] for b in brands]
+    pages = _pages(len(brands), LIST_PER_PAGE)
+    page = max(1, min(page, pages))
+    chunk = brands[(page - 1) * LIST_PER_PAGE: page * LIST_PER_PAGE]
+    keyboard = _two_columns([{"text": b["name"][:32], "callback_data": f"catalog:brand:{b['id']}"} for b in chunk])
+    keyboard += _pager_row("menu:brands", page, pages)
     keyboard.append([{"text": t("home_button", lang), "callback_data": "menu:home"}])
-    _send(chat_id, t("brands_list_title", lang), keyboard)
+    title = t("brands_list_title", lang) + (f"\n\n<i>{len(brands)} · {page}/{pages}</i>" if pages > 1 else "")
+    _send_or_edit(chat_id, edit_id, title, keyboard)
 
 
-def _show_my_orders(user, chat_id: int, lang: str) -> None:
+ORDERS_PER_PAGE = 5
+
+
+def _show_my_orders(user, chat_id: int, lang: str, page: int = 1, edit_id: str = "") -> None:
     from apps.telegram_bot.application.services.shopping import TelegramOrderService
 
-    orders, total = TelegramOrderService().list_my_orders(customer_id=user.id, page=1, page_size=5)
+    service = TelegramOrderService()
+    orders, total = service.list_my_orders(customer_id=user.id, page=page, page_size=ORDERS_PER_PAGE)
+    pages = _pages(total, ORDERS_PER_PAGE)
+    if not orders and page > 1:  # the list shrank since the pager was drawn
+        page = pages
+        orders, total = service.list_my_orders(customer_id=user.id, page=page, page_size=ORDERS_PER_PAGE)
     if not orders:
         _send(chat_id, t("no_orders", lang), [[{"text": t("home_button", lang), "callback_data": "menu:home"}]])
         return
@@ -961,13 +1009,34 @@ def _show_my_orders(user, chat_id: int, lang: str) -> None:
     keyboard = []
     for order in orders:
         lines.append(f"\U0001F4E6 #{order['order_number']} — {order['status']}")
-        keyboard.append([{"text": f"{t('btn_order_detail', lang)} #{order['order_number']}", "callback_data": f"ord:detail:{order['order_number']}"}])
+    keyboard = _two_columns([{"text": f"📦 #{order['order_number']}", "callback_data": f"ord:detail:{order['order_number']}"} for order in orders])
+    keyboard += _pager_row("menu:orders", page, pages)
     keyboard.append([{"text": t("home_button", lang), "callback_data": "menu:home"}])
     from apps.telegram_bot.infrastructure import shop_rich
 
-    if _send_rich(chat_id, lambda: shop_rich.orders_doc(orders, lang), keyboard):
+    start = (page - 1) * ORDERS_PER_PAGE + 1
+    build = lambda: shop_rich.orders_doc(orders, lang, total=total, start=start)  # noqa: E731
+    if edit_id and _edit_rich(chat_id, edit_id, build, keyboard):
         return
-    _send(chat_id, "\n".join(lines), keyboard)
+    if _send_rich(chat_id, build, keyboard):
+        return
+    _send_or_edit(chat_id, edit_id, "\n".join(lines), keyboard)
+
+
+def _edit_rich(chat_id: int, message_id: str, build, keyboard: list) -> bool:
+    from django.conf import settings as django_settings
+
+    token = getattr(django_settings, "TELEGRAM_BOT_TOKEN", None)
+    if not token or getattr(django_settings, "NUTRIZONE_TELEGRAM_GATEWAY", "disabled") != "live":
+        return False
+    try:
+        from apps.telegram_bot.infrastructure import rich as R
+
+        R.edit(token, chat_id, message_id, build(), keyboard)
+        return True
+    except Exception:  # noqa: BLE001
+        logger.warning("Telegram bot: rich edit failed for chat %s", chat_id, exc_info=True)
+        return False
 
 
 def _handle_order(user, chat_id: int, action: str, order_number: str | None, lang: str) -> None:
@@ -1171,17 +1240,20 @@ def _set_language(user, chat_id: int, lang_code: str) -> None:
     send_main_menu(chat_id, lang_code)
 
 
-def _show_categories(chat_id: int, lang: str) -> None:
+def _show_categories(chat_id: int, lang: str, page: int = 1, edit_id: str = "") -> None:
     from apps.telegram_bot.application.services.shopping import TelegramCatalogService
 
     categories = TelegramCatalogService().list_categories(locale=lang)
     if not categories:
         _send(chat_id, t("no_categories", lang), [[{"text": t("home_button", lang), "callback_data": "menu:home"}]])
         return
-
-    keyboard = [[{"text": cat["name"], "callback_data": f"catalog:category:{cat['id']}"}] for cat in categories]
+    pages = _pages(len(categories), LIST_PER_PAGE)
+    page = max(1, min(page, pages))
+    chunk = categories[(page - 1) * LIST_PER_PAGE: page * LIST_PER_PAGE]
+    keyboard = _two_columns([{"text": cat["name"][:32], "callback_data": f"catalog:category:{cat['id']}"} for cat in chunk])
+    keyboard += _pager_row("menu:catalog", page, pages)
     keyboard.append([{"text": t("home_button", lang), "callback_data": "menu:home"}])
-    _send(chat_id, t("catalog_title", lang), keyboard)
+    _send_or_edit(chat_id, edit_id, t("catalog_title", lang), keyboard)
 
 
 def _handle_catalog(user, chat_id: int, action: str, arg: str | None, lang: str) -> None:
@@ -1467,9 +1539,16 @@ def _product_card_keyboard(product: dict, page: int, total: int, lang: str, is_w
     ])
     if total > 1:
         keyboard.append([
-            {"text": "◀️", "callback_data": "pc:prev"},
+            {"text": "◀️", "callback_data": "pc:prev"} if page > 1 else {"text": "·", "callback_data": "pc:noop"},
             {"text": f"{page} / {total}", "callback_data": "pc:noop"},
-            {"text": "▶️", "callback_data": "pc:next"},
+            {"text": "▶️", "callback_data": "pc:next"} if page < total else {"text": "·", "callback_data": "pc:noop"},
+        ])
+    if total > 10:  # a long list: jump ten at a time or to either end instead of tapping one by one
+        keyboard.append([
+            {"text": "⏮", "callback_data": "pc:first"},
+            {"text": "−10", "callback_data": "pc:m10"},
+            {"text": "+10", "callback_data": "pc:p10"},
+            {"text": "⏭", "callback_data": "pc:last"},
         ])
     keyboard.append([{"text": t("btn_filter", lang), "callback_data": "flt:menu"}])
     keyboard.append([{"text": t("back_button", lang), "callback_data": "pc:back"}])
@@ -1872,7 +1951,7 @@ def _handle_product_card(user, chat_id: int, action: str, lang: str, message: di
         _send(chat_id, t("session_expired_reopen", lang), [[{"text": t("products_menu_all", lang), "callback_data": "pm:all"}], [{"text": t("home_button", lang), "callback_data": "menu:home"}]])
         return
 
-    if action in ("next", "prev"):
+    if action in ("next", "prev", "first", "last", "m10", "p10"):
         _pc_paginate(user, chat_id, lang, message_id, state, action)
     elif action == "back":
         _pc_back(user, chat_id, lang, message_id, state, action)
@@ -1890,8 +1969,11 @@ def _pc_paginate(user, chat_id: int, lang: str, message_id: str, state: dict, ac
     from apps.telegram_bot.interfaces import catalog_state
 
     _, total = _resolve_current_product(state, lang)
-    page = state.get("page", 1) + (1 if action == "next" else -1)
-    page = max(1, min(page, max(total, 1)))
+    current, last = state.get("page", 1), max(total, 1)
+    page = {"next": current + 1, "prev": current - 1, "p10": current + 10, "m10": current - 10, "first": 1, "last": last}.get(action, current)
+    page = max(1, min(page, last))
+    if page == current:
+        return  # already there: no needless edit (Telegram rejects an unchanged message anyway)
     state = catalog_state.set_page(chat_id, page)
     _render_browse(user, chat_id, lang, state, edit_message_id=message_id)
 

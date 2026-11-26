@@ -147,6 +147,24 @@ class PublicProductReviewListView(APIView):
         return paginated_response(data=rows, pagination={"strategy": "page", "page": pagination.page, "page_size": pagination.page_size, "total_pages": total_pages, "total_count": total})
 
 
+class ReviewRewardInfoView(APIView):
+    """`GET /reviews/reward?product_id=` -- public: the "+N coin for a review" offer, and for a signed-in customer
+    whether THIS product would still earn it (received, not rewarded yet) -- the product page shows it on the form."""
+
+    permission_classes = [AllowAny]
+
+    @extend_schema(tags=["Reviews"], summary="Coin reward for a review (public, personalised when signed in)")
+    def get(self, request):
+        from apps.reviews.infrastructure.rewards import offer
+
+        try:
+            product_id = uuid.UUID(request.query_params.get("product_id", ""))
+        except ValueError:
+            product_id = None
+        user = getattr(request, "user", None)
+        return success_response(data=offer(getattr(user, "id", None) if getattr(user, "is_authenticated", False) else None, product_id))
+
+
 class FeaturedReviewsView(APIView):
     """`GET /reviews/featured` -- public: the best published reviews (4-5 stars, with a comment) for the home page."""
 

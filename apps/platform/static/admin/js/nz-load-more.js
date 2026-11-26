@@ -133,4 +133,18 @@
       .catch(function () { window.location.href = href; })
       .finally(function () { if (btn.isConnected) { btn.removeAttribute("aria-busy"); btn.classList.remove("is-loading"); btn.innerHTML = label; } });
   });
+
+  /* "№ → " jump-to-page box (templates/admin/pagination.html): the URL keeps filters, search and ordering. */
+  document.addEventListener("submit", function (e) {
+    var form = e.target.closest && e.target.closest("[data-nz-jump]");
+    if (!form) return;
+    e.preventDefault();
+    var input = form.querySelector("input"), total = parseInt(form.getAttribute("data-nz-total"), 10) || 1;
+    var n = parseInt(input.value, 10);
+    if (!n || n < 1 || n > total) { input.classList.add("is-bad"); input.focus(); return; }
+    window.location.href = form.getAttribute("data-nz-jump").replace("__P__", String(n));
+  });
+  document.addEventListener("input", function (e) {
+    if (e.target.closest && e.target.closest("[data-nz-jump]")) e.target.classList.remove("is-bad");
+  });
 })();

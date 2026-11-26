@@ -125,3 +125,23 @@ a.nz-pager-num:hover, a.nz-pager-step:hover { background: var(--nz-hover); color
 /* the footer names the shop, not the admin framework's version */
 .app-footer > .float-end { display: none !important; }
 .nz-pager-list[hidden], .nz-pager-all[hidden] { display: none !important; }
+
+/* Page size ("Sahifada: 25 · 50 · 100 · 200") and jump-to-page -- admin_page_size.py / templates/admin/pagination.html */
+.nz-pager-sizes { display: inline-flex; align-items: center; gap: 2px; padding: 2px; border-radius: 999px; border: 1px solid var(--nz-glass-border, var(--nz-border)); background: var(--nz-glass-bg, var(--nz-surface)); }
+.nz-pager-sizes-l { padding: 0 6px 0 8px; font-size: .72rem; font-weight: 600; color: var(--nz-text-muted); }
+.nz-pager-size { min-width: 32px; height: 26px; display: inline-flex; align-items: center; justify-content: center; padding: 0 8px; border-radius: 999px; font-size: .76rem; font-weight: 700; font-variant-numeric: tabular-nums; color: var(--nz-text-secondary); text-decoration: none !important; transition: background .15s, color .15s; }
+a.nz-pager-size:hover { background: var(--nz-hover); color: var(--nz-primary, #3b82f6); }
+.nz-pager-size.is-current { background: var(--nz-primary, #3b82f6); color: #fff; }
+.nz-pager-jump { display: inline-flex; align-items: center; gap: 2px; margin: 0 0 0 4px; padding-left: 6px; border-left: 1px solid var(--nz-border); }
+.nz-pager-jump input { width: 58px; height: 34px; padding: 0 8px; border-radius: 10px; border: 1px solid var(--nz-border); background: transparent; color: var(--nz-text-primary); font-size: .85rem; font-weight: 600; text-align: center; -moz-appearance: textfield; }
+.nz-pager-jump input::-webkit-outer-spin-button, .nz-pager-jump input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+.nz-pager-jump input:focus { outline: 2px solid var(--nz-primary, #3b82f6); outline-offset: 1px; }
+.nz-pager-jump button { width: 34px; height: 34px; border: 0; border-radius: 10px; background: var(--nz-hover); color: var(--nz-primary, #3b82f6); cursor: pointer; }
+.nz-pager-jump input.is-bad { border-color: #dc2626; }
+.nz-pager-list > li.nz-pager-jump-li { display: list-item; list-style: none; }
+@media (max-width: 767px) {
+  .nz-pager-sizes { order: 8; }
+  .nz-pager-jump { padding-left: 4px; }
+  .nz-pager-jump input { width: 48px; height: 40px; font-size: 16px; }
+  .nz-pager-jump button { height: 40px; width: 40px; }
+}

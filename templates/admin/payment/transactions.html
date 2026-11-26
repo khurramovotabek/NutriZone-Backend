@@ -97,7 +97,7 @@
       <a class="nzp-btn nzp-btn-primary" href="{% url 'admin:payment_paymentproviderconfig_changelist' %}"><i class="fas fa-plug" aria-hidden="true"></i> {% translate "To'lov tizimlarini sozlash" %}</a></div>
     {% endif %}
   </section>
-  {% if cl.result_count > cl.list_per_page %}<div class="nzp-pagination">{% pagination cl %}</div>{% endif %}
+  {% if cl.result_count > 25 %}<div class="nzp-pagination">{% pagination cl %}</div>{% endif %}
 </div>
 {{ an.chart|json_script:"pay-chart-data" }}
 <script src="{% static 'admin/vendor/chartjs/chart.umd.js' %}"></script>

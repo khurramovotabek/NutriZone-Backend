@@ -62,6 +62,7 @@ def test_daily_task_sends_one_message_per_purchase_in_each_language(monkeypatch,
     i18n = rows.get().i18n
     assert "Oltin Whey" in i18n["uz"]["title"] and "Золотой Whey" in i18n["ru"]["title"] and "Gold Whey" in i18n["en"]["title"]
     assert "va yana 1 ta mahsulot" in i18n["uz"]["body"] and "and 1 more" in i18n["en"]["body"]
+    assert "1 000 NutriZone Coins" in i18n["uz"]["body"] and "4–5★" in i18n["ru"]["body"]  # the review reward is announced
     assert rows.get().link.startswith("/products/gold-uz-") and rows.get().link.endswith("#reviews")
 
 
@@ -93,5 +94,8 @@ def test_settings_page_opens_and_rejects_a_backwards_window(admin_client):
     assert admin_client.get("/django-admin/reviews/reviewrequestsettings/").status_code == 302
     resp = admin_client.post(url, {"enabled": "on", "ask_after_days": 10, "ask_until_days": 7})
     assert resp.status_code == 200 and ReviewRequestSettings.load().ask_until_days == 14
-    assert admin_client.post(url, {"enabled": "on", "ask_after_days": 3, "ask_until_days": 7}).status_code == 302
-    assert (ReviewRequestSettings.load().ask_after_days, ReviewRequestSettings.load().ask_until_days) == (3, 7)
+    reward = {"reward_enabled": "on", "reward_coins": 1500, "reward_min_rating": 1, "reward_min_chars": 20}
+    assert admin_client.post(url, {"enabled": "on", "ask_after_days": 3, "ask_until_days": 7, **reward}).status_code == 302
+    cfg = ReviewRequestSettings.load()
+    assert (cfg.ask_after_days, cfg.ask_until_days, cfg.reward_coins, cfg.reward_min_rating) == (3, 7, 1500, 1)
+    assert "1 500 coin" in admin_client.get(url).content.decode()

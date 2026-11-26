@@ -160,9 +160,13 @@ KINDS: dict[str, Kind] = {
         ("{product} скоро закончится", "По нашим расчётам, {product} {days_text}. Закажите сейчас — и продолжите без перерыва."),
         ("Your {product} is running low", "By our estimate, your {product} {days_text}. Reorder now to keep going without a break.")),
     "review_request": K("star", "warning", "normal",
-        ("{product} sizga yoqdimi?", "{product}{more} haqida fikringizni yozing — bir necha so'z va yulduzcha boshqa xaridorlarga to'g'ri tanlov qilishga yordam beradi."),
-        ("Как вам {product}?", "Поделитесь впечатлением о {product}{more} — пара слов и звёзды помогут другим покупателям сделать правильный выбор."),
-        ("How was your {product}?", "Tell us what you think of {product}{more} — a few words and stars help other shoppers choose well.")),
+        ("{product} sizga yoqdimi?", "{product}{more} haqida fikringizni yozing — bir necha so'z va yulduzcha boshqa xaridorlarga to'g'ri tanlov qilishga yordam beradi.{reward}"),
+        ("Как вам {product}?", "Поделитесь впечатлением о {product}{more} — пара слов и звёзды помогут другим покупателям сделать правильный выбор.{reward}"),
+        ("How was your {product}?", "Tell us what you think of {product}{more} — a few words and stars help other shoppers choose well.{reward}")),
+    "review_reward": K("coins", "success", "high",
+        ("+{coins} coin — sharhingiz uchun rahmat!", "{product} haqidagi sharhingiz saytda chiqdi va boshqa xaridorlarga yordam beradi. Hisobingizga {coins} coin tushdi. Balans: {balance} coin."),
+        ("+{coins} коинов — спасибо за отзыв!", "Ваш отзыв о {product} опубликован и поможет другим покупателям. На ваш счёт зачислено {coins} коинов. Баланс: {balance} коинов."),
+        ("+{coins} coins — thanks for your review!", "Your review of {product} is live and will help other shoppers. {coins} coins are now in your wallet. Balance: {balance} coins.")),
     "review_reply": K("message-circle", "success", "normal",
         ("Sharhingizga javob berildi", "{product} haqidagi sharhingizga do'kon javob yozdi: {reply}"),
         ("Магазин ответил на ваш отзыв", "Магазин ответил на ваш отзыв о {product}: {reply}"),
@@ -307,7 +311,7 @@ def render(kind: str, ctx: dict) -> dict:
     for lang in LANGS:
         title, body = getattr(spec, lang)
         per_lang = _Safe(data)
-        for key in ("title", "body", "note", "until", "discount", "method", "product", "days_text", "more"):  # per-language overrides: ctx["i18n"]["ru"]["until"]
+        for key in ("title", "body", "note", "until", "discount", "method", "product", "days_text", "more", "reward"):  # per-language overrides: ctx["i18n"]["ru"]["until"]
             v = ((ctx.get("i18n") or {}).get(lang) or {}).get(key)
             if v is not None:
                 per_lang[key] = v

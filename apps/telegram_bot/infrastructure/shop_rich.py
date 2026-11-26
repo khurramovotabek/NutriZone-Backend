@@ -45,7 +45,7 @@ T = {
         "warnings": "⚠️ Ogohlantirish", "flavours": "🍓 Ta'mlar", "add": "🛒 Savatga", "buy": "⚡ Hozir sotib olish", "site": "🌐 Saytda ochish",
         "cart": "Savatingiz", "cart_sub": "{units} dona mahsulot", "col_qty": "Soni", "col_sum": "Summa", "items": "Mahsulotlar", "total": "JAMI",
         "coins_hint": "🪙 Hisobingizda {coins} coin bor — rasmiylashtirishda to'lovga ishlatishingiz mumkin.", "price_pending": "narx aniqlanmoqda",
-        "orders": "Buyurtmalarim", "orders_sub": "Oxirgi {n} ta buyurtma", "col_order": "Buyurtma", "col_date": "Sana", "col_status": "Holat",
+        "orders": "Buyurtmalarim", "orders_sub": "Oxirgi {n} ta buyurtma", "orders_page": "{a}–{b} / jami {n} ta buyurtma", "col_order": "Buyurtma", "col_date": "Sana", "col_status": "Holat",
         "order": "Buyurtma", "progress": "📍 Buyurtma holati", "address": "🏠 Yetkazish manzili", "map": "📍 Yetkazish nuqtasi", "pickup": "🏪 Do'kondan olib ketish",
         "coins_used": "🪙 Coins bilan to'landi", "to_pay": "To'lanadi", "discount_row": "Chegirma", "track": "📦 Buyurtmani kuzatish", "footer": "NutriZone · sog'lom tanlov",
     },
@@ -60,7 +60,7 @@ T = {
         "warnings": "⚠️ Предупреждение", "flavours": "🍓 Вкусы", "add": "🛒 В корзину", "buy": "⚡ Купить сейчас", "site": "🌐 Открыть на сайте",
         "cart": "Ваша корзина", "cart_sub": "{units} шт. товаров", "col_qty": "Кол-во", "col_sum": "Сумма", "items": "Товары", "total": "ИТОГО",
         "coins_hint": "🪙 На счёте {coins} coin — можно оплатить ими часть заказа.", "price_pending": "цена уточняется",
-        "orders": "Мои заказы", "orders_sub": "Последние {n} заказов", "col_order": "Заказ", "col_date": "Дата", "col_status": "Статус",
+        "orders": "Мои заказы", "orders_sub": "Последние {n} заказов", "orders_page": "{a}–{b} из {n} заказов", "col_order": "Заказ", "col_date": "Дата", "col_status": "Статус",
         "order": "Заказ", "progress": "📍 Статус заказа", "address": "🏠 Адрес доставки", "map": "📍 Точка доставки", "pickup": "🏪 Самовывоз из магазина",
         "coins_used": "🪙 Оплачено coins", "to_pay": "К оплате", "discount_row": "Скидка", "track": "📦 Отследить заказ", "footer": "NutriZone · здоровый выбор",
     },
@@ -75,7 +75,7 @@ T = {
         "warnings": "⚠️ Warning", "flavours": "🍓 Flavours", "add": "🛒 Add to cart", "buy": "⚡ Buy now", "site": "🌐 Open on the website",
         "cart": "Your cart", "cart_sub": "{units} item(s)", "col_qty": "Qty", "col_sum": "Sum", "items": "Items", "total": "TOTAL",
         "coins_hint": "🪙 You have {coins} coins — spend them at checkout.", "price_pending": "price pending",
-        "orders": "My orders", "orders_sub": "Last {n} orders", "col_order": "Order", "col_date": "Date", "col_status": "Status",
+        "orders": "My orders", "orders_sub": "Last {n} orders", "orders_page": "{a}–{b} of {n} orders", "col_order": "Order", "col_date": "Date", "col_status": "Status",
         "order": "Order", "progress": "📍 Order status", "address": "🏠 Delivery address", "map": "📍 Delivery point", "pickup": "🏪 Store pickup",
         "coins_used": "🪙 Paid with coins", "to_pay": "To pay", "discount_row": "Discount", "track": "📦 Track the order", "footer": "NutriZone · the healthy choice",
     },
@@ -419,7 +419,7 @@ def _order_total(order) -> Decimal:
     return order.compute_total().grand_total.amount
 
 
-def orders_doc(orders: list[dict], lang: str = "uz") -> R.RichDoc:
+def orders_doc(orders: list[dict], lang: str = "uz", total: int | None = None, start: int = 1) -> R.RichDoc:
     from apps.ordering.infrastructure import composition as ordering_composition
 
     repo = ordering_composition.build_order_repository()
@@ -429,7 +429,7 @@ def orders_doc(orders: list[dict], lang: str = "uz") -> R.RichDoc:
         when = timezone.localtime(datetime.fromisoformat(o["placed_at"]), TZ).strftime("%d.%m.%Y") if o.get("placed_at") else "—"
         rows.append([R.b(o["order_number"]), R.e(when), R.e(status_label(o["status"], lang)), R.b(num(_order_total(order))) if order else "—"])
     doc = R.RichDoc()
-    doc.add(R.h(2, f"📦 {R.e(tr(lang, 'orders'))}"), R.p(R.i(tr(lang, "orders_sub", n=len(orders)))),
+    doc.add(R.h(2, f"📦 {R.e(tr(lang, 'orders'))}"), R.p(R.i(tr(lang, "orders_page", a=start, b=start + len(orders) - 1, n=total) if total and total > len(orders) else tr(lang, "orders_sub", n=len(orders)))),
             R.table([R.e(tr(lang, "col_order")), R.e(tr(lang, "col_date")), R.e(tr(lang, "col_status")), R.e(tr(lang, "col_sum"))], rows,
                     align=["left", "center", "left", "right"]),
             R.footer(R.e(tr(lang, "footer"))))

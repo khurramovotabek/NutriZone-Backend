@@ -25,7 +25,7 @@ KIND_META = {
     "order_cancelled": ("Buyurtma bekor qilindi", "fa-circle-xmark", "#e11d48"), "order_returned": ("Buyurtma qaytarildi", "fa-rotate-left", "#f59e0b"),
     "order_failed": ("To'lov o'tmadi", "fa-triangle-exclamation", "#e11d48"),
     "coins_earned": ("Coin (cashback)", "fa-coins", "#f59e0b"), "coins_earned_pos": ("Coin (do'kon)", "fa-coins", "#f59e0b"),
-    "coins_granted": ("Coin sovg'a", "fa-gift", "#16a34a"), "coins_deducted": ("Coin yechildi", "fa-coins", "#64748b"),
+    "coins_granted": ("Coin sovg'a", "fa-gift", "#16a34a"), "review_reward": ("Sharh uchun coin", "fa-star", "#eab308"), "coins_deducted": ("Coin yechildi", "fa-coins", "#64748b"),
     "coins_expiring": ("Coin kuyadi", "fa-hourglass-half", "#f59e0b"), "tier_up": ("Yangi daraja", "fa-trophy", "#8b5cf6"), "tier_at_risk": ("Daraja xavf ostida", "fa-shield-halved", "#f59e0b"),
     "payment_received": ("To'lov qabul qilindi", "fa-circle-check", "#10b981"), "payment_refunded": ("To'lov qaytarildi", "fa-rotate-left", "#f59e0b"),
     "payment_reminder": ("To'lov eslatmasi", "fa-credit-card", "#f59e0b"), "order_payment_expired": ("To'lanmagan — bekor", "fa-circle-xmark", "#e11d48"),

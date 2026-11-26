@@ -525,10 +525,16 @@ from django.shortcuts import redirect  # noqa: E402
 class ReviewRequestSettingsForm(forms.ModelForm):
     class Meta:
         model = orm.ReviewRequestSettings
-        fields = ("enabled", "ask_after_days", "ask_until_days")
+        fields = ("enabled", "ask_after_days", "ask_until_days", "reward_enabled", "reward_coins", "reward_min_rating", "reward_min_chars")
         help_texts = {
+            "reward_enabled": "Mijoz mahsulotni qo'lga olgandan (buyurtma yetkazilgan / do'kondan xarid) KEYIN yozgan sharhi saytda chiqqanda coin avtomatik tushadi. "
+                              "Bitta mahsulot uchun bir marta; yetkazilishdan oldin yozilgan sharh va ro'yxatdan o'tmagan (mehmon) mijozlar hisobga olinmaydi.",
+            "reward_coins": "1 coin = 1 so'm. Odatiy: 1 000.",
+            "reward_min_rating": "Shundan kam yulduzli sharhga coin berilmaydi. Tavsiya: 1 — har qanday halol sharh rag'batlansa, reyting ishonchli bo'ladi "
+                                 "(faqat 4–5★ ga mukofot Google sharh qoidalariga zid va reytingni sun'iy ko'taradi).",
+            "reward_min_chars": "Bir so'zli («zo'r») sharhlarga coin berilmasin — odatiy 30 belgi (1–2 gap).",
             "enabled": "Har kuni 12:00 da (Toshkent) mahsulotini olgan mijozga bir marta «… sizga yoqdimi?» xabari boradi — saytdagi bildirishnomalarga va Telegram'ga, "
-                       "sharh yozish tugmasi bilan. Bir xarid uchun bitta xabar; mijoz allaqachon sharh yozgan mahsulotlar so'ralmaydi. Bonus berilmaydi.",
+                       "sharh yozish tugmasi bilan. Bir xarid uchun bitta xabar; mijoz allaqachon sharh yozgan mahsulotlar so'ralmaydi. Mukofot yoqilgan bo'lsa, xabarda coin miqdori ham yoziladi.",
             "ask_after_days": "Buyurtma yetkazilgandan (yoki do'kondagi xariddan) shuncha kun o'tgach — mahsulotni sinab ko'rishga vaqt bo'lsin.",
             "ask_until_days": "Shundan eski xaridlar uchun so'ralmaydi — mijoz eslay olmaydi.",
         }
@@ -546,7 +552,8 @@ class ReviewRequestSettingsAdmin(PremiumFormMixin, admin.ModelAdmin):
     """Sharh so'rovi: the singleton -- on/off and the days window of the "how was it?" message."""
 
     form = ReviewRequestSettingsForm
-    fieldsets = (("Sharh so'rovi", {"fields": ("enabled", "ask_after_days", "ask_until_days")}),)
+    fieldsets = (("Sharh so'rovi", {"fields": ("enabled", "ask_after_days", "ask_until_days")}),
+                 ("Sharh uchun coin", {"fields": ("reward_enabled", "reward_coins", "reward_min_rating", "reward_min_chars")}))
     hero_icon, hero_tone = "fa-comment-dots", "#eab308"
 
     def changelist_view(self, request, extra_context=None):
@@ -576,15 +583,19 @@ class ReviewRequestSettingsAdmin(PremiumFormMixin, admin.ModelAdmin):
             first_ask[customer] = min(at, first_ask.get(customer, at))
         answered = {c for c, at in orm.ReviewModel.objects.filter(customer_id__in=first_ask, created_at__gte=since).values_list("customer_id", "created_at") if at >= first_ask[c]}
         opened = asks.exclude(seen_at=None, read_at=None).count()
+        paid = orm.ReviewRewardModel.objects.filter(created_at__gte=since)
+        rewards_n, rewards_sum = paid.count(), sum(paid.values_list("coins", flat=True))
         rate = f"{len(answered) * 100 // len(first_ask)}%" if first_ask else ""
         return {
             "title": "Sharh so'rovi", "subtitle": f"xariddan {obj.ask_after_days}–{obj.ask_until_days} kun o'tib, har kuni 12:00 da",
             "chips": [ui.chip("Yoqilgan" if obj.enabled else "O'chirilgan", "#16a34a" if obj.enabled else "#64748b", "fa-power-off"),
-                      ui.chip("Bonussiz", "#64748b", "fa-coins")],
+                      ui.chip(f"Sharh uchun {obj.reward_coins:,} coin · {obj.reward_min_rating}★+".replace(",", " ") if obj.reward_enabled and obj.reward_coins else "Bonussiz",
+                              "#eab308" if obj.reward_enabled and obj.reward_coins else "#64748b", "fa-coins")],
             "stats": [
                 hero_stat("Yuborilgan", len(asked), "#eab308", "oxirgi 30 kun", "fa-paper-plane"),
                 hero_stat("Ko'rilgan", opened, "#0891b2", "bildirishnoma ochilgan", "fa-eye"),
                 hero_stat("Sharh yozganlar", len(answered), "#16a34a", f"so'ralganlarning {rate}" if first_ask else "hali so'rov yo'q", "fa-star"),
+                hero_stat("Coin berilgan sharhlar", rewards_n, "#eab308", f"{rewards_sum:,} coin · 30 kun".replace(",", " "), "fa-coins"),
             ],
             "links": [{"label": "Sharhlar", "url": reverse("admin:reviews_reviewmodel_changelist"), "icon": "fa-star", "primary": True}],
         }
