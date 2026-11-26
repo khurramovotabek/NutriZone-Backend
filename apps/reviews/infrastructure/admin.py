@@ -527,11 +527,10 @@ class ReviewRequestSettingsForm(forms.ModelForm):
         model = orm.ReviewRequestSettings
         fields = ("enabled", "ask_after_days", "ask_until_days", "reward_enabled", "reward_coins", "reward_min_rating", "reward_min_chars")
         help_texts = {
-            "reward_enabled": "Mijoz mahsulotni qo'lga olgandan (buyurtma yetkazilgan / do'kondan xarid) KEYIN yozgan sharhi saytda chiqqanda coin avtomatik tushadi. "
-                              "Bitta mahsulot uchun bir marta; yetkazilishdan oldin yozilgan sharh va ro'yxatdan o'tmagan (mehmon) mijozlar hisobga olinmaydi.",
+            "reward_enabled": "Har bir yetkazilgan onlayn buyurtma uchun mijozning BITTA sharhiga coin avtomatik tushadi (sharh saytda chiqqanda). "
+                              "Sharh buyurtma yetkazilgandan keyin yozilgan bo'lishi kerak; ro'yxatdan o'tmagan (mehmon) mijozlar hisobga olinmaydi.",
             "reward_coins": "1 coin = 1 so'm. Odatiy: 1 000.",
-            "reward_min_rating": "Shundan kam yulduzli sharhga coin berilmaydi. Tavsiya: 1 — har qanday halol sharh rag'batlansa, reyting ishonchli bo'ladi "
-                                 "(faqat 4–5★ ga mukofot Google sharh qoidalariga zid va reytingni sun'iy ko'taradi).",
+            "reward_min_rating": "1 — har qanday baho (tavsiya etiladi: halol sharhlar reytingga ishonchni oshiradi va Google qoidalariga mos).",
             "reward_min_chars": "Bir so'zli («zo'r») sharhlarga coin berilmasin — odatiy 30 belgi (1–2 gap).",
             "enabled": "Har kuni 12:00 da (Toshkent) mahsulotini olgan mijozga bir marta «… sizga yoqdimi?» xabari boradi — saytdagi bildirishnomalarga va Telegram'ga, "
                        "sharh yozish tugmasi bilan. Bir xarid uchun bitta xabar; mijoz allaqachon sharh yozgan mahsulotlar so'ralmaydi. Mukofot yoqilgan bo'lsa, xabarda coin miqdori ham yoziladi.",
@@ -589,7 +588,7 @@ class ReviewRequestSettingsAdmin(PremiumFormMixin, admin.ModelAdmin):
         return {
             "title": "Sharh so'rovi", "subtitle": f"xariddan {obj.ask_after_days}–{obj.ask_until_days} kun o'tib, har kuni 12:00 da",
             "chips": [ui.chip("Yoqilgan" if obj.enabled else "O'chirilgan", "#16a34a" if obj.enabled else "#64748b", "fa-power-off"),
-                      ui.chip(f"Sharh uchun {obj.reward_coins:,} coin · {obj.reward_min_rating}★+".replace(",", " ") if obj.reward_enabled and obj.reward_coins else "Bonussiz",
+                      ui.chip(f"Har buyurtmaga 1 sharh · {obj.reward_coins:,} coin".replace(",", " ") if obj.reward_enabled and obj.reward_coins else "Bonussiz",
                               "#eab308" if obj.reward_enabled and obj.reward_coins else "#64748b", "fa-coins")],
             "stats": [
                 hero_stat("Yuborilgan", len(asked), "#eab308", "oxirgi 30 kun", "fa-paper-plane"),

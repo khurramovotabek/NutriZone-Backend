@@ -62,7 +62,7 @@ def test_daily_task_sends_one_message_per_purchase_in_each_language(monkeypatch,
     i18n = rows.get().i18n
     assert "Oltin Whey" in i18n["uz"]["title"] and "Золотой Whey" in i18n["ru"]["title"] and "Gold Whey" in i18n["en"]["title"]
     assert "va yana 1 ta mahsulot" in i18n["uz"]["body"] and "and 1 more" in i18n["en"]["body"]
-    assert "1 000 NutriZone Coins" in i18n["uz"]["body"] and "4–5★" in i18n["ru"]["body"]  # the review reward is announced
+    assert "1 000 NutriZone Coins" in i18n["uz"]["body"] and "с любой оценкой" in i18n["ru"]["body"]  # one review per order, any rating
     assert rows.get().link.startswith("/products/gold-uz-") and rows.get().link.endswith("#reviews")
 
 

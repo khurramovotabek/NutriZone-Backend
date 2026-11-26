@@ -107,6 +107,8 @@ def recommend_answer(profile: dict, loc: str) -> tuple[str, list[str], list[str]
     return "\n".join(lines), ids, [k for k, _p in picks]
 
 
+NUTRIENT = re.compile(r"oqsil|белок|белка|\btemir|желез|\bb12\b|kalsiy|кальци")  # a nutrient, not a product kind ("kreatinni qayerdan olsam" = where to buy)
+SOURCE_OF = re.compile(r"(?:qayerdan|qaerdan|nimadan)\s+ol|где\s+(?:взять|брать|получ)|откуда\s+(?:взять|брать|получ)|where\s+(?:do|can)\s+i\s+get")
 WHAT_IS = re.compile(r"(?:\bnima\b(?!\s+(?:uchun|ich|olay|kerak|tavsiya))|\bnimadir\b|nima degani|nima o'zi|farqi?\b|что так|что это|чем отлича|разниц|\bwhat is\b|\bwhat's\b|difference)")
 
 
@@ -142,6 +144,8 @@ def _expert(meta: dict, p, text: str, loc: str, taught: list):  # noqa: C901 - o
         if r:
             meta["last"] = "compare_shown"
             return r[0], r[1], CHIPS["after_reco"][loc], meta
+    if SOURCE_OF.search(seen.text) and NUTRIENT.search(seen.text) and taught and taught[0].score >= STRONG_MATCH and not seen.brands:
+        return None  # "vegetarianman, oqsilni qayerdan olaman" asks where the nutrient comes from -- food first, not a tub
     if not concept or concept not in expert.KIND_CATEGORY or seen.brands or nlu.body_facts(p.facts) or len(kinds) >= 2:
         # "kreatin va protein farqi" compares two kinds -- Brain's side-by-side answers that
         return None
@@ -406,6 +410,7 @@ def _answer(conv_meta: dict, text: str, loc: str) -> tuple[str, list[str], list[
     # "nima ichay?" about a symptom or a named kind ("mushagim tortishyapti", "how much vitamin D should I take") is a
     # knowledge question, not a request for a personal stack -- only a body-shape goal (muscle, fat loss) goes to the stack
     knowledge_question = not p.facts and (p.concept or p.goal in (None, "health"))
+    knowledge_question = knowledge_question or bool(SOURCE_OF.search(p.text) and NUTRIENT.search(p.text) and not nlu.body_facts(p.facts))
     if taught and taught[0].score >= STRONG_MATCH and (p.intent not in ("recommend", "faq_stores") or (knowledge_question and taught[0].score >= KNOWLEDGE_MATCH)):
         # what the shop taught on the dashboard (AI bilimlar bazasi) wins over the built-in texts; products of the kind asked about come along
         knowledge.mark_used([taught[0].entry])

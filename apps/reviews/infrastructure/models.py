@@ -95,10 +95,10 @@ class ReviewRequestSettings(models.Model):
     enabled = models.BooleanField(_("Sharh so'rovi yoqilgan"), default=True)
     ask_after_days = models.PositiveSmallIntegerField(_("Necha kundan keyin so'ralsin"), default=5, validators=[MinValueValidator(1), MaxValueValidator(60)])
     ask_until_days = models.PositiveSmallIntegerField(_("Necha kungacha so'ralsin"), default=14, validators=[MinValueValidator(2), MaxValueValidator(90)])
-    # Coins for a review written AFTER the customer received the product (rewards.py) -- one reward per product.
+    # Coins for a review written AFTER an online order was delivered (rewards.py) -- one reward per order, any rating.
     reward_enabled = models.BooleanField(_("Sharh uchun coin berilsin"), default=True)
     reward_coins = models.PositiveIntegerField(_("Coin miqdori"), default=1000, validators=[MaxValueValidator(100000)])
-    reward_min_rating = models.PositiveSmallIntegerField(_("Eng kam yulduz"), default=4, validators=[MinValueValidator(1), MaxValueValidator(5)])
+    reward_min_rating = models.PositiveSmallIntegerField(_("Eng kam yulduz"), default=1, validators=[MinValueValidator(1), MaxValueValidator(5)])
     reward_min_chars = models.PositiveSmallIntegerField(_("Matn kamida (belgi)"), default=30, validators=[MaxValueValidator(500)])
     updated_at = models.DateTimeField(auto_now=True)
 
@@ -123,7 +123,7 @@ class ReviewRequestSettings(models.Model):
 
 
 class ReviewRewardModel(models.Model):
-    """One coin reward per (customer, product): written by rewards.award() in the same transaction as the wallet credit."""
+    """One coin reward per (customer, order): written by rewards.award() in the same transaction as the wallet credit."""
 
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     review_id = models.UUIDField(unique=True)
@@ -131,7 +131,7 @@ class ReviewRewardModel(models.Model):
     product_id = models.UUIDField()
     coins = models.PositiveIntegerField()
     rating = models.PositiveSmallIntegerField()
-    received_ref = models.CharField(max_length=60, blank=True, default="")  # "order:<id>" / "sale:<id>" -- the purchase that qualified
+    received_ref = models.CharField(max_length=60)  # "order:<id>" -- the delivered order this review's reward belongs to
     transaction_id = models.UUIDField(null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True, db_index=True)
 
@@ -139,7 +139,7 @@ class ReviewRewardModel(models.Model):
         db_table = "reviews_review_rewards"
         verbose_name = _("Sharh mukofoti")
         verbose_name_plural = _("Sharh mukofotlari")
-        constraints = [models.UniqueConstraint(fields=["customer_id", "product_id"], name="uq_review_reward_customer_product")]
+        constraints = [models.UniqueConstraint(fields=["customer_id", "received_ref"], name="uq_review_reward_customer_order")]
 
     def __str__(self) -> str:
         return f"+{self.coins} coin · {self.rating}★"

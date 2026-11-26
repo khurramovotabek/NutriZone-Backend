@@ -110,9 +110,9 @@ def replenish_reminders() -> int:
 
 
 _MORE_TEXT = {"uz": " va yana {n} ta mahsulot", "ru": " и ещё {n} товар(ов)", "en": " and {n} more"}
-_REWARD_TEXT = {"uz": "\n\n🎁 Har bir mahsulot sharhi ({stars}★, kamida bir-ikki gap) uchun {coins} NutriZone Coins sovg'a.",
-                "ru": "\n\n🎁 За каждый отзыв о товаре ({stars}★, хотя бы пара предложений) — {coins} NutriZone Coins в подарок.",
-                "en": "\n\n🎁 {coins} NutriZone Coins for each product review ({stars}★, a sentence or two)."}
+_REWARD_TEXT = {"uz": "\n\n🎁 Har bir buyurtma uchun bitta sharhga {coins} NutriZone Coins sovg'a — har qanday baho bilan, bir-ikki gap yozsangiz kifoya.",
+                "ru": "\n\n🎁 За один отзыв с каждого заказа — {coins} NutriZone Coins в подарок, с любой оценкой: достаточно пары предложений.",
+                "en": "\n\n🎁 One review per order earns {coins} NutriZone Coins — any rating, a sentence or two is enough."}
 
 
 @shared_task(queue="default", name="ordering.review_requests")
@@ -129,8 +129,7 @@ def review_requests() -> int:
     cfg = ReviewRequestSettings.load()
     reward = {lang: "" for lang in _REWARD_TEXT}
     if cfg.reward_enabled and cfg.reward_coins:
-        stars = "4–5" if cfg.reward_min_rating == 4 else ("5" if cfg.reward_min_rating == 5 else f"{cfg.reward_min_rating}+")
-        reward = {lang: t.format(coins=fmt(cfg.reward_coins), stars=stars) for lang, t in _REWARD_TEXT.items()}
+        reward = {lang: t.format(coins=fmt(cfg.reward_coins)) for lang, t in _REWARD_TEXT.items()}
     names: dict = {}
     slugs: dict = {}
     for pid, locale, name, slug in ProductTranslation.objects.filter(product_id__in={p for a in asks for p in a.product_ids}).values_list("product_id", "locale_code", "name", "slug"):

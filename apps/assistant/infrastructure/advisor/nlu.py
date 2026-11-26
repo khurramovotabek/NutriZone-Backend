@@ -15,7 +15,7 @@ APOS = str.maketrans({"ʻ": "'", "‘": "'", "’": "'", "`": "'", "ʼ": "'"})
 
 # intent -> trigger stems (matched as word prefixes on the normalized text)
 INTENTS: dict[str, tuple[str, ...]] = {
-    "greet": ("salom", "assalom", "hello", "hi", "hey", "привет", "здравств", "добрый", "салом", "ассалом"),
+    "greet": ("salom", "assalom", "hello", "привет", "здравств", "добрый", "салом", "ассалом"),
     "thanks": ("rahmat", "raxmat", "tashakkur", "спасибо", "благодар", "thank", "thx", "рахмат"),
     "operator": ("operator", "odam bilan", "jonli", "менеджер", "оператор", "человек", "human", "agent", "support"),
     "faq_delivery": ("yetkaz", "dostav", "kuryer", "kurer", "достав", "курьер", "delivery", "deliver", "shipping", "етказ"),
@@ -233,7 +233,7 @@ def parse(text: str) -> Parsed:
     else:
         if p.facts or p.goal:
             p.intent = "recommend"
-        elif _has(both, INTENTS["greet"]) and len(t) < 40:
+        elif (_has(both, INTENTS["greet"]) or re.search(r"\b(?:hi|hey)\b", both)) and len(t) < 40:  # "hi" alone -- not "hisoblanadi"
             p.intent = "greet"
         elif _has(both, INTENTS["thanks"]) and len(t) < 40:
             p.intent = "thanks"

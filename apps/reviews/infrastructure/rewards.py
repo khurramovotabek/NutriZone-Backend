@@ -1,12 +1,13 @@
 """
-Coins for honest feedback: a customer who received a product (online order delivered/completed, or a store sale on
-their account) and THEN published a review of it gets `reward_coins` (default 1 000) once per product.
+Coins for feedback, one per order: every delivered online order earns `reward_coins` (default 1 000) for ONE review
+of a product from that order -- any star rating, an honest 1★ counts the same as a 5★.
 
 Rules (ReviewRequestSettings, Dashboard → Sharhlar → Sharh so'rovi):
-- the review was written after the goods were received -- reviews written before delivery never qualify;
-- rating >= reward_min_rating and the text is at least reward_min_chars long (no "zo'r" one-word reviews);
-- signed-up customers only (guest checkout accounts are skipped), one reward per (customer, product) for life --
-  ReviewRewardModel's unique constraint is the guard, so retries and races never pay twice;
+- only online orders (delivered / completed); the review must be written after that order reached the customer;
+- the text is at least reward_min_chars long (no one-word reviews); rating >= reward_min_rating (default 1 = any);
+- signed-up customers only (guest checkout accounts are skipped);
+- one reward per order -- ReviewRewardModel's unique (customer, order) constraint is the guard, so retries and races
+  never pay twice. The next order earns the next reward;
 - an edit later does not pay again; a review hidden by staff keeps the coins (staff can deduct in Loyalty if abused).
 Never raises into the review flow.
 """
@@ -21,12 +22,15 @@ from django.db import IntegrityError, transaction
 logger = logging.getLogger("nutrizone.app")
 
 
-def _received_ref(customer_id, product_id, written_at) -> str | None:
-    """The first purchase of this product the customer had received before `written_at`, or None."""
+def _unrewarded_order(customer_id, product_id, written_at) -> str | None:
+    """The earliest online order containing this product that reached the customer before `written_at` and has not
+    paid a review reward yet ("order:<id>"), or None."""
     from apps.ordering.infrastructure.replenishment import purchases
+    from apps.reviews.infrastructure.models import ReviewRewardModel
 
+    paid = set(ReviewRewardModel.objects.filter(customer_id=customer_id).values_list("received_ref", flat=True))
     hits = sorted((p for p in purchases(customer_ids=[customer_id], since=written_at - timedelta(days=730))
-                   if p.product_id == product_id and p.at <= written_at), key=lambda p: p.at)
+                   if p.ref.startswith("order:") and p.product_id == product_id and p.at <= written_at and p.ref not in paid), key=lambda p: p.at)
     return hits[0].ref if hits else None
 
 
@@ -44,13 +48,13 @@ def eligibility(review) -> tuple[bool, str, str]:
         return False, f"{cfg.reward_min_rating}★ dan past", ""
     if len((review.body or "").strip()) < cfg.reward_min_chars:
         return False, f"Matn {cfg.reward_min_chars} belgidan qisqa", ""
-    if ReviewRewardModel.objects.filter(customer_id=review.customer_id, product_id=review.product_id).exists():
-        return False, "Bu mahsulot uchun mukofot berilgan", ""
+    if ReviewRewardModel.objects.filter(review_id=review.id).exists():
+        return False, "Bu sharh uchun mukofot berilgan", ""
     if is_guest(review.customer_id):
         return False, "Ro'yxatdan o'tmagan mijoz", ""
-    ref = _received_ref(review.customer_id, review.product_id, review.created_at)
+    ref = _unrewarded_order(review.customer_id, review.product_id, review.created_at)
     if not ref:
-        return False, "Sharh mahsulot qo'lga tegishidan oldin yozilgan", ""
+        return False, "Yetkazilgan buyurtma yo'q yoki bu buyurtma uchun mukofot berilgan", ""
     return True, "", ref
 
 
@@ -105,7 +109,8 @@ def _notify(row, tx) -> None:
 
 def offer(customer_id, product_id) -> dict:
     """What the review form shows: {enabled, coins, min_rating, min_chars, state} -- state for a signed-in customer:
-    "eligible" (received, not rewarded), "rewarded", "not_received"; "anonymous" otherwise."""
+    "eligible" (a delivered order with this product has not paid a reward yet), "rewarded" (its order already paid),
+    "not_received"; "anonymous" otherwise."""
     from apps.reviews.infrastructure.models import ReviewRequestSettings, ReviewRewardModel
 
     cfg = ReviewRequestSettings.load()
@@ -115,8 +120,10 @@ def offer(customer_id, product_id) -> dict:
         return out
     from django.utils import timezone
 
-    if ReviewRewardModel.objects.filter(customer_id=customer_id, product_id=product_id).exists():
+    if _unrewarded_order(customer_id, product_id, timezone.now()):
+        out["state"] = "eligible"
+    elif ReviewRewardModel.objects.filter(customer_id=customer_id, product_id=product_id).exists():
         out["state"] = "rewarded"
     else:
-        out["state"] = "eligible" if _received_ref(customer_id, product_id, timezone.now()) else "not_received"
+        out["state"] = "not_received"
     return out

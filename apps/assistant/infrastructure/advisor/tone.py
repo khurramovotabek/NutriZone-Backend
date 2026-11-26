@@ -10,11 +10,16 @@ import re
 from apps.assistant.infrastructure.advisor import nlu
 
 UPSET = ("ishlamadi", "ishlamayapti", "ishlamaydi", "foyda bermadi", "foydasi yo'q", "pulimni qaytar", "pulni qaytar", "aldad", "aldov", "aldash",
-         "jahlim", "jahl", "norozi", "shikoyat", "hali ham kelmadi", "hali kelmadi", "kelmadi", "kech qoldi", "kechikdi", "buzilgan", "singan",
-         "soxta", "qalbaki", "yaroqsiz", "muddati o'tgan", "uyat", "dahshat", "bema'ni", "javob bermayapsiz", "javob yo'q",
+         "jahlim", "jahl", "norozi", "shikoyat", "hali ham kelmadi", "hali kelmadi", "kelmadi", "kech qoldi", "kechikdi",
+         "soxta", "qalbaki", "uyat", "dahshat", "bema'ni", "javob bermayapsiz", "javob yo'q",
          "верните деньги", "верните", "обман", "обманули", "мошен", "ужас", "кошмар", "безобраз", "не пришел", "не пришёл", "до сих пор",
-         "не работает", "не помог", "подделк", "фальшив", "просрочен", "сломан", "жалоб", "недоволен", "никто не отвечает",
-         "refund", "money back", "scam", "fake", "terrible", "awful", "worst", "still not", "never arrived", "didn't arrive", "broken", "expired", "angry", "disappointed")
+         "не работает", "не помог", "подделк", "фальшив", "жалоб", "недоволен", "никто не отвечает",
+         "refund", "money back", "scam", "fake", "terrible", "awful", "worst", "still not", "never arrived", "didn't arrive", "angry", "disappointed")
+# how a product *is* -- upset only when it came that way ("singan keldi"), not when asking about it
+# ("muddati o'tgan protein ichsa bo'ladimi")
+STATE = ("buzilgan", "singan", "yaroqsiz", "muddati o'tgan", "muddati otgan", "просрочен", "сломан", "испорчен", "broken", "expired", "damaged")
+CAME = ("keldi", "kelgan", "sotdingiz", "sotishdi", "berdingiz", "yubordingiz", "yuborishdi", "olib keldi", "пришел", "пришёл", "прислали", "привезли",
+        "продали", "получил", "arrived", "came", "sent me", "sold me", "delivered", "received")
 URGENT = ("tezroq", "zudlik bilan", "srochno", "срочно", "быстрее", "urgent", "asap", "right now")
 
 LEAD = {
@@ -42,7 +47,8 @@ def mood(text: str) -> str | None:
     both = f"{t} {t.translate(nlu.LATIN_FROM_CYR)}"
     letters = [c for c in raw if c.isalpha()]
     shouting = len(letters) >= 12 and sum(c.isupper() for c in letters) / len(letters) > 0.7
-    if any(s in both for s in UPSET) or shouting or re.search(r"[!?]{3,}", raw) and len(t.split()) >= 3:
+    came_bad = any(s in both for s in STATE) and any(s in both for s in CAME)
+    if any(s in both for s in UPSET) or came_bad or shouting or re.search(r"[!?]{3,}", raw) and len(t.split()) >= 3:
         return "upset"
     if any(s in both for s in URGENT):
         return "urgent"
