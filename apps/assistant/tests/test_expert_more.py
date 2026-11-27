@@ -23,7 +23,7 @@ def more_kb():
 
 
 def test_entries_are_complete():
-    for topic, priority, title, questions, keywords, uz, ru, en in _expert_more.E:
+    for _topic, _priority, title, questions, keywords, uz, ru, en in _expert_more.E:
         assert title in _expert_more.TITLES and questions and keywords and uz and ru and en
 
 

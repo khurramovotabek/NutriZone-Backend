@@ -17,19 +17,19 @@ APOS = str.maketrans({"ʻ": "'", "‘": "'", "’": "'", "`": "'", "ʼ": "'"})
 INTENTS: dict[str, tuple[str, ...]] = {
     "greet": ("salom", "assalom", "hello", "привет", "здравств", "добрый", "салом", "ассалом"),
     "thanks": ("rahmat", "raxmat", "tashakkur", "спасибо", "благодар", "thank", "thx", "рахмат"),
-    "operator": ("operator", "odam bilan", "jonli", "менеджер", "оператор", "человек", "human", "agent", "support"),
-    "faq_delivery": ("yetkaz", "dostav", "kuryer", "kurer", "достав", "курьер", "delivery", "deliver", "shipping", "етказ"),
+    "operator": ("operator", "sotuvchi", "konsultant", "maslahatchi bilan", "продавц", "продавец", "консультант", "менеджером", "odam bilan", "jonli", "менеджер", "оператор", "человек", "human", "agent", "support"),
+    "faq_delivery": ("yetkaz", "qancha vaqtda keladi", "necha kunda keladi", "qachon yetib keladi", "как долго ид", "сколько дней ид", "how long does delivery", "how long does it take", "dostav", "kuryer", "kurer", "достав", "курьер", "delivery", "deliver", "shipping", "етказ"),
     "faq_payment": ("to'lov", "tolov", "payme", "click", "uzum", "karta", "naqd", "оплат", "карт", "налич", "payment", "pay ", "card", "cash", "тўлов"),
     "faq_stores": ("do'kon", "dokon", "filial", "manzil", "qayerda", "joylash", "адрес", "магазин", "филиал", "где наход", "store", "shop location", "address", "where are you", "дўкон"),
     "faq_brands": ("brendlar", "qaysi brend", "brendingiz", "бренды", "какие бренды", "brands", "which brand"),
-    "faq_flavours": ("ta'mlar", "qanday ta'm", "qaysi ta'm", "вкусы", "какие вкусы", "каком вкус", "flavours", "flavors", "which flavour", "which flavor"),
+    "faq_flavours": ("ta'mlar", "ta'mlari", "ta'mi bor", "qanday ta'm", "qaysi ta'm", "вкусы", "какие вкусы", "каком вкус", "flavours", "flavors", "which flavour", "which flavor"),
     "faq_referral": ("do'stimni taklif", "do'stni taklif", "do'st taklif", "do'stingizni taklif", "do'stlarimni taklif", "taklif qilsam", "taklif havola", "referal", "referral",
                      "invite", "приглас", "реферал", "привести друга", "привёл друга", "дўстимни"),
     "faq_loyalty": ("coin", "bonus", "keshbek", "cashback", "кешбэк", "бонус", "баллы", "loyalty", "points", "коин"),
     "faq_original": ("original", "sertifikat", "qalbaki", "soxta", "оригинал", "подделк", "сертификат", "fake", "genuine", "authentic", "certificate"),
-    "faq_returns": ("qaytar", "almashtir", "vozvrat", "возврат", "обмен", "return", "refund", "exchange"),
+    "faq_returns": ("qaytar", "almashtir", "vozvrat", "возврат", "вернуть", "вернут", "обмен", "return", "refund", "exchange"),
     "faq_order": ("buyurtmam", "zakazim", "заказ", "где мой", "my order", "order status", "track"),
-    "usage": ("qanday ich", "qanday qabul", "qachon qabul", "qancha ich", "necha mg", "necha gramm", "kuniga qancha", "сколько пить", "сколько принимать", "сколько мг", "how many mg", "how much a day", "qachon ich", "doza", "dozirovka", "как приним", "как пить", "когда пить", "дозиров", "how to take", "how to use", "when to take", "dosage", "how much should", "per day", "a day", "в день", "в сутки", "daily dose", "should i take", "should take", "do i take", "need to take", "нужно принимать", "надо принимать"),
+    "usage": ("qanday ich", "necha marta ich", "necha mahal ich", "сколько раз в день пить", "how often", "how do i take", "qanday qabul", "qachon qabul", "qancha ich", "necha mg", "necha gramm", "kuniga qancha", "сколько пить", "сколько принимать", "сколько мг", "how many mg", "how much a day", "qachon ich", "doza", "dozirovka", "как приним", "как пить", "когда пить", "дозиров", "how to take", "how to use", "when to take", "dosage", "how much should", "per day", "a day", "в день", "в сутки", "daily dose", "should i take", "should take", "do i take", "need to take", "нужно принимать", "надо принимать"),
     "recommend": ("tavsiya", "maslahat", "tanlab", "pick a", "pick me", "pick one", "choose", "help me choose", "nima ich", "qaysi", "taklif", "kerak bo'l", "nima olay", "посовет", "что выбрать", "какой", "какую", "рекоменд", "подбер", "recommend", "suggest", "which", "what should", "advise", "best for", "maqsad"),
     "profile": ("bo'y", "vazn", "yosh", "рост", "вес", "лет", "height", "weight", "years old"),
 }
@@ -37,7 +37,7 @@ INTENTS: dict[str, tuple[str, ...]] = {
 GOALS: dict[str, tuple[str, ...]] = {
     "muscle": ("massa", "mushak", "muskul", "kuch", "bulk", "muscle", "mass", "gain", "набор", "масс", "мышц", "сила", "kattalash"),
     "weight_loss": ("ozish", "ozmoq", "ozay", "ozdir", "ozib", "ozg'in", "vazn tashla", "vazn yo'qot", "vazn kamaytir", "qorin ket", "qornimni", "yog'dan qutul", "подтянут", "рельеф", "стройн", "yog' yoq", "quriti", "sushka", "похуд", "сброс", "сушк", "жиросжиг", "lose weight", "weight loss", "fat loss", "cut", "slim", "lean"),
-    "endurance": ("chidam", "energiya", "yugur", "marafon", "velosiped", "futbol", "boks", "выносл", "энерги", "бег", "марафон", "endurance", "stamina", "running", "cardio", "energy"),
+    "endurance": ("chidam", "suzish", "suzuvchi", "suzaman", "плаван", "swim", "energiya", "yugur", "marafon", "velosiped", "futbol", "boks", "выносл", "энерги", "бег", "марафон", "endurance", "stamina", "running", "cardio", "energy"),
     "health": ("salomat", "sog'l", "immunitet", "vitamin", "здоров", "иммун", "витамин", "health", "immunity", "wellness"),
 }
 
@@ -225,7 +225,7 @@ def parse(text: str) -> Parsed:
     p.goal = "weight_loss" if "weight_loss" in found else (found[0] if found else None)
     p.recomp = "weight_loss" in found and "muscle" in found
     p.concept = next(iter(concepts_in(both)), None)
-    for intent in ("operator", "faq_order", "faq_returns", "faq_original", "faq_referral", "faq_loyalty", "faq_payment", "faq_delivery", "faq_stores", "faq_brands", "faq_flavours", "usage", "recommend"):
+    for intent in ("operator", "faq_returns", "faq_order", "faq_original", "faq_referral", "faq_loyalty", "faq_payment", "faq_delivery", "faq_stores", "faq_brands", "faq_flavours", "usage", "recommend"):
         hay = re.sub(r"qayerdan\w*", " ", both) if intent == "faq_stores" else both  # "qayerdan olsam" asks where to get it, not the shop address
         if _has(hay, INTENTS[intent]) and not (intent == "faq_original" and _has(both, GIFT)):  # a gift certificate isn't a product certificate
             p.intent = intent

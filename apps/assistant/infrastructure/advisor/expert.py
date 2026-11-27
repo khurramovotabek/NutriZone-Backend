@@ -33,6 +33,7 @@ KIND_CATEGORY = {
 }
 
 # sub-kind → (parent concept, category English name, trigger stems)
+STRICT_SUBS = ("vegan", "beef")  # sub-kinds asked for a reason (no dairy): no silent fallback to the whole kind
 SUBTYPES: dict[str, tuple[str, str, tuple[str, ...]]] = {
     "hydro": ("protein", "Hydrolyzed Whey", ("gidrolizat", "gidroliz", "hydroly", "hydrolys", "гидролиз", "hydro whey", "iso100")),
     "isolate": ("protein", "Whey Isolate", ("izolyat", "izolat", "isolate", "изолят", "iso ")),
@@ -192,6 +193,10 @@ def kind_search(concept: str | None, loc: str, *, sub: str | None = None, limit:
         found = tools.search_products({**args, "category_id": str(cat)}, loc)["products"]
         if found:
             return found
+    if sub in STRICT_SUBS:  # dairy-free is a need, not a taste: never hand over whey because the vegan shelf is empty
+        names = SUBTYPES[sub][2]
+        rows = tools.search_products({**args, "limit": 8, "query": SUBTYPES[sub][1]}, loc)["products"]
+        return [r for r in rows if nlu._has(_both(f"{r.get('name') or ''} {r.get('category') or ''}"), names)][:limit]
     if cat := category_id(concept):  # no such sub-section (or it's empty): the whole kind, never another kind
         for q in filter(None, (query, KIND_QUERY.get(concept or ""))):
             found = tools.search_products({**args, "category_id": str(cat), "query": q}, loc)["products"]
@@ -425,6 +430,13 @@ def budget_answer(concept: str, sub: str | None, budget: int | None, loc: str, *
     if not found:
         return None
     rows = rank(rows_for([x["id"] for x in found], loc, None if over else budget), concept, sub)
+    if budget and not over:  # a size inside the budget may be missing -- never list a tub above it under "up to <budget>"
+        within = [r for r in rows if (r.price or 0) <= budget]
+        if not within:
+            over = True
+            rows = sorted(rank(rows_for([x["id"] for x in found], loc, None), concept, sub), key=lambda r: r.price or 0)[:3]
+        else:
+            rows = within
     if cheap:  # "eng arzon" -- by the real cost of what you get, not by tub price
         rows.sort(key=lambda r: (not r.in_stock, r.per_25g or r.per_serving or r.per_kg or r.price))
     rows = rows[:5]

@@ -99,7 +99,7 @@ def test_a_product_named_by_name_is_shown_itself(shop):
 
 def test_off_topic_sentence_gets_no_random_products(shop):
     _r, ids, _c, meta = answer({}, "bugun ob-havo qanday bo'ladi ertaga", "uz")
-    assert ids == [] and meta["last"] == "unclear"
+    assert ids == [] and meta["last"] == "talk_offtopic"  # outside the shop's field: said so, no random tubs
 
 
 def test_womens_multivitamin_skips_the_mens_formula(shop):

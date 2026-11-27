@@ -107,9 +107,20 @@ def recommend_answer(profile: dict, loc: str) -> tuple[str, list[str], list[str]
     return "\n".join(lines), ids, [k for k, _p in picks]
 
 
+REVIEW_WORDS = re.compile(r"sharh|otziv|отзыв|review")
+WHICH_ONE = re.compile(r"\bqaysi|\bкак(?:ой|ую|ие)\b|\bwhich\b")
+BUY_WHERE = re.compile(r"(?:qayerdan|qaerdan|qayerda|qaerda)\s+(?:sotib\s+)?ol|qayerda\s+sotil|sotib\s+olsam|где\s+(?:купить|приобрести|продают|продаётся|продается|можно\s+купить)|"
+                       r"where\s+(?:can|do|should)\s+i\s+(?:buy|get|order)|where\s+to\s+buy")
+DIET_PLAN = re.compile(r"menyu|ratsion|ovqatlanish reja|ovqat reja|nima yeyish|nima yesam|меню|рацион|план питания|что есть|что кушать|meal plan|diet plan|what to eat|what should i eat")
 NUTRIENT = re.compile(r"oqsil|белок|белка|\btemir|желез|\bb12\b|kalsiy|кальци")  # a nutrient, not a product kind ("kreatinni qayerdan olsam" = where to buy)
 SOURCE_OF = re.compile(r"(?:qayerdan|qaerdan|nimadan)\s+ol|где\s+(?:взять|брать|получ)|откуда\s+(?:взять|брать|получ)|where\s+(?:do|can)\s+i\s+get")
 WHAT_IS = re.compile(r"(?:\bnima\b(?!\s+(?:uchun|ich|olay|kerak|tavsiya))|\bnimadir\b|nima degani|nima o'zi|farqi?\b|что так|что это|чем отлича|разниц|\bwhat is\b|\bwhat's\b|difference)")
+
+
+def _yes_no(text: str) -> bool:
+    """A can-I / does-it-work question ("bo'ladimi", "ozdiradimi", "можно ли", "is it safe"), not "what do you recommend?"."""
+    t = nlu.normalize(text)
+    return bool(brain.YES_NO.search(t)) or brain._has(f"{t} {t.translate(nlu.LATIN_FROM_CYR)}", brain.CAN_I)
 
 
 def _expert(meta: dict, p, text: str, loc: str, taught: list):  # noqa: C901 - one plain branch per kind of question
@@ -329,6 +340,15 @@ def _answer(conv_meta: dict, text: str, loc: str) -> tuple[str, list[str], list[
         return kb.T["thanks"][loc], [], CHIPS["faq"][loc], meta
     if p.intent == "operator":
         return kb.T["operator"][loc].format(contacts=kb.contacts(loc)), [], [], meta
+    quick = talk.special(text, loc)  # "2+2 nechchi", "bugun qanday kun"
+    if quick:
+        meta["last"] = "quick_fact"
+        return quick, [], CHIPS["start"][loc], meta
+    if p.concept and _yes_no(p.text) and "age" in p.facts and set(p.facts) <= {"age", "sex"} and not p.goal:
+        # "40 yoshda kreatin ichsa bo'ladimi" asks if the kind suits that age -- answer it; the age stays in the profile
+        p.facts = {k: v for k, v in p.facts.items() if k == "sex"}
+        if p.intent == "profile":
+            p.intent = "search"
     small = talk.intent(text)
     seen = brain.understand(text) if small else None
     # "uyqum yomon" is about sleep, not a complaint; "Zorvex yoki Kalmar qaysi biri yaxshi" compares brands, it isn't praise
@@ -361,6 +381,30 @@ def _answer(conv_meta: dict, text: str, loc: str) -> tuple[str, list[str], list[
         unsure = {"uz": "Bu haqida menda aniq ma'lumot yo'q — xodimlarimiz aniq aytib berishadi.", "ru": "Точной информации об этом у меня нет — сотрудники подскажут.",
                   "en": "I don't have exact information on that — our team will tell you."}[loc]
         return f"{unsure}\n\n" + kb.T["operator"][loc].format(contacts=kb.contacts(loc)), [], CHIPS["faq"][loc], meta
+    if (p.concept and BUY_WHERE.search(f"{p.text} {p.text.translate(nlu.LATIN_FROM_CYR)}") and not (NUTRIENT.search(p.text) and "sotib" not in p.text)
+            and not expert.dairy_issue(text) and not WHICH_ONE.search(p.text)):  # "qaysi proteinni qayerdan olay" wants a pick, not directions
+        # "kreatinni qayerdan olsam bo'ladi" -- where to buy it: here, online or in a branch, with what's in stock
+        meta["last"] = "where_buy"
+        found = expert.kind_search(p.concept, loc, limit=4) or expert.kind_search(p.concept, loc, limit=4, in_stock=False)
+        kind = kb.T["kind_name"][loc].get(p.concept, p.concept)
+        head = {"uz": f"🛒 **{kind}ni NutriZone'dan olasiz** — ikki yo'l bilan:\n\n"
+                      "1️⃣ **Saytdan buyurtma** — ro'yxatdan o'tmasdan ham bo'ladi; Toshkentga 1 ish kunida, viloyatlarga BTS orqali yetkazamiz.\n"
+                      "2️⃣ **Do'konlarimizdan** — kelib ko'rib olasiz yoki saytda buyurtma berib, do'kondan olib ketasiz (bepul).",
+                "ru": f"🛒 **{kind} можно купить в NutriZone** — двумя способами:\n\n"
+                      "1️⃣ **Заказ на сайте** — можно без регистрации; по Ташкенту за 1 рабочий день, в регионы — через BTS.\n"
+                      "2️⃣ **В наших магазинах** — приходите или закажите на сайте и заберите в магазине (бесплатно).",
+                "en": f"🛒 **You can buy {kind} at NutriZone** — two ways:\n\n"
+                      "1️⃣ **Order on the website** — no account needed; Tashkent in 1 working day, regions via BTS.\n"
+                      "2️⃣ **In our stores** — come in, or order online and pick it up in a store (free)."}[loc]
+        tail = {"uz": "\n\nHozir mavjudlari pastda 👇", "ru": "\n\nЧто есть сейчас — ниже 👇", "en": "\n\nWhat's in stock now is below 👇"}[loc] if found else ""
+        venues = brain.venues_for(text)
+        if venues:
+            meta["_venues"] = venues
+        return f"{head}{tail}\n\n{kb.stores_text(loc, text)}", [x["id"] for x in found], CHIPS["after_reco"][loc], meta
+    if p.intent == "faq_loyalty" and not p.concept and not REVIEW_WORDS.search(f"{p.text} {p.text.translate(nlu.LATIN_FROM_CYR)}"):
+        # "coin qanday ishlatiladi" -- the live programme (rates, balance rules), not the review-reward article
+        meta["last"] = "faq_loyalty"
+        return kb.loyalty_text(loc), [], CHIPS["faq"][loc], meta
     if p.intent == "faq_delivery" and not p.concept and not brain.understand(text).brands:
         # "yetkazib berish qancha turadi" -- the real tariff from the dashboard, before the price handler lists tubs
         meta["last"] = "faq_delivery"
@@ -410,7 +454,9 @@ def _answer(conv_meta: dict, text: str, loc: str) -> tuple[str, list[str], list[
     # "nima ichay?" about a symptom or a named kind ("mushagim tortishyapti", "how much vitamin D should I take") is a
     # knowledge question, not a request for a personal stack -- only a body-shape goal (muscle, fat loss) goes to the stack
     knowledge_question = not p.facts and (p.concept or p.goal in (None, "health"))
-    knowledge_question = knowledge_question or bool(SOURCE_OF.search(p.text) and NUTRIENT.search(p.text) and not nlu.body_facts(p.facts))
+    # "tez ozish mumkinmi", "yurish ozdiradimi" ask whether something works -- a yes/no question gets the article, not a profile form
+    knowledge_question = knowledge_question or bool(not nlu.body_facts(p.facts) and _yes_no(p.text) and taught and taught[0].score >= KNOWLEDGE_MATCH)
+    knowledge_question = knowledge_question or bool(DIET_PLAN.search(p.text) and not nlu.body_facts(p.facts)) or bool(SOURCE_OF.search(p.text) and NUTRIENT.search(p.text) and not nlu.body_facts(p.facts))
     if taught and taught[0].score >= STRONG_MATCH and (p.intent not in ("recommend", "faq_stores") or (knowledge_question and taught[0].score >= KNOWLEDGE_MATCH)):
         # what the shop taught on the dashboard (AI bilimlar bazasi) wins over the built-in texts; products of the kind asked about come along
         knowledge.mark_used([taught[0].entry])

@@ -31,9 +31,9 @@ def test_product_questions_are_never_small_talk():
     assert talk.intent("okay so how much protein do I need per day for muscle gain") is None  # too long to be chit-chat
 
 
-def test_an_off_topic_sentence_gets_a_clarifying_answer_not_a_random_fact():
+def test_an_off_topic_sentence_is_declined_politely_not_answered_with_a_random_fact():
     reply, ids, chips, meta = answer({}, "bugun ob-havo qanday bo'ladi ertaga", "uz")
-    assert meta["last"] == "unclear" and not ids and chips and "tushunmadim" in reply
+    assert meta["last"] == "talk_offtopic" and not ids and chips and "sohamdan tashqarida" in reply
 
 
 def test_complaints_offer_a_person():

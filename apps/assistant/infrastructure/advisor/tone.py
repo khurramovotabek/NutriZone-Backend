@@ -11,13 +11,13 @@ from apps.assistant.infrastructure.advisor import nlu
 
 UPSET = ("ishlamadi", "ishlamayapti", "ishlamaydi", "foyda bermadi", "foydasi yo'q", "pulimni qaytar", "pulni qaytar", "aldad", "aldov", "aldash",
          "jahlim", "jahl", "norozi", "shikoyat", "hali ham kelmadi", "hali kelmadi", "kelmadi", "kech qoldi", "kechikdi",
-         "soxta", "qalbaki", "uyat", "dahshat", "bema'ni", "javob bermayapsiz", "javob yo'q",
+         "uyat", "dahshat", "bema'ni", "javob bermayapsiz", "javob yo'q",
          "верните деньги", "верните", "обман", "обманули", "мошен", "ужас", "кошмар", "безобраз", "не пришел", "не пришёл", "до сих пор",
-         "не работает", "не помог", "подделк", "фальшив", "жалоб", "недоволен", "никто не отвечает",
-         "refund", "money back", "scam", "fake", "terrible", "awful", "worst", "still not", "never arrived", "didn't arrive", "angry", "disappointed")
+         "не работает", "не помог", "жалоб", "недоволен", "никто не отвечает",
+         "refund", "money back", "scam", "terrible", "awful", "worst", "still not", "never arrived", "didn't arrive", "angry", "disappointed")
 # how a product *is* -- upset only when it came that way ("singan keldi"), not when asking about it
 # ("muddati o'tgan protein ichsa bo'ladimi")
-STATE = ("buzilgan", "singan", "yaroqsiz", "muddati o'tgan", "muddati otgan", "просрочен", "сломан", "испорчен", "broken", "expired", "damaged")
+STATE = ("soxta", "qalbaki", "подделк", "фальшив", "fake", "buzilgan", "singan", "yaroqsiz", "muddati o'tgan", "muddati otgan", "просрочен", "сломан", "испорчен", "broken", "expired", "damaged")
 CAME = ("keldi", "kelgan", "sotdingiz", "sotishdi", "berdingiz", "yubordingiz", "yuborishdi", "olib keldi", "пришел", "пришёл", "прислали", "привезли",
         "продали", "получил", "arrived", "came", "sent me", "sold me", "delivered", "received")
 URGENT = ("tezroq", "zudlik bilan", "srochno", "срочно", "быстрее", "urgent", "asap", "right now")

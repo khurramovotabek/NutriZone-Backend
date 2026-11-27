@@ -29,6 +29,7 @@ PRICE = ("narx", "narhi", "qancha tur", "necha pul", "qanchaga", "qancha so'm", 
 HAVE = ("bormi", "bor mi", "mavjudmi", "qoldimi", "sotasiz", "sotiladimi", "topsa bo'ladimi", "есть ли", "есть в", "в наличии", "имеется", "продаете", "do you have", "in stock", "available")
 BEST = ("eng ko'p sotil", "ko'p sotil", "top", "xit", "mashhur", "eng yaxshi", "eng zo'r", "zo'r", "хит", "популяр", "самый продаваем", "лучш", "топ", "best seller", "bestseller", "best", "popular", "top rated")
 COMPARE = ("farq", "farqi", "yoki", "qaysi biri", "solishtir", "taqqosla", "или", "разниц", "отлича", "сравн", "что лучше", "versus", " vs ", "difference", "compare", "or ", "better than")
+BEST_ANY = ("eng ko'p sotil", "ko'p sotilad", "ko'p olinad", "mashhur mahsulot", "самый продаваем", "самые продаваем", "популярн", "хиты продаж", "best seller", "bestseller", "most popular")  # no kind named: the whole shop
 CHEAP = ("eng arzon", "arzon", "hamyonbop", "qimmat emas", "дешев", "недорог", "бюджетн", "cheapest", "cheap", "affordable", "lowest price", "арзон")
 WHY = ("nima uchun kerak", "nima uchun ich", "nima uchun", "nimaga", "vazifasi", "nima ish qil", "nimaga kerak", "nimaga ich", "nima foyda", "foydasi", "nima beradi", "nima qiladi", "nima o'zi", "nima degani",
        "для чего", "зачем", "польза", "что дает", "что даёт", "что такое", "what is", "what does", "why take", "why do i need", "benefit", "good for")
@@ -622,7 +623,7 @@ def respond(meta: dict, text: str, loc: str) -> Reply | None:
     if _has(b, PRICE) and parsed.intent != "usage":  # "how much creatine per day" asks for a dose
         if (r := _price(seen, loc, query)) is not None:
             return r
-    if _has(b, BEST) and (seen.concepts or seen.cats or seen.brands) and parsed.intent != "usage" and not body:
+    if _has(b, BEST) and (seen.concepts or seen.cats or seen.brands or _has(b, BEST_ANY)) and parsed.intent != "usage" and not body:
         if (r := _best(seen, loc)) is not None:
             return r
     if (_has(b, HAVE) or (len(seen.text.split()) <= 3 and (seen.cats or seen.brands) and not asks(text))) and parsed.intent not in ("usage",) and not body and not parsed.facts.get("sex"):  # "ayollar uchun protein bormi" gets the women note (engine)

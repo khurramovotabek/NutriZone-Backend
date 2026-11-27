@@ -23,6 +23,11 @@ TALK: dict[str, tuple[str, ...]] = {
              "устал", "нет мотивации", "нет результата", "не получается", "грустно", "хочу бросить", "tired", "no motivation", "no results", "give up", "demotivated", "sad"),
     "bye": ("xayr", "hayr", "ko'rishguncha", "salomat bo'ling", "пока", "до свидания", "всего доброго", "bye", "goodbye", "see you"),
     "ack": ("ok", "okay", "xo'p", "xop", "mayli", "tushunarli", "tushundim", "ha", "yo'q", "yoq", "ладно", "понятно", "хорошо", "ок", "да", "нет", "got it", "fine", "yes", "no", "sure", "cool"),
+    # outside the shop's field: said politely, then back to what it can do
+    "offtopic": ("ob-havo", "ob havo", "obhavo", "havo qanday", "погод", "weather", "she'r", "sher yoz", "стих", "poem", "anekdot", "анекдот", "joke", "hazil ayt",
+                 "kim yutdi", "hisob necha", "кто выиграл", "who won", "siyosat", "политик", "politic", "kino", "фильм", "movie", "qo'shiq", "песн", "song",
+                 "yangilik", "новост", "news", "dollar kursi", "kurs qancha", "курс доллар", "exchange rate", "uy vazifa", "домашн", "homework", "tarjima qil",
+                 "переведи", "translate", "kod yoz", "напиши код", "write code", "bitcoin", "биткоин", "kripto", "крипт", "crypto", "o'yin o'yna", "поиграем"),
     "guides": ("maslahatlar markazi", "центр советов", "advice centre", "advice center", "maqolalar", "статьи", "articles"),
     "praise": ("zo'r", "zor", "ajoyib", "barakalla", "malades", "молодец", "супер", "отлично", "круто", "great", "awesome", "nice", "cool bot", "good job"),
 }
@@ -110,6 +115,14 @@ R = {
         "ru": ["Спасибо{name_c}, приятно! 😊 Если будут вопросы — пишите."],
         "en": ["Thank you{name_c}, glad to help! 😊 Ask me anything else."],
     },
+    "offtopic": {
+        "uz": ["Bu mavzu mening sohamdan tashqarida{name_c} 🙂 Men NutriZone maslahatchisiman: sport ozuqasi, vitaminlar, ovqatlanish, mashg'ulot, buyurtma va yetkazib berish bo'yicha aniq javob beraman.\n\n"
+               "Masalan so'rang: **«80 kg, massa olmoqchiman»**, **«kreatin qanday ichiladi?»**, **«kunlik kaloriyamni hisobla»**."],
+        "ru": ["Эта тема вне моей специализации{name_c} 🙂 Я консультант NutriZone: точно отвечу про спортпит, витамины, питание, тренировки, заказы и доставку.\n\n"
+               "Например: **«80 кг, хочу набрать массу»**, **«как принимать креатин?»**, **«посчитай мои калории»**."],
+        "en": ["That's outside my field{name_c} 🙂 I'm the NutriZone advisor: I give exact answers on sports nutrition, vitamins, diet, training, orders and delivery.\n\n"
+               "Try: **\"80 kg, I want to build muscle\"**, **\"how do I take creatine?\"**, **\"count my daily calories\"**."],
+    },
     "guides": {
         "uz": ["📚 **Maslahatlar markazi** — kreatin, protein, vitaminlar, ozish va massa olish bo'yicha 60 dan ortiq aniq javob: {site}/guides\n\nYoki savolingizni shu yerga yozing — darhol javob beraman."],
         "ru": ["📚 **Центр советов** — более 60 точных ответов о креатине, протеине, витаминах, похудении и наборе массы: {site}/ru/guides\n\nИли задайте вопрос здесь — отвечу сразу."],
@@ -156,7 +169,7 @@ def intent(text: str) -> str | None:
     both = f"{t} {t.translate(nlu.LATIN_FROM_CYR)}"
     if nlu.concepts_in(both):  # "yomon emas, kreatin nima uchun kerak?" is a product question, not small talk
         return None
-    for key in ("guides", "price", "down", "complaint", "who", "abilities", "how_are_you", "bye", "praise"):
+    for key in ("guides", "offtopic", "price", "down", "complaint", "who", "abilities", "how_are_you", "bye", "praise"):
         if _matches(both, TALK[key]):
             return key
     if _exact_short(t, set(TALK["ack"])):
@@ -178,3 +191,43 @@ def reply(key: str, loc: str, name: str = "", contacts: str = "") -> tuple[str, 
 def looks_like_a_sentence(text: str) -> bool:
     """A real sentence that matched nothing (so the catalogue search would answer "nothing found for <the whole sentence>")."""
     return len(nlu.normalize(text).split()) >= 4
+
+
+MATH = re.compile(r"^\s*(-?\d+(?:[.,]\d+)?)\s*([+\-*/x×÷:])\s*(-?\d+(?:[.,]\d+)?)\s*(?:=|\?|nechchi|necha|nechi|qancha|bo'ladi|сколько|будет|equals|is)?[\s?=!.]*$", re.I)
+WHEN_NOW = ("bugun qanday kun", "bugun nechanchi", "bugun necha", "bugun sana", "soat necha", "hozir soat", "какое сегодня число", "какой сегодня день", "который час",
+            "сколько времени", "what day is it", "what's the date", "what is the date", "what time is it")
+OPEN_HOURS = ("ishla", "ochiq", "ochila", "yopil", "yopiq", "filial", "do'kon", "dokon", "nechagacha", "работ", "открыт", "закрыв", "магазин", "филиал", "open", "close", "store")  # "soat nechagacha ishlaydi" asks the shop hours
+MONTHS = {"uz": ["yanvar", "fevral", "mart", "aprel", "may", "iyun", "iyul", "avgust", "sentyabr", "oktyabr", "noyabr", "dekabr"],
+          "ru": ["января", "февраля", "марта", "апреля", "мая", "июня", "июля", "августа", "сентября", "октября", "ноября", "декабря"],
+          "en": ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"]}
+DAYS = {"uz": ["dushanba", "seshanba", "chorshanba", "payshanba", "juma", "shanba", "yakshanba"],
+        "ru": ["понедельник", "вторник", "среда", "четверг", "пятница", "суббота", "воскресенье"],
+        "en": ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"]}
+
+
+def special(text: str, loc: str) -> str | None:
+    """Quick facts a helper should simply know: "2+2 nechchi", "bugun qanday kun", "soat necha" (Tashkent time)."""
+    loc = loc if loc in ("uz", "ru", "en") else "uz"
+    m = MATH.match(nlu.normalize(text).replace("×", "*"))
+    if m:
+        a, op, b = float(m.group(1).replace(",", ".")), m.group(2), float(m.group(3).replace(",", "."))
+        if op in "/÷:" and b == 0:
+            return None
+        v = a + b if op == "+" else a - b if op == "-" else a * b if op in "*x×" else a / b
+        out = f"{v:,.4f}".rstrip("0").rstrip(".").replace(",", " ")
+        return {"uz": f"🧮 **{out}**. Kaloriya yoki oqsil hisoblash kerak bo'lsa ham yordam beraman — bo'y, vazn va maqsadingizni yozing.",
+                "ru": f"🧮 **{out}**. Помогу посчитать и калории или белок — напишите рост, вес и цель.",
+                "en": f"🧮 **{out}**. I can also work out your calories or protein — send your height, weight and goal."}[loc]
+    t = nlu.normalize(text)
+    both = f"{t} {t.translate(nlu.LATIN_FROM_CYR)}"
+    if len(t.split()) <= 6 and nlu._has(both, WHEN_NOW) and not nlu._has(both, OPEN_HOURS):
+        from datetime import datetime
+        from zoneinfo import ZoneInfo
+
+        now = datetime.now(ZoneInfo("Asia/Tashkent"))
+        day, month = DAYS[loc][now.weekday()], MONTHS[loc][now.month - 1]
+        return {"uz": f"🗓 Bugun **{now.day}-{month}, {day}**, Toshkentda soat **{now:%H:%M}**.",
+                "ru": f"🗓 Сегодня **{now.day} {month}, {day}**, в Ташкенте **{now:%H:%M}**.",
+                "en": f"🗓 Today is **{day}, {month} {now.day}**, it's **{now:%H:%M}** in Tashkent."}[loc]
+    return None
+

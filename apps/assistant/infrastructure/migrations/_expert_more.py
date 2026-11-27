@@ -12,7 +12,7 @@ E = [
      "sharh yozsam coin beriladimi\nsharh uchun coin\notziv yozsam bonus bormi\nsharh yozib pul ishlash\nsharh uchun 1000 coin\nqanday sharh yozaman\n"
      "коины за отзыв\nкак получить коины за отзыв\nбонус за отзыв\nдают ли бонус за отзыв\nкак оставить отзыв\n"
      "coins for a review\ndo i get coins for a review\nhow to leave a review",
-     "sharh, sharhi, otziv, отзыв, review, coin, koin, коин, бонус, bonus, yulduz, звезд",
+     "sharh, sharhi, sharh yoz, otziv, отзыв, review, yulduz, звезд",
      "⭐ **Har bir buyurtma uchun bitta sharhga — 1 000 NutriZone Coins.**\n\n"
      "**Qanday ishlaydi:**\n"
      "1️⃣ Buyurtmangiz yetkazilgach, mahsulotni sinab ko'ring.\n"
