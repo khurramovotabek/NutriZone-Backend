@@ -123,3 +123,16 @@ def test_guides_api_lists_public_entries_in_every_language_and_hides_promos(expe
     assert detail["title"] == "Vitamin D: who needs it and how much" and detail["answer"] == entry.answer_en
     assert detail["product_query"] == "vitamin d3"
     assert Client().get("/api/v1/assistant/guides/oktabr-aksiyasi").status_code == 404
+
+
+def test_full_guides_listing_carries_answers_and_questions(expert_kb):
+    from django.core.cache import cache
+    from django.test import Client
+
+    cache.clear()
+    plain = Client().get("/api/v1/assistant/guides?locale=en").json()["data"]["guides"]
+    full = Client().get("/api/v1/assistant/guides?locale=en&full=1").json()["data"]["guides"]
+    assert "answer" not in plain[0] and [g["slug"] for g in full] == [g["slug"] for g in plain]
+    one = next(g for g in full if g["slug"] == "d-vitamini-kimga-va-qancha")
+    entry = KnowledgeEntry.objects.get(slug="d-vitamini-kimga-va-qancha")
+    assert one["answer"] == entry.answer("en") and one["questions"] and len(one["questions"]) <= 12

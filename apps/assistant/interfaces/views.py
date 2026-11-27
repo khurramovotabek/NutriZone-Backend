@@ -313,7 +313,7 @@ def guides_view(request):
 
     if request.method != "GET":
         return HttpResponseNotAllowed(["GET"])
-    return _json({"guides": guides.listing(request.GET.get("locale") or "uz")})
+    return _json({"guides": guides.listing(request.GET.get("locale") or "uz", full=request.GET.get("full") == "1")})
 
 
 def guide_view(request, slug):

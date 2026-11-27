@@ -38,12 +38,19 @@ def _card(entry, locale: str) -> dict:
             "updated_at": entry.updated_at.isoformat()}
 
 
-def listing(locale: str) -> list[dict]:
+def _questions(entry) -> list[str]:
+    return [q.strip() for q in (entry.questions or "").splitlines() if q.strip()]
+
+
+def listing(locale: str, full: bool = False) -> list[dict]:
+    """Every guide's card; `full` adds the answer and the asked questions (nutrizone.uz/llms-full.txt reads them in one
+    call instead of one request per guide)."""
     locale = locale if locale in LOCALES else "uz"
-    key = f"assistant:guides:list:{locale}"
+    key = f"assistant:guides:list:{locale}{':full' if full else ''}"
     data = cache.get(key)
     if data is None:
-        data = [_card(e, locale) for e in _entries()]
+        data = [{**_card(e, locale), **({"answer": e.answer(locale), "questions": _questions(e)[:12]} if full else {})}
+                for e in _entries()]
         cache.set(key, data, TTL)
     return data
 
@@ -56,7 +63,7 @@ def detail(slug: str, locale: str) -> dict | None:
         entry = _entries().filter(slug=slug).first()
         if entry is None:
             return None
-        questions = [q.strip() for q in (entry.questions or "").splitlines() if q.strip()]
+        questions = _questions(entry)
         related = [_card(e, locale) for e in _entries().filter(topic=entry.topic).exclude(pk=entry.pk)[:6]]
         data = {**_card(entry, locale), "answer": entry.answer(locale), "questions": questions[:12], "keywords": entry.keywords,
                 "product_query": _product_query(entry), "related": related,
