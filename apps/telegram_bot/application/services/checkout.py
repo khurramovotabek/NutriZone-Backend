@@ -228,6 +228,9 @@ def confirm_cash_order(user) -> dict:
             consume_snapshot = pricing_composition.build_consume_price_snapshot(user.id)
             for item in active_items:
                 consume_snapshot.execute(item.price_reference.price_snapshot_id)
+            from apps.products.infrastructure import gift_offer
+
+            gift = gift_offer.attach(order.id, [i.product_variant_id for i in active_items], goods_total)
     except IntegrityError:
         existing_confirmation = telegram_orm.TelegramCheckoutConfirmation.objects.filter(cart_id=cart.id).first()
         if existing_confirmation and existing_confirmation.order_number:
@@ -237,4 +240,4 @@ def confirm_cash_order(user) -> dict:
     telegram_orm.TelegramCheckoutConfirmation.objects.filter(cart_id=cart.id).update(order_number=order.order_number.value)
 
     total = goods_total + (delivery.fee if delivery is not None else Decimal("0"))
-    return {"order_number": order.order_number.value, "total": str(total), "currency": cart.currency.value}
+    return {"order_number": order.order_number.value, "total": str(total), "currency": cart.currency.value, "gift": gift}

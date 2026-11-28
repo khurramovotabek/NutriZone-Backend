@@ -811,6 +811,9 @@ def _checkout_details(user, lang: str, summary: dict) -> str:
         name = html.escape(info.name if info else "—")
         price = money_text(item.price_reference.unit_amount.amount * item.quantity.value, lang) if item.price_reference else t("price_pending", lang)
         rows.append(f"{n}. {name} × {item.quantity.value} — <b>{price}</b>")
+    gift = _gift_line(items, lang)
+    if gift:
+        rows.append(gift)
     lines = [f"<blockquote>{chr(10).join(rows)}</blockquote>"] if rows else []
     address = geo_orm.Address.objects.filter(owner_type="user", owner_id=user.id).order_by("-created_at").first() if user is not None else None
     if address is not None:
@@ -826,6 +829,32 @@ def _checkout_details(user, lang: str, summary: dict) -> str:
         fee = t("delivery_free", lang) if delivery.is_free else money_text(delivery.fee, lang)
         lines.append(t("checkout_delivery_line", lang, carrier=html.escape(delivery.carrier or "—"), fee=fee, eta=html.escape(delivery.eta or "")).rstrip(" ·"))
     return "\n".join(lines)
+
+
+_GIFT_TEXT = {
+    "earned": {"uz": "🎁 <b>Sovg‘a: {name}</b> — 0 so‘m", "ru": "🎁 <b>Подарок: {name}</b> — 0 сум", "en": "🎁 <b>Gift: {name}</b> — 0 UZS"},
+    "missing": {"uz": "🎁 Yana <b>{missing}</b> xarid qilsangiz — {name} sovg‘a!", "ru": "🎁 Добавьте ещё на <b>{missing}</b> — и {name} в подарок!",
+                "en": "🎁 Add <b>{missing}</b> more — and get {name} as a gift!"},
+}
+
+
+def _gift_line(items, lang: str) -> str:
+    """Sovg'a aksiyasi in the bot checkout: the shaker the order earns, or how much is left to earn it."""
+    try:
+        from apps.products.infrastructure import gift_offer
+
+        goods = sum((i.price_reference.unit_amount.amount * i.quantity.value for i in items if i.price_reference), 0)
+        st = gift_offer.status([i.product_variant_id for i in items], goods, locale=lang)
+    except Exception:  # noqa: BLE001 - a promo never breaks checkout
+        logger.warning("gift offer status failed", exc_info=True)
+        return ""
+    if not st or not st["items_qualify"]:
+        return ""
+    name = html.escape(st["gift"]["name"])
+    lang = lang if lang in ("uz", "ru", "en") else "uz"
+    if st["earned"]:
+        return _GIFT_TEXT["earned"][lang].format(name=name)
+    return _GIFT_TEXT["missing"][lang].format(name=name, missing=money_text(st["missing"], lang))
 
 
 def _send_checkout_summary(chat_id: int, lang: str, summary: dict, user=None) -> None:

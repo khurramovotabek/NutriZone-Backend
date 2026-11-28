@@ -189,16 +189,10 @@ def _entry_cards(entries) -> tuple[dict, dict]:
 
 
 def _send_reminder(c, items, staff) -> None:
-    """One cart reminder: inbox + Telegram (notify kind cart_reminder) and a `reminder_sent` event in the cart history."""
-    from apps.notifications.infrastructure.notify import notify
+    """One manual cart reminder (Dashboard button / "remind all") -- see cart_reminders.send."""
+    from apps.cart.infrastructure.cart_reminders import send
 
-    cards = _variant_cards([i.product_variant_id for i in items])
-    names = [cards[i.product_variant_id]["name"] for i in items if i.product_variant_id in cards]
-    products = ", ".join(names[:2]) + (f" +{len(names) - 2}" if len(names) > 2 else "")
-    now = timezone.now()
-    notify(c.customer_id, "cart_reminder", {"products": products}, link="/cart", dedupe_key=f"cart_reminder:{c.id}:{now:%Y%m%d}")
-    orm.CartAuditEntryModel.objects.create(cart=c, action="reminder_sent", actor_id=None, occurred_at=now,
-                                           details={"by": staff.get_full_name() or staff.get_username()})
+    send(c, items, by=staff.get_full_name() or staff.get_username())
 
 
 # ====================================================================== carts

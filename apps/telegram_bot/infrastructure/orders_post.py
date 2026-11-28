@@ -94,8 +94,12 @@ def build(order, banner: str | None = None) -> dict:
     lines = order.active_lines()
     names, image = _product_names({ln.product_variant_id for ln in lines})
     units = sum(ln.quantity for ln in lines)
+    from apps.products.infrastructure.gift_offer import gift_line_ids
+
+    gifts = gift_line_ids([order.id])
     items = "\n".join(
-        f"▫️ {escape(names.get(ln.product_variant_id, 'Mahsulot'))}\n      {ln.quantity} × {money(ln.unit_price.amount, ln.unit_price.currency)} = <b>{money(ln.unit_price.amount * ln.quantity, ln.unit_price.currency)}</b>"
+        (f"🎁 <b>SOVG‘A</b> · {escape(names.get(ln.product_variant_id, 'Mahsulot'))}\n      {ln.quantity} dona = <b>0 so‘m</b>" if ln.id in gifts else
+         f"▫️ {escape(names.get(ln.product_variant_id, 'Mahsulot'))}\n      {ln.quantity} × {money(ln.unit_price.amount, ln.unit_price.currency)} = <b>{money(ln.unit_price.amount * ln.quantity, ln.unit_price.currency)}</b>")
         for ln in lines
     )
 

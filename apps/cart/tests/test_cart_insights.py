@@ -74,3 +74,83 @@ def test_insights_tab_and_remind_all(django_capture_on_commit_callbacks):
     client.post("/django-admin/cart/cartmodel/remind-all/")  # 24 h guard
     assert orm.CartAuditEntryModel.objects.filter(cart=c, action="reminder_sent").count() == 1
     assert client.get("/django-admin/cart/cartmodel/history/change/").status_code == 404
+
+
+# ---- automatic reminders (cart_reminders.py) + the period loss number
+
+
+def _sent(cart):
+    return list(orm.CartAuditEntryModel.objects.filter(cart=cart, action="reminder_sent").order_by("occurred_at"))
+
+
+def _age(cart, hours):
+    orm.CartModel.objects.filter(pk=cart.pk).update(updated_at=timezone.now() - timedelta(hours=hours))
+
+
+def test_auto_reminder_steps_follow_idle_time(monkeypatch):
+    from apps.cart.infrastructure import cart_reminders
+
+    calls = []
+    monkeypatch.setattr("apps.notifications.infrastructure.notify.notify", lambda uid, kind, ctx=None, **kw: calls.append((uid, kind, ctx)))
+    c = _cart(customer=uuid.uuid4())
+    _age(c, 1)
+    assert cart_reminders.run_auto()["sent"] == 0  # under 2 h: too early
+    _age(c, 3)
+    assert cart_reminders.run_auto()["step1"] == 1
+    assert calls[-1][1] == "cart_reminder" and "total" in calls[-1][2]
+    assert cart_reminders.run_auto()["sent"] == 0  # 20 h gap
+    orm.CartAuditEntryModel.objects.filter(cart=c).update(occurred_at=timezone.now() - timedelta(hours=21))
+    _age(c, 30)
+    orm.CartAuditEntryModel.objects.filter(cart=c, action="reminder_sent").update(occurred_at=timezone.now() - timedelta(hours=21))
+    assert cart_reminders.run_auto()["step2"] == 1
+    orm.CartAuditEntryModel.objects.filter(cart=c, action="reminder_sent").update(occurred_at=timezone.now() - timedelta(hours=21))
+    _age(c, 80)
+    assert cart_reminders.run_auto()["step3"] == 1
+    orm.CartAuditEntryModel.objects.filter(cart=c, action="reminder_sent").update(occurred_at=timezone.now() - timedelta(hours=21))
+    _age(c, 100)
+    assert cart_reminders.run_auto()["sent"] == 0  # three is the limit
+    assert [e.details["step"] for e in _sent(c)] == [1, 2, 3]
+    assert all(e.details["by"] == cart_reminders.AUTO_BY for e in _sent(c))
+
+
+def test_auto_reminder_skips_guests_old_and_ordered(monkeypatch):
+    from apps.cart.infrastructure import cart_reminders
+
+    monkeypatch.setattr("apps.notifications.infrastructure.notify.notify", lambda *a, **kw: None)
+    guest = _cart()
+    _age(guest, 5)
+    old = _cart(customer=uuid.uuid4())
+    _age(old, 24 * 8)
+    ordered = _cart(customer=uuid.uuid4())
+    _age(ordered, 5)
+    _order_from(ordered, status="confirmed")
+    # ordered elsewhere (bot / another cart) after this cart's last change
+    other = _cart(customer=uuid.uuid4())
+    _age(other, 5)
+    from apps.ordering.infrastructure.models import OrderModel
+    o = _order_from(_cart(customer=other.customer_id), status="confirmed")
+    OrderModel.objects.filter(pk=o.pk).update(customer_id=other.customer_id)
+    assert cart_reminders.run_auto()["sent"] == 0
+
+
+def test_late_cart_gets_the_current_step_only(monkeypatch):
+    from apps.cart.infrastructure import cart_reminders
+
+    c = _cart(customer=uuid.uuid4())
+    now = timezone.now()
+    c.refresh_from_db()
+    orm.CartModel.objects.filter(pk=c.pk).update(updated_at=now - timedelta(hours=30))
+    c.refresh_from_db()
+    assert cart_reminders.due_step(c, [], now) == (2, "cart_reminder_2")
+
+
+def test_period_loss_counts_only_this_periods_carts():
+    _cart(customer=uuid.uuid4(), days_ago=2)
+    _cart(days_ago=3, items=2)
+    old = _cart(days_ago=60)
+    orm.CartAuditEntryModel.objects.filter(cart=old).update(occurred_at=timezone.now() - timedelta(days=60))
+    d = cart_analytics.build(30)
+    assert d["lost"]["carts"] == 2
+    assert d["lost"]["guest_carts"] == 1 and d["lost"]["signed_carts"] == 1
+    assert d["lost"]["single"] == 1
+    assert d["abandoned"]["carts"] == 3  # the all-time view still shows the old one

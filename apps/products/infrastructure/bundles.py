@@ -27,7 +27,7 @@ from django.core.cache import cache
 from apps.products.infrastructure import models as orm
 
 CACHE_TTL = 60 * 60
-_KEY = "bundle:v4:{}"
+_KEY = "bundle:v5:{}"
 SHORTLIST = 10
 
 
@@ -151,9 +151,12 @@ def _compute(product_id) -> dict | None:
         return None
     ceiling = main_price * cfg.max_companion_share / Decimal("100")
 
+    from apps.products.infrastructure import gift_offer
+
+    gift = gift_offer.gift_product_id()  # the Sovg'a aksiyasi shaker has its own card on the page -- never offered twice
     candidates = []
     for row in _companion_pool():
-        r = rank(row["category_id"]) if row["category_id"] and row["product_id"] != str(product_id) else None
+        r = rank(row["category_id"]) if row["category_id"] and row["product_id"] not in (str(product_id), gift) else None
         if r is None or Decimal(row["price"]) > ceiling:
             continue
         dept_slug = slug_of.get(dept.get(row["category_id"], ""), "")
@@ -223,7 +226,7 @@ def _allowed_categories(cfg) -> set[str] | None:
     return out
 
 
-POOL_KEY = "bundle:v4:pool"
+POOL_KEY = "bundle:v5:pool"
 
 
 def _companion_pool() -> list[dict]:

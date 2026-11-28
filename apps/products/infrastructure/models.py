@@ -662,6 +662,41 @@ class BundleSettings(models.Model):
         return obj
 
 
+class GiftOfferSettings(models.Model):
+    """Singleton (pk=1): the free gift (the NutriZone shaker) an order earns, and the product-page recommendation of it
+    (apps/products/infrastructure/gift_offer.py)."""
+
+    enabled = models.BooleanField(_("Sovg'a aksiyasi yoqilgan"), default=True)
+    gift_variant = models.ForeignKey(ProductVariant, null=True, blank=True, on_delete=models.SET_NULL, related_name="+", verbose_name=_("Sovg'a mahsuloti"),
+                                     help_text=_("Buyurtmaga 0 so'mga qo'shiladigan mahsulot (masalan NutriZone sheykeri). Omborda bo'lishi kerak."))
+    min_goods_amount = models.DecimalField(_("Minimal xarid, so'm"), max_digits=14, decimal_places=2, default=1_000_000,
+                                           validators=[MinValueValidator(0)],
+                                           help_text=_("Mahsulotlar summasi (chegirmadan keyin, yetkazib berishsiz) shundan kam bo'lmasa sovg'a beriladi."))
+    qualifying_categories = models.ManyToManyField(
+        Category, blank=True, related_name="+", verbose_name=_("Shart bo'limlari"),
+        help_text=_("Savatda shu bo'limlardan (va ularning ichidagilaridan) kamida bitta mahsulot bo'lsa sovg'a beriladi va mahsulot sahifasida "
+                    "sovg'a tavsiya qilinadi. Bo'sh bo'lsa — Proteinlar va Geynerlar."))
+    recommend_on_pdp = models.BooleanField(_("Mahsulot sahifasida tavsiya qilish"), default=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        db_table = "catalog_gift_offer_settings"
+        verbose_name = _("Sovg'a aksiyasi")
+        verbose_name_plural = _("Sovg'a aksiyasi")
+
+    def __str__(self) -> str:
+        return "Sovg'a aksiyasi"
+
+    def save(self, *args, **kwargs):
+        self.pk = 1
+        super().save(*args, **kwargs)
+
+    @classmethod
+    def load(cls) -> "GiftOfferSettings":
+        obj, _created = cls.objects.get_or_create(pk=1)
+        return obj
+
+
 # ---------------------------------------------------------------------------
 # Wishlist
 # ---------------------------------------------------------------------------

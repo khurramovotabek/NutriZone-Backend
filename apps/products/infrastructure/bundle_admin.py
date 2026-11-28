@@ -173,9 +173,78 @@ def _flush_bundle_cache() -> None:
         import redis as redis_lib
 
         r = redis_lib.Redis.from_url(settings.REDIS_URL, socket_timeout=2)
-        for key in r.scan_iter(match="*bundle:v4:*", count=500):
+        for key in r.scan_iter(match="*bundle:v5:*", count=500):
             r.delete(key)
     except Exception:  # noqa: BLE001 - the cache simply expires within the hour
         pass
 
 
+
+
+# ====================================================================== Sovg'a aksiyasi (gift_offer.py)
+
+
+class GiftOfferSettingsForm(forms.ModelForm):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields["qualifying_categories"].queryset = (orm.Category.objects.filter(Q(parent__isnull=True) | Q(parent__parent__isnull=True), is_active=True)
+                                                         .prefetch_related("translations").order_by("parent__sort_order", "sort_order"))
+        # the gift is a small accessory: offer the shaker / bottle / accessory variants, never the whole catalog
+        accessory = orm.CategoryTranslation.objects.filter(locale_code="uz", slug__in=("shakerlar", "suv-idishlari", "aksessuarlar")).values_list("category_id", flat=True)
+        qs = orm.ProductVariant.objects.filter(status="active", product__is_deleted=False).filter(
+            Q(product__category_id__in=list(accessory)) | Q(product__category__parent_id__in=list(accessory)) | Q(pk=getattr(self.instance, "gift_variant_id", None)))
+        self.fields["gift_variant"].queryset = qs.select_related("product").prefetch_related("product__translations")
+        self.fields["gift_variant"].label_from_instance = lambda v: f"{v.product} · {v.sku}"
+
+    class Meta:
+        model = orm.GiftOfferSettings
+        fields = ("enabled", "gift_variant", "min_goods_amount", "recommend_on_pdp", "qualifying_categories")
+        widgets = {"qualifying_categories": forms.CheckboxSelectMultiple}
+
+
+@admin.register(orm.GiftOfferSettings)
+class GiftOfferSettingsAdmin(PremiumFormMixin, admin.ModelAdmin):
+    form = GiftOfferSettingsForm
+    fieldsets = (("Sovg'a", {"fields": ("enabled", "gift_variant", "min_goods_amount", "recommend_on_pdp")}),
+                 ("Qaysi xaridlarga", {"fields": ("qualifying_categories",)}))
+    hero_icon, hero_tone = "fa-gift", "#f59e0b"
+
+    def changelist_view(self, request, extra_context=None):
+        return redirect(reverse("admin:products_giftoffersettings_change", args=[orm.GiftOfferSettings.load().pk]))
+
+    def get_object(self, request, object_id, from_field=None):
+        return orm.GiftOfferSettings.load()
+
+    def has_add_permission(self, request) -> bool:
+        return False
+
+    def has_delete_permission(self, request, obj=None) -> bool:
+        return False
+
+    def save_related(self, request, form, formsets, change):
+        super().save_related(request, form, formsets, change)
+        from apps.products.infrastructure import gift_offer
+
+        gift_offer.invalidate()
+        _flush_bundle_cache()  # bundles skip the gift product -- the pairs are recomputed
+
+    def response_change(self, request, obj):
+        messages.success(request, "Saqlandi — checkout, Telegram bot va mahsulot sahifalari yangi sozlama bilan ishlaydi.")
+        return redirect(request.path)
+
+    def form_hero(self, request, obj):
+        from apps.ordering.infrastructure.models import OrderLineItemModel
+        from apps.stores.infrastructure.availability import sellable
+
+        given = OrderLineItemModel.objects.filter(is_gift=True, status="active").count()
+        stock = sellable([obj.gift_variant_id]).get(obj.gift_variant_id, 0) if obj.gift_variant_id else 0
+        on = obj.enabled and obj.gift_variant_id
+        return {
+            "title": "Sovg'a aksiyasi", "subtitle": _name(obj.gift_variant.product) if obj.gift_variant_id else "Sovg'a mahsuloti tanlanmagan",
+            "chips": [ui.chip("Yoqilgan" if on else "O'chirilgan", "#16a34a" if on else "#64748b", "fa-power-off")],
+            "stats": [
+                hero_stat("Minimal xarid", f"{int(obj.min_goods_amount):,}".replace(",", " ") + " so'm", "#f59e0b", "chegirmadan keyin", "fa-coins"),
+                hero_stat("Omborda", stock, "#0ea5e9" if stock else "#e11d48", "sovg'a qoldig'i", "fa-box"),
+                hero_stat("Berilgan", given, "#16a34a", "buyurtmalarda", "fa-gift"),
+            ],
+        }

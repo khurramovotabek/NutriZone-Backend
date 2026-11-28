@@ -639,7 +639,9 @@ class OrderAdmin(ExcelExportMixin, admin.ModelAdmin):
     def total_col(self, obj: orm.OrderModel) -> str:
         active = [line for line in obj.lines.all() if line.status == "active"]
         total = sum((line.unit_price_amount * line.quantity - line.discount_amount + line.tax_amount for line in active), Decimal("0")) + (obj.shipping_amount or 0)
-        return format_html('<b class="nz-num">{}</b> <span class="nz-text-muted">{}</span>', _money(total), _("so'm") if obj.currency == "UZS" else obj.currency)
+        gift = format_html(' <span class="nzc-pill" style="--t:#d97706" title="{}"><i class="fas fa-gift" aria-hidden="true"></i> {}</span>',
+                           _("Sovg'a aksiyasi: sheyker 0 so'mga qo'shilgan"), _("Sovg'a")) if any(line.is_gift for line in active) else ""
+        return format_html('<b class="nz-num">{}</b> <span class="nz-text-muted">{}</span>{}', _money(total), _("so'm") if obj.currency == "UZS" else obj.currency, gift)
 
     @admin.display(description=_("Sana"), ordering="placed_at")
     def placed_col(self, obj: orm.OrderModel) -> str:

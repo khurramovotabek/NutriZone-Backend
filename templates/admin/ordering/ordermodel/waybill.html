@@ -71,7 +71,7 @@
     <thead><tr><th style="width:28px"></th><th>{% translate "Product" %}</th><th class="r">{% translate "Qty" %}</th><th class="r hide-sm">{% translate "Price" %}</th><th class="r">{% translate "Sum" %}</th></tr></thead>
     <tbody>
       {% for i in w.items %}
-      <tr><td><span class="check"></span></td><td><b>{{ i.name }}</b><br><small>{% if i.size %}{{ i.size }} · {% endif %}{{ i.sku }}</small></td><td class="r"><b>{{ i.qty }}</b></td><td class="r hide-sm">{{ i.unit }}</td><td class="r">{{ i.total }}</td></tr>
+      <tr><td><span class="check"></span></td><td><b>{% if i.gift %}🎁 SOVG'A · {% endif %}{{ i.name }}</b><br><small>{% if i.size %}{{ i.size }} · {% endif %}{{ i.sku }}</small></td><td class="r"><b>{{ i.qty }}</b></td><td class="r hide-sm">{{ i.unit }}</td><td class="r">{{ i.total }}</td></tr>
       {% endfor %}
     </tbody>
   </table>

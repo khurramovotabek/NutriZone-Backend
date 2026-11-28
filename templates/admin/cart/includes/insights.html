@@ -11,6 +11,7 @@
     <div class="nzci-kpi" style="--c:#e11d48"><small>{% translate "Tashlab ketish darajasi" %}</small><b>{{ ins.kpi.abandon_rate|pct }}</b><span>{% translate "buyurtmagacha yetmagan savatlar" %}</span></div>
     <div class="nzci-kpi" style="--c:#16a34a"><small>{% translate "Savatlardan tushum" %}</small><b>{{ ins.kpi.revenue|som }}</b><span>{% blocktranslate with v=ins.kpi.pipeline|som %}yetkazilgan · yo'lda {{ v }}{% endblocktranslate %}</span></div>
     <div class="nzci-kpi" style="--c:#0ea5e9"><small>{% translate "Qaror vaqti (mediana)" %}</small><b>{% if ins.kpi.median_wait is not None %}{% if ins.kpi.median_wait < 60 %}{{ ins.kpi.median_wait }} {% translate "daq" %}{% elif ins.kpi.median_wait < 1440 %}{% widthratio ins.kpi.median_wait 60 1 %} {% translate "soat" %}{% else %}{% widthratio ins.kpi.median_wait 1440 1 %} {% translate "kun" %}{% endif %}{% else %}—{% endif %}</b><span>{% translate "birinchi mahsulotdan buyurtmagacha" %}</span></div>
+    <div class="nzci-kpi" style="--c:#be123c"><small>{% translate "Davrdagi yo'qotish" %}</small><b>{{ ins.lost.value|som }}</b><span>{% blocktranslate with n=ins.lost.carts g=ins.lost.guest_pct %}{{ n }} ta savat · {{ g }}% mehmon{% endblocktranslate %}</span></div>
     <div class="nzci-kpi" style="--c:#f59e0b"><small>{% translate "Akkaunt bilan / mehmon" %}</small><b>{{ ins.kpi.signed_conversion|pct }} <em>/ {{ ins.kpi.guest_conversion|pct }}</em></b><span>{% translate "konversiya: kirgan mijoz va mehmon" %}</span></div>
   </div>
 
@@ -32,7 +33,8 @@
 
     <section class="nzp-card nzci-card">
       <h4>{% translate "Tashlab ketilgan savatlar — yoshi bo'yicha" %}</h4>
-      <p class="nzci-sub">{% blocktranslate with c=ins.abandoned.carts v=ins.abandoned.total|som %}{{ c }} ta savat · {{ v }} (bugungi narxda){% endblocktranslate %}</p>
+      <p class="nzci-sub">{% blocktranslate with c=ins.abandoned.carts v=ins.abandoned.total|som w=ins.abandoned.winnable|som o=ins.abandoned.old|som %}Hamma vaqt: {{ c }} ta savat · {{ v }} (bugungi narxda). Qaytarsa bo'ladigani (30 kungacha): {{ w }} · eski (30+ kun): {{ o }}{% endblocktranslate %}</p>
+      {% if ins.lost.carts %}<p class="nzci-note"><i class="fas fa-scale-balanced" aria-hidden="true"></i> {% blocktranslate with d=ins.days n=ins.lost.carts v=ins.lost.value|som gc=ins.lost.guest_carts gv=ins.lost.guest_value|som sc=ins.lost.signed_carts sv=ins.lost.signed_value|som sp=ins.lost.single_pct m=ins.lost.median|som %}So'nggi {{ d }} kunda ochilib, buyurtma bo'lmagan: {{ n }} ta savat · {{ v }}. Mehmon (aloqa yo'q): {{ gc }} ta · {{ gv }}; akkaunt bilan (eslatsa bo'ladi): {{ sc }} ta · {{ sv }}. {{ sp }}% savatda bitta mahsulot, o'rtacha savat {{ m }}.{% endblocktranslate %}</p>{% endif %}
       {% for a in ins.abandoned.age %}<div class="nzci-age{% if forloop.last %} old{% endif %}" style="--i:{{ forloop.counter0 }}"><span>{{ a.label }}</span><div class="nzci-bar"><i style="width:{{ a.pct }}%"></i></div><b>{{ a.value|som }}</b><small>{% blocktranslate with c=a.carts r=a.reachable %}{{ c }} savat · {{ r }} eslatsa bo'ladi{% endblocktranslate %}</small></div>{% endfor %}
       {% if can_remind_all and ins.abandoned.remindable %}
       <details class="nzci-remind"><summary class="nzp-btn"><i class="fas fa-bell" aria-hidden="true"></i> {% blocktranslate with n=ins.abandoned.remindable %}{{ n }} mijozga eslatma yuborish{% endblocktranslate %}</summary>
@@ -43,6 +45,7 @@
 
     <section class="nzp-card nzci-card">
       <h4>{% translate "Eslatmalar samaradorligi" %}</h4>
+      <p class="nzci-note"><i class="fas fa-robot" aria-hidden="true"></i> {% translate "Avtomatik eslatma yoqilgan: savat 2 soat, 24 soat va 3 kun tegilmasa (10:00–22:00), akkaunt bilan kirgan mijozga sayt bildirishnomasi va Telegram xabari boradi. Buyurtma bergan yoki mahsuloti tugagan savatga yuborilmaydi." %}</p>
       <div class="nzci-rem">
         <div><b>{{ ins.reminders.sent }}</b><small>{% translate "eslatma yuborildi" %}</small></div>
         <div><b>{{ ins.reminders.won }}</b><small>{% blocktranslate %}savat qaytdi (7 kun ichida){% endblocktranslate %}</small></div>

@@ -121,6 +121,26 @@ def build(days: int = 30) -> dict:
         p["units"] += i["quantity"]
         p["carts"].add(i["cart_id"])
         p["value"] += price * i["quantity"]
+    # ---- the honest number: carts STARTED IN THIS PERIOD that are still waiting (no order), at today's prices.
+    # The age buckets above cover every cart ever left (30+ day ones too), so comparing their total with the
+    # period's orders overstated the loss.
+    per_cart: dict = {}
+    for i in live:
+        if i["cart_id"] in started:
+            r = per_cart.setdefault(i["cart_id"], {"value": ZERO, "lines": 0, "signed": bool(i["cart__customer_id"])})
+            r["value"] += ((cards.get(i["product_variant_id"]) or {}).get("price") or ZERO) * i["quantity"]
+            r["lines"] += 1
+    lost_vals = sorted(r["value"] for r in per_cart.values())
+    lost = {"carts": len(per_cart), "value": sum(lost_vals, ZERO),
+            "guest_carts": sum(1 for r in per_cart.values() if not r["signed"]),
+            "guest_value": sum((r["value"] for r in per_cart.values() if not r["signed"]), ZERO),
+            "signed_carts": sum(1 for r in per_cart.values() if r["signed"]),
+            "signed_value": sum((r["value"] for r in per_cart.values() if r["signed"]), ZERO),
+            "single": sum(1 for r in per_cart.values() if r["lines"] == 1),
+            "median": lost_vals[len(lost_vals) // 2] if lost_vals else ZERO}
+    lost["guest_pct"] = round(lost["guest_carts"] * 100 / lost["carts"]) if lost["carts"] else 0
+    lost["single_pct"] = round(lost["single"] * 100 / lost["carts"]) if lost["carts"] else 0
+
     ab_total = sum((b["value"] for b in buckets), ZERO)
     ab_lead = max((b["value"] for b in buckets), default=ZERO) or Decimal(1)
     age = [{"label": b["label"], "carts": len(b["carts"]), "value": b["value"], "reachable": len(b["reachable"]),
@@ -165,7 +185,8 @@ def build(days: int = 30) -> dict:
                 "guest_conversion": pct(len(ordered - signed), len(started - signed)), "signed_conversion": pct(len(ordered & signed), len(signed))},
         "series": {"labels": labels, "started": s_started, "ordered": s_ordered, "peak": peak,
                    "bars": [{"label": l, "a": a, "b": b, "ha": round(a * 100 / peak), "hb": round(b * 100 / peak)} for l, a, b in zip(labels, s_started, s_ordered)]},
-        "abandoned": {"age": age, "total": ab_total, "carts": sum(a["carts"] for a in age), "remindable": len(remindable)},
+        "lost": lost,
+        "abandoned": {"age": age, "total": ab_total, "winnable": sum((b["value"] for b in buckets[:3]), ZERO), "old": buckets[-1]["value"], "carts": sum(a["carts"] for a in age), "remindable": len(remindable)},
         "top_products": top_products,
         "reminders": {"sent": len(rem), "won": len(won), "rate": pct(len(won), len({c for c, _a in rem})), "value": won_value},
         "sources": sources,

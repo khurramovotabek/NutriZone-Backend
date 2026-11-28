@@ -7,7 +7,7 @@
 <link rel="stylesheet" href="{% static 'admin/css/nutrizone-platform.css' %}?v=6">
 <link rel="stylesheet" href="{% static 'admin/vendor/leaflet/leaflet.css' %}">
 <link rel="stylesheet" href="{% static 'admin/css/nutrizone-geo.css' %}?v=3">
-<link rel="stylesheet" href="{% static 'admin/css/nutrizone-delivery.css' %}?v=3">
+<link rel="stylesheet" href="{% static 'admin/css/nutrizone-delivery.css' %}?v=4">
 {% endblock %}
 
 {% block breadcrumbs %}
@@ -100,7 +100,7 @@
               {% for i in o.items %}
               <li>
                 <span class="nzdl-thumb">{% if i.image %}<img src="{{ i.image }}" alt="" loading="lazy" decoding="async">{% else %}<i class="fas fa-box" aria-hidden="true"></i>{% endif %}</span>
-                <span class="nzdl-iname"><b>{{ i.name }}</b><small>{% if i.size %}{{ i.size }} · {% endif %}{{ i.sku }}</small></span>
+                <span class="nzdl-iname"><b>{% if i.gift %}🎁 {% endif %}{{ i.name }}</b>{% if i.gift %}<em class="nzdl-gift">{% translate "SOVG'A" %}</em>{% endif %}<small>{% if i.size %}{{ i.size }} · {% endif %}{{ i.sku }}</small></span>
                 <span class="nzdl-qty">× {{ i.qty }}</span>
                 <span class="nzdl-sum">{{ i.total }}</span>
               </li>

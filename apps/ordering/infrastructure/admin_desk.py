@@ -274,7 +274,7 @@ def order_snapshot(order: orm.OrderModel) -> dict:
             "image": info.image_url if info else None, "product_id": info.product_id if info else None,
             "unit": money(l.unit_price_amount), "discount": money(l.discount_amount) if l.discount_amount else "",
             "total": money(_line_net(l)), "net_unit": (_line_net(l) / l.quantity) if l.quantity else Decimal(0),
-            "returned": returned.get(l.id, 0), "cancelled": cancelled.get(l.id, 0),
+            "returned": returned.get(l.id, 0), "cancelled": cancelled.get(l.id, 0), "gift": l.is_gift,
             "returnable": max(l.quantity - returned.get(l.id, 0), 0) if active else 0,
             "cancellable": max(l.quantity - cancelled.get(l.id, 0), 0) if active else 0,
         })

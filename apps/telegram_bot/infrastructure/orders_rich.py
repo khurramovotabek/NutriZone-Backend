@@ -239,6 +239,9 @@ def order_doc(order_id, banner: str | None = None, audience: str = "channel") ->
     placed = timezone.localtime(order.placed_at or timezone.now(), TZ)
 
     lines = order.active_lines()
+    from apps.products.infrastructure.gift_offer import gift_line_ids
+
+    gifts = gift_line_ids([order.id])
     infos = _variant_names({ln.product_variant_id for ln in lines})
     stock = _stock_map(store.id if store else _warehouse_id(), [ln.product_variant_id for ln in lines])
     basket = []
@@ -247,6 +250,10 @@ def order_doc(order_id, banner: str | None = None, audience: str = "channel") ->
         name = info.name if info else "Mahsulot"
         size = f" · {info.size}" if info and info.size else ""
         sku = f" · <code>{R.e(info.sku)}</code>" if info and info.sku else ""
+        if ln.id in gifts:  # the free shaker (gift_offer.py): staff must pack it too
+            basket.append([str(k), f"🎁 {R.b('SOVG‘A')} · {R.b(name)}{R.e(size)}{sku} · <i>{ln.quantity} dona</i>", R.b("0 · sovg‘a"),
+                           _stock_cell(stock.get(ln.product_variant_id))])
+            continue
         basket.append([str(k), f"{R.b(name)}{R.e(size)}{sku} · <i>{ln.quantity} × {num(ln.unit_price.amount)}</i>", R.b(num(ln.unit_price.amount * ln.quantity)),
                        _stock_cell(stock.get(ln.product_variant_id))])
     units = sum(ln.quantity for ln in lines)
@@ -337,12 +344,15 @@ def customer_receipt_doc(order_number: str, lang: str = "uz") -> R.RichDoc | Non
         return None
     order = ordering_composition.build_order_repository().get_by_id(row["id"])
     lines = order.active_lines()
+    from apps.products.infrastructure.gift_offer import gift_line_ids
+
+    gifts = gift_line_ids([order.id])
     infos = _variant_names({ln.product_variant_id for ln in lines})
     totals = order.compute_total()
     cash = totals.grand_total.amount
     coins = Decimal(coins_spent_on_order(order.id) or 0)
-    basket = [[R.b(infos[ln.product_variant_id].name if ln.product_variant_id in infos else "Mahsulot") + (f" · {R.e(infos[ln.product_variant_id].size)}" if ln.product_variant_id in infos and infos[ln.product_variant_id].size else ""),
-               str(ln.quantity), num(ln.unit_price.amount * ln.quantity)] for ln in lines]
+    basket = [[("🎁 " if ln.id in gifts else "") + R.b(infos[ln.product_variant_id].name if ln.product_variant_id in infos else "Mahsulot") + (f" · {R.e(infos[ln.product_variant_id].size)}" if ln.product_variant_id in infos and infos[ln.product_variant_id].size else ""),
+               str(ln.quantity), "Sovg‘a 🎁" if ln.id in gifts else num(ln.unit_price.amount * ln.quantity)] for ln in lines]
     ship = totals.shipping_total.amount
     pickup = row["fulfilment_method"] == "pickup"
     money = [[R.e("Mahsulotlar"), num(cash - ship + totals.discount_total.amount)]]
@@ -361,6 +371,8 @@ def customer_receipt_doc(order_number: str, lang: str = "uz") -> R.RichDoc | Non
             R.p(f"🧾 {R.b(order.order_number.value)} · operator tez orada bog'lanadi."),
             R.table(["Mahsulot", "Soni", "Summa"], basket, align=["left", "center", "right"]),
             R.table([], money, align=["left", "right"]))
+    if gifts:
+        doc.add(R.p("🎁 " + R.b("Sizga sovg‘a!") + " Xaridingiz uchun NutriZone sheykeri buyurtmangizga bepul qo‘shildi."))
     if addr and not pickup:
         doc.add(R.p(f"🏠 {R.e(', '.join(x for x in (addr.line1, addr.city) if x))}"))
     frontend = (getattr(settings, "FRONTEND_URL", None) or "").rstrip("/")

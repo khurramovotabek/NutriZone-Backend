@@ -119,6 +119,8 @@ def _available_units(items) -> dict:
 def _cart_payload(cart) -> dict:
     live = [i for i in cart.items.values() if i.status.value != "removed"]
     stock = _available_units(live)
+    bundle = _bundle_payload(live)
+    goods = _goods_estimate(live) - (Decimal(bundle["amount"]) if bundle else Decimal("0"))
     return {
         "id": str(cart.id), "code": cart.code.value, "token": str(cart.token), "version": cart.version.value,
         "currency": cart.currency.value, "cart_type": cart.cart_type.value, "status": cart.status.value,
@@ -129,8 +131,26 @@ def _cart_payload(cart) -> dict:
         "gift_message": cart.gift_message.text if cart.gift_message else None,
         "expires_at": cart.expires_at.isoformat() if cart.expires_at else None, "is_locked": cart.lock_reason is not None,
         # "Birga arzonroq" pairs among the priced lines -- the same amount checkout takes off
-        "bundle_discount": _bundle_payload(live),
+        "bundle_discount": bundle,
+        # Sovg'a aksiyasi: the free shaker earned / how much is left (coupons are applied at checkout, not here)
+        "gift": _gift_preview(live, {"amount": str(goods)} if live else None),
     }
+
+
+def _goods_estimate(live) -> Decimal:
+    """Goods total for the gift progress: the frozen line price, else today's catalog price (a guest cart is priced
+    only at checkout)."""
+    unpriced = [i.product_variant_id for i in live if i.price_reference is None]
+    catalog = {}
+    if unpriced:
+        try:
+            from apps.products.infrastructure.selectors import bulk_variant_prices
+
+            catalog = {v: Decimal(p["amount"]) for v, p in bulk_variant_prices(unpriced).items()}
+        except Exception:  # noqa: BLE001 - an estimate only
+            catalog = {}
+    return sum(((i.price_reference.unit_amount.amount if i.price_reference is not None else catalog.get(i.product_variant_id, Decimal("0"))) * i.quantity.value
+                for i in live), Decimal("0"))
 
 
 def _bundle_payload(live) -> dict | None:
@@ -790,6 +810,10 @@ def place_order(request, cart, actor_id, data: dict):
             # Coins leave the wallet in the SAME transaction as the order: either both
             # happen or neither does (a race that empties the wallet rolls the order back).
             _redeem_coins(actor_id, coins_to_redeem, order, payable_before_coins)
+            # Sovg'a aksiyasi: 1 mln+ with a protein / gainer -> the NutriZone shaker as a 0 so'm line (gift_offer.py)
+            from apps.products.infrastructure import gift_offer
+
+            gift_offer.attach(order.id, [i.product_variant_id for i in active_items], payable_before_coins, store_id=pickup.id if pickup is not None else None)
             # every coupon that gave a discount records one use (limits count these) -- same transaction as the order
             from apps.pricing.infrastructure import coupon_rules
 
@@ -1078,7 +1102,23 @@ def preview_payload(cart, actor_id, delivery) -> dict:
         # an account made by a guest order (name + phone, never verified): no coins until the owner signs in properly
         "guest_account": guest_account,
         "delivery": delivery(total_after_discount or subtotal, [(i.product_variant_id, i.quantity.value) for i in active_items]),
+        "gift": _gift_preview(active_items, total_after_discount or subtotal),
     }
+
+
+def _gift_preview(active_items, goods: dict | None) -> dict | None:
+    """Sovg'a aksiyasi (products/infrastructure/gift_offer.py): earned, or how much is left -- None when no offer runs."""
+    if not goods or not active_items:
+        return None
+    try:
+        from apps.products.infrastructure import gift_offer
+
+        return gift_offer.status([i.product_variant_id for i in active_items], Decimal(goods["amount"]))
+    except Exception:  # a promo never breaks checkout
+        import logging
+
+        logging.getLogger("nutrizone.app").exception("gift offer preview failed")
+        return None
 
 
 def _delivery_preview(request, goods_total: dict | None, items) -> dict | None:

@@ -49,6 +49,7 @@ main.app-main:has(.nzdl) { overflow-x: clip !important; overflow-y: visible !imp
 .nzdl-thumb img { width: 100%; height: 100%; object-fit: contain; padding: 3px; }
 .nzdl-iname { min-width: 0; }
 .nzdl-iname b { display: block; font-size: .84rem; line-height: 1.25; color: var(--nz-text-primary); display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.nzdl-gift { display: inline-block; margin-top: 2px; padding: 1px 7px; border-radius: 999px; font-style: normal; font-size: .68rem; font-weight: 800; letter-spacing: .04em; color: #b45309; background: color-mix(in srgb, #f59e0b 16%, transparent); }
 .nzdl-iname small { color: var(--nz-text-muted); font-size: .74rem; }
 .nzdl-qty { font-weight: 800; color: var(--nz-text-primary); white-space: nowrap; }
 .nzdl-sum { font-weight: 700; color: var(--nz-text-secondary); white-space: nowrap; font-variant-numeric: tabular-nums; font-size: .82rem; }

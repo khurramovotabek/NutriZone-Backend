@@ -106,6 +106,8 @@ class OrderLineItemModel(BaseModel):
     status = models.CharField(default=OrderLineItemStatus.ACTIVE.value, db_index=True, **enum_field_kwargs(OrderLineItemStatus))
     price_snapshot_id = models.UUIDField(null=True, blank=True)
     reservation_id = models.UUIDField(null=True, blank=True)
+    # a free gift the order earned (products/infrastructure/gift_offer.py): unit price 0, shown as "Sovg'a" everywhere
+    is_gift = models.BooleanField(default=False)
 
     class Meta:
         db_table = "ordering_order_lines"

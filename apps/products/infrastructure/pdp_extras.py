@@ -142,8 +142,18 @@ def extras(product_id, *, customer_id=None, locale: str | None = None) -> dict:
 
         logging.getLogger("nutrizone.app").exception("bundle offer failed for %s", product_id)
         bundle = None
+    try:
+        from apps.products.infrastructure import gift_offer
+
+        gift = gift_offer.pdp_card(product.id, locale)
+    except Exception:  # a promo never takes the product page down
+        import logging
+
+        logging.getLogger("nutrizone.app").exception("gift offer card failed for %s", product_id)
+        gift = None
     return {
         "bundle": bundle,
+        "gift": gift,
         "trust": _trust(product, variant_ids),
         "price_history": _price_history(variant_ids),
         "watching": watching,

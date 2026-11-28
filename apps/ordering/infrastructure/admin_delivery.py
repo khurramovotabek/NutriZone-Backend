@@ -92,7 +92,7 @@ def desk_payload(stage: str = "prepare", q: str = "", city: str = "", courier: s
             net = l.unit_price_amount * l.quantity - l.discount_amount + l.tax_amount
             total += net
             items.append({"name": info.name if info else _("Unknown product"), "size": info.size if info else "", "sku": info.sku if info else "",
-                          "image": info.image_url if info else "", "qty": l.quantity, "unit": money(l.unit_price_amount), "total": money(net)})
+                          "image": info.image_url if info else "", "qty": l.quantity, "unit": money(l.unit_price_amount), "total": money(net), "gift": l.is_gift})
         total += o.shipping_amount or 0  # the delivery fee is collected with the goods
         got = paid.get(o.id, Decimal(0))
         collect = max(total - got, Decimal(0))
@@ -216,7 +216,7 @@ def waybill(order: orm.OrderModel) -> dict:
         net = l.unit_price_amount * l.quantity - l.discount_amount + l.tax_amount
         total += net
         items.append({"name": info.name if info else "—", "size": info.size if info else "", "sku": info.sku if info else "", "qty": l.quantity,
-                      "unit": money(l.unit_price_amount), "total": money(net)})
+                      "unit": money(l.unit_price_amount), "total": money(net), "gift": l.is_gift})
     shipping = order.shipping_amount or Decimal(0)
     total += shipping
     got = _paid_by_order([order.id]).get(order.id, Decimal(0))

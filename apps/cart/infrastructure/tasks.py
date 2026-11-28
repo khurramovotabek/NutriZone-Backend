@@ -134,3 +134,11 @@ def purge_empty_guest_carts(older_than_days: int = GUEST_CART_TTL_DAYS, batch_si
         deleted += len(ids)
     logging.getLogger("nutrizone.app").info("cart.purge_empty_guest_carts: %s deleted", deleted)
     return deleted
+
+
+@shared_task(queue="default", name="cart.auto_remind_abandoned")  # "scheduled" has no worker; default does
+def auto_remind_abandoned() -> dict:
+    """Hourly 10:00-21:00 Tashkent: the 2 h / 24 h / 72 h abandoned-cart reminders (apps/cart/infrastructure/cart_reminders.py)."""
+    from apps.cart.infrastructure.cart_reminders import run_auto
+
+    return run_auto()

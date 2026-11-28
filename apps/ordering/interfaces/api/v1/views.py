@@ -87,13 +87,17 @@ class OrderingThrottle(ScopedRateLimitThrottle):
     identifier_source = "user"
 
 
-def _order_payload(order) -> dict:
+def _order_payload(order, gifts: set | None = None) -> dict:
+    if gifts is None:  # the free shaker lines (products/infrastructure/gift_offer.py) -- the storefront labels them "Sovg'a"
+        from apps.products.infrastructure.gift_offer import gift_line_ids
+
+        gifts = gift_line_ids([order.id])
     return {
         "id": str(order.id), "order_number": order.order_number.value, "customer_id": str(order.customer_id) if order.customer_id else None,
         "cart_id": str(order.cart_id) if order.cart_id else None, "currency": order.currency, "order_type": order.order_type.value,
         "channel": order.channel.value, "status": order.status.value, "version": order.version.value, "is_locked": order.lock_reason is not None,
         "lock_reason": order.lock_reason.value if order.lock_reason else None, "is_archived": order.is_archived,
-        "lines": [_line_payload(l) for l in order.lines.values()], "coupon_ids": [str(c) for c in order.coupon_ids],
+        "lines": [{**_line_payload(l), "is_gift": l.id in gifts} for l in order.lines.values()], "coupon_ids": [str(c) for c in order.coupon_ids],
         "payment_references": [_payment_ref_payload(p) for p in order.payment_references.values()],
         "fulfillment_references": [_fulfillment_ref_payload(f) for f in order.fulfillment_references.values()],
         "invoice": _invoice_payload(order.invoice) if order.invoice else None,
@@ -127,6 +131,12 @@ def _fulfilment_payload(order_id) -> dict:
     return {"fulfilment_method": method, "pickup_store": pickup,
             # what delivery costs on this order (0 for pickup) and how it travels: Tashkent city -> Yandex, regions -> BTS
             "shipping_amount": str(row.get("shipping_amount") or 0), "delivery_zone": row.get("delivery_zone") or None, "delivery_carrier": row.get("delivery_carrier") or ""}
+
+
+def _gifts(orders) -> set:
+    from apps.products.infrastructure.gift_offer import gift_line_ids
+
+    return gift_line_ids([o.id for o in orders])
 
 
 def _line_payload(line) -> dict:
@@ -197,7 +207,7 @@ class OrderListCreateView(APIView):
         params = parse_order_list_params(request.query_params)
         items, total = composition.build_admin_list_orders().execute(status=params.status, page=params.page, page_size=params.page_size)
         total_pages = max((total + params.page_size - 1) // params.page_size, 1)
-        return paginated_response(data=[_order_payload(o) for o in items], pagination={"strategy": "page", "page": params.page, "page_size": params.page_size, "total_pages": total_pages, "total_count": total})
+        return paginated_response(data=[_order_payload(o, gifts) for gifts in [_gifts(items)] for o in items], pagination={"strategy": "page", "page": params.page, "page_size": params.page_size, "total_pages": total_pages, "total_count": total})
 
     @extend_schema(tags=["Ordering"], summary="Create an order from cart data", request=CreateOrderSerializer, responses={201: OpenApiResponse(description="Order created"), **_responses(401, 403, 422)})
     def post(self, request):
@@ -782,7 +792,7 @@ class CustomerOrdersView(APIView):
         status_filter = request.query_params.get("filter[status]")
         items, total = composition.build_list_customer_orders().execute(uuid.UUID(customer_id), status=status_filter, page=pagination.page, page_size=pagination.page_size)
         total_pages = max((total + pagination.page_size - 1) // pagination.page_size, 1)
-        return paginated_response(data=[_order_payload(o) for o in items], pagination={"strategy": "page", "page": pagination.page, "page_size": pagination.page_size, "total_pages": total_pages, "total_count": total})
+        return paginated_response(data=[_order_payload(o, gifts) for gifts in [_gifts(items)] for o in items], pagination={"strategy": "page", "page": pagination.page, "page_size": pagination.page_size, "total_pages": total_pages, "total_count": total})
 
 
 class OrderSearchView(APIView):

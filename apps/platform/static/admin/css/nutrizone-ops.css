@@ -65,7 +65,7 @@ body.nz-glass-page .nzb-live, body.nz-glass-page .nzci-live { animation: nz-puls
 .nzci-periods { display: inline-flex; gap: 4px; padding: 4px; border-radius: 12px; border: 1px solid var(--nz-border, #e2e8f0); }
 .nzci-periods a { padding: 6px 12px; border-radius: 9px; font-weight: 700; font-size: .82rem; color: var(--nz-text-secondary); text-decoration: none; }
 .nzci-periods a.on { background: var(--nz-primary, #6366f1); color: #fff; box-shadow: 0 6px 16px -8px var(--nz-primary, #6366f1); }
-.nzci-kpis { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 12px; }
+.nzci-kpis { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 12px; }
 .nzci-kpi { position: relative; padding: 14px 16px; border-radius: 16px; border: 1px solid var(--nz-border, #e2e8f0); background: var(--nz-surface, #fff); overflow: hidden; }
 .nzci-kpi::before { content: ""; position: absolute; inset: 0 auto 0 0; width: 4px; background: var(--c); }
 .nzci-kpi small { display: block; font-size: .72rem; font-weight: 700; text-transform: uppercase; letter-spacing: .04em; color: var(--nz-text-secondary); }

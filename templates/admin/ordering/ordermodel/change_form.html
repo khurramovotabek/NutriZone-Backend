@@ -148,6 +148,7 @@
               <strong>{{ l.name }}</strong>
               <small>{% if l.size %}{{ l.size }} · {% endif %}{% if l.sku %}SKU {{ l.sku }}{% endif %}</small>
               <span class="nzd-line-tags">
+                {% if l.gift %}<span class="nzd-tag" style="--t:#d97706"><i class="fas fa-gift" aria-hidden="true"></i> {% translate "Sovg'a — 0 so'm" %}</span>{% endif %}
                 {% if l.status == "cancelled" %}<span class="nzd-tag" style="--t:#e11d48">{% translate "Cancelled" %}</span>{% elif l.status == "returned" %}<span class="nzd-tag" style="--t:#f97316">{% translate "Returned" %}</span>{% endif %}
                 {% if l.active and l.returned %}<span class="nzd-tag" style="--t:#f97316">{% blocktranslate with n=l.returned %}{{ n }} in a return{% endblocktranslate %}</span>{% endif %}
                 {% if l.active and l.cancelled %}<span class="nzd-tag" style="--t:#e11d48">{% blocktranslate with n=l.cancelled %}{{ n }} in a cancellation{% endblocktranslate %}</span>{% endif %}
